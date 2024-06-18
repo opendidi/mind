@@ -1,0 +1,328 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg id="_图层_2" data-name="图层 2" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 150 150">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#_未命名的渐变_13);
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5, .cls-6, .cls-7, .cls-8, .cls-9, .cls-10, .cls-11, .cls-12 {
+        stroke-width: 0px;
+      }
+
+      .cls-2 {
+        fill: url(#_未命名的渐变_10);
+      }
+
+      .cls-3 {
+        fill: url(#_未命名的渐变_63);
+      }
+
+      .cls-4, .cls-13 {
+        fill: none;
+      }
+
+      .cls-13 {
+        stroke: #fff;
+      }
+
+      .cls-13, .cls-14, .cls-15, .cls-16, .cls-17, .cls-18, .cls-19, .cls-20, .cls-21 {
+        stroke-miterlimit: 10;
+        stroke-width: .1px;
+      }
+
+      .cls-14 {
+        filter: url(#outer-glow-7);
+      }
+
+      .cls-14, .cls-15, .cls-16, .cls-17, .cls-18, .cls-19, .cls-20, .cls-21 {
+        fill: #98edff;
+        stroke: #008cff;
+      }
+
+      .cls-15 {
+        filter: url(#outer-glow-6);
+      }
+
+      .cls-16 {
+        filter: url(#outer-glow-8);
+      }
+
+      .cls-17 {
+        filter: url(#outer-glow-2);
+      }
+
+      .cls-18 {
+        filter: url(#outer-glow-5);
+      }
+
+      .cls-19 {
+        filter: url(#outer-glow-1);
+      }
+
+      .cls-20 {
+        filter: url(#outer-glow-3);
+      }
+
+      .cls-21 {
+        filter: url(#outer-glow-4);
+      }
+
+      .cls-5 {
+        fill: url(#_未命名的渐变_1827);
+      }
+
+      .cls-6 {
+        fill: url(#_新建图案);
+        opacity: .1;
+      }
+
+      .cls-22 {
+        opacity: .2;
+      }
+
+      .cls-7, .cls-23 {
+        mix-blend-mode: multiply;
+        opacity: .2;
+      }
+
+      .cls-7, .cls-12 {
+        fill: #000714;
+      }
+
+      .cls-24 {
+        isolation: isolate;
+      }
+
+      .cls-25 {
+        opacity: 0;
+      }
+
+      .cls-9 {
+        fill: #7695ca;
+      }
+
+      .cls-10 {
+        fill: #4e5f79;
+      }
+
+      .cls-11 {
+        fill: #171d23;
+      }
+    </style>
+    <pattern id="_新建图案" data-name="新建图案" x="0" y="0" width="18.57" height="32.16" patternTransform="translate(3383.19 888.25)" patternUnits="userSpaceOnUse" viewBox="0 0 18.57 32.16">
+      <g>
+        <rect class="cls-4" x="0" y="0" width="18.57" height="32.16"/>
+        <g>
+          <g>
+            <polyline class="cls-13" points="18.57 21.44 18.57 32.16 18.57 42.88"/>
+            <polyline class="cls-13" points="9.29 26.8 18.57 32.16 27.85 37.51 27.85 37.52"/>
+            <polyline class="cls-13" points="9.29 37.52 9.29 37.51 18.57 32.16 27.85 26.8"/>
+          </g>
+          <polygon class="cls-13" points="27.85 37.52 27.85 26.8 18.57 21.44 9.28 26.8 9.28 37.52 18.57 42.88 27.85 37.52"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-13" points="0 21.44 0 32.16 0 42.88"/>
+            <polyline class="cls-13" points="-9.28 26.8 0 32.16 9.28 37.51 9.28 37.52"/>
+            <polyline class="cls-13" points="-9.28 37.52 -9.28 37.51 0 32.16 9.28 26.8"/>
+          </g>
+          <polygon class="cls-13" points="9.28 37.52 9.28 26.8 0 21.44 -9.28 26.8 -9.28 37.52 0 42.88 9.28 37.52"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-13" points="18.57 10.72 27.85 16.08 37.13 21.43 37.13 21.44"/>
+            <polyline class="cls-13" points="18.57 21.44 18.57 21.43 27.85 16.08 37.13 10.72"/>
+          </g>
+          <polygon class="cls-13" points="37.14 21.44 37.14 10.72 27.85 5.36 18.57 10.72 18.57 21.44 27.85 26.8 37.14 21.44"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-13" points="9.28 5.36 9.28 16.08 9.28 26.8"/>
+            <polyline class="cls-13" points="0 10.72 9.28 16.08 18.56 21.43 18.56 21.44"/>
+            <polyline class="cls-13" points="0 21.44 0 21.43 9.28 16.08 18.56 10.72"/>
+          </g>
+          <polygon class="cls-13" points="18.57 21.44 18.57 10.72 9.28 5.36 0 10.72 0 21.44 9.28 26.8 18.57 21.44"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-13" points="-18.56 10.72 -9.28 16.08 0 21.43 0 21.44"/>
+            <polyline class="cls-13" points="-18.56 21.44 -18.56 21.43 -9.28 16.08 0 10.72"/>
+          </g>
+          <polygon class="cls-13" points="0 21.44 0 10.72 -9.28 5.36 -18.57 10.72 -18.57 21.44 -9.28 26.8 0 21.44"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-13" points="18.57 -10.72 18.57 0 18.57 10.72"/>
+            <polyline class="cls-13" points="9.29 -5.36 18.57 0 27.85 5.35 27.85 5.36"/>
+            <polyline class="cls-13" points="9.29 5.36 9.29 5.35 18.57 0 27.85 -5.36"/>
+          </g>
+          <polygon class="cls-13" points="27.85 5.36 27.85 -5.36 18.57 -10.72 9.28 -5.36 9.28 5.36 18.57 10.72 27.85 5.36"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-13" points="0 -10.72 0 0 0 10.72"/>
+            <polyline class="cls-13" points="-9.28 -5.36 0 0 9.28 5.35 9.28 5.36"/>
+            <polyline class="cls-13" points="-9.28 5.36 -9.28 5.35 0 0 9.28 -5.36"/>
+          </g>
+          <polygon class="cls-13" points="9.28 5.36 9.28 -5.36 0 -10.72 -9.28 -5.36 -9.28 5.36 0 10.72 9.28 5.36"/>
+        </g>
+      </g>
+    </pattern>
+    <linearGradient id="_未命名的渐变_1827" data-name="未命名的渐变 1827" x1="18.56" y1="105.37" x2="92.45" y2="62.72" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#425266"/>
+      <stop offset="1" stop-color="#596b8b"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_10" data-name="未命名的渐变 10" x1="88.51" y1="94.13" x2="119.9" y2="94.13" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#283140"/>
+      <stop offset="1" stop-color="#12161a"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_13" data-name="未命名的渐变 13" x1="22.5" y1="28.18" x2="119.9" y2="28.18" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#88aae5"/>
+      <stop offset="1" stop-color="#547098"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_63" data-name="未命名的渐变 63" x1="94.22" y1="129.76" x2="99.97" y2="129.76" gradientTransform="translate(202.76) rotate(-180) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#2b3540"/>
+      <stop offset="1" stop-color="#333f4d"/>
+    </linearGradient>
+    <filter id="outer-glow-1" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur" stdDeviation="2"/>
+      <feFlood flood-color="#008cff" flood-opacity="1"/>
+      <feComposite in2="blur" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-2" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur-2" stdDeviation="2"/>
+      <feFlood flood-color="#008cff" flood-opacity="1"/>
+      <feComposite in2="blur-2" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-3" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur-3" stdDeviation="2"/>
+      <feFlood flood-color="#008cff" flood-opacity="1"/>
+      <feComposite in2="blur-3" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-4" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur-4" stdDeviation="2"/>
+      <feFlood flood-color="#008cff" flood-opacity="1"/>
+      <feComposite in2="blur-4" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-5" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur-5" stdDeviation="2"/>
+      <feFlood flood-color="#008cff" flood-opacity="1"/>
+      <feComposite in2="blur-5" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-6" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur-6" stdDeviation="2"/>
+      <feFlood flood-color="#008cff" flood-opacity="1"/>
+      <feComposite in2="blur-6" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-7" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur-7" stdDeviation="2"/>
+      <feFlood flood-color="#008cff" flood-opacity="1"/>
+      <feComposite in2="blur-7" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+    <filter id="outer-glow-8" filterUnits="userSpaceOnUse">
+      <feOffset dx="0" dy="0"/>
+      <feGaussianBlur result="blur-8" stdDeviation="2"/>
+      <feFlood flood-color="#008cff" flood-opacity="1"/>
+      <feComposite in2="blur-8" operator="in"/>
+      <feComposite in="SourceGraphic"/>
+    </filter>
+  </defs>
+  <g id="_图元" data-name="图元">
+    <g id="_转运楼" data-name="转运楼">
+      <g id="_背景" data-name="背景" class="cls-25">
+        <rect class="cls-12" y="0" width="150" height="150"/>
+        <rect id="_网格" data-name="网格" class="cls-6" y="0" width="150" height="150"/>
+      </g>
+      <g class="cls-24">
+        <polygon class="cls-5" points="88.77 56.36 88.51 150 22.23 111.73 22.5 18.09 88.77 56.36"/>
+        <polygon class="cls-5" points="88.77 56.36 88.51 150 22.23 111.73 22.5 18.09 88.77 56.36"/>
+        <polygon class="cls-7" points="88.64 133.63 88.51 150 22.23 111.73 22.36 95.36 88.64 133.63"/>
+        <polygon class="cls-2" points="88.77 56.36 119.9 38.27 119.64 131.91 88.51 150 88.77 56.36"/>
+        <g class="cls-23">
+          <polygon class="cls-12" points="88.64 133.4 119.77 115.31 119.64 131.91 88.51 150 88.64 133.4"/>
+        </g>
+        <polygon class="cls-1" points="22.5 18.09 53.63 0 119.9 38.27 88.77 56.36 22.5 18.09"/>
+        <g>
+          <g>
+            <polygon class="cls-9" points="108.52 122 108.54 137.52 103.01 140.71 102.99 125.19 108.52 122"/>
+            <polygon class="cls-3" points="102.78 125.53 108.16 137.31 108.54 137.52 108.52 131.16 108.52 122 102.78 125.53"/>
+            <polygon class="cls-11" points="108.17 122.4 108.16 137.31 108.54 137.52 108.53 122.19 108.17 122.4"/>
+          </g>
+          <g class="cls-24">
+            <polygon class="cls-10" points="102.47 125.46 102.47 125.84 108.95 122.1 108.95 121.72 102.47 125.46"/>
+            <polygon class="cls-11" points="102.47 125.46 101.83 125.09 101.83 125.46 102.47 125.84 102.47 125.46"/>
+            <polygon class="cls-9" points="108.95 121.72 108.3 121.35 101.83 125.09 102.47 125.46 108.95 121.72"/>
+          </g>
+          <g class="cls-24">
+            <polygon class="cls-10" points="110.55 137.58 110.56 137.95 102.79 142.43 102.78 142.06 110.55 137.58"/>
+            <polygon class="cls-11" points="102.78 142.06 102.79 142.43 101.5 141.69 101.5 141.31 102.78 142.06"/>
+            <polygon class="cls-9" points="109.27 136.83 110.55 137.58 102.78 142.06 101.5 141.31 109.27 136.83"/>
+          </g>
+        </g>
+      </g>
+      <g class="cls-24">
+        <polygon class="cls-8" points="37.79 99 37.79 103.51 32.21 100.29 32.22 95.79 37.79 99"/>
+        <polygon class="cls-9" points="37.79 103.51 37.79 104.38 31.47 100.73 32.21 100.29 37.79 103.51"/>
+        <polygon class="cls-11" points="32.22 95.79 32.21 100.29 31.47 100.73 31.48 95.36 32.22 95.79"/>
+        <polygon class="cls-19" points="32.22 95.79 32.21 100.29 37.79 103.51 37.79 99 32.22 95.79"/>
+      </g>
+      <g class="cls-24">
+        <polygon class="cls-8" points="71.95 118.03 71.95 122.54 66.38 119.32 66.38 114.82 71.95 118.03"/>
+        <polygon class="cls-9" points="71.95 122.54 71.95 123.41 65.63 119.76 66.38 119.32 71.95 122.54"/>
+        <polygon class="cls-11" points="66.38 114.82 66.38 119.32 65.63 119.76 65.64 114.39 66.38 114.82"/>
+        <polygon class="cls-17" points="66.38 114.82 66.38 119.32 71.95 122.54 71.95 118.03 66.38 114.82"/>
+      </g>
+      <g class="cls-24">
+        <polygon class="cls-8" points="37.79 78.64 37.79 83.15 32.21 79.93 32.22 75.43 37.79 78.64"/>
+        <polygon class="cls-9" points="37.79 83.15 37.79 84.02 31.47 80.37 32.21 79.93 37.79 83.15"/>
+        <polygon class="cls-11" points="32.22 75.43 32.21 79.93 31.47 80.37 31.48 75 32.22 75.43"/>
+        <polygon class="cls-20" points="32.22 75.43 32.21 79.93 37.79 83.15 37.79 78.64 32.22 75.43"/>
+      </g>
+      <g class="cls-24">
+        <polygon class="cls-8" points="71.95 97.67 71.95 102.19 66.38 98.96 66.38 94.46 71.95 97.67"/>
+        <polygon class="cls-9" points="71.95 102.19 71.95 103.05 65.63 99.4 66.38 98.96 71.95 102.19"/>
+        <polygon class="cls-11" points="66.38 94.46 66.38 98.96 65.63 99.4 65.64 94.03 66.38 94.46"/>
+        <polygon class="cls-21" points="66.38 94.46 66.38 98.96 71.95 102.19 71.95 97.67 66.38 94.46"/>
+      </g>
+      <g class="cls-24">
+        <polygon class="cls-8" points="37.79 60 37.79 64.51 32.21 61.29 32.22 56.79 37.79 60"/>
+        <polygon class="cls-9" points="37.79 64.51 37.79 65.37 31.47 61.73 32.21 61.29 37.79 64.51"/>
+        <polygon class="cls-11" points="32.22 56.79 32.21 61.29 31.47 61.73 31.48 56.36 32.22 56.79"/>
+        <polygon class="cls-18" points="32.22 56.79 32.21 61.29 37.79 64.51 37.79 60 32.22 56.79"/>
+      </g>
+      <g class="cls-24">
+        <polygon class="cls-8" points="71.95 79.03 71.95 83.54 66.38 80.32 66.38 75.82 71.95 79.03"/>
+        <polygon class="cls-9" points="71.95 83.54 71.95 84.41 65.63 80.76 66.38 80.32 71.95 83.54"/>
+        <polygon class="cls-11" points="66.38 75.82 66.38 80.32 65.63 80.76 65.64 75.39 66.38 75.82"/>
+        <polygon class="cls-15" points="66.38 75.82 66.38 80.32 71.95 83.54 71.95 79.03 66.38 75.82"/>
+      </g>
+      <g class="cls-24">
+        <polygon class="cls-8" points="37.79 41.91 37.79 46.42 32.21 43.2 32.22 38.69 37.79 41.91"/>
+        <polygon class="cls-9" points="37.79 46.42 37.79 47.28 31.47 43.63 32.21 43.2 37.79 46.42"/>
+        <polygon class="cls-11" points="32.22 38.69 32.21 43.2 31.47 43.63 31.48 38.27 32.22 38.69"/>
+        <polygon class="cls-14" points="32.22 38.69 32.21 43.2 37.79 46.42 37.79 41.91 32.22 38.69"/>
+      </g>
+      <g class="cls-24">
+        <polygon class="cls-8" points="71.95 60.94 71.95 65.45 66.38 62.23 66.38 57.72 71.95 60.94"/>
+        <polygon class="cls-9" points="71.95 65.45 71.95 66.31 65.63 62.66 66.38 62.23 71.95 65.45"/>
+        <polygon class="cls-11" points="66.38 57.72 66.38 62.23 65.63 62.66 65.64 57.3 66.38 57.72"/>
+        <polygon class="cls-16" points="66.38 57.72 66.38 62.23 71.95 65.45 71.95 60.94 66.38 57.72"/>
+      </g>
+    </g>
+  </g>
+</svg>
