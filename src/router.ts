@@ -4,9 +4,9 @@
  * @Author: htang
  * @Date: 2024-04-01 16:25:43
  * @LastEditors: htang
- * @LastEditTime: 2024-04-01 17:51:02
+ * @LastEditTime: 2024-07-10 14:10:08
  */
-import { createRouter, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router';
 
 const routes = [
   { path: '/', component: () => import('./views/Index.vue') },
@@ -14,7 +14,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHistory(import.meta.env.VITE_PUBLIC_PATH),
+  history: createWebHashHistory(),
   routes,
 });
 

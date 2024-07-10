@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2024-04-02 09:08:58
+ * @LastEditTime: 2024-07-10 14:08:22
  */
 import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, 'env');
   return {
     // 参考：https://www.jianshu.com/p/4973bd983e96
-    base: loadEnv(mode, process.cwd()).VITE_PUBLIC_PATH,
+    base: loadEnv(mode, process.cwd()).VITE_BASE_URL,
     plugins: [vue()],
     resolve: {
       alias: {
