@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, 'env');
   return {
     // 参考：https://www.jianshu.com/p/4973bd983e96
-    base: loadEnv(mode, process.cwd()).VITE_BASE_URL,
+    base: './',//loadEnv(mode, process.cwd()).VITE_BASE_URL,
     plugins: [vue()],
     resolve: {
       alias: {
