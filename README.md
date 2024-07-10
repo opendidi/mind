@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-04-01 16:26:12
  * @LastEditors: htang
- * @LastEditTime: 2024-04-03 15:47:28
+ * @LastEditTime: 2024-07-10 14:21:22
 -->
 
 基于meta2d.js开发的编辑器
@@ -54,3 +54,9 @@ pnpm serve
 ```bash
 pnpm build
 ```
+
+项目可视化编辑页面1
+> <img width="100%" align="center" src="./images/1720592339906.jpg" />
+
+项目可视化编辑页面2
+> <img width="100%" align="center" src="./images/1720592440688.jpg">
