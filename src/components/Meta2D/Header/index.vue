@@ -286,6 +286,9 @@
         <i class="iconfont icon-31fenxiang"></i>
         <span>分享</span>
       </a>
+      <a href="https://github.com/opendidi/mind" target="_blank">
+        <GithubOutlined />
+      </a>
     </div>
     <ShareModal ref="shareModal" />
   </div>
@@ -294,8 +297,10 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { Icon } from "tdesign-vue-next";
+import { GithubOutlined } from "@ant-design/icons-vue";
 export default defineComponent({
   components: {
+    GithubOutlined,
     "t-icon": Icon,
   },
 });
@@ -848,6 +853,14 @@ function onSearch() {
       &.active,
       &:hover {
         color: #0c56eb;
+      }
+    }
+  }
+
+  .head-right {
+    a {
+      &:last-child {
+        font-size: 18px;
       }
     }
   }
