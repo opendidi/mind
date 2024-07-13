@@ -45,7 +45,7 @@ pnpm install
 - run
 
 ```bash
-pnpm serve
+pnpm start
 ```
 
 
