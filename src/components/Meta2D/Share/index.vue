@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-10-11 11:15:10
  * @LastEditors: htang
- * @LastEditTime: 2024-04-03 16:29:14
+ * @LastEditTime: 2024-10-08 18:09:00
 -->
 <template>
   <a-modal
@@ -73,7 +73,9 @@ export default defineComponent({
     let date = Date.now();
     let args = [`id=${proxy.$route.query.id || 1}`, `r=${date + ""}`];
     let model = ref({
-      url: `${window.location.origin}/metaPreview?${args.join("&")}`,
+      url: `${window.location.origin}${
+        import.meta.env.VITE_BASE_URL
+      }/metaPreview?${args.join("&")}`,
     });
 
     async function onCopy() {
