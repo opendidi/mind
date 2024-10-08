@@ -30,6 +30,7 @@
     "mind-plugins-core": "^1.0.25",
     "moment": "^2.29.4",
     "monaco-editor": "^0.43.0",
+    "nprogress": "^0.2.0",
     "pinia": "2.0.12",
     "plyr": "^3.7.8",
     "qrcode.vue": "^3.4.1",

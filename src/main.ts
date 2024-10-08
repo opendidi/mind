@@ -4,12 +4,12 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2023-10-10 10:35:09
+ * @LastEditTime: 2024-10-08 20:14:26
  */
 import { createApp } from 'vue';
 import App from './App.vue';
 
-import router from './router.ts';
+import router from "./router"
 import TDesign from 'tdesign-vue-next';
 
 import Antd from 'ant-design-vue';
@@ -23,6 +23,8 @@ import '@/assets/js/font_4042197_vr5c62twlzh.js'
 
 import '@/assets/icon/iconfont.css'
 import '@/styles/index.less';
+
+import './permission'
 
 const app = createApp(App);
 
