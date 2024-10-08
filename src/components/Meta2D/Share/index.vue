@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-10-11 11:15:10
  * @LastEditors: htang
- * @LastEditTime: 2024-10-08 18:14:34
+ * @LastEditTime: 2024-10-08 19:53:07
 -->
 <template>
   <a-modal
@@ -57,7 +57,7 @@
 </template>
 
 <script>
-import { ref, defineComponent, getCurrentInstance } from "vue";
+import { ref, defineComponent, getCurrentInstance, nextTick } from "vue";
 import useClipboard from "vue-clipboard3";
 import { message } from "ant-design-vue";
 import QrcodeVue from "qrcode.vue";
@@ -73,9 +73,7 @@ export default defineComponent({
     let date = Date.now();
     let args = [`id=${proxy.$route.query.id || 1}`, `r=${date + ""}`];
     let model = ref({
-      url: `${window.location.origin}/${
-        import.meta.env.BASE_URL
-      }/metaPreview?${args.join("&")}`,
+      url: `${window.location.origin}/mind/metaPreview?${args.join("&")}`,
     });
 
     async function onCopy() {

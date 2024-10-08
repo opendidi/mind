@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2024-07-10 14:08:22
+ * @LastEditTime: 2024-10-08 19:35:35
  */
 import { defineConfig, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
@@ -14,11 +14,11 @@ import * as path from 'path';
 const TimeStamp = new Date().getTime();
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, 'env');
-  return {
+export default ({ mode }) => {
+  const env = loadEnv(mode, process.cwd());
+  return defineConfig({
     // 参考：https://www.jianshu.com/p/4973bd983e96
-    base: './',//loadEnv(mode, process.cwd()).VITE_BASE_URL,
+    base: env.VITE_APP_BASE_URL,
     plugins: [vue()],
     resolve: {
       alias: {
@@ -72,5 +72,5 @@ export default defineConfig(({ mode }) => {
       }
     },
     envDir: 'env',
-  }
-});
+  })
+};
