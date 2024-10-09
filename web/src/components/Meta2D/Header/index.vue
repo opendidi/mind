@@ -51,14 +51,13 @@
           </a-menu>
         </template>
       </a-dropdown>
-      <a href="javascript:void(0);" @click="onSave(true)">
+      <a @click="onSave(true)">
         <t-icon name="save" />
         <span>保存</span>
       </a>
     </div>
     <div class="head-center flex">
       <a
-        href="javascript:void(0);"
         class="iconfont icon-gangbi1"
         :class="[isOnDrawLine == true ? 'active' : '']"
         @click="onDrawLine"
@@ -66,7 +65,6 @@
         <span>钢笔</span>
       </a>
       <a
-        href="javascript:void(0);"
         class="iconfont icon-icon-test"
         :class="[isDrawingPencil == true ? 'active' : '']"
         @click="onDrawingPencil"
@@ -74,7 +72,6 @@
         <span>铅笔</span>
       </a>
       <a
-        href="javascript:void(0);"
         class="iconfont icon-fangdajing"
         :class="[isShowMagnifier == true ? 'active' : '']"
         @click="onShowMagnifier"
@@ -224,7 +221,6 @@
         </template>
       </a-dropdown>
       <a
-        href="javascript:void(0);"
         class="iconfont icon-Anchorpoint"
         :class="[isAutoAnchor == true ? 'active' : '']"
         @click="onAutoAnchor"
@@ -232,7 +228,6 @@
         <span>自动锚点</span>
       </a>
       <a
-        href="javascript:void(0);"
         class="iconfont icon-a-56px_line_Anti-fraud"
         :class="[isDisableAnchor == true ? 'active' : '']"
         @click="onDisableAnchor"
@@ -244,7 +239,6 @@
     </div>
     <div class="head-right flex items-center">
       <a
-        href="javascript:void(0);"
         @click="setLocked"
         :style="{
           color: data.locked == 1 ? '#faad14' : data.locked == 2 ? 'red' : '',
@@ -263,24 +257,28 @@
           <span>锁定</span>
         </template>
       </a>
-      <a href="javascript:void(0);" @click="onView()" title="运行查看">
+      <a @click="onView()" title="运行查看">
         <t-icon name="play-circle-stroke" />
         <span>预览</span>
       </a>
       <template v-if="scale > 0">
-        <a href="javascript:void(0);">
+        <a>
           <span style="line-height: 40px">{{ scale }}%</span>
           <span>视图</span>
         </a>
       </template>
       <a-tooltip title="100%视图" placement="bottom">
-        <a href="javascript:void(0);" @click="onScaleDefault">
+        <a @click="onScaleDefault">
           <t-icon name="refresh" />
         </a>
       </a-tooltip>
-      <a href="javascript:void(0);" @click="onScaleWindow" title="窗口大小">
+      <a @click="onScaleWindow" title="窗口大小">
         <t-icon name="fullscreen-exit" />
         <span>窗口大小</span>
+      </a>
+      <a title="文件管理" @click="openFileManager">
+        <t-icon name="folder-open" />
+        <span>文件管理</span>
       </a>
       <a @click="onSearch">
         <i class="iconfont icon-31fenxiang"></i>
@@ -291,6 +289,7 @@
       </a>
     </div>
     <ShareModal ref="shareModal" />
+    <FileManager ref="fileManager" />
   </div>
 </template>
 
@@ -307,7 +306,7 @@ export default defineComponent({
 </script>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref, getCurrentInstance } from "vue";
+import { onMounted, reactive, ref, getCurrentInstance, nextTick } from "vue";
 import { useRouter } from "vue-router";
 import { Pen, PenType, deepClone } from "@meta2d/core";
 import FileSaver from "file-saver";
@@ -316,6 +315,7 @@ import { CaretDownOutlined } from "@ant-design/icons-vue";
 import ShareModal from "../Share/index.vue";
 import { Icon } from "tdesign-vue-next";
 import { useCommonStore, useCommonStoreWithOut } from "@/store/modules/common";
+import FileManager from "@/components/FileManager/index.vue";
 
 let { proxy } = getCurrentInstance();
 
@@ -819,6 +819,16 @@ function onShowMagnifier() {
     meta2d.hideMagnifier();
     isShowMagnifier.value = false;
   }
+}
+
+/**
+ * 打开素材库
+ */
+function openFileManager() {
+  proxy.$refs.fileManager.visible = true;
+  nextTick(() => {
+    proxy.$refs.fileManager.init();
+  });
 }
 
 /**

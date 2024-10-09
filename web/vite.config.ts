@@ -4,34 +4,37 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2024-10-08 19:35:35
+ * @LastEditTime: 2024-10-09 10:45:26
  */
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig, UserConfig, ConfigEnv, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import { OUTPUT_DIR } from './build/constant';
 import * as path from 'path';
+import { createProxy } from './build/vite/proxy';
+import { wrapperEnv } from './build/utils';
 
 const TimeStamp = new Date().getTime();
 
 // https://vitejs.dev/config/
-export default ({ mode }) => {
+export default ({ command, mode }: ConfigEnv): UserConfig => {
   const env = loadEnv(mode, process.cwd());
+  const root = process.cwd();
+  const isBuild = command === 'build';
+  const viteEnv = wrapperEnv(env);
+  const { VITE_PORT, VITE_PUBLIC_PATH, VITE_PROXY } = viteEnv;
   return defineConfig({
     // 参考：https://www.jianshu.com/p/4973bd983e96
     base: env.VITE_APP_BASE_URL,
+    root,
+    envDir: 'env',
     plugins: [vue()],
-    resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src/'),
-      },
-    },
     server: {
       // Listening on all local IPs
       host: true,
       https: false,
-      port: 5173,
+      port: VITE_PORT,
       // Load proxy configuration from .env
-      // proxy: createProxy(VITE_PROXY),
+      proxy: createProxy(VITE_PROXY),
     },
     css: {
       preprocessorOptions: {
@@ -42,6 +45,15 @@ export default ({ mode }) => {
           javascriptEnabled: true,
         },
       },
+    },
+    resolve: {
+      alias: {
+        '@': path.resolve(__dirname, './src/'),
+      },
+    },
+    esbuild: {
+      //清除全局的console.log和debug
+      drop: isBuild ? ['console', 'debugger'] : [],
     },
     build: {
       minify: 'esbuild',
@@ -71,6 +83,5 @@ export default ({ mode }) => {
         }
       }
     },
-    envDir: 'env',
   })
 };

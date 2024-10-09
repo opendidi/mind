@@ -1,0 +1,7 @@
+Flask==3.0.3
+oss2==2.18.4
+pymysql==1.1.0
+minio==7.2.6
+eventlet==0.36.1
+Flask-Cors==4.0.1
+Pillow==10.3.0

@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-04-01 16:26:12
  * @LastEditors: htang
- * @LastEditTime: 2024-07-10 14:21:22
+ * @LastEditTime: 2024-10-09 09:09:33
 -->
 
 基于meta2d.js开发的编辑器
@@ -12,7 +12,7 @@
 当前最新版本：0.0.2（发布时间：2024-04-03）
 
 [![AUR](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](https://github.com/opendidi/mind/blob/main/LICENSE)
-[![](https://img.shields.io/badge/version-0.0.2-brightgreen.svg)](https://github.com/zhangdaiscott/jeecg-boot)
+[![](https://img.shields.io/badge/version-0.0.2-brightgreen.svg)](https://github.com/opendidi/mind)
 
 ## 源码下载或者预览
 
@@ -23,9 +23,17 @@
 
 - 开源地址：https://github.com/le5le-com/meta2d.js
 
+## 后端服务启动
+
+> python版本要求python3.8.10
+
+```python
+> python starter.py
+```
+
 ## 安装与使用
 
- > 环境要求: 版本要求Node 14.18+ / 16+ 版本以上
+ > 环境要求: 前端版本要求Node 14.18+ / 16+ 版本以上
  > 建议使用pnpm否则依赖可能安装不上。
 
 - Get the project code

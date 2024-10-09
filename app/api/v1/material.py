@@ -4,7 +4,7 @@ version: 1.0.0
 Author: htang
 Date: 2024-08-09 16:48:11
 LastEditors: htang
-LastEditTime: 2024-09-26 17:56:38
+LastEditTime: 2024-10-09 09:50:16
 '''
 from flask import Blueprint, Flask, render_template, request, Response, jsonify
 from app.package.module.material_mysql import MaterialMysqlHandler
@@ -81,7 +81,7 @@ def upload_material():
   # 父级id
   parent_id = request.form.get("parent_id")
 
-  # 全景图
+  # 图片文件
   uploaded_files = request.files.getlist("file")
 
   hisFile = request.files['file']
