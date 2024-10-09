@@ -57,45 +57,44 @@
       </a>
     </div>
     <div class="head-center flex">
-      <a
-        class="iconfont icon-gangbi1"
-        :class="[isOnDrawLine == true ? 'active' : '']"
-        @click="onDrawLine"
-      >
+      <a :class="[isOnDrawLine == true ? 'active' : '']" @click="onDrawLine">
+        <t-icon name="pen" />
         <span>钢笔</span>
       </a>
       <a
-        class="iconfont icon-icon-test"
         :class="[isDrawingPencil == true ? 'active' : '']"
         @click="onDrawingPencil"
       >
+        <t-icon name="edit" />
         <span>铅笔</span>
       </a>
       <a
-        class="iconfont icon-fangdajing"
         :class="[isShowMagnifier == true ? 'active' : '']"
         @click="onShowMagnifier"
       >
+        <t-icon name="search" />
         <span>放大镜</span>
       </a>
-      <a class="iconfont icon-chexiao" @click="onUndo">
+      <a @click="onUndo">
+        <t-icon name="rollback" />
         <span>撤销</span>
       </a>
-      <a class="iconfont icon-zhongzuo" @click="onRedo">
+      <a @click="onRedo">
+        <t-icon name="rollfront" />
         <span>重做</span>
       </a>
       <a
-        class="iconfont icon-zhixian"
         @dragstart="onAddShape($event, 'line')"
         @click="onAddShape($event, 'line')"
       >
+        <t-icon name="remove" />
         <span>直线</span>
       </a>
       <a
-        class="iconfont icon-wenzixiaoguo"
         @dragstart="onAddShape($event, 'text')"
         @click="onAddShape($event, 'text')"
       >
+        <t-icon name="textbox" />
         <span>文字</span>
       </a>
       <!-- <a class="flex items-center" @click="drawLine">
@@ -258,7 +257,7 @@
         </template>
       </a>
       <a @click="onView()" title="运行查看">
-        <t-icon name="play-circle-stroke" />
+        <t-icon name="play-circle" />
         <span>预览</span>
       </a>
       <template v-if="scale > 0">
@@ -281,7 +280,7 @@
         <span>文件管理</span>
       </a>
       <a @click="onSearch">
-        <i class="iconfont icon-31fenxiang"></i>
+        <t-icon name="share" />
         <span>分享</span>
       </a>
       <a href="https://github.com/opendidi/mind" target="_blank">
