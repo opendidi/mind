@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-14 08:50:34
  * @LastEditors: htang
- * @LastEditTime: 2024-04-10 10:35:05
+ * @LastEditTime: 2024-10-09 15:22:14
  */
 import moment from 'moment'
 
@@ -384,6 +384,10 @@ export const GRAPHIC_GROUPS = [{
   name: '2.5D-废气治理',
   show: true,
   list: []
+}, {
+  name: '2.5D-采暖系统',
+  show: true,
+  list: [],
 }, {
   name: '2.5D-火力发电',
   show: true,
@@ -903,33 +907,37 @@ function importFile() {
     mkdir: '2.5D-废气治理',
     index: 5,
   }, {
+    import: import.meta.glob(`@/assets/images/2.5D-采暖系统/*`),
+    mkdir: '2.5D-采暖系统',
+    index: 6,
+  }, {
     import: import.meta.glob(`@/assets/images/2.5D-火力发电/*`),
     mkdir: '2.5D-火力发电',
-    index: 6,
+    index: 7,
   }, {
     import: import.meta.glob(`@/assets/images/2.5D-智慧城市/*`),
     mkdir: '2.5D-智慧城市',
-    index: 7,
+    index: 8,
   }, {
     import: import.meta.glob(`@/assets/images/2.5D-风力发电/*`),
     mkdir: '2.5D-风力发电',
-    index: 8,
+    index: 9,
   }, {
     import: import.meta.glob(`@/assets/images/2.5D-锅炉房/*`),
     mkdir: '2.5D-锅炉房',
-    index: 9,
+    index: 10,
   }, {
     import: import.meta.glob(`@/assets/images/太阳能光伏发电/*`),
     mkdir: '太阳能光伏发电',
-    index: 10,
+    index: 11,
   }, {
     import: import.meta.glob(`@/assets/images/IoT-MNMS-移动网管域/*`),
     mkdir: 'IoT-MNMS-移动网管域',
-    index: 11,
+    index: 12,
   }, {
     import: import.meta.glob(`@/assets/images/IoT-SAFETY-安全/*`),
     mkdir: 'IoT-SAFETY-安全',
-    index: 12,
+    index: 13,
   }];
   array.map((item) => {
     const modules = item.import;
