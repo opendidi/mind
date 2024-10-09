@@ -63,6 +63,12 @@ pnpm start
 pnpm build
 ```
 
+前端打包打包文件路径配置 [点击查看](./web/build/constant.ts)
+
+```js
+ export const OUTPUT_DIR = '../docs';
+```
+
 项目可视化编辑页面1
 > <img width="100%" align="center" src="./images/1720592339906.jpg" />
 
