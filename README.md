@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-04-01 16:26:12
  * @LastEditors: htang
- * @LastEditTime: 2024-10-09 09:09:33
+ * @LastEditTime: 2024-10-09 15:00:56
 -->
 
 基于meta2d.js开发的编辑器
@@ -68,3 +68,6 @@ pnpm build
 
 项目可视化编辑页面2
 > <img width="100%" align="center" src="./images/1720592440688.jpg">
+
+项目可视化编辑页面3
+> <img width="100%" align="center" src="./images/1728457223394.jpg">

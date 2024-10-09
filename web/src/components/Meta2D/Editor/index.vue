@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-11-07 19:56:27
  * @LastEditors: htang
- * @LastEditTime: 2024-04-03 21:21:28
+ * @LastEditTime: 2024-10-09 14:59:20
 -->
 <template>
   <div id="meta2d"></div>
@@ -37,6 +37,7 @@ import "@/assets/js/rg.js";
 import { MetaPlugin } from "@/utils/plugin";
 import { mindBoxPlugin } from "@meta2d/plugin-mind-core";
 import { useSelection } from "@/services/selections";
+import test1 from "@/assets/data/test.json";
 
 const { select } = useSelection();
 
@@ -71,9 +72,9 @@ onMounted(() => {
   initPlugin();
 
   // 读取本地存储
-  let data: any = localStorage.getItem("meta2d");
+  let data: any = test1; //localStorage.getItem("meta2d");
   if (data) {
-    data = JSON.parse(data);
+    // data = JSON.parse(data);
     // 判断是否为运行查看，是-设置为预览模式
     if (!data.locked) {
       data["locked"] = 0;
