@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-14 08:50:34
  * @LastEditors: htang
- * @LastEditTime: 2024-10-09 15:22:14
+ * @LastEditTime: 2024-10-17 20:04:52
  */
 import moment from 'moment'
 
@@ -398,6 +398,10 @@ export const GRAPHIC_GROUPS = [{
   list: []
 }, {
   name: '2.5D-风力发电',
+  show: true,
+  list: []
+}, {
+  name: '2.5D-水力发电',
   show: true,
   list: []
 }, {
@@ -923,21 +927,25 @@ function importFile() {
     mkdir: '2.5D-风力发电',
     index: 9,
   }, {
+    import: import.meta.glob(`@/assets/images/2.5D-水力发电/*`),
+    mkdir: '2.5D-水力发电',
+    index: 10,
+  }, {
     import: import.meta.glob(`@/assets/images/2.5D-锅炉房/*`),
     mkdir: '2.5D-锅炉房',
-    index: 10,
+    index: 11,
   }, {
     import: import.meta.glob(`@/assets/images/太阳能光伏发电/*`),
     mkdir: '太阳能光伏发电',
-    index: 11,
+    index: 12,
   }, {
     import: import.meta.glob(`@/assets/images/IoT-MNMS-移动网管域/*`),
     mkdir: 'IoT-MNMS-移动网管域',
-    index: 12,
+    index: 13,
   }, {
     import: import.meta.glob(`@/assets/images/IoT-SAFETY-安全/*`),
     mkdir: 'IoT-SAFETY-安全',
-    index: 13,
+    index: 14,
   }];
   array.map((item) => {
     const modules = item.import;
