@@ -1,0 +1,330 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 150.14 150.08">
+  <defs>
+    <style>
+      .cls-1 {
+        fill: url(#_未命名的渐变_18);
+      }
+
+      .cls-1, .cls-2, .cls-3, .cls-4, .cls-5, .cls-6, .cls-7, .cls-8, .cls-9, .cls-10, .cls-11, .cls-12, .cls-13, .cls-14, .cls-15, .cls-16, .cls-17, .cls-18, .cls-19, .cls-20, .cls-21, .cls-22, .cls-23, .cls-24, .cls-25, .cls-26, .cls-27 {
+        stroke-width: 0px;
+      }
+
+      .cls-2 {
+        fill: url(#_未命名的渐变_11);
+      }
+
+      .cls-3 {
+        fill: url(#_未命名的渐变_13);
+      }
+
+      .cls-4 {
+        fill: url(#_未命名的渐变_10);
+      }
+
+      .cls-5 {
+        fill: url(#_未命名的渐变_24);
+      }
+
+      .cls-6 {
+        fill: url(#_未命名的渐变_21);
+      }
+
+      .cls-7 {
+        fill: url(#_未命名的渐变_40);
+      }
+
+      .cls-8 {
+        fill: url(#_未命名的渐变_35);
+      }
+
+      .cls-9 {
+        fill: url(#_未命名的渐变_56);
+      }
+
+      .cls-10, .cls-28 {
+        fill: none;
+      }
+
+      .cls-11 {
+        fill: url(#_未命名的渐变_1827-2);
+      }
+
+      .cls-28 {
+        stroke: #fff;
+        stroke-miterlimit: 10;
+        stroke-width: .1px;
+      }
+
+      .cls-12 {
+        fill: url(#_未命名的渐变_56-2);
+      }
+
+      .cls-13 {
+        fill: url(#_未命名的渐变_56-3);
+      }
+
+      .cls-14 {
+        fill: url(#_未命名的渐变_35-2);
+      }
+
+      .cls-15 {
+        fill: url(#_未命名的渐变_11-2);
+      }
+
+      .cls-16 {
+        fill: url(#_未命名的渐变_13-3);
+      }
+
+      .cls-17 {
+        fill: url(#_未命名的渐变_13-2);
+      }
+
+      .cls-18 {
+        fill: url(#_未命名的渐变_1827);
+      }
+
+      .cls-19 {
+        fill: url(#_未命名的渐变_21-2);
+      }
+
+      .cls-20 {
+        fill: url(#_未命名的渐变_21-3);
+      }
+
+      .cls-21 {
+        fill: url(#_未命名的渐变_21-4);
+      }
+
+      .cls-22 {
+        fill: url(#_新建图案);
+        opacity: .1;
+      }
+
+      .cls-29 {
+        opacity: .2;
+      }
+
+      .cls-30 {
+        isolation: isolate;
+      }
+
+      .cls-31 {
+        mix-blend-mode: multiply;
+        opacity: .45;
+      }
+
+      .cls-32 {
+        opacity: 0;
+      }
+
+      .cls-24 {
+        fill: #7497d0;
+      }
+
+      .cls-25 {
+        fill: #4a5f7b;
+      }
+
+      .cls-26 {
+        fill: #161d24;
+      }
+
+      .cls-27 {
+        fill: #000715;
+      }
+    </style>
+    <pattern id="_新建图案" data-name="新建图案" x="0" y="0" width="18.57" height="32.16" patternTransform="translate(4014.57 1856.19)" patternUnits="userSpaceOnUse" viewBox="0 0 18.57 32.16">
+      <g>
+        <rect class="cls-10" x="0" y="0" width="18.57" height="32.16"/>
+        <g>
+          <g>
+            <polyline class="cls-28" points="18.57 21.44 18.57 32.16 18.57 42.88"/>
+            <polyline class="cls-28" points="9.29 26.8 18.57 32.16 27.85 37.51 27.85 37.52"/>
+            <polyline class="cls-28" points="9.29 37.52 9.29 37.51 18.57 32.16 27.85 26.8"/>
+          </g>
+          <polygon class="cls-28" points="27.85 37.52 27.85 26.8 18.57 21.44 9.28 26.8 9.28 37.52 18.57 42.88 27.85 37.52"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-28" points="0 21.44 0 32.16 0 42.88"/>
+            <polyline class="cls-28" points="-9.28 26.8 0 32.16 9.28 37.51 9.28 37.52"/>
+            <polyline class="cls-28" points="-9.28 37.52 -9.28 37.51 0 32.16 9.28 26.8"/>
+          </g>
+          <polygon class="cls-28" points="9.28 37.52 9.28 26.8 0 21.44 -9.28 26.8 -9.28 37.52 0 42.88 9.28 37.52"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-28" points="18.57 10.72 27.85 16.08 37.13 21.43 37.13 21.44"/>
+            <polyline class="cls-28" points="18.57 21.44 18.57 21.43 27.85 16.08 37.13 10.72"/>
+          </g>
+          <polygon class="cls-28" points="37.14 21.44 37.14 10.72 27.85 5.36 18.57 10.72 18.57 21.44 27.85 26.8 37.14 21.44"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-28" points="9.28 5.36 9.28 16.08 9.28 26.8"/>
+            <polyline class="cls-28" points="0 10.72 9.28 16.08 18.56 21.43 18.56 21.44"/>
+            <polyline class="cls-28" points="0 21.44 0 21.43 9.28 16.08 18.56 10.72"/>
+          </g>
+          <polygon class="cls-28" points="18.57 21.44 18.57 10.72 9.28 5.36 0 10.72 0 21.44 9.28 26.8 18.57 21.44"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-28" points="-18.56 10.72 -9.28 16.08 0 21.43 0 21.44"/>
+            <polyline class="cls-28" points="-18.56 21.44 -18.56 21.43 -9.28 16.08 0 10.72"/>
+          </g>
+          <polygon class="cls-28" points="0 21.44 0 10.72 -9.28 5.36 -18.57 10.72 -18.57 21.44 -9.28 26.8 0 21.44"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-28" points="18.57 -10.72 18.57 0 18.57 10.72"/>
+            <polyline class="cls-28" points="9.29 -5.36 18.57 0 27.85 5.35 27.85 5.36"/>
+            <polyline class="cls-28" points="9.29 5.36 9.29 5.35 18.57 0 27.85 -5.36"/>
+          </g>
+          <polygon class="cls-28" points="27.85 5.36 27.85 -5.36 18.57 -10.72 9.28 -5.36 9.28 5.36 18.57 10.72 27.85 5.36"/>
+        </g>
+        <g>
+          <g>
+            <polyline class="cls-28" points="0 -10.72 0 0 0 10.72"/>
+            <polyline class="cls-28" points="-9.28 -5.36 0 0 9.28 5.35 9.28 5.36"/>
+            <polyline class="cls-28" points="-9.28 5.36 -9.28 5.35 0 0 9.28 -5.36"/>
+          </g>
+          <polygon class="cls-28" points="9.28 5.36 9.28 -5.36 0 -10.72 -9.28 -5.36 -9.28 5.36 0 10.72 9.28 5.36"/>
+        </g>
+      </g>
+    </pattern>
+    <linearGradient id="_未命名的渐变_11" data-name="未命名的渐变 11" x1="55.15" y1="148.27" x2="56.8" y2="148.27" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#4a5f7b"/>
+      <stop offset="1" stop-color="#3e4347"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_13" data-name="未命名的渐变 13" x1="46.22" y1="146.02" x2="56.8" y2="146.02" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#81aaea"/>
+      <stop offset="1" stop-color="#4d709c"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_18" data-name="未命名的渐变 18" x1="46.22" y1="146.02" x2="56.8" y2="146.02" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#10243b" stop-opacity="0"/>
+      <stop offset="1" stop-color="#10243b"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_11-2" data-name="未命名的渐变 11" x1="95.87" y1="141.47" x2="97.52" y2="141.47" gradientTransform="translate(191.5) rotate(-180) scale(1 -1)" xlink:href="#_未命名的渐变_11"/>
+    <linearGradient id="_未命名的渐变_13-2" data-name="未命名的渐变 13" x1="86.94" y1="139.22" x2="97.52" y2="139.22" gradientTransform="translate(191.5) rotate(-180) scale(1 -1)" xlink:href="#_未命名的渐变_13"/>
+    <linearGradient id="_未命名的渐变_24" data-name="未命名的渐变 24" x1="86.94" y1="139.22" x2="97.52" y2="139.22" gradientTransform="translate(191.5) rotate(-180) scale(1 -1)" gradientUnits="userSpaceOnUse">
+      <stop offset=".4" stop-color="#10243b"/>
+      <stop offset="1" stop-color="#10243b" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_1827" data-name="未命名的渐变 1827" x1="90.61" y1="129.7" x2="104.7" y2="121.56" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#3e5268"/>
+      <stop offset="1" stop-color="#556b8e"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_35" data-name="未命名的渐变 35" x1="354.27" y1="153.12" x2="318.54" y2="117.38" gradientTransform="translate(411.37 246.95) rotate(-180)" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#11161a"/>
+      <stop offset=".29" stop-color="#7497d0"/>
+      <stop offset="1" stop-color="#263141"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_21" data-name="未命名的渐变 21" x1="44.75" y1="77.59" x2="105.2" y2="77.59" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#35455c"/>
+      <stop offset=".15" stop-color="#7497d0"/>
+      <stop offset=".25" stop-color="#7497d0"/>
+      <stop offset=".9" stop-color="#11161a"/>
+      <stop offset="1" stop-color="#263141"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_35-2" data-name="未命名的渐变 35" x1="51.72" y1="14.47" x2="99.08" y2="41.82" gradientTransform="matrix(1,0,0,1,0,0)" xlink:href="#_未命名的渐变_35"/>
+    <radialGradient id="_未命名的渐变_40" data-name="未命名的渐变 40" cx="61.68" cy="22.86" fx="61.68" fy="22.86" r="29.71" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#7497d0"/>
+      <stop offset=".89" stop-color="#263141"/>
+      <stop offset="1" stop-color="#1c252f"/>
+    </radialGradient>
+    <linearGradient id="_未命名的渐变_21-2" data-name="未命名的渐变 21" x1="44.91" y1="40.09" x2="104.96" y2="40.09" xlink:href="#_未命名的渐变_21"/>
+    <linearGradient id="_未命名的渐变_21-3" data-name="未命名的渐变 21" x1="44.91" y1="115.19" x2="105.03" y2="115.19" xlink:href="#_未命名的渐变_21"/>
+    <linearGradient id="_未命名的渐变_21-4" data-name="未命名的渐变 21" x1="62.9" y1="11.98" x2="68.74" y2="11.98" xlink:href="#_未命名的渐变_21"/>
+    <linearGradient id="_未命名的渐变_1827-2" data-name="未命名的渐变 1827" x1="60.83" y1="5.17" x2="65.79" y2="5.17" xlink:href="#_未命名的渐变_1827"/>
+    <linearGradient id="_未命名的渐变_10" data-name="未命名的渐变 10" x1="65.78" y1="5.13" x2="70.84" y2="5.13" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#263141"/>
+      <stop offset="1" stop-color="#11161a"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_13-3" data-name="未命名的渐变 13" x1="60.84" y1="2.9" x2="70.84" y2="2.9" xlink:href="#_未命名的渐变_13"/>
+    <linearGradient id="_未命名的渐变_56" data-name="未命名的渐变 56" x1="51.16" y1="77.08" x2="66.57" y2="77.08" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#09243d" stop-opacity=".6"/>
+      <stop offset=".03" stop-color="#09243d" stop-opacity=".6"/>
+      <stop offset="1" stop-color="#09243d" stop-opacity=".6"/>
+    </linearGradient>
+    <linearGradient id="_未命名的渐变_56-2" data-name="未命名的渐变 56" x1="67.62" y1="75.11" x2="82.26" y2="75.11" xlink:href="#_未命名的渐变_56"/>
+    <linearGradient id="_未命名的渐变_56-3" data-name="未命名的渐变 56" x1="83.38" y1="72.84" x2="98.78" y2="72.84" xlink:href="#_未命名的渐变_56"/>
+  </defs>
+  <g class="cls-30">
+    <g id="_图层_2" data-name="图层 2">
+      <g id="_涂层" data-name="涂层">
+        <g id="_真空罐" data-name="真空罐">
+          <g id="_背景" data-name="背景" class="cls-32">
+            <rect class="cls-27" y=".08" width="150" height="150"/>
+            <rect id="_网格" data-name="网格" class="cls-22" x=".14" y=".04" width="150" height="150"/>
+          </g>
+          <g>
+            <g>
+              <g class="cls-30">
+                <path class="cls-2" d="m56.8,146.63v.84c0,.88-.56,1.76-1.65,2.45v-.84c1.1-.69,1.65-1.57,1.65-2.45Z"/>
+                <path class="cls-3" d="m54.94,144.03c2.41,1.39,2.48,3.62.21,5.05l-8.93-5.15c2.46-1.32,6.31-1.29,8.72.1Z"/>
+                <polygon class="cls-25" points="55.15 149.08 55.15 149.92 46.22 144.76 46.22 143.93 55.15 149.08"/>
+                <path class="cls-1" d="m54.94,144.03c2.41,1.39,2.48,3.62.21,5.05l-8.93-5.15c2.46-1.32,6.31-1.29,8.72.1Z"/>
+              </g>
+              <g class="cls-30">
+                <polygon class="cls-26" points="57.78 110.95 55.38 144.25 52.89 145.69 52.8 113.83 57.78 110.95"/>
+                <polygon class="cls-25" points="52.89 145.69 52.17 145.27 52.08 113.41 52.8 113.83 52.89 145.69"/>
+                <polygon class="cls-24" points="52.8 113.83 52.08 113.41 57.06 110.53 57.78 110.95 52.8 113.83"/>
+              </g>
+              <g class="cls-30">
+                <polygon class="cls-25" points="52.81 116.72 52.72 148.57 47.74 145.69 47.83 113.84 52.81 116.72"/>
+                <polygon class="cls-26" points="52.81 116.72 53.53 116.3 53.44 148.15 52.72 148.57 52.81 116.72"/>
+                <polygon class="cls-24" points="47.83 113.84 48.55 113.42 53.53 116.3 52.81 116.72 47.83 113.84"/>
+              </g>
+            </g>
+            <g>
+              <g class="cls-30">
+                <path class="cls-15" d="m93.98,139.82v.84c0,.88.56,1.76,1.65,2.45v-.84c-1.1-.69-1.65-1.57-1.65-2.45Z"/>
+                <path class="cls-17" d="m95.84,137.22c-2.41,1.39-2.48,3.62-.21,5.05l8.93-5.15c-2.46-1.32-6.31-1.29-8.72.1Z"/>
+                <polygon class="cls-25" points="95.63 142.28 95.63 143.11 104.56 137.96 104.56 137.12 95.63 142.28"/>
+                <path class="cls-5" d="m95.84,137.22c-2.41,1.39-2.48,3.62-.21,5.05l8.93-5.15c-2.46-1.32-6.31-1.29-8.72.1Z"/>
+              </g>
+              <g class="cls-30">
+                <polygon class="cls-25" points="93 104.15 95.4 137.44 97.89 138.88 97.98 107.02 93 104.15"/>
+                <polygon class="cls-25" points="97.89 138.88 98.62 138.46 98.71 106.6 97.98 107.02 97.89 138.88"/>
+                <polygon class="cls-24" points="97.98 107.02 98.71 106.6 93.72 103.73 93 104.15 97.98 107.02"/>
+              </g>
+              <g class="cls-30">
+                <polygon class="cls-26" points="97.97 109.91 98.06 141.77 103.04 138.89 102.95 107.04 97.97 109.91"/>
+                <polygon class="cls-18" points="97.97 109.91 97.25 109.5 97.34 141.35 98.06 141.77 97.97 109.91"/>
+                <polygon class="cls-24" points="102.95 107.04 102.23 106.62 97.25 109.5 97.97 109.91 102.95 107.04"/>
+              </g>
+            </g>
+            <path class="cls-8" d="m45.15,114.14c1.81,5.77,7.93,13.73,19.2,17.14,6.64,2.01,12.56,1.55,13.68,1.43,6.46-.65,10.02-2.01,14.35-4.28,7.88-4.6,11.09-10.23,12.39-14.13,1.72-5.4-.95-11.2-8.07-15.46-11.67-6.97-30.85-7.17-42.85-.43-7.52,4.22-10.43,10.16-8.69,15.72Z"/>
+            <path class="cls-6" d="m105.2,27.25l-.24,83.51c-.01,4.43-2.93,8.86-8.75,12.25-11.72,6.81-30.78,6.81-42.57,0-5.94-3.43-8.9-7.93-8.89-12.42l.24-83.51c-.01,4.49,2.95,8.99,8.89,12.42,11.79,6.81,30.85,6.81,42.57,0,5.82-3.38,8.74-7.81,8.75-12.25Z"/>
+            <path class="cls-14" d="m104.67,26.21c-1.8-5.13-7.89-12.19-19.12-15.23-6.61-1.79-12.51-1.37-13.62-1.27-6.43.58-9.98,1.78-14.29,3.8-7.85,4.09-11.04,9.08-12.34,12.55-1.72,4.8.94,9.95,8.03,13.73,11.62,6.19,30.73,6.37,42.68.38,7.49-3.75,10.39-9.02,8.66-13.96Z"/>
+            <path class="cls-7" d="m104.79,26.21c-1.8-5.13-7.89-12.19-19.12-15.23-6.61-1.79-12.51-1.37-13.62-1.27-6.43.58-9.98,1.78-14.29,3.8-7.85,4.09-11.04,9.08-12.34,12.55-1.72,4.8.94,9.95,8.03,13.73,11.62,6.19,30.73,6.37,42.68.38,7.49-3.75,10.39-9.02,8.66-13.96Z"/>
+            <g>
+              <g class="cls-31">
+                <path class="cls-23" d="m104.96,28.34l-.02,8.35c-.01,4.42-2.92,8.84-8.72,12.22-11.68,6.8-30.69,6.8-42.45,0-5.92-3.42-8.87-7.91-8.86-12.39l.02-8.35c-.01,4.48,2.94,8.97,8.86,12.39,11.76,6.8,30.76,6.8,42.45,0,5.8-3.37,8.7-7.79,8.72-12.22Z"/>
+              </g>
+              <path class="cls-19" d="m104.96,27.34l-.02,8.35c-.01,4.42-2.92,8.84-8.72,12.22-11.68,6.8-30.69,6.8-42.45,0-5.92-3.42-8.87-7.91-8.86-12.39l.02-8.35c-.01,4.48,2.94,8.97,8.86,12.39,11.76,6.8,30.76,6.8,42.45,0,5.8-3.37,8.7-7.79,8.72-12.22Z"/>
+            </g>
+            <g>
+              <g class="cls-31">
+                <path class="cls-23" d="m105.03,103.45l-.02,8.35c-.01,4.42-2.92,8.84-8.73,12.22-11.7,6.8-30.72,6.8-42.49,0-5.92-3.42-8.88-7.91-8.87-12.39l.02-8.35c-.01,4.48,2.95,8.97,8.87,12.39,11.77,6.8,30.8,6.8,42.49,0,5.81-3.37,8.71-7.79,8.73-12.22Z"/>
+              </g>
+              <path class="cls-20" d="m105.03,102.45l-.02,8.35c-.01,4.42-2.92,8.84-8.73,12.22-11.7,6.8-30.72,6.8-42.49,0-5.92-3.42-8.88-7.91-8.87-12.39l.02-8.35c-.01,4.48,2.95,8.97,8.87,12.39,11.77,6.8,30.8,6.8,42.49,0,5.81-3.37,8.71-7.79,8.73-12.22Z"/>
+            </g>
+            <path class="cls-24" d="m44.96,28.57c-.01,4.48,2.94,8.97,8.86,12.39,11.75,6.8,30.75,6.8,42.43,0,5.75-3.35,8.65-7.72,8.71-12.11v-1.6c0,4.42-2.91,8.84-8.71,12.22-11.68,6.8-30.67,6.8-42.43,0-5.92-3.42-8.87-7.91-8.86-12.39l-.02,8.35s0,.07,0,.1l.02-6.96Z"/>
+            <path class="cls-24" d="m44.94,102.37c-.01,4.48,2.95,8.97,8.87,12.39,11.77,6.8,30.8,6.8,42.49,0,5.76-3.35,8.66-7.72,8.72-12.11v-1.6c0,4.42-2.92,8.84-8.72,12.22-11.7,6.8-30.72,6.8-42.49,0-5.92-3.42-8.88-7.91-8.87-12.39l-.02,8.35s0,.07,0,.1l.02-6.96Z"/>
+            <g class="cls-30">
+              <path class="cls-21" d="m68.74,4.48l-.04,13.36c0,.43-.28.85-.84,1.18-1.13.66-2.97.66-4.1,0-.57-.33-.86-.76-.86-1.2l.04-13.36c0,.43.28.87.86,1.2,1.13.65,2.97.65,4.1,0,.56-.32.84-.75.84-1.18Z"/>
+              <path class="cls-24" d="m67.88,3.28c1.13.65,1.14,1.72.01,2.37s-2.97.66-4.1,0-1.14-1.72-.01-2.38,2.96-.65,4.1,0Z"/>
+            </g>
+            <g class="cls-30">
+              <polygon class="cls-11" points="65.79 5.8 65.78 7.4 60.83 4.54 60.84 2.94 65.79 5.8"/>
+              <polygon class="cls-4" points="65.79 5.8 70.84 2.86 70.84 4.46 65.78 7.4 65.79 5.8"/>
+              <polygon class="cls-16" points="60.84 2.94 65.89 0 70.84 2.86 65.79 5.8 60.84 2.94"/>
+            </g>
+          </g>
+        </g>
+      </g>
+    </g>
+  </g>
+</svg>

@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2024-10-17 20:19:58
+ * @LastEditTime: 2024-10-17 20:55:51
  */
 import { defineConfig, UserConfig, ConfigEnv, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
@@ -53,7 +53,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     },
     esbuild: {
       //清除全局的console.log和debug
-      // drop: isBuild ? ['console', 'debugger'] : [],
+      drop: isBuild ? ['console', 'debugger'] : [],
     },
     build: {
       minify: 'esbuild',
