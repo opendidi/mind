@@ -21,7 +21,8 @@
 
 ## 基于meta2d.js开源开发
 
-- 开源地址：https://github.com/le5le-com/meta2d.js
+- [meta2D开源地址](https://github.com/le5le-com/meta2d.js)
+- 文档地址：[2D图元组成的可视化引擎](https://doc.le5le.com/document/119359590)
 
 ## 后端服务启动
 
