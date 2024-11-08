@@ -369,58 +369,6 @@ export const GRAPHIC_GROUPS = [{
     events: []
   }]
 }, {
-  name: '2.5D-光伏系统',
-  show: true,
-  list: []
-}, {
-  name: '2.5D-制冷站',
-  show: true,
-  list: []
-}, {
-  name: '2.5D-废水处理',
-  show: true,
-  list: []
-}, {
-  name: '2.5D-废气治理',
-  show: true,
-  list: []
-}, {
-  name: '2.5D-采暖系统',
-  show: true,
-  list: [],
-}, {
-  name: '2.5D-火力发电',
-  show: true,
-  list: []
-}, {
-  name: '2.5D-智慧城市',
-  show: true,
-  list: []
-}, {
-  name: '2.5D-风力发电',
-  show: true,
-  list: []
-}, {
-  name: '2.5D-水力发电',
-  show: true,
-  list: []
-}, {
-  name: '2.5D-锅炉房',
-  show: true,
-  list: []
-}, {
-  name: '太阳能光伏发电',
-  show: true,
-  list: []
-}, {
-  name: 'IoT-MNMS-移动网管域',
-  show: true,
-  list: []
-}, {
-  name: 'IoT-SAFETY(安全)',
-  show: true,
-  list: []
-}, {
   name: '流程图',
   show: true,
   list: [{
@@ -894,59 +842,7 @@ export default async function GET_IMAGE_PATH(mkdir: string, name: string) {
 };
 
 function importFile() {
-  let array = [{
-    import: import.meta.glob(`@/assets/images/2.5D-光伏系统/*`),
-    mkdir: '2.5D-光伏系统',
-    index: 2,
-  }, {
-    import: import.meta.glob(`@/assets/images/2.5D-制冷站/*`),
-    mkdir: '2.5D-制冷站',
-    index: 3,
-  }, {
-    import: import.meta.glob(`@/assets/images/2.5D-废水处理/*`),
-    mkdir: '2.5D-废水处理',
-    index: 4,
-  }, {
-    import: import.meta.glob(`@/assets/images/2.5D-废气治理/*`),
-    mkdir: '2.5D-废气治理',
-    index: 5,
-  }, {
-    import: import.meta.glob(`@/assets/images/2.5D-采暖系统/*`),
-    mkdir: '2.5D-采暖系统',
-    index: 6,
-  }, {
-    import: import.meta.glob(`@/assets/images/2.5D-火力发电/*`),
-    mkdir: '2.5D-火力发电',
-    index: 7,
-  }, {
-    import: import.meta.glob(`@/assets/images/2.5D-智慧城市/*`),
-    mkdir: '2.5D-智慧城市',
-    index: 8,
-  }, {
-    import: import.meta.glob(`@/assets/images/2.5D-风力发电/*`),
-    mkdir: '2.5D-风力发电',
-    index: 9,
-  }, {
-    import: import.meta.glob(`@/assets/images/2.5D-水力发电/*`),
-    mkdir: '2.5D-水力发电',
-    index: 10,
-  }, {
-    import: import.meta.glob(`@/assets/images/2.5D-锅炉房/*`),
-    mkdir: '2.5D-锅炉房',
-    index: 11,
-  }, {
-    import: import.meta.glob(`@/assets/images/太阳能光伏发电/*`),
-    mkdir: '太阳能光伏发电',
-    index: 12,
-  }, {
-    import: import.meta.glob(`@/assets/images/IoT-MNMS-移动网管域/*`),
-    mkdir: 'IoT-MNMS-移动网管域',
-    index: 13,
-  }, {
-    import: import.meta.glob(`@/assets/images/IoT-SAFETY-安全/*`),
-    mkdir: 'IoT-SAFETY-安全',
-    index: 14,
-  }];
+  let array = [];
   array.map((item) => {
     const modules = item.import;
     Object.keys(modules).forEach((key: string) => {
