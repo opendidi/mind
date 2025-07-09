@@ -4,12 +4,16 @@
  * @Author: htang
  * @Date: 2024-04-03 10:23:59
  * @LastEditors: htang
- * @LastEditTime: 2024-04-03 10:31:48
+ * @LastEditTime: 2025-07-09 14:28:52
 -->
 <template>
   <div class="app-props">
-    <FileProps ref="fileProps" v-if="selections.mode === SelectionMode.File" />
-    <PenProps v-else-if="selections.mode === SelectionMode.Pen" />
+    <template v-if="selections.mode === SelectionMode.File">
+      <FileProps ref="fileProps" />
+    </template>
+    <template v-else-if="selections.mode === SelectionMode.Pen">
+      <PenProps />
+    </template>
   </div>
 </template>
 
@@ -60,6 +64,7 @@ export default defineComponent({
 .app-props {
   height: calc(100vh - 40px);
   padding: 0 12px;
+  background: #fff;
   border-left: 1px solid #ddd;
   overflow-y: auto;
   z-index: 2;

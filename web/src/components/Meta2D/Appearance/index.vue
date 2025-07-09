@@ -4,15 +4,43 @@
       <a-tabs v-model:activeKey="tags">
         <a-tab-pane :key="1" tab="外观">
           <div class="mb-12">
-            <a-collapse v-model:activeKey="alignmentKey" size="small" expand-icon-position="right">
+            <a-collapse
+              v-model:activeKey="alignmentKey"
+              size="small"
+              expand-icon-position="right"
+            >
               <a-collapse-panel :key="1" header="对齐(参照框)">
                 <div class="flex items-center justify-between">
-                  <i title="左对齐" class="iconfont icon-juzuoduiqi" @click="onAlignNodes('left')"></i>
-                  <i title="右对齐" class="iconfont icon-juyouduiqi" @click="onAlignNodes('right')"></i>
-                  <i title="顶部对齐" class="iconfont icon-jushangduiqi" @click="onAlignNodes('top')"></i>
-                  <i title="底部对齐" class="iconfont icon-juxiaduiqi" @click="onAlignNodes('bottom')"></i>
-                  <i title="垂直居中" class="iconfont icon-zuoyoujuzhongduiqi" @click="onAlignNodes('center')"></i>
-                  <i title="水平居中" class="iconfont icon-shangxiajuzhongduiqi" @click="onAlignNodes('middle')"></i>
+                  <i
+                    title="左对齐"
+                    class="iconfont icon-juzuoduiqi"
+                    @click="onAlignNodes('left')"
+                  ></i>
+                  <i
+                    title="右对齐"
+                    class="iconfont icon-juyouduiqi"
+                    @click="onAlignNodes('right')"
+                  ></i>
+                  <i
+                    title="顶部对齐"
+                    class="iconfont icon-jushangduiqi"
+                    @click="onAlignNodes('top')"
+                  ></i>
+                  <i
+                    title="底部对齐"
+                    class="iconfont icon-juxiaduiqi"
+                    @click="onAlignNodes('bottom')"
+                  ></i>
+                  <i
+                    title="垂直居中"
+                    class="iconfont icon-zuoyoujuzhongduiqi"
+                    @click="onAlignNodes('center')"
+                  ></i>
+                  <i
+                    title="水平居中"
+                    class="iconfont icon-shangxiajuzhongduiqi"
+                    @click="onAlignNodes('middle')"
+                  ></i>
                   <!-- <Icon
                   title="等距分布、左右对齐"
                   name="component-divider-horizontal"
@@ -30,12 +58,36 @@
               </a-collapse-panel>
               <a-collapse-panel :key="2" header="对齐(参照第一个选中节点)">
                 <div class="flex items-center justify-between">
-                  <i title="左对齐" class="iconfont icon-juzuoduiqi" @click="onAlignNodesByFirst('left')"></i>
-                  <i title="右对齐" class="iconfont icon-juyouduiqi" @click="onAlignNodesByFirst('right')"></i>
-                  <i title="顶部对齐" class="iconfont icon-jushangduiqi" @click="onAlignNodesByFirst('top')"></i>
-                  <i title="底部对齐" class="iconfont icon-juxiaduiqi" @click="onAlignNodesByFirst('bottom')"></i>
-                  <i title="垂直居中" class="iconfont icon-zuoyoujuzhongduiqi" @click="onAlignNodesByFirst('center')"></i>
-                  <i title="水平居中" class="iconfont icon-shangxiajuzhongduiqi" @click="onAlignNodesByFirst('middle')"></i>
+                  <i
+                    title="左对齐"
+                    class="iconfont icon-juzuoduiqi"
+                    @click="onAlignNodesByFirst('left')"
+                  ></i>
+                  <i
+                    title="右对齐"
+                    class="iconfont icon-juyouduiqi"
+                    @click="onAlignNodesByFirst('right')"
+                  ></i>
+                  <i
+                    title="顶部对齐"
+                    class="iconfont icon-jushangduiqi"
+                    @click="onAlignNodesByFirst('top')"
+                  ></i>
+                  <i
+                    title="底部对齐"
+                    class="iconfont icon-juxiaduiqi"
+                    @click="onAlignNodesByFirst('bottom')"
+                  ></i>
+                  <i
+                    title="垂直居中"
+                    class="iconfont icon-zuoyoujuzhongduiqi"
+                    @click="onAlignNodesByFirst('center')"
+                  ></i>
+                  <i
+                    title="水平居中"
+                    class="iconfont icon-shangxiajuzhongduiqi"
+                    @click="onAlignNodesByFirst('middle')"
+                  ></i>
                 </div>
               </a-collapse-panel>
               <!-- <a-collapse-panel :key="2" header="样式">
@@ -60,9 +112,9 @@
 </template>
 
 <script>
-import { ref, watch, nextTick, defineComponent } from 'vue';
-import { Icon } from 'tdesign-icons-vue-next';
-import { useCommonStore } from '@/store/modules/common';
+import { ref, watch, nextTick, defineComponent } from "vue";
+import { Icon } from "tdesign-icons-vue-next";
+import { useCommonStore } from "@/store/modules/common";
 export default defineComponent({
   components: { Icon },
   setup(props, { emit }) {
@@ -127,6 +179,7 @@ export default defineComponent({
 .app-props {
   height: calc(100vh - 40px);
   padding: 0 12px;
+  background: #fff;
   border-left: 1px solid #dddddd;
   overflow-y: auto;
   z-index: 2;

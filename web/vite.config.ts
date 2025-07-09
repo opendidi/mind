@@ -4,10 +4,11 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2024-10-17 20:55:51
+ * @LastEditTime: 2025-07-09 14:26:29
  */
 import { defineConfig, UserConfig, ConfigEnv, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import windiCSS from 'vite-plugin-windicss';
 import { OUTPUT_DIR } from './build/constant';
 import * as path from 'path';
 import { createProxy } from './build/vite/proxy';
@@ -27,7 +28,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     base: env.VITE_APP_BASE_URL,
     root,
     envDir: 'env',
-    plugins: [vue()],
+    plugins: [vue(), windiCSS()],
     server: {
       // Listening on all local IPs
       host: true,
