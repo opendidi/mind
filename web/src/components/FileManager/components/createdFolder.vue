@@ -9,13 +9,7 @@
 <template>
   <a-popover v-model:visible="visible" title="新建文件夹" trigger="click">
     <template #content>
-      <a-form
-        ref="formRef"
-        :model="model"
-        :rules="rules"
-        layout="inline"
-        @finish="onFinish"
-      >
+      <a-form ref="formRef" :model="model" :rules="rules" layout="inline" @finish="onFinish">
         <a-form-item label="文件夹名称" name="name">
           <a-input v-model:value="model.name" placeholder="请输入文件夹名称" />
         </a-form-item>
@@ -24,13 +18,17 @@
         </a-form-item>
       </a-form>
     </template>
-    <a-button type="primary">创建文件夹</a-button>
+    <a-button type="primary">
+      <icon name="folder-add" class="mr-1" />
+      <span>创建文件夹</span>
+    </a-button>
   </a-popover>
 </template>
 
 <script setup>
 import { ref, onMounted, getCurrentInstance, watch } from "vue";
 import { apiMaterialCreatedFolder } from "@/api/material";
+import { Icon } from "tdesign-vue-next";
 
 let visible = ref(false);
 let { proxy } = getCurrentInstance();

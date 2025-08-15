@@ -13,6 +13,7 @@ import {
 } from "vue";
 import PhotoSwipeLightbox from "photoswipe/lightbox";
 import "photoswipe/style.css";
+
 export default defineComponent({
   setup() {
     let lightbox = null;

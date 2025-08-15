@@ -4,70 +4,97 @@
  * @Author: htang
  * @Date: 2024-09-26 21:20:16
  * @LastEditors: htang
- * @LastEditTime: 2024-09-27 16:54:13
+ * @LastEditTime: 2025-08-15 11:22:22
 -->
 <template>
-  <a-popover v-model:visible="visible" title="素材文件上传" trigger="click">
-    <template #content>
-      <a-form :model="data">
-        <a-form-item label="文件类型" name="type">
-          <a-select v-model:value="data.type">
-            <a-select-option value="image">图片</a-select-option>
-            <a-select-option value="audio">音频</a-select-option>
-            <a-select-option value="other">其他</a-select-option>
-            <a-select-option value="panorama">全景图</a-select-option>
-          </a-select>
-        </a-form-item>
-        <a-form-item>
-          <a-upload-dragger
-            v-model:fileList="fileList"
-            name="file"
-            :data="data"
-            :multiple="true"
-            :action="action"
-            @change="handleChange"
-          >
-            <p class="ant-upload-drag-icon">
-              <inbox-outlined />
-            </p>
-            <p class="ant-upload-hint">文件拖拽这里上传</p>
-          </a-upload-dragger>
-        </a-form-item>
-      </a-form>
-    </template>
-    <a-button type="primary">上传文件</a-button>
-  </a-popover>
+  <template v-if="data.parent_id !== ''">
+    <a-upload
+      v-model:fileList="fileList"
+      name="file"
+      :data="data"
+      :accept="accept"
+      :multiple="true"
+      :action="action"
+      :showUploadList="false"
+      @change="handleChange"
+      :before-upload="beforeUpload"
+    >
+      <a-button type="primary" class="ant-upload-hint w-full">
+        上传文件
+      </a-button>
+    </a-upload>
+  </template>
+  <template v-else>
+    <a-button type="primary" :disabled="true" style="width: 95%">
+      上传文件
+    </a-button>
+  </template>
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, getCurrentInstance, watch, nextTick } from "vue";
+import {
+  ref,
+  onMounted,
+  getCurrentInstance,
+  watch,
+  nextTick,
+  computed,
+} from "vue";
 import { message } from "ant-design-vue";
 import { InboxOutlined } from "@ant-design/icons-vue";
+import { Icon } from "tdesign-vue-next";
+import { FileExplorer } from "@/utils/FileExplorer.ts";
 
 const emit = defineEmits(["oks"]);
 
-let { proxy } = getCurrentInstance();
+const api_url = import.meta.env.VITE_GLOB_API_URL;
 
-let visible = ref(false);
+const { proxy }: any = getCurrentInstance();
+
+const visible = ref(false);
+
+const file_type = ref("");
+
+const accept = computed(() => {
+  switch (file_type.value) {
+    case "image":
+    case "panorama":
+      return new FileExplorer()._filterExt.image.join(",");
+    case "video":
+      return new FileExplorer()._filterExt.video.join(",");
+    case "audio":
+      return new FileExplorer()._filterExt.audio.join(",");
+    default:
+      break;
+  }
+});
 
 let data = ref({
-  type: "panorama",
+  type: file_type.value ? file_type.value : "panorama",
   parent_id: "",
 });
 
-let baseURL = import.meta.env.VITE_GLOB_API_URL;
-
-let action = ref(baseURL + "/material/upload");
+let action = computed(() => {
+  return api_url + "material/upload";
+});
 
 // 文件列表
 let fileList = ref([]);
 
-function handleChange(info) {
+const beforeUpload = (file: any) => {
+  console.log(file);
+};
+
+function handleChange(info: any) {
   const status = info.file.status;
   if (status == "done") {
-    message.success(`${info.file.name} 文件上传成功`);
-    fileList.value = [];
-    visible.value = false;
+    if (info.file.response.code == 200) {
+      message.success(`${info.file.name} 文件上传成功`);
+      fileList.value = [];
+      visible.value = false;
+    } else {
+      message.error(`文件上传失败。`);
+    }
     emit("oks");
   } else if (status === "error") {
     message.error(`${info.file.name} 文件上传失败。`);
@@ -76,5 +103,6 @@ function handleChange(info) {
 
 defineExpose({
   data,
+  file_type,
 });
 </script>

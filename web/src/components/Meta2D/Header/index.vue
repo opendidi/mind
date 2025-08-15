@@ -824,9 +824,14 @@ function onShowMagnifier() {
  * 打开素材库
  */
 function openFileManager() {
-  proxy.$refs.fileManager.visible = true;
+  let fileManager = proxy.$refs.fileManager;
+  fileManager.visible = true;
   nextTick(() => {
-    proxy.$refs.fileManager.init();
+    fileManager.initMaterialFolder().then((res) => {
+      fileManager.selectedKeys = [res];
+      fileManager.queryParam.parent_id = res;
+      fileManager.init();
+    });
   });
 }
 

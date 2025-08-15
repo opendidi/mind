@@ -8,10 +8,6 @@ LastEditTime: 2024-10-08 21:12:59
 '''
 # -*- coding: UTF-8 -*-
 
-import logging
-import pymysql
-import pymysql.cursors
-import os
 from .connect import ConnectMysqlHandler
 
 class CategoriesMysqlHandler:

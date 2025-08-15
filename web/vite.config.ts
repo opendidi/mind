@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2025-07-09 14:26:29
+ * @LastEditTime: 2025-08-15 17:24:11
  */
 import { defineConfig, UserConfig, ConfigEnv, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
@@ -13,6 +13,11 @@ import { OUTPUT_DIR } from './build/constant';
 import * as path from 'path';
 import { createProxy } from './build/vite/proxy';
 import { wrapperEnv } from './build/utils';
+import { resolve } from 'path';
+
+function pathResolve(dir: string) {
+  return resolve(process.cwd(), '.', dir);
+}
 
 const TimeStamp = new Date().getTime();
 
@@ -48,9 +53,31 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       },
     },
     resolve: {
-      alias: {
-        '@': path.resolve(__dirname, './src/'),
-      },
+      alias: [
+        // {
+        //   find: 'vue-i18n',
+        //   replacement: 'vue-i18n/dist/vue-i18n.cjs.js',
+        // },
+        // /@/xxxx => src/xxxx
+        {
+          find: /\/@\//,
+          replacement: pathResolve('src') + '/',
+        },
+        // /#/xxxx => types/xxxx
+        {
+          find: /\/#\//,
+          replacement: pathResolve('types') + '/',
+        },
+        {
+          find: /@\//,
+          replacement: pathResolve('src') + '/',
+        },
+        // /#/xxxx => types/xxxx
+        {
+          find: /#\//,
+          replacement: pathResolve('types') + '/',
+        },
+      ],
     },
     esbuild: {
       //清除全局的console.log和debug
