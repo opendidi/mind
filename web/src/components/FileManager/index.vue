@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-09-24 16:38:51
  * @LastEditors: htang
- * @LastEditTime: 2025-08-15 11:04:38
+ * @LastEditTime: 2025-08-15 18:12:32
 -->
 <template>
   <a-modal
@@ -375,7 +375,6 @@ async function init() {
       data[keys[i]] = _;
     }
   });
-  initMaterialFolder();
   await apiMaterialList(data).then((res) => {
     spinning.value = false;
     if (res.data) {
