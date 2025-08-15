@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-04-01 16:26:12
  * @LastEditors: htang
- * @LastEditTime: 2024-11-12 15:56:16
+ * @LastEditTime: 2025-08-15 10:03:40
 -->
 
 基于meta2d.js开发的编辑器
@@ -46,22 +46,21 @@ git clone https://github.com/opendidi/mind.git
 - Installation dependencies
 
 ```bash
-cd mind
-
+# 根目录下载依赖
 pnpm install
 ```
 
 - run
 
 ```bash
-pnpm start
+pnpm dev:web
 ```
 
 
 - build
 
 ```bash
-pnpm build
+pnpm build:web
 ```
 
 前端打包打包文件路径配置 [点击查看](./web/build/constant.ts)
