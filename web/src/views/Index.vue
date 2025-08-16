@@ -11,10 +11,7 @@
     <Header />
     <div class="designer">
       <Graphics />
-      <a-dropdown
-        :trigger="['contextmenu']"
-        @visibleChange="handleMenuVisibleChange"
-      >
+      <a-dropdown :trigger="['contextmenu']" @visibleChange="handleMenuVisibleChange">
         <Editor />
         <template #overlay>
           <a-menu class="canvas-context-menu" @click="handleMenuClick">
@@ -24,12 +21,7 @@
                   <a-menu-divider :key="idx" />
                 </template>
                 <template v-else>
-                  <a-menu-item
-                    :disabled="vo.disabled"
-                    :key="idx"
-                    :data="vo.data"
-                    :title="vo.title"
-                  >
+                  <a-menu-item :disabled="vo.disabled" :key="idx" :data="vo.data" :title="vo.title">
                     <span>{{ vo.title }}</span>
                     <span>{{ vo.keyCode }}</span>
                   </a-menu-item>
@@ -53,7 +45,6 @@
 import {
   ref,
   nextTick,
-  computed,
   getCurrentInstance,
   onMounted,
   onUnmounted,
@@ -474,7 +465,7 @@ onUnmounted(() => {
 
   :deep .ant-form {
     .ant-collapse {
-      .ant-collapse-content > .ant-collapse-content-box {
+      .ant-collapse-content>.ant-collapse-content-box {
         padding: 6px;
       }
 

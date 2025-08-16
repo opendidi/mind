@@ -261,7 +261,7 @@ class MaterialMysqlHandler:
             file_extension = os.path.splitext(path)[1][1:]
 
             name = file_name
-            url = f'http://{minio_cdn_url}/pano/{oss_path}'
+            url = f'http://{minio_cdn_url}/mind/{oss_path}'
             thumb_path = ''
             size = MinioUtil.get_object_size(oss_path)
             extension = file_extension

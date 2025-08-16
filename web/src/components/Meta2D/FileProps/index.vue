@@ -14,81 +14,31 @@
             <a-collapse-panel :key="2" :forceRender="true" header="画布">
               <a-form label-align="left" :label-col="{ span: 10 }">
                 <a-form-item label="默认颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="options.color"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="onChangeOptions('color', options.color)"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="options.color" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="onChangeOptions('color', options.color)" clearable />
                 </a-form-item>
                 <a-form-item label="画笔填充颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="data.penBackground"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="onChangeData('penBackground', data.penBackground)"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="data.penBackground" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="onChangeData('penBackground', data.penBackground)" clearable />
                 </a-form-item>
                 <a-form-item label="背景颜色" name="background">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="data.background"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="onChangeData('background', data.background)"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="data.background" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="onChangeData('background', data.background)" clearable />
                 </a-form-item>
                 <a-form-item label="背景网格">
                   <a-switch v-model:checked="options.grid" @change="onChangeData('grid', options.grid)" />
                 </a-form-item>
                 <a-form-item label="网格颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="options.gridColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="onChangeData('gridColor', options.gridColor)"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="options.gridColor" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="onChangeData('gridColor', options.gridColor)" clearable />
                 </a-form-item>
                 <a-form-item label="网格大小">
-                  <a-input-number
-                    v-model:value="options.gridSize"
-                    @change="onChangeData('gridSize', options.gridSize)"
-                    style="width: 100%"
-                    :min="0"
-                  />
+                  <a-input-number v-model:value="options.gridSize" @change="onChangeData('gridSize', options.gridSize)" style="width: 100%" :min="0" />
                 </a-form-item>
                 <a-form-item label="网格角度">
-                  <a-input-number
-                    v-model:value="options.gridRotate"
-                    @change="onChangeData('gridRotate', options.gridRotate)"
-                    style="width: 100%"
-                    :min="0"
-                  />
+                  <a-input-number v-model:value="options.gridRotate" @change="onChangeData('gridRotate', options.gridRotate)" style="width: 100%" :min="0" />
                 </a-form-item>
                 <a-form-item label="标尺">
                   <a-switch v-model:checked="options.rule" @change="onChangeData('rule', options.rule)" />
                 </a-form-item>
                 <a-form-item label="标尺颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="options.ruleColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="onChangeData('ruleColor', options.ruleColor)"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="options.ruleColor" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="onChangeData('ruleColor', options.ruleColor)" clearable />
                 </a-form-item>
                 <a-form-item label="初始化JS">
                   <a-button @click="openEditContainer">...</a-button>
@@ -176,6 +126,23 @@
       <a-tab-pane :key="3" tab="布局">
         <div class="mb-12"></div>
       </a-tab-pane>
+      <a-tab-pane :key="4" tab="结构">
+        <div class="structure">
+          <ul>
+            <template v-for="(item, index) in data.pens" :key="index">
+              <li class="flex items-center justify-between p-3">
+                <span>{{ item.name }}</span>
+                <template v-if="item.visible">
+                  <t-icon name="browse-off" title="隐藏" @click="openPen(item, index, false)" />
+                </template>
+                <template v-else>
+                  <t-icon name="browse" title="显示" @click="openPen(item, index, true)" />
+                </template>
+              </li>
+            </template>
+          </ul>
+        </div>
+      </a-tab-pane>
     </a-tabs>
     <EditContainer ref="editContainer" :title="editContainerTitle" @oks="getEditTextValue" @close="closeEditContainer" />
   </div>
@@ -185,9 +152,11 @@
 import { defineComponent } from 'vue';
 import { ColorPicker } from 'tdesign-vue-next';
 import 'tdesign-vue-next/es/style/index.css';
+import { Icon } from "tdesign-icons-vue-next";
 export default defineComponent({
   components: {
     't-color-picker': ColorPicker,
+    Icon,
   },
 });
 </script>
@@ -274,7 +243,7 @@ let editContainerTitle = ref<string>();
 /**
  * 初始化数据
  */
-function onInit(dataValue) {
+function onInit(dataValue: any) {
   const d: any = dataValue; //JSON.parse(useCommonStore().originalData);
 
   if (d['https']) {
@@ -300,11 +269,15 @@ function onInit(dataValue) {
     ...d,
   });
 
+  console.log(data.pens)
+
   Object.assign(options, meta2d.getOptions());
 }
 
 onMounted(() => {
+  onInit(meta2d.data());
   // const d: any = meta2d.data();
+  // console.log(d)
   // meta2d.socketFn = (message, context) => {
   //   let info = JSON.parse(message);
   //   let dataList = JSON.parse(info.data);
@@ -467,6 +440,14 @@ function onMqttDataFinish() {
   meta2d.connectMqtt(mqttForm);
 }
 
+const openPen = (params: any, index: number, visible: any) => {
+  data.pens[index]['visible'] = visible
+  meta2d.setValue({
+    id: params.id,
+    visible,
+  }, { render: false })
+}
+
 defineExpose({
   onInit,
 });
@@ -481,36 +462,69 @@ defineExpose({
 .props-panel {
   height: 100%;
   background: #fff;
+
   .ant-tabs {
     .ant-divider {
       // margin: 6px 0;
     }
+
     :deep .ant-collapse-item {
       border-bottom: 1px solid #d9d9d9;
       box-sizing: border-box;
+
       .ant-collapse-header {
         // padding: 6px 0;
       }
     }
+
     :deep .ant-collapse-content-box {
       padding: 6px;
     }
+
     .ant-form {
       .ant-form-item {
         margin-bottom: 6px;
+
         :deep(.t-input--auto-width) {
           width: 100% !important;
         }
+
         .anticon {
           margin: 0 0 0 12px;
           font-size: 24px;
           cursor: pointer;
+
           &:hover {
             color: var(--color-error);
           }
         }
+
         &:last-child {
           margin-bottom: 0;
+        }
+      }
+    }
+
+    .structure {
+      ul {
+        li {
+          height: 40px;
+          border-bottom: 1px solid #f1f1f1;
+          box-sizing: border-box;
+          line-height: 40px;
+          cursor: pointer;
+
+          &:hover {
+            background: #f1f1f1;
+
+            span {
+              color: #1890ff
+            }
+          }
+
+          .t-icon {
+            cursor: pointer;
+          }
         }
       }
     }

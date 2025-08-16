@@ -31,6 +31,7 @@ export default defineComponent({
      * 预览图片
      */
     const openPreview = (record) => {
+      console.log(record)
       // 动态创建一个 a 标签来传递图片数据给 PhotoSwipeLightbox
       const galleryElement = document.createElement("div");
       galleryElement.id = "gallery";

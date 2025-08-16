@@ -8,17 +8,7 @@
 -->
 <template>
   <template v-if="data.parent_id !== ''">
-    <a-upload
-      v-model:fileList="fileList"
-      name="file"
-      :data="data"
-      :accept="accept"
-      :multiple="true"
-      :action="action"
-      :showUploadList="false"
-      @change="handleChange"
-      :before-upload="beforeUpload"
-    >
+    <a-upload v-model:fileList="fileList" name="file" :data="data" :accept="accept" :multiple="true" :action="action" :showUploadList="false" @change="handleChange" :before-upload="beforeUpload">
       <a-button type="primary" class="ant-upload-hint w-full">
         上传文件
       </a-button>
@@ -34,15 +24,10 @@
 <script lang="ts" setup>
 import {
   ref,
-  onMounted,
   getCurrentInstance,
-  watch,
-  nextTick,
   computed,
 } from "vue";
 import { message } from "ant-design-vue";
-import { InboxOutlined } from "@ant-design/icons-vue";
-import { Icon } from "tdesign-vue-next";
 import { FileExplorer } from "@/utils/FileExplorer.ts";
 
 const emit = defineEmits(["oks"]);
