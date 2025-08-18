@@ -4,7 +4,7 @@ version: 1.0.0
 Author: htang
 Date: 2024-04-22 15:31:45
 LastEditors: htang
-LastEditTime: 2025-08-15 17:53:45
+LastEditTime: 2025-08-18 17:59:41
 '''
 # -*- coding: UTF-8 -*-
 
@@ -12,7 +12,7 @@ import os
 import re
 
 # 设置允许的文件类型
-ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'mp3', 'mp4', 'gif', 'txt', 'doc', 'avi', 'css', 'csv', 'dbf', 'dwg', 'exe', 'fla', 'flash', 'html', 'iso', 'javascript', 'json', 'pdf', 'ppt', 'psd', 'rtf', 'svg', 'xls', 'xml', 'zip'
+ALLOWED_EXTENSIONS = { 'png', 'jpg', 'jpeg', 'mp3', 'mp4', 'gif', 'txt', 'doc', 'docx', 'avi', 'css', 'csv', 'dbf', 'dwg', 'exe', 'fla', 'flash', 'html', 'iso', 'javascript', 'json', 'pdf', 'ppt', 'psd', 'rtf', 'svg', 'xls', 'xml', 'zip'
 }
 
 # html js swf xml JPG

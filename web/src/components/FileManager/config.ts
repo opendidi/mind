@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2025-06-13 14:32:10
  * @LastEditors: htang
- * @LastEditTime: 2025-08-15 17:48:25
+ * @LastEditTime: 2025-08-18 18:00:40
  */
 import ai from "@/assets/images/file-explorer/ai.svg";
 import avi from "@/assets/images/file-explorer/avi.svg";
@@ -55,6 +55,7 @@ const fileIconMap: any = {
   '.gif': gif,
   '.txt': txt,
   '.doc': doc,
+  '.docx': doc,
   '.avi': avi,
   '.css': css,
   '.csv': csv,

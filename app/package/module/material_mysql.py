@@ -278,7 +278,10 @@ class MaterialMysqlHandler:
             # 提交事务
             connect.commit()
 
-        return success_info
+        if len(success_info) > 0:
+          return success_info
+        else:
+          return None
     except Exception as ex:
       logging.warning(ex)
       return None
