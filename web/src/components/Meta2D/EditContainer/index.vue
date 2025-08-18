@@ -18,24 +18,34 @@
     :cancel-button-props="{ style: { display: 'none' } }"
   >
     <div ref="editContainer" :id="'edit-' + uuid" class="code-editor"></div>
-    <span>打开图纸后，执行的初始脚本。 <br />可获取pen和context参数 <br />例如，console.log('pen', 'context');return true;</span>
+    <span
+      >打开图纸后，执行的初始脚本。 <br />可获取pen和context参数
+      <br />例如，console.log('pen', 'context');return true;</span
+    >
   </a-modal>
 </template>
 
 <script>
-import { ref, defineComponent, getCurrentInstance, onMounted, watch, onUnmounted } from 'vue';
-import { buildUUID } from '@/utils/uuid';
-import * as monaco from 'monaco-editor/esm/vs/editor/editor.main.js';
+import {
+  ref,
+  defineComponent,
+  getCurrentInstance,
+  onMounted,
+  watch,
+  onUnmounted,
+} from "vue";
+import { buildUUID } from "@/utils/uuid";
+import * as monaco from "monaco-editor/esm/vs/editor/editor.main.js";
 // https://juejin.cn/post/7150587036729737252 参考
-import tsWorker from 'monaco-editor/esm/vs/language/typescript/ts.worker?worker';
-import jsonWorker from 'monaco-editor/esm/vs/language/json/json.worker?worker';
+import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
+import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
 // 解决vite Monaco提示错误
 self.MonacoEnvironment = {
   getWorker(_, label) {
-    if (label === 'json') {
+    if (label === "json") {
       return new jsonWorker();
     }
-    if (['typescript', 'javascript'].includes(label)) {
+    if (["typescript", "javascript"].includes(label)) {
       return new tsWorker();
     }
   },
@@ -44,10 +54,10 @@ export default defineComponent({
   props: {
     title: {
       type: String,
-      default: 'JavaScript',
+      default: "JavaScript",
     },
   },
-  emits: ['oks', 'close'],
+  emits: ["oks", "close"],
   setup(props, { emit }) {
     let { proxy } = getCurrentInstance();
 
@@ -56,14 +66,14 @@ export default defineComponent({
 
     let uuid = ref();
 
-    let type = '';
+    let type = "";
 
-    function init(value, language = 'JavaScript', t) {
+    function init(value, language = "JavaScript", t) {
       monacoEditor = monaco.editor.create(proxy.$refs.editContainer, {
         value,
         readOnly: false,
         language,
-        theme: 'vs-dark',
+        theme: "vs-dark",
         selectOnLineNumbers: true,
         renderSideBySide: false,
       });
@@ -74,7 +84,7 @@ export default defineComponent({
       () => visible.value,
       (bool) => {
         if (!bool) {
-          emit('close');
+          emit("close");
           if (monacoEditor) {
             monacoEditor.dispose();
           }
@@ -89,7 +99,7 @@ export default defineComponent({
     }
 
     function handleOk() {
-      emit('oks', monacoEditor.getValue(), type);
+      emit("oks", monacoEditor.getValue(), type);
       visible.value = false;
       monacoEditor.dispose();
     }
