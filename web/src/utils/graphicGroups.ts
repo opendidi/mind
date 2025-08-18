@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-14 08:50:34
  * @LastEditors: htang
- * @LastEditTime: 2025-08-15 11:54:01
+ * @LastEditTime: 2025-08-18 14:52:15
  */
 import moment from 'moment'
 
@@ -21,6 +21,7 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'square',
+      visible: true,
     },
   }, {
     name: '矩形',
@@ -31,6 +32,7 @@ export const GRAPHIC_GROUPS = [{
       height: 50,
       borderRadius: 0.1,
       name: 'rectangle',
+      visible: true,
     },
   }, {
     name: '圆',
@@ -40,6 +42,7 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'circle',
+      visible: true,
     },
   }, {
     name: '三角形',
@@ -49,6 +52,7 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'triangle',
+      visible: true,
     },
   }, {
     name: '菱形',
@@ -58,6 +62,7 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'diamond',
+      visible: true,
     },
   }, {
     name: '五边形',
@@ -67,6 +72,7 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'pentagon',
+      visible: true,
     },
   }, {
     name: '六边形',
@@ -76,6 +82,7 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'hexagon',
+      visible: true,
     },
   }, {
     name: '五角星',
@@ -85,6 +92,7 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'pentagram',
+      visible: true,
     },
   }, {
     name: '左箭头',
@@ -94,6 +102,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 60,
       name: 'leftArrow',
+      visible: true,
     },
   }, {
     name: '右箭头',
@@ -103,6 +112,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 60,
       name: 'rightArrow',
+      visible: true,
     },
   }, {
     name: '双向箭头',
@@ -112,6 +122,7 @@ export const GRAPHIC_GROUPS = [{
       width: 150,
       height: 60,
       name: 'twowayArrow',
+      visible: true,
     },
   }, {
     name: '云',
@@ -121,6 +132,7 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'cloud',
+      visible: true,
     },
   }, {
     name: '消息框',
@@ -131,6 +143,7 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'message',
+      visible: true,
     },
   }, {
     name: '文件',
@@ -140,6 +153,7 @@ export const GRAPHIC_GROUPS = [{
       width: 80,
       height: 100,
       name: 'file',
+      visible: true,
     },
   }, {
     name: '图片',
@@ -149,7 +163,8 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'image',
-      image: "https://assets.le5lecdn.com/2d/img/logo.png"
+      image: "https://assets.le5lecdn.com/2d/img/logo.png",
+      visible: true,
     },
   }, {
     name: '视频',
@@ -160,6 +175,7 @@ export const GRAPHIC_GROUPS = [{
       height: 100,
       video: 'https://video.699pic.com/videos/17/69/11/a_aa3jeKZ0D63g1556176911_10s.mp4',
       autoPlay: true,
+      visible: true,
     },
   }, {
     name: '立方体',
@@ -191,6 +207,7 @@ export const GRAPHIC_GROUPS = [{
           type: 'color',
         }],
       },
+      visible: true,
     },
   }, {
     name: '人',
@@ -200,6 +217,7 @@ export const GRAPHIC_GROUPS = [{
       width: 70,
       height: 100,
       name: 'people',
+      visible: true,
     },
   }],
 }, {
@@ -223,6 +241,7 @@ export const GRAPHIC_GROUPS = [{
       hoverBackground: "#40a9ff", //鼠标经过
       hoverColor: "#40a9ff",
       hoverTextColor: "#fff",
+      visible: true,
     },
     events: [
       // {
@@ -252,6 +271,7 @@ export const GRAPHIC_GROUPS = [{
       disableOffColor: "#E5E5E5",
       disableOnColor: "#A3D3FF",
       locked: 0,
+      visible: true,
       //disable: true,
     },
     events: []
@@ -270,6 +290,7 @@ export const GRAPHIC_GROUPS = [{
         { text: "选项二" },
         { text: "选项三", isForbidden: true },
       ],
+      visible: true,
     },
     events: []
   }, {
@@ -282,6 +303,7 @@ export const GRAPHIC_GROUPS = [{
       checked: true,
       // isForbidden: true,
       value: '选项一',
+      visible: true,
     }
   }, {
     name: '滑动输入条',
@@ -299,6 +321,7 @@ export const GRAPHIC_GROUPS = [{
       background: "#D4D6D9",
       textColor: "#222",
       unit: "%",
+      visible: true,
     }
   }, {
     name: '输入框',
@@ -317,6 +340,7 @@ export const GRAPHIC_GROUPS = [{
       hoverTextColor: "#000000FF",
       activeTextColor: "#000000FF",
       textLeft: 10,
+      visible: true,
     }
   }, {
     name: '选择器',
@@ -342,6 +366,7 @@ export const GRAPHIC_GROUPS = [{
       }, {
         text: "选项3"
       }],
+      visible: true,
     }
   }, {
     name: '时间',
@@ -365,6 +390,7 @@ export const GRAPHIC_GROUPS = [{
         type: 'switch',
       }],
       timeFormat: "`${year}-${month}-${day} ${hours}:${minutes}:${seconds} 星期${week}`",
+      visible: true,
     },
     events: []
   }]
@@ -381,6 +407,7 @@ export const GRAPHIC_GROUPS = [{
       height: 40,
       borderRadius: 0.5,
       name: 'rectangle',
+      visible: true,
     },
   }, {
     name: '流程',
@@ -391,6 +418,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 40,
       name: 'rectangle',
+      visible: true,
     },
   }, {
     name: '判定',
@@ -401,6 +429,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 60,
       name: 'diamond',
+      visible: true,
     },
   }, {
     name: '数据',
@@ -412,6 +441,7 @@ export const GRAPHIC_GROUPS = [{
       height: 50,
       name: 'flowData',
       offsetX: 0.14,
+      visible: true,
     },
   }, {
     name: '准备',
@@ -422,6 +452,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 50,
       name: 'hexagon',
+      visible: true,
     },
   }, {
     name: '子流程',
@@ -432,6 +463,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 50,
       name: 'flowSubprocess',
+      visible: true,
     },
   }, {
     name: '数据库',
@@ -442,6 +474,7 @@ export const GRAPHIC_GROUPS = [{
       width: 80,
       height: 120,
       name: 'flowDb',
+      visible: true,
     },
   }, {
     name: '文档',
@@ -452,6 +485,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 100,
       name: 'flowDocument',
+      visible: true,
     },
   }, {
     name: '内部存储',
@@ -462,6 +496,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 80,
       name: 'flowInternalStorage',
+      visible: true,
     },
   }, {
     name: '外部存储',
@@ -472,6 +507,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 80,
       name: 'flowExternStorage',
+      visible: true,
     },
   }, {
     name: '队列',
@@ -482,6 +518,7 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'flowQueue',
+      visible: true,
     },
   }, {
     name: '手动输入',
@@ -492,6 +529,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 80,
       name: 'flowManually',
+      visible: true,
     },
   }, {
     name: '展示',
@@ -502,6 +540,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 80,
       name: 'flowDisplay',
+      visible: true,
     },
   }, {
     name: '并行模式',
@@ -512,6 +551,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 50,
       name: 'flowParallel',
+      visible: true,
     },
   }, {
     name: '注释',
@@ -522,6 +562,7 @@ export const GRAPHIC_GROUPS = [{
       width: 100,
       height: 100,
       name: 'flowComment',
+      visible: true,
     },
   }],
 }, {
@@ -538,6 +579,7 @@ export const GRAPHIC_GROUPS = [{
       name: 'circle',
       background: '#555',
       lineWidth: 0,
+      visible: true,
     },
   }, {
     name: '结束',
@@ -547,6 +589,7 @@ export const GRAPHIC_GROUPS = [{
       width: 30,
       height: 30,
       name: 'activityFinal',
+      visible: true,
     },
   }, {
     name: '活动',
@@ -558,6 +601,7 @@ export const GRAPHIC_GROUPS = [{
       height: 50,
       borderRadius: 0.25,
       name: 'rectangle',
+      visible: true,
     },
   }, {
     name: '决策/合并',
@@ -568,6 +612,7 @@ export const GRAPHIC_GROUPS = [{
       width: 120,
       height: 50,
       name: 'diamond',
+      visible: true,
     },
   }, {
     name: '垂直泳道',
@@ -582,6 +627,7 @@ export const GRAPHIC_GROUPS = [{
       textTop: 20,
       // textHeight: ,
       lineTop: 0.08,
+      visible: true,
     },
   }, {
     name: '水平泳道',
@@ -596,6 +642,7 @@ export const GRAPHIC_GROUPS = [{
       textLeft: 0.04,
       textAlign: 'left',
       lineLeft: 0.08,
+      visible: true,
     },
   }, {
     name: '垂直分岔/汇合',
@@ -608,6 +655,7 @@ export const GRAPHIC_GROUPS = [{
       name: 'forkV',
       fillStyle: '#555',
       strokeStyle: 'transparent',
+      visible: true,
     },
   }, {
     name: '水平分岔/汇合',
@@ -620,6 +668,7 @@ export const GRAPHIC_GROUPS = [{
       name: 'forkH',
       fillStyle: '#555',
       strokeStyle: 'transparent',
+      visible: true,
     },
   }],
 }, {
@@ -636,6 +685,7 @@ export const GRAPHIC_GROUPS = [{
         height: 400,
         textHeight: 50,
         name: 'lifeline',
+        visible: true,
       },
     }, {
       name: '激活',
@@ -646,6 +696,7 @@ export const GRAPHIC_GROUPS = [{
         width: 12,
         height: 200,
         name: 'sequenceFocus',
+        visible: true,
       },
     }, {
       name: '简单类',
@@ -663,6 +714,7 @@ export const GRAPHIC_GROUPS = [{
         list: [{
           text: '- name: string\n+ setName(name: string): void',
         }],
+        visible: true,
       },
     }, {
       name: '类',
@@ -682,6 +734,7 @@ export const GRAPHIC_GROUPS = [{
         }, {
           text: '+ setName(name: string): void',
         }],
+        visible: true,
       },
     },
   ],
@@ -696,6 +749,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'andGate',
         width: 100,
         height: 150,
+        visible: true,
       },
     }, {
       name: '基本事件',
@@ -704,6 +758,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'basicEvent',
         width: 100,
         height: 150,
+        visible: true,
       },
     }, {
       name: '未展开事件',
@@ -712,6 +767,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'unexpandedEvent',
         width: 100,
         height: 150,
+        visible: true,
       },
     }, {
       name: '优先AND门',
@@ -720,6 +776,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'priorityAndGate',
         width: 100,
         height: 150,
+        visible: true,
       },
     }, {
       name: '禁止门',
@@ -728,6 +785,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'forbiddenGate',
         width: 100,
         height: 150,
+        visible: true,
       },
     }, {
       name: '事件',
@@ -736,6 +794,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'event',
         width: 100,
         height: 150,
+        visible: true,
       },
     }, {
       name: '开关事件',
@@ -744,6 +803,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'switchEvent',
         width: 100,
         height: 150,
+        visible: true,
       },
     }, {
       name: '条件事件',
@@ -752,6 +812,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'conditionalEvent',
         width: 150,
         height: 100,
+        visible: true,
       },
     }, {
       name: '转移符号',
@@ -760,6 +821,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'transferSymbol',
         width: 100,
         height: 150,
+        visible: true,
       },
     }, {
       name: '或门',
@@ -768,6 +830,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'orGate',
         width: 100,
         height: 150,
+        visible: true,
       },
     }, {
       name: '异或门',
@@ -776,6 +839,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'xorGate',
         width: 100,
         height: 150,
+        visible: true,
       },
     }, {
       name: '表决门',
@@ -784,6 +848,7 @@ export const GRAPHIC_GROUPS = [{
         name: 'votingGate',
         width: 100,
         height: 150,
+        visible: true,
       },
     },
   ],
@@ -799,6 +864,7 @@ export const GRAPHIC_GROUPS = [{
       height: 50,
       name: 'mindNode',
       borderRadius: 0.5,
+      visible: true,
     },
   }, {
     name: '子主题',
@@ -808,6 +874,7 @@ export const GRAPHIC_GROUPS = [{
       width: 160,
       height: 40,
       name: 'mindLine',
+      visible: true,
     },
   }],
 }]
@@ -826,7 +893,7 @@ function commonImportFile(path: string, index: number) {
       imageRatio: true,
       image: new URL(path, import.meta.url).href,
       label: decodeURIComponent(_[_.length - 1].split('-')[0]).trim(),
-      lineWidth: 0
+      lineWidth: 0,
     },
   })
 }
