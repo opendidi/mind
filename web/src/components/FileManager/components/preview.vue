@@ -1,3 +1,11 @@
+<!--
+ * @Descripttion:
+ * @version: 1.0.0
+ * @Author: htang
+ * @Date: 2025-07-09 14:19:33
+ * @LastEditors: htang
+ * @LastEditTime: 2025-08-18 17:26:14
+-->
 <template>
   <div></div>
 </template>
@@ -31,13 +39,10 @@ export default defineComponent({
      * 预览图片
      */
     const openPreview = (record) => {
-      console.log(record)
       // 动态创建一个 a 标签来传递图片数据给 PhotoSwipeLightbox
       const galleryElement = document.createElement("div");
       galleryElement.id = "gallery";
-      galleryElement.innerHTML = `
-        <a href="${record.url}" data-pswp-width="${record.width}" data-pswp-height="${record.height}" target="_blank"></a>
-      `;
+      galleryElement.innerHTML = `<a href="${record.url}" data-pswp-width="${record.width}" data-pswp-height="${record.height}" target="_blank"></a>`;
 
       // 将 a 标签添加到 DOM 中
       document.body.appendChild(galleryElement);

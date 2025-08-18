@@ -4,24 +4,45 @@
  * @Author: htang
  * @Date: 2024-09-24 16:38:51
  * @LastEditors: htang
- * @LastEditTime: 2025-08-15 18:12:32
+ * @LastEditTime: 2025-08-18 17:30:12
 -->
 <template>
-  <a-modal v-model:visible="visible" title="资源文件管理器" width="1240px" centered :bodyStyle="bodyStyle" :destroyOnClose="true" :footer="footer" okText="确定" cancelText="取消" wrapClassName="file-manager-modal" @ok="handleOk">
+  <a-modal
+    v-model:visible="visible"
+    title="资源文件管理器"
+    width="1240px"
+    centered
+    :bodyStyle="bodyStyle"
+    :destroyOnClose="true"
+    :footer="footer"
+    okText="确定"
+    cancelText="取消"
+    wrapClassName="file-manager-modal"
+    @ok="handleOk"
+  >
     <a-spin tip="素材加载中..." :spinning="spinning">
       <div class="file-manager flex justify-between flex-wrap">
         <div class="c-left">
           <div class="folder-tree">
             <template v-if="folderTreeData.length !== 0">
-              <a-tree v-model:selectedKeys="selectedKeys" :tree-data="folderTreeData" default-expand-all show-icon :blockNode="true" @select="selectDirData">
+              <a-tree
+                v-model:selectedKeys="selectedKeys"
+                :tree-data="folderTreeData"
+                default-expand-all
+                show-icon
+                :blockNode="true"
+                @select="selectDirData"
+              >
                 <template #title="{ key: treeKey, title }">
                   <a-dropdown :trigger="['contextmenu']">
                     <span>{{ title }}</span>
                     <template #overlay>
-                      <a-menu @click="
-                        ({ key: menuKey }) =>
-                          onContextMenuClick(treeKey, menuKey)
-                      ">
+                      <a-menu
+                        @click="
+                          ({ key: menuKey }) =>
+                            onContextMenuClick(treeKey, menuKey)
+                        "
+                      >
                         <a-menu-item key="1">
                           <delete-outlined />
                           <span>删除</span>
@@ -52,33 +73,85 @@
                 <li title="前进" class="opt-item icon ico-right disabled"></li>
                 <li class="opt-item liider"></li>
                 <li title="编辑" class="opt-item icon ico-edit disabled"></li>
-                <li title="剪切" class="opt-item icon ico-scissors" :class="[
-                  actionIndex == -1 || !isCopy || spinning ? 'disabled' : '',
-                ]" @click="onScissors"></li>
-                <li title="复制" class="opt-item icon ico-copy" :class="[
-                  actionIndex == -1 || isCopy || spinning ? 'disabled' : '',
-                ]" @click="onCopy"></li>
-                <li title="黏贴" class="opt-item icon ico-paste" :class="[
-                  actionIndex == -1 || !isCopy || spinning ? 'disabled' : '',
-                ]" @click="onPaste"></li>
-                <li title="重命名" class="opt-item icon ico-rename" :class="[actionIndex == -1 || spinning ? 'disabled' : '']" @click="onModifyRename"></li>
-                <li title="删除" class="opt-item icon ico-trash" :class="[
-                  selectedRowKeys.length == 0 || spinning ? 'disabled' : '',
-                ]" @click="onDelete"></li>
+                <li
+                  title="剪切"
+                  class="opt-item icon ico-scissors"
+                  :class="[
+                    actionIndex == -1 || !isCopy || spinning ? 'disabled' : '',
+                  ]"
+                  @click="onScissors"
+                ></li>
+                <li
+                  title="复制"
+                  class="opt-item icon ico-copy"
+                  :class="[
+                    actionIndex == -1 || isCopy || spinning ? 'disabled' : '',
+                  ]"
+                  @click="onCopy"
+                ></li>
+                <li
+                  title="黏贴"
+                  class="opt-item icon ico-paste"
+                  :class="[
+                    actionIndex == -1 || !isCopy || spinning ? 'disabled' : '',
+                  ]"
+                  @click="onPaste"
+                ></li>
+                <li
+                  title="重命名"
+                  class="opt-item icon ico-rename"
+                  :class="[actionIndex == -1 || spinning ? 'disabled' : '']"
+                  @click="onModifyRename"
+                ></li>
+                <li
+                  title="删除"
+                  class="opt-item icon ico-trash"
+                  :class="[
+                    selectedRowKeys.length == 0 || spinning ? 'disabled' : '',
+                  ]"
+                  @click="onDelete"
+                ></li>
                 <li class="opt-item liider"></li>
-                <li title="锁定目录" class="opt-item icon ico-lock-on" :class="[isLock !== 1 || spinning ? 'disabled' : '']"></li>
-                <li title="新建目录" class="opt-item icon ico-add-dir" @click="onCreateDirectory"></li>
-                <li title="全选" class="opt-item icon ico-select-all" :class="[mode == 'single' ? 'disabled' : '']" @click="onSelectAll"></li>
-                <li title="切换布局" class="opt-item icon ico-list-layout" :class="[
-                  currentLayout == 'list'
-                    ? 'ico-list-layout'
-                    : 'ico-grid-layout',
-                ]" @click="onToggleLayouts"></li>
-                <li title="同步文件" class="opt-item icon ico-refresh" @click="onRefresh()"></li>
+                <li
+                  title="锁定目录"
+                  class="opt-item icon ico-lock-on"
+                  :class="[isLock !== 1 || spinning ? 'disabled' : '']"
+                ></li>
+                <li
+                  title="新建目录"
+                  class="opt-item icon ico-add-dir"
+                  @click="onCreateDirectory"
+                ></li>
+                <li
+                  title="全选"
+                  class="opt-item icon ico-select-all"
+                  :class="[mode == 'single' ? 'disabled' : '']"
+                  @click="onSelectAll"
+                ></li>
+                <li
+                  title="切换布局"
+                  class="opt-item icon ico-list-layout"
+                  :class="[
+                    currentLayout == 'list'
+                      ? 'ico-list-layout'
+                      : 'ico-grid-layout',
+                  ]"
+                  @click="onToggleLayouts"
+                ></li>
+                <li
+                  title="同步文件"
+                  class="opt-item icon ico-refresh"
+                  @click="onRefresh()"
+                ></li>
               </ul>
               <a-form layout="inline">
                 <a-form-item>
-                  <a-input v-model:value="queryParam.keyword" placeholder="请输入关键字搜索" @keydown.enter="onSearch" allowClear>
+                  <a-input
+                    v-model:value="queryParam.keyword"
+                    placeholder="请输入关键字搜索"
+                    @keydown.enter="onSearch"
+                    allowClear
+                  >
                     <template #prefix>
                       <SearchOutlined />
                     </template>
@@ -86,7 +159,9 @@
                 </a-form-item>
               </a-form>
             </div>
-            <div class="crumb-sort-bar flex items-center justify-between w-full">
+            <div
+              class="crumb-sort-bar flex items-center justify-between w-full"
+            >
               <a-breadcrumb>
                 <a-breadcrumb-item>
                   <home-outlined />
@@ -101,35 +176,63 @@
                 <span title="切换排序类型" class="sort-item sort-date">
                   时间排序
                 </span>
-                <i title="切换排序次序" class="sort-item icon ml-1" :class="[
-                  queryParam.sort_order == 'DESC' ? 'ico-down' : 'ico-up',
-                ]" @click="onSort()"></i>
+                <i
+                  title="切换排序次序"
+                  class="sort-item icon ml-1"
+                  :class="[
+                    queryParam.sort_order == 'DESC' ? 'ico-down' : 'ico-up',
+                  ]"
+                  @click="onSort()"
+                ></i>
               </div>
             </div>
           </div>
           <template v-if="dataSource.length !== 0">
-            <div class="file-list" :class="[currentLayout == 'grid' ? 'layout-grid' : 'layout-list']">
+            <div
+              class="file-list"
+              :class="[currentLayout == 'grid' ? 'layout-grid' : 'layout-list']"
+            >
               <template v-for="(item, idx) in dataSource" :key="idx">
-                <div class="file-item fi-dir" :class="[
-                  actionIndex == idx || selectedRowKeys.includes(item.id)
-                    ? 'selected'
-                    : '',
-                ]" @dblclick="onOperateFileOrDir(item)" @click="onSelectFile(item, idx)">
+                <div
+                  class="file-item fi-dir"
+                  :class="[
+                    actionIndex == idx || selectedRowKeys.includes(item.id)
+                      ? 'selected'
+                      : '',
+                  ]"
+                  @dblclick="onOperateFileOrDir(item)"
+                  @click="onSelectFile(item, idx)"
+                >
                   <template v-if="mode == 'multiple'">
-                    <div class="checkbox-wrap" @click.native.stop="onMultipleChoices(item, idx)">
+                    <div
+                      class="checkbox-wrap"
+                      @click.native.stop="onMultipleChoices(item, idx)"
+                    >
                       <div class="icon ico-checkbox"></div>
                     </div>
                   </template>
-                  <div class="bg-thumb" :style="{ backgroundImage: formatBackgroundImage(item) }"></div>
+                  <div
+                    class="bg-thumb"
+                    :style="{ backgroundImage: formatBackgroundImage(item) }"
+                  ></div>
                   <div class="title">{{ item.name }}</div>
-                  <div class="icon" :class="[item.lock == 1 ? 'ico-lock-on-face' : '']"></div>
+                  <div
+                    class="icon"
+                    :class="[item.lock == 1 ? 'ico-lock-on-face' : '']"
+                  ></div>
                   <div class="date">{{ item.created_at }}</div>
                   <div class="size"></div>
                 </div>
               </template>
             </div>
             <div class="table-footer flex items-center justify-end">
-              <a-pagination v-model:current="ipagination.current" :total="ipagination.total" show-less-items show-quick-jumper @change="onChangePagination" />
+              <a-pagination
+                v-model:current="ipagination.current"
+                :total="ipagination.total"
+                show-less-items
+                show-quick-jumper
+                @change="onChangePagination"
+              />
             </div>
           </template>
           <template v-else>
@@ -433,14 +536,20 @@ const onOperateFileOrDir = (params: any) => {
     case "dir":
       openFolder(params);
       break;
-    case '.png':
-    case '.jpg':
-    case '.jpeg':
-    case '.gif':
-    case '.svg':
-      proxy.$refs.filePreview.openPreview({
-        url: params.url,
-      })
+    case ".png":
+    case ".jpg":
+    case ".jpeg":
+    case ".gif":
+    case ".svg":
+      const img = new Image();
+      img.src = params.url;
+      img.onload = () => {
+        proxy.$refs.filePreview.openPreview({
+          url: params.url,
+          width: img.width,
+          height: img.height,
+        });
+      };
       break;
     default:
       break;
