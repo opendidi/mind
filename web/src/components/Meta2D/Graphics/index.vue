@@ -109,7 +109,10 @@
         </div>
       </a-tab-pane>
       <a-tab-pane key="2" tab="我的组件" force-render>
-        <div class="mkdir-head" @click="directoryVisible = true">
+        <div
+          class="mkdir-head flex items-center"
+          @click="directoryVisible = true"
+        >
           <folder-add-outlined />
           <span>新建文件夹</span>
         </div>
