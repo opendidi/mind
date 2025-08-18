@@ -15,7 +15,6 @@ import os
 import json
 import uuid
 import app.util.file as PanoFile
-from pathlib import Path
 from .connect import ConnectMysqlHandler
 from app.util.log_config import setup_logging
 from datetime import datetime
@@ -248,8 +247,6 @@ class MaterialMysqlHandler:
             # 把全景图上传到阿里云
             oss_path = str(timestamp) + '/' + filename
 
-            file_type = Path(path).suffix
-
             MinioUtil.upload_pano_file(path, oss_path)
 
             # 获取文件后缀
@@ -271,7 +268,7 @@ class MaterialMysqlHandler:
             """
 
             # 执行 SQL 语句
-            cursor.execute(sql, (id, name, url, thumb_path, size, extension, file_type, parent_id))
+            cursor.execute(sql, (id, name, url, thumb_path, size, extension, '', parent_id))
 
             # 收集成功信息
             success_info.append(cursor.lastrowid)
