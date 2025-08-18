@@ -18,7 +18,6 @@ import time
 import shutil
 import os
 import json
-import jwt
 
 material_api = Blueprint("material", __name__)
 

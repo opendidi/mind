@@ -61,11 +61,17 @@
         <t-icon name="pen" />
         <span>钢笔</span>
       </a>
-      <a :class="[isDrawingPencil == true ? 'active' : '']" @click="onDrawingPencil">
+      <a
+        :class="[isDrawingPencil == true ? 'active' : '']"
+        @click="onDrawingPencil"
+      >
         <t-icon name="edit" />
         <span>铅笔</span>
       </a>
-      <a :class="[isShowMagnifier == true ? 'active' : '']" @click="onShowMagnifier">
+      <a
+        :class="[isShowMagnifier == true ? 'active' : '']"
+        @click="onShowMagnifier"
+      >
         <t-icon name="search" />
         <span>放大镜</span>
       </a>
@@ -77,11 +83,17 @@
         <t-icon name="rollfront" />
         <span>重做</span>
       </a>
-      <a @dragstart="onAddShape($event, 'line')" @click="onAddShape($event, 'line')">
+      <a
+        @dragstart="onAddShape($event, 'line')"
+        @click="onAddShape($event, 'line')"
+      >
         <t-icon name="remove" />
         <span>直线</span>
       </a>
-      <a @dragstart="onAddShape($event, 'text')" @click="onAddShape($event, 'text')">
+      <a
+        @dragstart="onAddShape($event, 'text')"
+        @click="onAddShape($event, 'text')"
+      >
         <t-icon name="textbox" />
         <span>文字</span>
       </a>
@@ -111,7 +123,11 @@
         <template #overlay>
           <a-menu style="width: 220px">
             <a-menu-item key="1">
-              <a-input-number v-model:value="data.lineWidth" style="width: 100%" @blur="getDataLineWidth" />
+              <a-input-number
+                v-model:value="data.lineWidth"
+                style="width: 100%"
+                @blur="getDataLineWidth"
+              />
             </a-menu-item>
           </a-menu>
         </template>
@@ -119,8 +135,11 @@
       <a-dropdown overlayClassName="header-dropdown">
         <a>
           <svg class="l-icon" aria-hidden="true">
-            <use :xlink:href="lineTypes.find((item) => item.value === currentLineType)?.icon
-              "></use>
+            <use
+              :xlink:href="
+                lineTypes.find((item) => item.value === currentLineType)?.icon
+              "
+            ></use>
           </svg>
           <span>连线</span>
           <caret-down-outlined />
@@ -143,8 +162,11 @@
       <a-dropdown overlayClassName="header-dropdown">
         <a>
           <svg class="l-icon" aria-hidden="true">
-            <use :xlink:href="fromArrows.find((item) => item.value === fromArrow)?.icon
-              "></use>
+            <use
+              :xlink:href="
+                fromArrows.find((item) => item.value === fromArrow)?.icon
+              "
+            ></use>
           </svg>
           <span>起点</span>
           <caret-down-outlined />
@@ -153,7 +175,11 @@
           <a-menu style="width: 160px">
             <template v-for="(item, idx) in fromArrows" :key="idx">
               <a-menu-item>
-                <div class="flex middle" style="height: 30px" @click="changeFromArrow(item.value)">
+                <div
+                  class="flex middle"
+                  style="height: 30px"
+                  @click="changeFromArrow(item.value)"
+                >
                   <svg class="l-icon" aria-hidden="true">
                     <use :xlink:href="item.icon"></use>
                   </svg>
@@ -166,8 +192,11 @@
       <a-dropdown overlayClassName="header-dropdown">
         <a>
           <svg class="l-icon" aria-hidden="true">
-            <use :xlink:href="toArrows.find((item) => item.value === toArrow)?.icon
-              "></use>
+            <use
+              :xlink:href="
+                toArrows.find((item) => item.value === toArrow)?.icon
+              "
+            ></use>
           </svg>
           <span>终点</span>
           <caret-down-outlined />
@@ -176,7 +205,11 @@
           <a-menu style="width: 160px">
             <template v-for="(item, idx) in toArrows" :key="idx">
               <a-menu-item>
-                <div class="flex middle" style="height: 30px" @click="changeToArrow(item.value)">
+                <div
+                  class="flex middle"
+                  style="height: 30px"
+                  @click="changeToArrow(item.value)"
+                >
                   <svg class="l-icon" aria-hidden="true">
                     <use :xlink:href="item.icon"></use>
                   </svg>
@@ -186,19 +219,30 @@
           </a-menu>
         </template>
       </a-dropdown>
-      <a class="iconfont icon-Anchorpoint" :class="[isAutoAnchor == true ? 'active' : '']" @click="onAutoAnchor">
+      <a
+        class="iconfont icon-Anchorpoint"
+        :class="[isAutoAnchor == true ? 'active' : '']"
+        @click="onAutoAnchor"
+      >
         <span>自动锚点</span>
       </a>
-      <a class="iconfont icon-a-56px_line_Anti-fraud" :class="[isDisableAnchor == true ? 'active' : '']" @click="onDisableAnchor">
+      <a
+        class="iconfont icon-a-56px_line_Anti-fraud"
+        :class="[isDisableAnchor == true ? 'active' : '']"
+        @click="onDisableAnchor"
+      >
         <span>
           {{ isDisableAnchor ? "显示锚点" : "禁用锚点" }}
         </span>
       </a>
     </div>
     <div class="head-right flex items-center">
-      <a @click="setLocked" :style="{
-        color: data.locked == 1 ? '#faad14' : data.locked == 2 ? 'red' : '',
-      }">
+      <a
+        @click="setLocked"
+        :style="{
+          color: data.locked == 1 ? '#faad14' : data.locked == 2 ? 'red' : '',
+        }"
+      >
         <template v-if="data.locked == 0">
           <i class="iconfont icon-unlock"></i>
           <span>编辑</span>
@@ -244,7 +288,7 @@
       </a>
     </div>
     <ShareModal ref="shareModal" />
-    <FileManager ref="fileManager" :mode="'view'" />
+    <FileManager ref="fileManager" :mode="'multiple'" />
   </div>
 </template>
 

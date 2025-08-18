@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-09-24 16:38:51
  * @LastEditors: htang
- * @LastEditTime: 2025-08-18 17:30:12
+ * @LastEditTime: 2025-08-18 20:46:18
 -->
 <template>
   <a-modal
@@ -274,8 +274,13 @@ import {
   HomeOutlined,
   SearchOutlined,
 } from "@ant-design/icons-vue";
+import { FileExplorer } from "@/utils/FileExplorer.ts";
 
 const { proxy }: any = getCurrentInstance();
+
+const images = new FileExplorer()._filterExt.image;
+
+console.log(images.includes(".png"));
 
 const props = defineProps({
   mode: {
