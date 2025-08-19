@@ -316,7 +316,8 @@
         href="https://github.com/opendidi/mind"
         target="_blank"
       >
-        <GithubOutlined />
+        <t-icon name="logo-github" />
+        <span>源代码</span>
       </a>
     </div>
     <ShareModal ref="shareModal" />
