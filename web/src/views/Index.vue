@@ -4,14 +4,17 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2024-04-03 10:29:55
+ * @LastEditTime: 2025-08-19 09:51:05
 -->
 <template>
   <div class="app-page">
     <Header />
     <div class="designer">
       <Graphics />
-      <a-dropdown :trigger="['contextmenu']" @visibleChange="handleMenuVisibleChange">
+      <a-dropdown
+        :trigger="['contextmenu']"
+        @visibleChange="handleMenuVisibleChange"
+      >
         <Editor />
         <template #overlay>
           <a-menu class="canvas-context-menu" @click="handleMenuClick">
@@ -21,7 +24,12 @@
                   <a-menu-divider :key="idx" />
                 </template>
                 <template v-else>
-                  <a-menu-item :disabled="vo.disabled" :key="idx" :data="vo.data" :title="vo.title">
+                  <a-menu-item
+                    :disabled="vo.disabled"
+                    :key="idx"
+                    :data="vo.data"
+                    :title="vo.title"
+                  >
                     <span>{{ vo.title }}</span>
                     <span>{{ vo.keyCode }}</span>
                   </a-menu-item>
@@ -42,21 +50,13 @@
 </template>
 
 <script lang="ts" setup>
-import {
-  ref,
-  nextTick,
-  getCurrentInstance,
-  onMounted,
-  onUnmounted,
-} from "vue";
+import { ref, nextTick, getCurrentInstance, onMounted, onUnmounted } from "vue";
 import type { MenuProps } from "ant-design-vue";
-
 import Header from "@/components/Meta2D/Header/index.vue";
 import Graphics from "@/components/Meta2D/Graphics/index.vue";
 import Editor from "@/components/Meta2D/Editor/index.vue";
 import Props from "@/components/Meta2D/Props/index.vue";
 import Appearance from "@/components/Meta2D/Appearance/index.vue";
-
 import { MENUS as menus } from "@/utils/config-contentmenu.ts";
 import {
   LOCK_STATE_DATA as lockState,
@@ -66,7 +66,7 @@ import GET_IMAGE_PATH from "@/utils/graphicGroups.ts";
 import { useSelection } from "@/services/selections";
 import { useCommonStore, useCommonStoreWithOut } from "@/store/modules/common";
 
-let { proxy } = getCurrentInstance();
+const { proxy } = getCurrentInstance();
 
 const { selections } = useSelection();
 
@@ -292,7 +292,6 @@ const handleMenuClick: MenuProps["onClick"] = (e: any) => {
   let { pen } = selections;
   let list = menuLists.value;
   if (pen || pens.value.length > 0) {
-    console.log(e.item.data);
     switch (e.item.data) {
       // 置顶
       case "top":
@@ -455,7 +454,7 @@ onUnmounted(() => {
 
   .designer {
     display: grid;
-    height: calc(100vh - 40px);
+    height: calc(100vh - 50px);
     grid-template-columns: 200px 1fr 301px;
   }
 
@@ -465,7 +464,7 @@ onUnmounted(() => {
 
   :deep .ant-form {
     .ant-collapse {
-      .ant-collapse-content>.ant-collapse-content-box {
+      .ant-collapse-content > .ant-collapse-content-box {
         padding: 6px;
       }
 

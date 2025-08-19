@@ -62,7 +62,7 @@ export default defineComponent({
 
 <style lang="less" scoped>
 .app-props {
-  height: calc(100vh - 40px);
+  height: calc(100vh - 50px);
   padding: 0 12px;
   background: #fff;
   border-left: 1px solid #ddd;

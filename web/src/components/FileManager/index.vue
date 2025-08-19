@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-09-24 16:38:51
  * @LastEditors: htang
- * @LastEditTime: 2025-08-18 20:46:18
+ * @LastEditTime: 2025-08-19 10:38:21
 -->
 <template>
   <a-modal
@@ -562,11 +562,7 @@ const onOperateFileOrDir = (params: any) => {
 };
 
 const formatBackgroundImage = (params: any) => {
-  let { type, thumb_path } = params;
-  switch (type) {
-    default:
-      return getFileIconByExt(type);
-  }
+  return getFileIconByExt(params.extension);
 };
 
 const onSelectFile = (params: any, idx: any) => {

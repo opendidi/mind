@@ -299,7 +299,7 @@ heandleGraphicGroups();
 
 <style lang="less" scoped>
 .graphics {
-  height: calc(100vh - 40px);
+  height: calc(100vh - 50px);
   background: #fff;
   border-right: 1px solid #dddddd;
   z-index: 2;
@@ -326,7 +326,7 @@ heandleGraphicGroups();
   }
 
   .scroll {
-    height: calc(100vh - 188px);
+    height: calc(100vh - 199px);
     overflow-y: auto;
     // &::-webkit-scrollbar {
     //   width: 8px;
