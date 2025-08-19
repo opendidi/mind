@@ -4,7 +4,7 @@ version: 1.0.0
 Author: htang
 Date: 2024-06-17 10:07:01
 LastEditors: htang
-LastEditTime: 2025-08-15 16:15:00
+LastEditTime: 2025-08-19 15:12:24
 '''
 # -*- coding: UTF-8 -*-
 
@@ -178,7 +178,6 @@ class MaterialMysqlHandler:
             row['created_at'] = datetime.strptime(row['created_at'], '%a, %d %b %Y %H:%M:%S %Z').strftime('%Y-%m-%d %H:%M:%S')
           elif isinstance(row['created_at'], datetime):
             row['created_at'] = row['created_at'].strftime('%Y-%m-%d %H:%M:%S')
-        print(results)
         return [dict(row) for row in results]
     except Exception as ex:
       logging.warning(ex)
@@ -205,7 +204,6 @@ class MaterialMysqlHandler:
           INSERT INTO `material` (`id`, `name`, `type`, `parent_id`, `path`) VALUES (%s, %s, %s, %s, %s)
         '''
         # 执行 SQL 语句
-        print(id)
         cursor.execute(sql, (id, name, 'dir', parent_id, path))
         # 提交事务
         connect.commit()

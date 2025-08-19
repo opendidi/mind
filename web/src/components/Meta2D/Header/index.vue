@@ -888,15 +888,7 @@ function onSearch() {
   z-index: 3;
 
   .head-center {
-    .iconfont {
-      &::before {
-        font-size: 20px;
-      }
-
-      span {
-        font-size: 14px;
-      }
-
+    a {
       &.active,
       &:hover {
         color: #0c56eb;

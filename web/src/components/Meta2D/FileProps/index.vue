@@ -408,36 +408,11 @@ function onInit(dataValue: any) {
     ...d,
   });
 
-  console.log(data.pens);
-
   Object.assign(options, meta2d.getOptions());
 }
 
 onMounted(() => {
   onInit(meta2d.data());
-  // const d: any = meta2d.data();
-  // console.log(d)
-  // meta2d.socketFn = (message, context) => {
-  //   let info = JSON.parse(message);
-  //   let dataList = JSON.parse(info.data);
-  //   console.log(dataList);
-  //   // let pens = [];
-  //   dataList.map((item) => {
-  //     item['id'] = item['dot'];
-  //     if (item['vtype'] === 'FLOAT') {
-  //       item['text'] = parseFloat(item['value']).toFixed(2);
-  //     } else {
-  //       item['text'] = item['value'];
-  //     }
-  //     meta2d.setValue({
-  //       ...item,
-  //     });
-  //   });
-  //   // Do sth
-  //   // return false; //表示仅执行自定义的回调函数方法
-  //   return true; //表示除了执行自定义的回调方法外，还会执行核心库方法
-  // };
-  // meta2d.setValue({ dataId: "device-001", value: 20 });
 });
 
 function onChangeData(key: string, dataValue: string) {
