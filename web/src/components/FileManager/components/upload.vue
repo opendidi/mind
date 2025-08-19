@@ -4,29 +4,34 @@
  * @Author: htang
  * @Date: 2024-09-26 21:20:16
  * @LastEditors: htang
- * @LastEditTime: 2025-08-15 11:22:22
+ * @LastEditTime: 2025-08-19 15:09:59
 -->
 <template>
   <template v-if="data.parent_id !== ''">
-    <a-upload v-model:fileList="fileList" name="file" :data="data" :accept="accept" :multiple="true" :action="action" :showUploadList="false" @change="handleChange" :before-upload="beforeUpload">
-      <a-button type="primary" class="ant-upload-hint w-full">
-        上传文件
-      </a-button>
+    <a-upload
+      v-model:fileList="fileList"
+      name="file"
+      :data="data"
+      :accept="accept"
+      :multiple="true"
+      :action="action"
+      :showUploadList="false"
+      @change="handleChange"
+      :before-upload="beforeUpload"
+      class="file-manager-upload"
+    >
+      <a-button type="primary" class="w-full">上传文件</a-button>
     </a-upload>
   </template>
   <template v-else>
-    <a-button type="primary" :disabled="true" style="width: 95%">
+    <a-button type="primary" :disabled="true" class="w-full">
       上传文件
     </a-button>
   </template>
 </template>
 
 <script lang="ts" setup>
-import {
-  ref,
-  getCurrentInstance,
-  computed,
-} from "vue";
+import { ref, getCurrentInstance, computed } from "vue";
 import { message } from "ant-design-vue";
 import { FileExplorer } from "@/utils/FileExplorer.ts";
 
@@ -91,3 +96,11 @@ defineExpose({
   file_type,
 });
 </script>
+
+<style lang="less" scoped>
+.file-manager-upload {
+  :deep(.ant-upload) {
+    width: 100%;
+  }
+}
+</style>

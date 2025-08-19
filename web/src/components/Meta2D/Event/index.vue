@@ -327,7 +327,6 @@ export default defineComponent({
             break;
         }
       });
-      console.log(keysValue.value, "kv.........");
     }
 
     function changeValue(data, key, idx) {

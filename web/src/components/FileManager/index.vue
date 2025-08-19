@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-09-24 16:38:51
  * @LastEditors: htang
- * @LastEditTime: 2025-08-19 10:38:21
+ * @LastEditTime: 2025-08-19 15:33:55
 -->
 <template>
   <a-modal
@@ -15,8 +15,6 @@
     :bodyStyle="bodyStyle"
     :destroyOnClose="true"
     :footer="footer"
-    okText="确定"
-    cancelText="取消"
     wrapClassName="file-manager-modal"
     @ok="handleOk"
   >
@@ -61,7 +59,7 @@
               <a-empty :image="simpleImage" description="暂无目录数据" />
             </template>
           </div>
-          <div class="upload-item w-full flex items-center justify-center">
+          <div class="upload-item w-full pl-2 pr-2">
             <FileUpload ref="fileUpload" @oks="uploadSuccessDone" />
           </div>
         </div>
@@ -200,7 +198,6 @@
                       ? 'selected'
                       : '',
                   ]"
-                  @dblclick="onOperateFileOrDir(item)"
                   @click="onSelectFile(item, idx)"
                 >
                   <template v-if="mode == 'multiple'">
@@ -216,6 +213,12 @@
                     :style="{ backgroundImage: formatBackgroundImage(item) }"
                   ></div>
                   <div class="title">{{ item.name }}</div>
+                  <div
+                    class="preview"
+                    @click.native.stop="onOperateFileOrDir(item)"
+                  >
+                    <span>预览</span>
+                  </div>
                   <div
                     class="icon"
                     :class="[item.lock == 1 ? 'ico-lock-on-face' : '']"
@@ -278,9 +281,7 @@ import { FileExplorer } from "@/utils/FileExplorer.ts";
 
 const { proxy }: any = getCurrentInstance();
 
-const images = new FileExplorer()._filterExt.image;
-
-console.log(images.includes(".png"));
+const images_ext = new FileExplorer()._filterExt.image;
 
 const props = defineProps({
   mode: {
@@ -537,32 +538,33 @@ const onCreateDirectory = () => {
 };
 
 const onOperateFileOrDir = (params: any) => {
-  switch (params.type) {
-    case "dir":
-      openFolder(params);
-      break;
-    case ".png":
-    case ".jpg":
-    case ".jpeg":
-    case ".gif":
-    case ".svg":
-      const img = new Image();
-      img.src = params.url;
-      img.onload = () => {
-        proxy.$refs.filePreview.openPreview({
-          url: params.url,
-          width: img.width,
-          height: img.height,
-        });
-      };
-      break;
-    default:
-      break;
+  if (params.type == "dir") {
+    openFolder(params);
+  } else {
+    switch (params.extension) {
+      case "png":
+      case "jpg":
+      case "jpeg":
+      case "gif":
+      case "svg":
+        const img = new Image();
+        img.src = params.url;
+        img.onload = () => {
+          proxy.$refs.filePreview.openPreview({
+            url: params.url,
+            width: img.width,
+            height: img.height,
+          });
+        };
+        break;
+      default:
+        break;
+    }
   }
 };
 
 const formatBackgroundImage = (params: any) => {
-  return getFileIconByExt(params.extension);
+  return getFileIconByExt(params.extension || params.type);
 };
 
 const onSelectFile = (params: any, idx: any) => {
@@ -1075,6 +1077,21 @@ defineExpose({
             transition: border-color 0.3s;
             cursor: pointer;
 
+            .preview {
+              position: absolute;
+              bottom: 31px;
+              left: 0;
+              display: none;
+              width: 100%;
+              height: 30px;
+              background: #18bc9c;
+              border-radius: 5px 5px 0 0;
+              line-height: 31px;
+              span {
+                color: #fff;
+              }
+            }
+
             .bg-thumb {
               height: 112px;
               border-bottom: 1px solid #e0e0e0;
@@ -1103,6 +1120,10 @@ defineExpose({
 
             &:hover {
               border-color: #18bc9c;
+
+              .preview {
+                display: block;
+              }
 
               .checkbox-wrap {
                 display: block;
@@ -1143,6 +1164,10 @@ defineExpose({
             box-sizing: border-box;
             align-items: center;
             cursor: pointer;
+
+            .preview {
+              font-size: 12px;
+            }
 
             .checkbox-wrap {
               .ico-checkbox {
