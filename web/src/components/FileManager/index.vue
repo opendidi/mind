@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-09-24 16:38:51
  * @LastEditors: htang
- * @LastEditTime: 2025-08-18 17:30:12
+ * @LastEditTime: 2025-08-19 10:38:21
 -->
 <template>
   <a-modal
@@ -274,8 +274,13 @@ import {
   HomeOutlined,
   SearchOutlined,
 } from "@ant-design/icons-vue";
+import { FileExplorer } from "@/utils/FileExplorer.ts";
 
 const { proxy }: any = getCurrentInstance();
+
+const images = new FileExplorer()._filterExt.image;
+
+console.log(images.includes(".png"));
 
 const props = defineProps({
   mode: {
@@ -557,11 +562,7 @@ const onOperateFileOrDir = (params: any) => {
 };
 
 const formatBackgroundImage = (params: any) => {
-  let { type, thumb_path } = params;
-  switch (type) {
-    default:
-      return getFileIconByExt(type);
-  }
+  return getFileIconByExt(params.extension);
 };
 
 const onSelectFile = (params: any, idx: any) => {

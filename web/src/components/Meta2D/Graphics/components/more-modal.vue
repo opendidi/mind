@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-10-12 17:49:12
  * @LastEditors: htang
- * @LastEditTime: 2024-01-19 17:48:05
+ * @LastEditTime: 2025-08-18 19:55:48
 -->
 <template>
   <a-modal
@@ -18,16 +18,17 @@
     okText="确定"
   >
     <template #title>
-      <span>图形库管理</span>
-      <a-divider type="vertical" />
-      <a-button type="text" @click="onRefresh">
-        <redo-outlined />
-        刷新
-      </a-button>
+      <div class="flex items-center">
+        <span>图形库管理</span>
+        <a-divider type="vertical" />
+        <redo-outlined @click="onRefresh" title="刷新" />
+      </div>
     </template>
     <div class="m-4">
       <div class="mb-6">
-        <a-checkbox v-model:checked="checkall" @change="onCheckAllChange">全选</a-checkbox>
+        <a-checkbox v-model:checked="checkall" @change="onCheckAllChange"
+          >全选</a-checkbox
+        >
       </div>
       <a-checkbox-group v-model:value="dataValue" style="width: 100%">
         <a-row :gutter="[16, 16]">
@@ -43,12 +44,12 @@
 </template>
 
 <script>
-import { ref, defineComponent, getCurrentInstance, watch } from 'vue';
-import { message } from 'ant-design-vue';
-import { RedoOutlined } from '@ant-design/icons-vue';
-import { useCommonStore } from '@/store/modules/common';
-import { GRAPHIC_GROUPS } from '@/utils/graphicGroups';
-import { setGraphicGroups } from '@/utils/meta-storage';
+import { ref, defineComponent, getCurrentInstance, watch } from "vue";
+import { message } from "ant-design-vue";
+import { RedoOutlined } from "@ant-design/icons-vue";
+import { useCommonStore } from "@/store/modules/common";
+import { GRAPHIC_GROUPS } from "@/utils/graphicGroups";
+import { setGraphicGroups } from "@/utils/meta-storage";
 
 export default defineComponent({
   components: { RedoOutlined },
@@ -68,8 +69,10 @@ export default defineComponent({
     watch(
       () => dataValue.value,
       (params) => {
-        indeterminate.value = !!params.length && params.length < checkedList.value.length;
-        checkall.value = params.length > 0 && params.length === checkedList.value.length;
+        indeterminate.value =
+          !!params.length && params.length < checkedList.value.length;
+        checkall.value =
+          params.length > 0 && params.length === checkedList.value.length;
         let obj = useCommonStore().graphics;
         checkedList.value.map((_) => {
           if (!dataValue.value.includes(_.id)) {
@@ -80,7 +83,7 @@ export default defineComponent({
           obj[_.label] = _.value;
         });
         setGraphicGroups(obj);
-        emit('oks');
+        emit("oks");
       }
     );
 
@@ -112,7 +115,9 @@ export default defineComponent({
     }
 
     function onCheckAllChange(e) {
-      dataValue.value = e.target.checked ? checkedList.value.map((item) => item.id) : [];
+      dataValue.value = e.target.checked
+        ? checkedList.value.map((item) => item.id)
+        : [];
       indeterminate.value = false;
     }
 
@@ -127,7 +132,7 @@ export default defineComponent({
       setGraphicGroups(obj);
       useCommonStore().setGraphicGroups(obj);
       init();
-      message.success('刷新成功');
+      message.success("刷新成功");
     }
 
     return {

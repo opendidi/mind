@@ -110,13 +110,13 @@
       </a-tab-pane>
       <a-tab-pane key="2" tab="我的组件" force-render>
         <div
-          class="mkdir-head flex items-center"
-          @click="directoryVisible = true"
+          class="mkdir-head flex items-center pb-3"
+          @click="openCreatedFolder"
         >
           <folder-add-outlined />
           <span>新建文件夹</span>
         </div>
-        <div class="">
+        <template v-if="directoryList.length !== 0">
           <a-collapse
             v-model:activeKey="directoryKey"
             :defaultExpandAll="true"
@@ -133,10 +133,19 @@
               </a-collapse-panel>
             </template>
           </a-collapse>
+        </template>
+        <template v-else>
+          <a-empty description="暂没数据" />
+        </template>
+      </a-tab-pane>
+      <a-tab-pane key="3" tab="图纸" force-render>
+        <div class="mt-10">
+          <a-empty description="暂没数据" />
         </div>
       </a-tab-pane>
     </a-tabs>
     <MoreModal ref="moreModal" @oks="heandleGraphicGroups" />
+    <CreatedFolder ref="createdFolder" />
   </div>
 </template>
 
@@ -149,7 +158,7 @@ import {
   AppstoreOutlined,
 } from "@ant-design/icons-vue";
 import { GRAPHIC_GROUPS as graphicGroups } from "@/utils/graphicGroups.ts";
-import MoreModal from "./components/more-modal.vue";
+import { MoreModal, CreatedFolder } from "./components/index.ts";
 import { useCommonStore } from "@/store/modules/common";
 import { Icon } from "tdesign-icons-vue-next";
 
@@ -281,12 +290,16 @@ function filterGraphicGroups() {
   }
 }
 
+const openCreatedFolder = () => {
+  proxy.$refs.createdFolder.visible = true;
+};
+
 heandleGraphicGroups();
 </script>
 
 <style lang="less" scoped>
 .graphics {
-  height: calc(100vh - 40px);
+  height: calc(100vh - 50px);
   background: #fff;
   border-right: 1px solid #dddddd;
   z-index: 2;
@@ -298,6 +311,8 @@ heandleGraphicGroups();
 
     .mkdir-head {
       margin: 12px;
+      border-bottom: 1px solid #e5e5e5;
+      box-sizing: border-box;
 
       .anticon {
         margin: 0 6px 0 0;
@@ -311,7 +326,7 @@ heandleGraphicGroups();
   }
 
   .scroll {
-    height: calc(100vh - 188px);
+    height: calc(100vh - 199px);
     overflow-y: auto;
     // &::-webkit-scrollbar {
     //   width: 8px;

@@ -2,7 +2,7 @@
   <div class="app-header flex items-center justify-between">
     <div class="head-left flex items-center">
       <a-dropdown>
-        <a class="ant-dropdown-link">
+        <a class="ant-dropdown-link flex items-center flex-col">
           <t-icon name="file" />
           <span>文件</span>
         </a>
@@ -27,7 +27,7 @@
         </template>
       </a-dropdown>
       <a-dropdown>
-        <a class="ant-dropdown-link">
+        <a class="ant-dropdown-link flex items-center flex-col">
           <t-icon name="edit-1" />
           <span>编辑</span>
         </a>
@@ -51,37 +51,57 @@
           </a-menu>
         </template>
       </a-dropdown>
-      <a @click="onSave(true)">
+      <a class="flex items-center flex-col" @click="onSave(true)">
         <t-icon name="save" />
         <span>保存</span>
       </a>
     </div>
-    <div class="head-center flex">
-      <a :class="[isOnDrawLine == true ? 'active' : '']" @click="onDrawLine">
+    <div class="head-center flex items-center">
+      <a
+        class="flex items-center flex-col"
+        :class="[isOnDrawLine == true ? 'active' : '']"
+        @click="onDrawLine"
+      >
         <t-icon name="pen" />
         <span>钢笔</span>
       </a>
-      <a :class="[isDrawingPencil == true ? 'active' : '']" @click="onDrawingPencil">
+      <a
+        class="flex items-center flex-col"
+        :class="[isDrawingPencil == true ? 'active' : '']"
+        @click="onDrawingPencil"
+      >
         <t-icon name="edit" />
         <span>铅笔</span>
       </a>
-      <a :class="[isShowMagnifier == true ? 'active' : '']" @click="onShowMagnifier">
+      <a
+        class="flex items-center flex-col"
+        :class="[isShowMagnifier == true ? 'active' : '']"
+        @click="onShowMagnifier"
+      >
         <t-icon name="search" />
         <span>放大镜</span>
       </a>
-      <a @click="onUndo">
+      <a class="flex items-center flex-col" @click="onUndo">
         <t-icon name="rollback" />
         <span>撤销</span>
       </a>
-      <a @click="onRedo">
+      <a class="flex items-center flex-col" @click="onRedo">
         <t-icon name="rollfront" />
         <span>重做</span>
       </a>
-      <a @dragstart="onAddShape($event, 'line')" @click="onAddShape($event, 'line')">
+      <a
+        class="flex items-center flex-col"
+        @dragstart="onAddShape($event, 'line')"
+        @click="onAddShape($event, 'line')"
+      >
         <t-icon name="remove" />
         <span>直线</span>
       </a>
-      <a @dragstart="onAddShape($event, 'text')" @click="onAddShape($event, 'text')">
+      <a
+        class="flex items-center flex-col"
+        @dragstart="onAddShape($event, 'text')"
+        @click="onAddShape($event, 'text')"
+      >
         <t-icon name="textbox" />
         <span>文字</span>
       </a>
@@ -103,27 +123,38 @@
         <span>连线</span>
       </a> -->
       <a-dropdown v-model:visible="lineWidthVisible">
-        <a>
-          {{ data.lineWidth }}&nbsp;
+        <a class="flex items-center flex-col">
+          <span class="flex items-center">
+            {{ data.lineWidth }}&nbsp;
+            <t-icon name="chevron-down-s" />
+          </span>
           <span>线宽</span>
-          <caret-down-outlined />
         </a>
         <template #overlay>
           <a-menu style="width: 220px">
             <a-menu-item key="1">
-              <a-input-number v-model:value="data.lineWidth" style="width: 100%" @blur="getDataLineWidth" />
+              <a-input-number
+                v-model:value="data.lineWidth"
+                style="width: 100%"
+                @blur="getDataLineWidth"
+              />
             </a-menu-item>
           </a-menu>
         </template>
       </a-dropdown>
       <a-dropdown overlayClassName="header-dropdown">
-        <a>
-          <svg class="l-icon" aria-hidden="true">
-            <use :xlink:href="lineTypes.find((item) => item.value === currentLineType)?.icon
-              "></use>
-          </svg>
+        <a class="flex items-center flex-col">
+          <span class="flex items-center">
+            <svg class="l-icon" aria-hidden="true">
+              <use
+                :xlink:href="
+                  lineTypes.find((item) => item.value === currentLineType)?.icon
+                "
+              ></use>
+            </svg>
+            <t-icon name="chevron-down-s" />
+          </span>
           <span>连线</span>
-          <caret-down-outlined />
         </a>
         <template #overlay>
           <a-menu style="width: 160px">
@@ -141,19 +172,28 @@
         </template>
       </a-dropdown>
       <a-dropdown overlayClassName="header-dropdown">
-        <a>
-          <svg class="l-icon" aria-hidden="true">
-            <use :xlink:href="fromArrows.find((item) => item.value === fromArrow)?.icon
-              "></use>
-          </svg>
+        <a class="flex items-center flex-col">
+          <span class="flex items-center">
+            <svg class="l-icon" aria-hidden="true">
+              <use
+                :xlink:href="
+                  fromArrows.find((item) => item.value === fromArrow)?.icon
+                "
+              ></use>
+            </svg>
+            <t-icon name="chevron-down-s" />
+          </span>
           <span>起点</span>
-          <caret-down-outlined />
         </a>
         <template #overlay>
           <a-menu style="width: 160px">
             <template v-for="(item, idx) in fromArrows" :key="idx">
               <a-menu-item>
-                <div class="flex middle" style="height: 30px" @click="changeFromArrow(item.value)">
+                <div
+                  class="flex middle"
+                  style="height: 30px"
+                  @click="changeFromArrow(item.value)"
+                >
                   <svg class="l-icon" aria-hidden="true">
                     <use :xlink:href="item.icon"></use>
                   </svg>
@@ -164,19 +204,28 @@
         </template>
       </a-dropdown>
       <a-dropdown overlayClassName="header-dropdown">
-        <a>
-          <svg class="l-icon" aria-hidden="true">
-            <use :xlink:href="toArrows.find((item) => item.value === toArrow)?.icon
-              "></use>
-          </svg>
+        <a class="flex items-center flex-col">
+          <span class="flex items-center">
+            <svg class="l-icon" aria-hidden="true">
+              <use
+                :xlink:href="
+                  toArrows.find((item) => item.value === toArrow)?.icon
+                "
+              ></use>
+            </svg>
+            <t-icon name="chevron-down-s" />
+          </span>
           <span>终点</span>
-          <caret-down-outlined />
         </a>
         <template #overlay>
           <a-menu style="width: 160px">
             <template v-for="(item, idx) in toArrows" :key="idx">
               <a-menu-item>
-                <div class="flex middle" style="height: 30px" @click="changeToArrow(item.value)">
+                <div
+                  class="flex middle"
+                  style="height: 30px"
+                  @click="changeToArrow(item.value)"
+                >
                   <svg class="l-icon" aria-hidden="true">
                     <use :xlink:href="item.icon"></use>
                   </svg>
@@ -186,65 +235,92 @@
           </a-menu>
         </template>
       </a-dropdown>
-      <a class="iconfont icon-Anchorpoint" :class="[isAutoAnchor == true ? 'active' : '']" @click="onAutoAnchor">
+      <a
+        class="flex items-center flex-col"
+        :class="[isAutoAnchor == true ? 'active' : '']"
+        @click="onAutoAnchor"
+      >
+        <t-icon name="focus" />
         <span>自动锚点</span>
       </a>
-      <a class="iconfont icon-a-56px_line_Anti-fraud" :class="[isDisableAnchor == true ? 'active' : '']" @click="onDisableAnchor">
+      <a
+        class="flex items-center flex-col"
+        :class="[isDisableAnchor == true ? 'active' : '']"
+        @click="onDisableAnchor"
+      >
+        <t-icon name="map-aiming" />
         <span>
           {{ isDisableAnchor ? "显示锚点" : "禁用锚点" }}
         </span>
       </a>
     </div>
     <div class="head-right flex items-center">
-      <a @click="setLocked" :style="{
-        color: data.locked == 1 ? '#faad14' : data.locked == 2 ? 'red' : '',
-      }">
+      <a
+        class="flex items-center flex-col"
+        @click="setLocked"
+        :style="{
+          color: data.locked == 1 ? '#faad14' : data.locked == 2 ? 'red' : '',
+        }"
+      >
         <template v-if="data.locked == 0">
-          <i class="iconfont icon-unlock"></i>
+          <t-icon name="lock-off" />
           <span>编辑</span>
         </template>
         <template v-if="data.locked == 1">
-          <i class="iconfont icon-lock"></i>
+          <t-icon name="lock-on" />
           <span>预览</span>
         </template>
         <template v-if="data.locked == 2">
-          <i class="iconfont icon-suoding"></i>
+          <t-icon name="lock-on" />
           <span>锁定</span>
         </template>
       </a>
-      <a @click="onView()" title="运行查看">
+      <a class="flex items-center flex-col" @click="onView()" title="运行查看">
         <t-icon name="play-circle" />
         <span>预览</span>
       </a>
       <template v-if="scale > 0">
-        <a>
-          <span style="line-height: 40px">{{ scale }}%</span>
+        <a class="flex items-center flex-col">
+          <span>{{ scale }}%</span>
           <span>视图</span>
         </a>
       </template>
       <a-tooltip title="100%视图" placement="bottom">
-        <a @click="onScaleDefault">
+        <a class="flex items-center flex-col" @click="onScaleDefault">
           <t-icon name="refresh" />
+          <span>还原</span>
         </a>
       </a-tooltip>
-      <a @click="onScaleWindow" title="窗口大小">
+      <a
+        class="flex items-center flex-col"
+        @click="onScaleWindow"
+        title="窗口大小"
+      >
         <t-icon name="fullscreen-exit" />
         <span>窗口大小</span>
       </a>
-      <a title="文件管理" @click="openFileManager">
+      <a
+        class="flex items-center flex-col"
+        title="文件管理"
+        @click="openFileManager"
+      >
         <t-icon name="folder-open" />
         <span>文件管理</span>
       </a>
-      <a @click="onSearch">
+      <a class="flex items-center flex-col" @click="onSearch">
         <t-icon name="share" />
         <span>分享</span>
       </a>
-      <a href="https://github.com/opendidi/mind" target="_blank">
+      <a
+        class="flex items-center flex-col"
+        href="https://github.com/opendidi/mind"
+        target="_blank"
+      >
         <GithubOutlined />
       </a>
     </div>
     <ShareModal ref="shareModal" />
-    <FileManager ref="fileManager" :mode="'view'" />
+    <FileManager ref="fileManager" :mode="'multiple'" />
   </div>
 </template>
 
@@ -803,7 +879,7 @@ function onSearch() {
 .app-header {
   position: relative;
   width: 100%;
-  height: 40px;
+  height: 50px;
   padding: 0 12px;
   background: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -836,21 +912,21 @@ function onSearch() {
   }
 
   a {
-    display: flex;
     margin: 0 8px;
-    align-items: center;
     text-decoration: none;
     white-space: nowrap;
     color: #595959;
+
+    span {
+      font-size: 12px;
+    }
 
     &:hover {
       color: #4583ff;
     }
 
     svg {
-      position: relative;
-      top: -1px;
-      margin: 0 4px 0 0;
+      margin: 0;
       font-size: 15px;
     }
 
@@ -864,7 +940,6 @@ function onSearch() {
   }
 
   svg {
-    height: 40px;
     margin: 0 8px;
 
     &:hover {

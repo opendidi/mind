@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2025-06-13 14:32:10
  * @LastEditors: htang
- * @LastEditTime: 2025-08-18 18:00:40
+ * @LastEditTime: 2025-08-19 10:37:43
  */
 import ai from "@/assets/images/file-explorer/ai.svg";
 import avi from "@/assets/images/file-explorer/avi.svg";
@@ -45,37 +45,37 @@ import zip1 from "@/assets/images/file-explorer/zip-1.svg";
 import zip from "@/assets/images/file-explorer/zip.svg";
 
 const fileIconMap: any = {
-  '.ai': ai,
+  'ai': ai,
   'dir': dir,
-  '.mp3': mp3,
-  '.mp4': mp4,
-  '.png': png,
-  '.jpg': jpg,
-  '.jpeg': jpg,
-  '.gif': gif,
-  '.txt': txt,
-  '.doc': doc,
-  '.docx': doc,
-  '.avi': avi,
-  '.css': css,
-  '.csv': csv,
-  '.dbf': dbf,
-  '.dwg': dwg,
-  '.exe': exe,
-  '.fla': fla,
-  '.flash': flash,
-  '.html': html,
-  '.iso': iso,
-  '.javascript': javascript,
-  '.json': jsonFile,
-  '.pdf': pdf,
-  '.ppt': ppt,
-  '.psd': psd,
-  '.rtf': rtf,
-  '.svg': svg,
-  '.xls': xls,
-  '.xml': xml,
-  '.zip': zip,
+  'mp3': mp3,
+  'mp4': mp4,
+  'png': png,
+  'jpg': jpg,
+  'jpeg': jpg,
+  'gif': gif,
+  'txt': txt,
+  'doc': doc,
+  'docx': doc,
+  'avi': avi,
+  'css': css,
+  'csv': csv,
+  'dbf': dbf,
+  'dwg': dwg,
+  'exe': exe,
+  'fla': fla,
+  'flash': flash,
+  'html': html,
+  'iso': iso,
+  'javascript': javascript,
+  'json': jsonFile,
+  'pdf': pdf,
+  'ppt': ppt,
+  'psd': psd,
+  'rtf': rtf,
+  'svg': svg,
+  'xls': xls,
+  'xml': xml,
+  'zip': zip,
   'file': file,
   'folder': folder,
   'folderfull': folderfull,
@@ -89,6 +89,7 @@ const fileIconMap: any = {
  * 根据文件扩展名返回对应的图标
  */
 const getFileIconByExt = (ext: string) => {
+  console.log(fileIconMap[ext], ext)
   return fileIconMap[ext] ? `url(${fileIconMap[ext]})` : '';
 };
 
