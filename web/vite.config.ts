@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2025-08-15 17:24:11
+ * @LastEditTime: 2025-08-19 17:39:33
  */
 import { defineConfig, UserConfig, ConfigEnv, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
@@ -53,31 +53,19 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       },
     },
     resolve: {
-      alias: [
-        // {
-        //   find: 'vue-i18n',
-        //   replacement: 'vue-i18n/dist/vue-i18n.cjs.js',
-        // },
-        // /@/xxxx => src/xxxx
-        {
-          find: /\/@\//,
-          replacement: pathResolve('src') + '/',
-        },
-        // /#/xxxx => types/xxxx
-        {
-          find: /\/#\//,
-          replacement: pathResolve('types') + '/',
-        },
-        {
-          find: /@\//,
-          replacement: pathResolve('src') + '/',
-        },
-        // /#/xxxx => types/xxxx
-        {
-          find: /#\//,
-          replacement: pathResolve('types') + '/',
-        },
-      ],
+      alias: [{
+        find: /\/@\//,
+        replacement: pathResolve('src') + '/',
+      }, {
+        find: /\/#\//,
+        replacement: pathResolve('types') + '/',
+      }, {
+        find: /@\//,
+        replacement: pathResolve('src') + '/',
+      }, {
+        find: /#\//,
+        replacement: pathResolve('types') + '/',
+      }],
     },
     esbuild: {
       //清除全局的console.log和debug

@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2025-06-13 14:32:10
  * @LastEditors: htang
- * @LastEditTime: 2025-08-19 10:37:43
+ * @LastEditTime: 2025-08-19 17:25:10
  */
 import ai from "@/assets/images/file-explorer/ai.svg";
 import avi from "@/assets/images/file-explorer/avi.svg";
@@ -89,7 +89,6 @@ const fileIconMap: any = {
  * 根据文件扩展名返回对应的图标
  */
 const getFileIconByExt = (ext: string) => {
-  console.log(fileIconMap[ext], ext)
   return fileIconMap[ext] ? `url(${fileIconMap[ext]})` : '';
 };
 
