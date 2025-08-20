@@ -99,13 +99,8 @@
             </template>
           </a-collapse>
         </div>
-        <div class="more-graphical flex justify-center items-center">
-          <a-button @click="openGraphics">
-            <template #icon>
-              <AppstoreOutlined />
-            </template>
-            图形库管理
-          </a-button>
+        <div class="more-graphical flex justify-center items-center p-2">
+          <a-button class="w-full" @click="openGraphics">图形库管理</a-button>
         </div>
       </a-tab-pane>
       <a-tab-pane key="2" tab="我的组件" force-render>
@@ -217,16 +212,6 @@ function openGraphics() {
   nextTick(() => {
     proxy.$refs.moreModal.init();
   });
-}
-
-/**
- * 获取文件夹名称
- */
-function handleOk() {
-  directoryList.value.push({
-    name: directoryName.value,
-  });
-  directoryVisible.value = false;
 }
 
 /**

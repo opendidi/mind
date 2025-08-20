@@ -105,7 +105,7 @@
         <t-icon name="textbox" />
         <span>文字</span>
       </a>
-      <!-- <a class="flex items-center" @click="drawLine">
+      <a class="flex items-center flex-col" @click="drawLine">
         <svg
           width="1em"
           height="1em"
@@ -120,8 +120,8 @@
             fill="currentColor"
           ></path>
         </svg>
-        <span>连线</span>
-      </a> -->
+        <span :style="{ color: isDrawLine ? ' #1677ff' : '' }">连线</span>
+      </a>
       <a-dropdown v-model:visible="lineWidthVisible">
         <a class="flex items-center flex-col">
           <span class="flex items-center">
@@ -154,17 +154,25 @@
             </svg>
             <t-icon name="chevron-down-s" />
           </span>
-          <span>连线</span>
+          <span>
+            {{ lineTypes.find((item) => item.value === currentLineType)?.name }}
+          </span>
         </a>
         <template #overlay>
           <a-menu style="width: 160px">
             <template v-for="(item, idx) in lineTypes" :key="idx">
               <a-menu-item>
-                <div class="flex middle" @click="changeLineType(item.value)">
-                  {{ item.name }} <span class="flex-grow"></span>
-                  <svg class="l-icon" aria-hidden="true">
-                    <use :xlink:href="item.icon"></use>
-                  </svg>
+                <div
+                  class="middle w-full"
+                  :class="[currentLineType == item.value ? 'active' : '']"
+                  @click="changeLineType(item.value)"
+                >
+                  <div class="flex items-center justify-between">
+                    <span>{{ item.name }}</span>
+                    <svg class="l-icon" aria-hidden="true">
+                      <use :xlink:href="item.icon"></use>
+                    </svg>
+                  </div>
                 </div>
               </a-menu-item>
             </template>
@@ -190,7 +198,7 @@
             <template v-for="(item, idx) in fromArrows" :key="idx">
               <a-menu-item>
                 <div
-                  class="flex middle"
+                  class="middle w-full flex items-center"
                   style="height: 30px"
                   @click="changeFromArrow(item.value)"
                 >
@@ -222,7 +230,7 @@
             <template v-for="(item, idx) in toArrows" :key="idx">
               <a-menu-item>
                 <div
-                  class="flex middle"
+                  class="middle w-full flex items-center"
                   style="height: 30px"
                   @click="changeToArrow(item.value)"
                 >
@@ -549,7 +557,6 @@ function openFile() {
       try {
         // 3. 打开文件内容
         meta2d.open(JSON.parse(text));
-
         // 可选：缩放到窗口大小展示
         meta2d.fitView();
       } catch (e) {
@@ -681,6 +688,7 @@ function onAddShape(event: DragEvent | MouseEvent, name: string) {
         width: 100,
         height: 20,
         name: "text",
+        visible: true,
       };
       break;
     case "line":
@@ -695,6 +703,7 @@ function onAddShape(event: DragEvent | MouseEvent, name: string) {
         name: "line",
         lineName: "line",
         type: 1,
+        visible: true,
       };
       break;
   }
@@ -735,7 +744,6 @@ function onSave(flag: boolean) {
   const data: any = meta2d.data();
   useCommonStoreWithOut().setTopology(meta2d);
   const commonStore = useCommonStore();
-  console.log(commonStore.topology.store.data);
   localStorage.setItem("meta2d", JSON.stringify(data));
   if (flag) {
     message.success("保存成功");
@@ -884,7 +892,7 @@ function onSearch() {
   padding: 0 12px;
   background: #fff;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-  border-bottom: 1px solid #dddddd;
+  border-bottom: 1px solid #ddd;
   z-index: 3;
 
   .head-center {
@@ -912,6 +920,9 @@ function onSearch() {
 
     span {
       font-size: 12px;
+      &:first-child {
+        height: 15px;
+      }
     }
 
     &:hover {
@@ -951,6 +962,12 @@ function onSearch() {
       fill: currentColor;
       overflow: hidden;
     }
+  }
+}
+
+.middle {
+  &.active {
+    color: #0c56eb;
   }
 }
 </style>
