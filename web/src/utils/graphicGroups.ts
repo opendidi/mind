@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-14 08:50:34
  * @LastEditors: htang
- * @LastEditTime: 2025-08-18 14:52:15
+ * @LastEditTime: 2025-08-20 12:12:58
  */
 import moment from 'moment'
 
@@ -157,8 +157,9 @@ export const GRAPHIC_GROUPS = [{
     },
   }, {
     name: '图片',
-    icon: 'l-image',
-    id: 15,
+    icon: 'image',
+    iconFamily: 't-icon',
+    id: 16,
     data: {
       width: 100,
       height: 100,
@@ -169,6 +170,7 @@ export const GRAPHIC_GROUPS = [{
   }, {
     name: '视频',
     icon: 'video-camera',
+    id: 17,
     data: {
       name: 'video',
       width: 100,

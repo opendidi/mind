@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2024-04-10 16:03:12
+ * @LastEditTime: 2025-08-21 09:33:00
 -->
 <template>
   <div class="app-page">
@@ -13,6 +13,20 @@
     <CommonModal ref="commonModal" :width="'90vw'" />
     <!-- 小窗展示 -->
     <IframeModal ref="iframeModal" />
+    <div class="fix flex flex-col">
+      <a-tooltip placement="left">
+        <template #title>
+          <span>适合窗口大小</span>
+        </template>
+        <t-icon name="fullscreen-1" class="mb-2" @click="onFitView(true, 0)" />
+      </a-tooltip>
+      <a-tooltip placement="left">
+        <template #title>
+          <span>短边适合窗口大小</span>
+        </template>
+        <t-icon name="fullscreen-exit-1" @click="onFitView(false, 20)" />
+      </a-tooltip>
+    </div>
   </div>
 </template>
 
@@ -77,6 +91,10 @@ watch(
   }
 );
 
+const onFitView = (fit: boolean, viewPadding: number) => {
+  meta2d.fitView(fit, viewPadding);
+};
+
 onMounted(() => {
   // 读取本地存储
   let data: any = localStorage.getItem("meta2d");
@@ -95,5 +113,19 @@ onMounted(() => {
 <style lang="less" scoped>
 .app-page {
   height: 100vh;
+  .fix {
+    position: fixed;
+    right: 20px;
+    bottom: 20px;
+    background: #fff;
+    z-index: 10;
+    .t-icon {
+      font-size: 26px;
+      cursor: pointer;
+      &:hover {
+        color: #1890ff;
+      }
+    }
+  }
 }
 </style>
