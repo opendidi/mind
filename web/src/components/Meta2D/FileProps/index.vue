@@ -248,22 +248,29 @@
         <div class="structure">
           <ul>
             <template v-for="(item, index) in data.pens" :key="index">
-              <li class="flex items-center justify-between p-3">
+              <li
+                class="flex items-center justify-between p-3"
+                @click="onActive(item)"
+              >
                 <span>{{ item.name }}</span>
-                <template v-if="item.visible">
-                  <t-icon
-                    name="browse"
-                    title="显示"
-                    @click="openPen(item, index, false)"
-                  />
-                </template>
-                <template v-else>
-                  <t-icon
-                    name="browse-off"
-                    title="隐藏"
-                    @click="openPen(item, index, true)"
-                  />
-                </template>
+                <div class="flex items-center" @click.stop>
+                  <t-icon name="delete" @click="onDeletePen(item)" />
+                  <a-divider type="vertical" />
+                  <template v-if="item.visible">
+                    <t-icon
+                      name="browse"
+                      title="显示"
+                      @click="openPen(item, index, false)"
+                    />
+                  </template>
+                  <template v-else>
+                    <t-icon
+                      name="browse-off"
+                      title="隐藏"
+                      @click="openPen(item, index, true)"
+                    />
+                  </template>
+                </div>
               </li>
             </template>
           </ul>
@@ -554,12 +561,30 @@ function onMqttDataFinish() {
   meta2d.connectMqtt(mqttForm);
 }
 
+const onActive = (params: any) => {
+  meta2d.store.active = [params];
+  meta2d.render();
+};
+
+const onDeletePen = (param: any) => {
+  meta2d.delete([param]);
+  meta2d.render();
+  onSave();
+};
+
 const openPen = (params: any, index: number, visible: any) => {
   data.pens[index]["visible"] = visible;
   meta2d.setValue({
     id: params.id,
     visible,
   });
+};
+
+const onSave = () => {
+  // 本地存储
+  const _: any = meta2d.data();
+  localStorage.setItem("meta2d", JSON.stringify(_));
+  Object.assign(data, { ..._ });
 };
 
 defineExpose({

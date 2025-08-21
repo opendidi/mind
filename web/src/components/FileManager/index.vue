@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-09-24 16:38:51
  * @LastEditors: htang
- * @LastEditTime: 2025-08-19 15:33:55
+ * @LastEditTime: 2025-08-21 09:15:21
 -->
 <template>
   <a-modal
@@ -213,12 +213,11 @@
                     :style="{ backgroundImage: formatBackgroundImage(item) }"
                   ></div>
                   <div class="title">{{ item.name }}</div>
-                  <div
-                    class="preview"
-                    @click.native.stop="onOperateFileOrDir(item)"
-                  >
-                    <span>预览</span>
-                  </div>
+                  <template v-if="item.type !== 'dir'">
+                    <div class="preview" @click.stop="onOperateFileOrDir(item)">
+                      <span>预览</span>
+                    </div>
+                  </template>
                   <div
                     class="icon"
                     :class="[item.lock == 1 ? 'ico-lock-on-face' : '']"

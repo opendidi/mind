@@ -50,11 +50,11 @@
                 <ul class="flex items-center flex-wrap">
                   <template v-for="(vo, i) in item.list" :key="i">
                     <li
-                      class="graphic"
+                      class="graphic flex justify-center items-center"
                       :draggable="true"
                       @dragstart="dragStart($event, vo)"
                       @click.prevent="dragStart($event, vo)"
-                      :title="vo.data.label"
+                      :title="vo.name"
                     >
                       <template v-if="vo.icon.indexOf('iconfont') !== -1">
                         <i :class="vo.icon"></i>
@@ -66,13 +66,6 @@
                           :title="vo.name"
                           :name="vo.icon"
                           style="font-size: 30px"
-                        />
-                      </template>
-                      <template v-else-if="vo.data.image">
-                        <img
-                          :src="vo.data.image"
-                          alt=""
-                          :title="vo.data.label"
                         />
                       </template>
                       <template v-else-if="vo.subClassName == '箭头'">
@@ -87,9 +80,12 @@
                           v-html="vo.svg"
                         ></div>
                       </template>
+                      <template v-else-if="vo.iconFamily == 't-icon'">
+                        <t-icon :name="vo.icon" />
+                      </template>
                       <template v-else>
                         <svg class="l-icon" aria-hidden="true">
-                          <use :xlink:href="'#' + vo.icon"></use>
+                          <use :xlink:href="`#${vo.icon}`"></use>
                         </svg>
                       </template>
                     </li>
@@ -391,6 +387,10 @@ heandleGraphicGroups();
             -webkit-line-clamp: 1;
             word-break: break-all;
             -webkit-box-orient: vertical;
+          }
+
+          .t-icon {
+            font-size: 26px;
           }
 
           .l-icon {
