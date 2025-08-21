@@ -53,6 +53,18 @@
                     clearable
                   />
                 </a-form-item>
+                <a-form-item label="背景图片">
+                  <a-button type="primary" @click="openFileManager()">
+                    获取背景图片
+                  </a-button>
+                </a-form-item>
+                <a-form-item label="背景图片地址">
+                  <a-input
+                    v-model:value="data.bkImage"
+                    @blur="onChangeData('bkImage', data.bkImage)"
+                    placeholder="请输入背景图片地址"
+                  />
+                </a-form-item>
                 <a-form-item label="背景网格">
                   <a-switch
                     v-model:checked="options.grid"
@@ -157,12 +169,9 @@
                   />
                 </a-form-item>
                 <a-form-item label="操作">
-                  <a-button
-                    type="primary"
-                    html-type="submit"
-                    style="width: 100%"
-                    >提交</a-button
-                  >
+                  <a-button type="primary" html-type="submit" class="w-full">
+                    提交
+                  </a-button>
                 </a-form-item>
               </a-form>
             </a-collapse-panel>
@@ -211,16 +220,15 @@
                       />
                     </a-form-item>
                     <a-form-item label="请求头">
-                      <a-button @click="openEditContainerSettingHeader(vo, idx)"
-                        >...</a-button
+                      <a-button
+                        @click="openEditContainerSettingHeader(vo, idx)"
                       >
+                        ...
+                      </a-button>
                     </a-form-item>
                   </a-card>
                 </template>
                 <a-button block @click="onAddHttpSetData">
-                  <template #icon>
-                    <plus-outlined />
-                  </template>
                   增加HTTP通信
                 </a-button>
               </a-form>
@@ -242,7 +250,32 @@
         </div>
       </a-tab-pane>
       <a-tab-pane :key="3" tab="布局">
-        <div class="mb-12"></div>
+        <div class="layout mb-12">
+          <a-collapse
+            v-model:activeKey="layoutKey"
+            size="small"
+            expand-icon-position="right"
+          >
+            <a-collapse-panel :key="1" :forceRender="true" header="布局">
+              <a-form label-align="left" :label-col="{ span: 7 }">
+                <a-form-item label="最大宽度">
+                  <a-input v-model:value="layout.width" placeholder="自适应" />
+                </a-form-item>
+                <a-form-item label="间距">
+                  <a-input-number
+                    v-model:value="layout.space"
+                    placeholder="自适应"
+                  />
+                </a-form-item>
+                <a-form-item>
+                  <a-button type="primary" block @click="onSetLayout()">
+                    开始排版
+                  </a-button>
+                </a-form-item>
+              </a-form>
+            </a-collapse-panel>
+          </a-collapse>
+        </div>
       </a-tab-pane>
       <a-tab-pane :key="4" tab="结构">
         <div class="structure">
@@ -283,6 +316,11 @@
       @oks="getEditTextValue"
       @close="closeEditContainer"
     />
+    <FileManager
+      ref="fileManagerRef"
+      :mode="'single'"
+      @oks="onFileManagerOks"
+    />
   </div>
 </template>
 
@@ -310,6 +348,7 @@ import {
 } from "vue";
 import { PlusOutlined, DeleteOutlined } from "@ant-design/icons-vue";
 import { message } from "ant-design-vue";
+import FileManager from "@/components/FileManager/index.vue";
 import EditContainer from "@/components/Meta2D/EditContainer/index.vue";
 import { useCommonStore, useCommonStoreWithOut } from "@/store/modules/common";
 import { Meta2d } from "@meta2d/core";
@@ -318,8 +357,11 @@ let { proxy } = getCurrentInstance();
 
 const commonStore = useCommonStore();
 
+const fileManagerRef = ref(null);
+
 let tags = ref<number>(1);
 let fileKey = ref<number>([1, 2, 3, 4]);
+let layoutKey = ref<number>([1]);
 let activeKey = ref<number>([1, 2, 3]);
 
 // 图纸数据
@@ -327,6 +369,13 @@ const data = reactive<any>({
   name: "",
   background: undefined,
   color: undefined,
+});
+
+const layout = ref({
+  // 宽度
+  width: "",
+  // 间距
+  space: 30,
 });
 
 let tabBarStyle = reactive({
@@ -426,6 +475,9 @@ function onChangeData(key: string, dataValue: string) {
   switch (key) {
     case "background":
       meta2d.setBackgroundColor(dataValue);
+      break;
+    case "bkImage":
+      meta2d.setBackgroundImage(dataValue);
       break;
     case "grid":
     case "gridColor":
@@ -552,6 +604,30 @@ function getEditTextValue(textValue: string) {
 function onDeleteHttpNode(data: any, idx: number) {
   https.value.splice(idx, 1);
 }
+
+const openFileManager = () => {
+  const fileManager: any = fileManagerRef.value;
+  fileManager.visible = true;
+  nextTick(() => {
+    fileManager.initMaterialFolder().then((res) => {
+      fileManager.selectedKeys = [res];
+      fileManager.queryParam.parent_id = res;
+      fileManager.init();
+    });
+  });
+};
+
+const onFileManagerOks = (params: any) => {
+  Object.assign(data, {
+    bkImage: params.url,
+  });
+  onChangeData("bkImage", params.url);
+};
+
+const onSetLayout = () => {
+  const { width, space }: any = layout.value;
+  meta2d.layout(undefined, width, space);
+};
 
 /**
  * https://doc.le5le.com/document/119620524#MQTT
