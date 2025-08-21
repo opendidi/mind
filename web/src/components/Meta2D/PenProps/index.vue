@@ -4,141 +4,62 @@
       <a-tab-pane :key="1" tab="图纸">
         <div class="mb-12">
           <a-form label-align="left" :label-col="{ span: 10 }" v-if="pen">
-            <a-collapse
-              v-model:activeKey="activeKey"
-              size="small"
-              expand-icon-position="right"
-            >
-              <a-collapse-panel
-                :key="1"
-                :forceRender="true"
-                header="位置和大小"
-              >
+            <a-collapse v-model:activeKey="activeKey" size="small" expand-icon-position="right">
+              <a-collapse-panel :key="1" :forceRender="true" header="位置和大小">
                 <a-form-item label="X">
-                  <a-input-number
-                    v-model:value="rect.x"
-                    @change="changeRect('x')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="rect.x" @change="changeRect('x')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="Y">
-                  <a-input-number
-                    v-model:value="rect.y"
-                    @change="changeRect('y')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="rect.y" @change="changeRect('y')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="宽">
-                  <a-input-number
-                    v-model:value="rect.width"
-                    @change="changeRect('width')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="rect.width" @change="changeRect('width')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="高">
-                  <a-input-number
-                    v-model:value="rect.height"
-                    @change="changeRect('height')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="rect.height" @change="changeRect('height')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="锁定宽高比">
-                  <a-switch
-                    v-model:checked="pen.ratio"
-                    @change="changeValue('ratio')"
-                  />
+                  <a-switch v-model:checked="pen.ratio" @change="changeValue('ratio')" />
                 </a-form-item>
                 <a-form-item label="圆角">
-                  <a-input-number
-                    v-model:value="pen.borderRadius"
-                    @change="changeValue('borderRadius')"
-                    style="width: 100%"
-                    placeholder="< 1 比例"
-                  />
+                  <a-input-number v-model:value="pen.borderRadius" @change="changeValue('borderRadius')" style="width: 100%" placeholder="< 1 比例" />
                 </a-form-item>
                 <a-form-item label="旋转">
-                  <a-input-number
-                    v-model:value="pen.rotate"
-                    @change="changeValue('rotate')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.rotate" @change="changeValue('rotate')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="内边距 - 上">
-                  <a-input-number
-                    v-model:value="pen.paddingTop"
-                    @change="changeValue('paddingTop')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.paddingTop" @change="changeValue('paddingTop')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="内边距 - 右">
-                  <a-input-number
-                    v-model:value="pen.paddingRight"
-                    @change="changeValue('paddingRight')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.paddingRight" @change="changeValue('paddingRight')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="内边距 - 下">
-                  <a-input-number
-                    v-model:value="pen.paddingBottom"
-                    @change="changeValue('paddingBottom')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.paddingBottom" @change="changeValue('paddingBottom')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="内边距 - 左">
-                  <a-input-number
-                    v-model:value="pen.paddingLeft"
-                    @change="changeValue('paddingLeft')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.paddingLeft" @change="changeValue('paddingLeft')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="进度">
-                  <a-input-number
-                    v-model:value="pen.progress"
-                    @change="changeValue('progress')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.progress" @change="changeValue('progress')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="进度颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.progressColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('progressColor')"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="pen.progressColor" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="changeValue('progressColor')" clearable />
                 </a-form-item>
                 <a-form-item label="垂直进度">
-                  <a-switch
-                    v-model:checked="pen.verticalProgress"
-                    @change="changeValue('verticalProgress')"
-                  />
+                  <a-switch v-model:checked="pen.verticalProgress" @change="changeValue('verticalProgress')" />
                 </a-form-item>
                 <a-form-item label="水平翻转">
-                  <a-switch
-                    v-model:checked="pen.flipX"
-                    @change="changeValue('flipX')"
-                  />
+                  <a-switch v-model:checked="pen.flipX" @change="changeValue('flipX')" />
                 </a-form-item>
                 <a-form-item label="垂直翻转">
-                  <a-switch
-                    v-model:checked="pen.flipY"
-                    @change="changeValue('flipY')"
-                  />
+                  <a-switch v-model:checked="pen.flipY" @change="changeValue('flipY')" />
                 </a-form-item>
                 <a-form-item label="输入框">
-                  <a-switch
-                    v-model:checked="pen.input"
-                    @change="changeValue('input')"
-                  />
+                  <a-switch v-model:checked="pen.input" @change="changeValue('input')" />
                 </a-form-item>
                 <template v-if="pen.showChild !== undefined">
                   <a-form-item label="状态">
-                    <a-select
-                      v-model:value="pen.showChild"
-                      @change="changeValue('showChild')"
-                    >
+                    <a-select v-model:value="pen.showChild" @change="changeValue('showChild')">
                       <a-select-option value="">无</a-select-option>
                       <template v-for="(vo, idx) in pen.children" :key="vo">
                         <a-select-option :value="idx">
@@ -151,10 +72,7 @@
               </a-collapse-panel>
               <a-collapse-panel :key="2" :forceRender="true" header="样式">
                 <a-form-item label="线条样式">
-                  <a-select
-                    v-model:value="pen.dash"
-                    @change="changeValue('dash')"
-                  >
+                  <a-select v-model:value="pen.dash" @change="changeValue('dash')">
                     <template v-for="(vo, idx) in configLineDash" :key="idx">
                       <a-select-option :value="idx">
                         <span v-html="vo.node"></span>
@@ -163,90 +81,33 @@
                   </a-select>
                 </a-form-item>
                 <a-form-item label="线条宽度">
-                  <a-input-number
-                    v-model:value="pen.lineWidth"
-                    :step="1"
-                    @change="changeValue('lineWidth')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.lineWidth" :step="1" @change="changeValue('lineWidth')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="边框宽度">
-                  <a-input-number
-                    v-model:value="pen.borderWidth"
-                    @change="changeValue('borderWidth')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.borderWidth" @change="changeValue('borderWidth')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="边框颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.borderColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('borderColor')"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="pen.borderColor" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="changeValue('borderColor')" clearable />
                 </a-form-item>
                 <a-form-item label="背景颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.background"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('background')"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="pen.background" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="changeValue('background')" clearable />
                 </a-form-item>
                 <a-form-item label="字体颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.color"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('color')"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="pen.color" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="changeValue('color')" clearable />
                 </a-form-item>
                 <a-form-item label="阴影颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.shadowColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('color')"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="pen.shadowColor" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="changeValue('color')" clearable />
                 </a-form-item>
                 <a-form-item label="圆角">
-                  <a-input-number
-                    :min="0"
-                    :max="1"
-                    :step="0.01"
-                    v-model:value="pen.borderRadius"
-                    @change="changeValue('borderRadius')"
-                    style="width: 100%"
-                  />
+                  <a-input-number :min="0" :max="1" :step="0.01" v-model:value="pen.borderRadius" @change="changeValue('borderRadius')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="不透明度">
                   <a-row style="align-items: center">
                     <a-col :span="20">
-                      <a-slider
-                        v-model:value="pen.globalAlpha"
-                        :min="0"
-                        :max="1"
-                        :step="0.01"
-                        @change="changeValue('globalAlpha')"
-                      />
+                      <a-slider v-model:value="pen.globalAlpha" :min="0" :max="1" :step="0.01" @change="changeValue('globalAlpha')" />
                     </a-col>
                     <a-col :span="4">
-                      <span
-                        class="ml-16"
-                        style="width: 50px; line-height: 30px"
-                      >
+                      <span class="ml-16" style="width: 50px; line-height: 30px">
                         {{ pen.globalAlpha }}
                       </span>
                     </a-col>
@@ -255,193 +116,100 @@
               </a-collapse-panel>
               <a-collapse-panel :key="3" :forceRender="true" header="文字">
                 <a-form-item label="字体名">
-                  <a-input
-                    v-model:value="pen.text"
-                    @change="changeValue('text')"
-                  />
+                  <a-input v-model:value="pen.text" @change="changeValue('text')" />
                 </a-form-item>
                 <a-form-item label="文字大小">
-                  <a-input-number
-                    v-model:value="pen.fontSize"
-                    placeholder="请输入文字大小"
-                    @change="changeValue('fontSize')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.fontSize" placeholder="请输入文字大小" @change="changeValue('fontSize')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="文字颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.textColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('textColor')"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="pen.textColor" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="changeValue('textColor')" clearable />
                 </a-form-item>
                 <a-form-item label="倾斜">
-                  <a-select
-                    v-model:value="pen.fontStyle"
-                    @change="changeValue('fontStyle')"
-                  >
+                  <a-select v-model:value="pen.fontStyle" @change="changeValue('fontStyle')">
                     <a-select-option value="normal">正常</a-select-option>
                     <a-select-option value="italic">倾斜</a-select-option>
                   </a-select>
                 </a-form-item>
                 <a-form-item label="加粗">
-                  <a-select
-                    v-model:value="pen.fontWeight"
-                    @change="changeValue('fontWeight')"
-                  >
+                  <a-select v-model:value="pen.fontWeight" @change="changeValue('fontWeight')">
                     <a-select-option value="normal">正常</a-select-option>
                     <a-select-option value="bold">加粗</a-select-option>
                   </a-select>
                 </a-form-item>
                 <a-form-item label="浮动文字颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.hoverTextColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('hoverTextColor')"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="pen.hoverTextColor" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="changeValue('hoverTextColor')" clearable />
                 </a-form-item>
                 <a-form-item label="背景颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.textBackground"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('textBackground')"
-                    clearable
-                  />
+                  <t-color-picker class="w-full" v-model="pen.textBackground" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="changeValue('textBackground')" clearable />
                 </a-form-item>
                 <a-form-item label="水平对齐">
-                  <a-select
-                    v-model:value="pen.textAlign"
-                    @change="changeValue('textAlign')"
-                  >
+                  <a-select v-model:value="pen.textAlign" @change="changeValue('textAlign')">
                     <a-select-option value="left">左对齐</a-select-option>
                     <a-select-option value="center">居中</a-select-option>
                     <a-select-option value="right">右对齐</a-select-option>
                   </a-select>
                 </a-form-item>
                 <a-form-item label="垂直对齐">
-                  <a-select
-                    v-model:value="pen.textBaseline"
-                    @change="changeValue('textBaseline')"
-                  >
+                  <a-select v-model:value="pen.textBaseline" @change="changeValue('textBaseline')">
                     <a-select-option value="top">顶部对齐</a-select-option>
                     <a-select-option value="middle">居中</a-select-option>
                     <a-select-option value="bottom">底部对齐</a-select-option>
                   </a-select>
                 </a-form-item>
                 <a-form-item label="行高">
-                  <a-input-number
-                    v-model:value="pen.lineHeight"
-                    @change="changeValue('lineHeight')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.lineHeight" @change="changeValue('lineHeight')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="换行">
-                  <a-select
-                    v-model:value="pen.whiteSpace"
-                    @change="changeValue('whiteSpace')"
-                  >
+                  <a-select v-model:value="pen.whiteSpace" @change="changeValue('whiteSpace')">
                     <a-select-option value="">默认</a-select-option>
                     <a-select-option value="nowrap">不换行</a-select-option>
                     <a-select-option value="pre-line">回车换行</a-select-option>
-                    <a-select-option value="break-all"
-                      >永远换行</a-select-option
-                    >
+                    <a-select-option value="break-all">永远换行</a-select-option>
                   </a-select>
                 </a-form-item>
               </a-collapse-panel>
               <a-collapse-panel :key="4" :forceRender="true" header="图片">
                 <a-form-item label="图片选择">
                   <div class="flex items-center">
-                    <img
-                      :src="pen.image"
-                      alt=""
-                      style="width: 50px; height: 50px"
-                    />
+                    <img :src="pen.image" alt="" style="width: 50px; height: 50px" />
                     <close-outlined title="清除图片" />
                   </div>
                 </a-form-item>
                 <a-form-item label="图片地址">
-                  <a-input
-                    v-model:value="pen.image"
-                    placeholder="请输入图片地址"
-                    @blur="changeValue('image')"
-                  />
+                  <a-input v-model:value="pen.image" placeholder="请输入图片地址" @blur="changeValue('image')" />
                 </a-form-item>
                 <a-form-item label="背景图片">
                   <div class="flex items-center">
-                    <img
-                      :src="pen.backgroundImage"
-                      alt=""
-                      style="width: 50px; height: 50px"
-                    />
+                    <img :src="pen.backgroundImage" alt="" style="width: 50px; height: 50px" />
                     <close-outlined title="清除背景图片" />
                   </div>
                 </a-form-item>
                 <a-form-item label="背景图片">
-                  <a-input
-                    v-model:value="pen.backgroundImage"
-                    placeholder="请输入背景图片"
-                    @blur="changeValue('backgroundImage')"
-                  />
+                  <a-input v-model:value="pen.backgroundImage" placeholder="请输入背景图片" @blur="changeValue('backgroundImage')" />
                 </a-form-item>
                 <a-form-item label="描绘图片">
                   <div class="flex items-center">
-                    <img
-                      :src="pen.strokeImage"
-                      alt=""
-                      style="width: 50px; height: 50px"
-                    />
+                    <img :src="pen.strokeImage" alt="" style="width: 50px; height: 50px" />
                     <close-outlined title="清除描绘图片" />
                   </div>
                 </a-form-item>
                 <a-form-item label="描绘图片地址">
-                  <a-input
-                    v-model:value="pen.strokeImage"
-                    placeholder="请输入描绘图片地址"
-                    @blur="changeValue('strokeImage')"
-                  />
+                  <a-input v-model:value="pen.strokeImage" placeholder="请输入描绘图片地址" @blur="changeValue('strokeImage')" />
                 </a-form-item>
                 <a-form-item label="宽度">
-                  <a-input-number
-                    v-model:value="pen.iconWidth"
-                    placeholder="自适应"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.iconWidth" placeholder="自适应" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="高度">
-                  <a-input-number
-                    v-model:value="pen.iconHeight"
-                    placeholder="自适应"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.iconHeight" placeholder="自适应" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="保持比例">
                   <a-switch v-model:checked="pen.imageRatio" />
                 </a-form-item>
                 <a-form-item label="水平偏移">
-                  <a-input-number
-                    v-model:value="pen.iconLeft"
-                    placeholder="请输入水平偏移"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.iconLeft" placeholder="请输入水平偏移" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="垂直偏移">
-                  <a-input-number
-                    v-model:value="pen.iconTop"
-                    placeholder="请输入垂直偏移"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.iconTop" placeholder="请输入垂直偏移" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="对齐方式">
                   <a-select v-model:value="pen.iconAlign" allowClear>
@@ -483,21 +251,11 @@
         <EventFunc ref="eventFunc" @event="getEventList" @oks="getEventList" />
       </a-tab-pane>
       <a-tab-pane :key="3" tab="动效">
-        <Animate
-          ref="animate"
-          :pen="pen"
-          @onChange="changeValue"
-          v-show="pen.name !== 'video'"
-        />
+        <Animate ref="animate" :pen="pen" @onChange="changeValue" v-show="pen.name !== 'video'" />
         <VideoComputed ref="videoComputed" v-if="pen.name == 'video'" />
       </a-tab-pane>
       <a-tab-pane :key="4" tab="数据">
-        <DataValueLayout
-          ref="dataValueLayout"
-          @oks="onRefreshData"
-          @getDataValue="getDataValue"
-          @deleteDataValue="deleteDataValue"
-        />
+        <DataValueLayout ref="dataValueLayout" @oks="onRefreshData" @getDataValue="getDataValue" @deleteDataValue="deleteDataValue" />
       </a-tab-pane>
     </a-tabs>
     <EditContainer ref="editContainer" @oks="getEditTextValue" />
@@ -550,12 +308,15 @@ import { useSelection } from "@/services/selections";
 import EventFunc from "@/components/Meta2D/Event/index.vue";
 import Animate from "@/components/Meta2D/Animate/index.vue";
 import VideoComputed from "@/components/Meta2D/Video/index.vue";
+import { useCommonStore } from "@/store/modules/common";
 
 import { CONFIG_LINE_DASH as configLineDash } from "@/utils/config-line";
 
 let { proxy } = getCurrentInstance();
 
 const { selections } = useSelection();
+
+const commonStore = useCommonStore();
 
 let tabBarStyle = ref({
   background: "#fff",
@@ -687,12 +448,14 @@ function changeValue(prop: string) {
       break;
   }
   meta2d.setValue(v, { render: true });
+  commonStore.setIsSave("0");
 }
 
 function changeRect(prop: string) {
   const v: any = { id: pen.value.id };
   v[prop] = rect.value[prop];
   meta2d.setValue(v, { render: true });
+  commonStore.setIsSave("0");
 }
 
 function top() {
@@ -716,12 +479,14 @@ function onRefreshData(data: any) {
   Object.assign(pen.value, {
     ...data,
   });
+  commonStore.setIsSave("0");
 }
 
 function getDataValue(k: any, v: any) {
   Object.assign(pen.value, {
     [k]: v,
   });
+  commonStore.setIsSave("0");
 }
 
 function deleteDataValue(k: string) {
@@ -779,6 +544,7 @@ function onEditData(data: any, idx: any) {
  */
 function getEventList(event: any) {
   pen.value["events"] = event;
+  commonStore.setIsSave("0");
 }
 
 /**
@@ -804,6 +570,7 @@ function getEditTextValue(textValue: string) {
     }
   });
   dataIndex = -1;
+  commonStore.setIsSave("0");
 }
 
 onMounted(() => {
@@ -820,10 +587,12 @@ onUnmounted(() => {
   .ant-form {
     .ant-form-item {
       margin-bottom: 5px;
+
       img {
         margin: 0 12px 0 0;
         cursor: pointer;
       }
+
       .anticon-close {
         font-size: 14px;
         cursor: pointer;
