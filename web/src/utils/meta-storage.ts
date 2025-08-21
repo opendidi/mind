@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-11-05 00:39:23
  * @LastEditors: htang
- * @LastEditTime: 2024-01-19 17:44:30
+ * @LastEditTime: 2025-08-21 20:28:38
  */
 const KEY: string = 'meta2d';
 const ORIGINAL_KEY: string = 'original_meta2d';
@@ -62,4 +62,16 @@ export function setGraphicGroups(data: any) {
 
 export function removeGraphicGroups() {
   return localStorage.removeItem(GRAPHIC_KEY)
+}
+
+export function setIsSave(isSave: any) {
+  return localStorage.setItem('isSave', isSave)
+}
+
+export function getIsSave() {
+  return localStorage.getItem('isSave')
+}
+
+export function removeIsSave() {
+  return localStorage.removeItem('isSave')
 }

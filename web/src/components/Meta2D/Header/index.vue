@@ -51,10 +51,12 @@
           </a-menu>
         </template>
       </a-dropdown>
-      <a class="flex items-center flex-col" @click="onSave(true)">
-        <t-icon name="save" />
-        <span>保存</span>
-      </a>
+      <a-badge :dot="dot">
+        <a class="flex items-center flex-col" @click="onSave(true)">
+          <t-icon name="save" />
+          <span>保存</span>
+        </a>
+      </a-badge>
     </div>
     <div class="head-center flex items-center">
       <a
@@ -346,7 +348,15 @@ export default defineComponent({
 </script>
 
 <script lang="ts" setup>
-import { onMounted, reactive, ref, getCurrentInstance, nextTick } from "vue";
+import {
+  onMounted,
+  reactive,
+  ref,
+  getCurrentInstance,
+  computed,
+  watch,
+  nextTick,
+} from "vue";
 import { useRouter } from "vue-router";
 import { Pen, PenType, deepClone } from "@meta2d/core";
 import FileSaver from "file-saver";
@@ -367,6 +377,16 @@ let data = ref({});
 let originalData = ref({});
 
 let isOnDrawLine = ref(false);
+
+let dot = ref(false);
+
+watch(
+  () => useCommonStore().isSave,
+  (v) => {
+    v == "1" ? (dot.value = false) : (dot.value = true);
+  },
+  { immediate: true }
+);
 
 let isDrawingPencil = ref<boolean>(false);
 
@@ -746,6 +766,7 @@ function onSave(flag: boolean) {
   const commonStore = useCommonStore();
   localStorage.setItem("meta2d", JSON.stringify(data));
   if (flag) {
+    commonStore.setIsSave("1");
     message.success("保存成功");
   }
 }

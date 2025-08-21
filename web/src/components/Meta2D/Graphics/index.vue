@@ -188,14 +188,14 @@ watch(
 );
 
 const dragStart = (e: any, elem: any) => {
+  let commonStore = useCommonStore();
   if (!elem) {
     return;
   }
   e.stopPropagation();
-
   // 拖拽事件
   if (e instanceof DragEvent) {
-    // 设置拖拽数据
+    commonStore.setIsSave("0");
     e.dataTransfer?.setData("Meta2d", JSON.stringify(elem.data));
   } else {
     // 支持单击添加图元。平板模式
