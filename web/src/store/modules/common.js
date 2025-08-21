@@ -4,17 +4,18 @@
  * @Author: htang
  * @Date: 2023-10-10 10:47:09
  * @LastEditors: htang
- * @LastEditTime: 2023-10-12 20:51:00
+ * @LastEditTime: 2025-08-21 20:17:43
  */
 import { defineStore } from 'pinia';
 import { store } from '@/store';
-import { getTopology } from '@/utils/meta-storage'
+import { getTopology, getIsSave, setIsSave } from '@/utils/meta-storage'
 import { getGraphicGroups, setGraphicGroups } from '@/utils/graphicGroups'
 
 export const useCommonStore = defineStore('common', {
   state: () => ({
     topology: getTopology() || {},
     graphics: getGraphicGroups() || {},
+    isSave: getIsSave() || false,
   }),
   getters: {
     getTopology(state) {
@@ -22,6 +23,9 @@ export const useCommonStore = defineStore('common', {
     },
     getGraphicGroups(state) {
       return state.graphics || {};
+    },
+    getIsSave(state) {
+      return state.isSave || false;
     }
   },
   actions: {
@@ -31,6 +35,10 @@ export const useCommonStore = defineStore('common', {
     setGraphicGroups(data) {
       this.graphics = data;
       setGraphicGroups(JSON.stringify(data));
+    },
+    setIsSave(data) {
+      this.isSave = data;
+      setIsSave(data);
     }
   }
 })
