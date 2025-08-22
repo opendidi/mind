@@ -1,14 +1,11 @@
 # -*- coding: UTF-8 -*-
 
 from flask import Blueprint, Flask, render_template, request, Response, jsonify
-from app.util.file import build_tree
 from app.package.module.blueprint_mysql import BlueprintMysqlHandler
-from app.util import contains_special_chars, generate_random_string
+from app.util import contains_special_chars
 from app.plugin.minio.app.controller import MinioUtil
 from app.util.protocol_handler import ProtocolBuilder
 from app.config.protocol import StatusCode
-import app.util.file as PanoFile
-import json
 
 blueprint_api = Blueprint("blueprint", __name__)
 
@@ -23,6 +20,15 @@ def blueprint_lists():
     'keyword': keyword,
   })
   return ProtocolBuilder.build_response(data)
+
+# @blueprint_api.route('/upload', methods=['POST'])
+# def upload():
+#   try:
+#     if request.content_type.startswith('multipart/form-data'):
+#       data = request.form.to_dict()
+#       print(data)
+#   except Exception as e:
+#     return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, str(e))
 
 @blueprint_api.route("/find", methods=['GET'])
 def find():
