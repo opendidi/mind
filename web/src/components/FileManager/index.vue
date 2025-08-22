@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-09-24 16:38:51
  * @LastEditors: htang
- * @LastEditTime: 2025-08-21 15:09:38
+ * @LastEditTime: 2025-08-22 16:37:21
 -->
 <template>
   <a-modal
@@ -192,13 +192,14 @@
             >
               <template v-for="(item, idx) in dataSource" :key="idx">
                 <div
-                  class="file-item fi-dir"
+                  class="file-item"
                   :class="[
                     actionIndex == idx || selectedRowKeys.includes(item.id)
                       ? 'selected'
                       : '',
                   ]"
                   @click="onSelectFile(item, idx)"
+                  @dblclick="onOperateFileOrDir(item)"
                 >
                   <template v-if="mode == 'multiple'">
                     <div

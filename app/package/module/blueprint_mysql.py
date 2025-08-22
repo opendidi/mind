@@ -4,7 +4,7 @@ version: 1.0.0
 Author: htang
 Date: 2025-08-22 14:03:29
 LastEditors: htang
-LastEditTime: 2025-08-22 15:08:29
+LastEditTime: 2025-08-22 16:29:34
 '''
 # -*- coding: UTF-8 -*-
 
@@ -35,11 +35,18 @@ class BlueprintMysqlHandler:
       offset = (int(page_num) - 1) * int(page_size)
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
-        sql = "SELECT id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https FROM blueprint WHERE del = 0 "
+        sql = "SELECT id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail, created_at FROM blueprint WHERE del = 0 "
         sql += "LIMIT {} OFFSET {}".format(page_size, offset)
-        print(sql)
         cursor.execute(sql, tuple(data))
         results = cursor.fetchall()
+
+        # 格式化时间
+        for row in results:
+          # 检查 created_at 的类型
+          if isinstance(row['created_at'], str):
+            row['created_at'] = datetime.strptime(row['created_at'], '%a, %d %b %Y %H:%M:%S %Z').strftime('%Y-%m-%d %H:%M:%S')
+          elif isinstance(row['created_at'], datetime):
+            row['created_at'] = row['created_at'].strftime('%Y-%m-%d %H:%M:%S')
 
         params_count = []
 
@@ -72,7 +79,7 @@ class BlueprintMysqlHandler:
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
-        sql = ''' select id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https from blueprint where id = %s and del = 0 '''
+        sql = ''' select id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail from blueprint where id = %s and del = 0 '''
         cursor.execute(sql, (id,))
         result = cursor.fetchone()
         if result is None:
@@ -102,15 +109,16 @@ class BlueprintMysqlHandler:
     initJs = data['initJs']
     pens = data['pens']
     https = data['https']
+    thumbnail = data['thumbnail']
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
-        sql = "INSERT INTO blueprint (id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(sql, (id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https))
+        sql = "INSERT INTO blueprint (id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(sql, (id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail))
         connect.commit()
         if cursor.rowcount == 0:
           return False, "数据增加失败"
-        return True
+        return True, id
     except Exception as e:
       # 发生错误时打印错误信息
       print(f"发生错误：{e}")

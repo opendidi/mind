@@ -36,11 +36,11 @@ CREATE TABLE `blueprint` (
   `initJs` text COMMENT '初始化JS',
   `pens` text COMMENT '画笔数据',
   `https` text COMMENT 'https数组数据',
+  `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `del` int(11) DEFAULT '0' COMMENT '逻辑删除',
+  `thumbnail` varchar(255) DEFAULT NULL COMMENT '缩略图',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-
-/*Data for the table `blueprint` */
 
 /*Table structure for table `categories` */
 
@@ -56,8 +56,6 @@ CREATE TABLE `categories` (
   `status` tinyint(1) NOT NULL DEFAULT '1',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-/*Data for the table `categories` */
 
 /*Table structure for table `material` */
 
@@ -83,8 +81,6 @@ CREATE TABLE `material` (
   `user_id` varchar(33) DEFAULT NULL COMMENT '用户ID',
   PRIMARY KEY (`id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
-
-/*Data for the table `material` */
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

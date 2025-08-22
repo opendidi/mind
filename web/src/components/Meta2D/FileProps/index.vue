@@ -620,7 +620,6 @@ const openFileManager = () => {
       fileManager.selectedKeys = [res];
       fileManager.queryParam.parent_id = res;
       fileManager.init();
-      commonStore.setIsSave("0");
     });
   });
 };

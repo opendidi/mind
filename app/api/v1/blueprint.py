@@ -41,7 +41,7 @@ def add():
         return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, '名称不能包含特殊字符')
       if data['name'] == None or data['name'] == '':
         return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, '名称不能为空')
-      ok = BlueprintMysqlHandler.add({
+      ok, id = BlueprintMysqlHandler.add({
         'name': data['name'],
         'color': data['color'],
         'penBackground': data['penBackground'],
@@ -56,9 +56,10 @@ def add():
         'initJs': data['initJs'],
         'pens': data['pens'],
         'https': data['https'],
+        'thumbnail': data['thumbnail'],
       })
       if ok:
-        return ProtocolBuilder.build_response({}, StatusCode.SUCCESS, '添加成功')
+        return ProtocolBuilder.build_response({'id': id}, StatusCode.SUCCESS, '添加成功')
       else:
         return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, '添加失败')
   except Exception as e:

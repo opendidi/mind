@@ -11,20 +11,29 @@
         </a>
         <template #overlay>
           <a-menu>
-            <!-- <a-menu-item @click="newFile">
-              <a>新建文件</a>
-            </a-menu-item> -->
-            <!-- <a-menu-item @click="openFile" divider="true">
-              <a>打开文件</a>
-            </a-menu-item> -->
             <a-menu-item divider="true">
-              <a @click="downloadJson">下载JSON文件</a>
+              <a class="flex items-center" @click="createBluePrint">
+                <t-icon name="numbers-1-1" />
+                <span>新建图纸</span>
+              </a>
             </a-menu-item>
             <a-menu-item>
-              <a @click="downloadPng">下载为PNG</a>
+              <a class="flex items-center" @click="downloadJson">
+                <t-icon name="numbers-2" />
+                <span>下载JSON文件</span>
+              </a>
             </a-menu-item>
             <a-menu-item>
-              <a @click="downloadSvg">下载为SVG</a>
+              <a class="flex items-center" @click="downloadPng">
+                <t-icon name="numbers-3" />
+                <span>下载为PNG</span>
+              </a>
+            </a-menu-item>
+            <a-menu-item>
+              <a class="flex items-center" @click="downloadSvg">
+                <t-icon name="numbers-4" />
+                <span>下载为SVG</span>
+              </a>
             </a-menu-item>
           </a-menu>
         </template>
@@ -41,22 +50,35 @@
           <a-menu>
             <a-menu-item>
               <a @click="onToggleAnchorMode">
-                <div class="flex">增加/删除锚点</div>
+                <div class="flex items-center">
+                  <t-icon name="numbers-1-1" />
+                  <span>增加/删除锚点</span>
+                </div>
               </a>
             </a-menu-item>
             <a-menu-item>
               <a @click="onAddAnchorHand">
-                <div class="flex">添加手柄</div>
+                <div class="flex items-center">
+                  <t-icon name="numbers-2" />
+                  <span>添加手柄</span>
+                </div>
               </a>
             </a-menu-item>
             <a-menu-item>
               <a @click="onRemoveAnchorHand">
-                <div class="flex">删除手柄</div>
+                <div class="flex items-center">
+                  <t-icon name="numbers-3" />
+                  <span>删除手柄</span>
+                </div>
               </a>
             </a-menu-item>
           </a-menu>
         </template>
       </a-dropdown>
+      <a class="flex items-center flex-col" @click="openBluePrintList()">
+        <t-icon name="view-list" />
+        <span>列表</span>
+      </a>
       <a-badge :dot="dot">
         <a class="flex items-center flex-col" @click="onSave(true)">
           <t-icon name="save" />
@@ -346,6 +368,7 @@
     </div>
     <ShareModal ref="shareModal" />
     <FileManager ref="fileManager" :mode="'multiple'" />
+    <BluePrintModal ref="bluePrintModalRef" />
   </div>
 </template>
 
@@ -375,7 +398,7 @@ import { useRouter } from "vue-router";
 import { Pen, PenType, deepClone } from "@meta2d/core";
 import FileSaver from "file-saver";
 import { message } from "ant-design-vue";
-import { CaretDownOutlined } from "@ant-design/icons-vue";
+import BluePrintModal from "@/components/blueprint/index.vue";
 import ShareModal from "../Share/index.vue";
 import { Icon } from "tdesign-vue-next";
 import { useCommonStore, useCommonStoreWithOut } from "@/store/modules/common";
@@ -384,6 +407,8 @@ import FileManager from "@/components/FileManager/index.vue";
 let { proxy } = getCurrentInstance();
 
 const router = useRouter();
+
+const bluePrintModalRef = ref(null);
 
 let data = ref({});
 
@@ -602,6 +627,8 @@ function openFile() {
   };
   input.click();
 }
+
+const createBluePrint = () => {};
 
 const downloadJson = () => {
   const data: any = meta2d.data();
@@ -921,6 +948,10 @@ function openFileManager() {
     });
   });
 }
+
+const openBluePrintList = () => {
+  bluePrintModalRef.value.visible = true;
+};
 
 /**
  * 分享

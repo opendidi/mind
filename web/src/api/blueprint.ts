@@ -4,16 +4,16 @@
  * @Author: htang
  * @Date: 2025-08-22 14:57:15
  * @LastEditors: htang
- * @LastEditTime: 2025-08-22 15:06:09
+ * @LastEditTime: 2025-08-22 16:16:17
  */
 import http from '@/utils/request';
 
 const API = {
-  lists: '/material/lists',
-  find: '/material/find',
-  add: '/material/add',
-  modify: '/material/modify',
-  delete: '/material/delete',
+  lists: '/blueprint/lists',
+  find: '/blueprint/find',
+  add: '/blueprint/add',
+  modify: '/blueprint/modify',
+  delete: '/blueprint/delete',
 }
 
 /**
@@ -24,7 +24,7 @@ const API = {
 export function apiBlueprintList(params: any) {
   return new Promise(async (resolve, reject) => {
     await http.get(API.lists, { params }).then((res: any) => {
-      resolve(res);
+      resolve(res.data);
     })
   })
 }
