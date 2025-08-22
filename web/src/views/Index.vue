@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2025-08-19 09:51:05
+ * @LastEditTime: 2025-08-22 10:38:47
 -->
 <template>
   <div class="app-page">
@@ -94,6 +94,7 @@ function save() {
     propsData.value = commonStore.topology.store.data;
     localStorage.setItem("meta2d", JSON.stringify(data));
     timer = undefined;
+    commonStore.setIsSave("0");
   }, 500);
 }
 
@@ -297,7 +298,7 @@ const handleMenuClick: MenuProps["onClick"] = (e: any) => {
       case "top":
         meta2d.top(pen);
         break;
-      // 置顶
+      // 置底
       case "bottom":
         meta2d.bottom(pen);
         break;

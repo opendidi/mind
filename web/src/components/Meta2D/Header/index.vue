@@ -3,7 +3,10 @@
     <div class="head-left flex items-center">
       <a-dropdown>
         <a class="ant-dropdown-link flex items-center flex-col">
-          <t-icon name="file" />
+          <div class="flex items-center">
+            <t-icon name="folder" />
+            <t-icon name="chevron-down-s" />
+          </div>
           <span>文件</span>
         </a>
         <template #overlay>
@@ -28,7 +31,10 @@
       </a-dropdown>
       <a-dropdown>
         <a class="ant-dropdown-link flex items-center flex-col">
-          <t-icon name="edit-1" />
+          <div class="flex items-center">
+            <t-icon name="edit-1" />
+            <t-icon name="chevron-down-s" />
+          </div>
           <span>编辑</span>
         </a>
         <template #overlay>
@@ -82,6 +88,14 @@
       >
         <t-icon name="search" />
         <span>放大镜</span>
+      </a>
+      <a
+        class="flex items-center flex-col"
+        :class="[visibleMap == true ? 'active' : '']"
+        @click="onOpenMap()"
+      >
+        <t-icon name="location" />
+        <span>鹰眼地图</span>
       </a>
       <a class="flex items-center flex-col" @click="onUndo">
         <t-icon name="rollback" />
@@ -399,6 +413,8 @@ let isDisableAnchor = ref<boolean>(false);
 // 是否开启放大镜
 let isShowMagnifier = ref<boolean>(false);
 
+const visibleMap = ref<boolean>(false);
+
 const isDrawLine = ref<boolean>(false);
 
 const scale = ref(0);
@@ -696,6 +712,15 @@ function onAll() {
 function onDelete() {
   meta2d.delete();
 }
+
+const onOpenMap = () => {
+  visibleMap.value = visibleMap.value ? false : true;
+  if (visibleMap.value) {
+    meta2d.showMap();
+  } else {
+    meta2d.hideMap();
+  }
+};
 
 function onAddShape(event: DragEvent | MouseEvent, name: string) {
   event.stopPropagation();

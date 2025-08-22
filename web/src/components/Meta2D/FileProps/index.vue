@@ -3,50 +3,117 @@
     <a-tabs v-model:activeKey="tags" :tabBarStyle="tabBarStyle">
       <a-tab-pane :key="1" tab="图纸">
         <div class="mb-12">
-          <a-collapse v-model:activeKey="fileKey" size="small" expand-icon-position="right">
+          <a-collapse
+            v-model:activeKey="fileKey"
+            size="small"
+            expand-icon-position="right"
+          >
             <a-collapse-panel :key="1" :forceRender="true" header="文件">
               <a-form label-align="left" :label-col="{ span: 7 }">
                 <a-form-item label="文件名称">
-                  <a-input v-model:value="data.name" @change="onChangeData('name', data.name)" />
+                  <a-input
+                    v-model:value="data.name"
+                    @change="onChangeData('name', data.name)"
+                  />
                 </a-form-item>
               </a-form>
             </a-collapse-panel>
             <a-collapse-panel :key="2" :forceRender="true" header="画布">
               <a-form label-align="left" :label-col="{ span: 10 }">
                 <a-form-item label="默认颜色">
-                  <t-color-picker class="w-full" v-model="options.color" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="onChangeOptions('color', options.color)" clearable />
+                  <t-color-picker
+                    class="w-full"
+                    v-model="options.color"
+                    :show-primary-color-preview="false"
+                    format="CSS"
+                    :color-modes="['monochrome']"
+                    @change="onChangeOptions('color', options.color)"
+                    clearable
+                  />
                 </a-form-item>
                 <a-form-item label="画笔填充颜色">
-                  <t-color-picker class="w-full" v-model="data.penBackground" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="onChangeData('penBackground', data.penBackground)" clearable />
+                  <t-color-picker
+                    class="w-full"
+                    v-model="data.penBackground"
+                    :show-primary-color-preview="false"
+                    format="CSS"
+                    :color-modes="['monochrome']"
+                    @change="onChangeData('penBackground', data.penBackground)"
+                    clearable
+                  />
                 </a-form-item>
                 <a-form-item label="背景颜色" name="background">
-                  <t-color-picker class="w-full" v-model="data.background" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="onChangeData('background', data.background)" clearable />
+                  <t-color-picker
+                    class="w-full"
+                    v-model="data.background"
+                    :show-primary-color-preview="false"
+                    format="CSS"
+                    :color-modes="['monochrome']"
+                    @change="onChangeData('background', data.background)"
+                    clearable
+                  />
                 </a-form-item>
                 <a-form-item label="背景图片">
-                  <a-button type="primary" @click="openFileManager()">
+                  <a-button type="primary" block @click="openFileManager()">
                     获取背景图片
                   </a-button>
                 </a-form-item>
                 <a-form-item label="背景图片地址">
-                  <a-input v-model:value="data.bkImage" @blur="onChangeData('bkImage', data.bkImage)" placeholder="请输入背景图片地址" />
+                  <a-input
+                    v-model:value="data.bkImage"
+                    @blur="onChangeData('bkImage', data.bkImage)"
+                    placeholder="请输入背景图片地址"
+                  />
                 </a-form-item>
                 <a-form-item label="背景网格">
-                  <a-switch v-model:checked="options.grid" @change="onChangeData('grid', options.grid)" />
+                  <a-switch
+                    v-model:checked="options.grid"
+                    @change="onChangeData('grid', options.grid)"
+                  />
                 </a-form-item>
                 <a-form-item label="网格颜色">
-                  <t-color-picker class="w-full" v-model="options.gridColor" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="onChangeData('gridColor', options.gridColor)" clearable />
+                  <t-color-picker
+                    class="w-full"
+                    v-model="options.gridColor"
+                    :show-primary-color-preview="false"
+                    format="CSS"
+                    :color-modes="['monochrome']"
+                    @change="onChangeData('gridColor', options.gridColor)"
+                    clearable
+                  />
                 </a-form-item>
                 <a-form-item label="网格大小">
-                  <a-input-number v-model:value="options.gridSize" @change="onChangeData('gridSize', options.gridSize)" style="width: 100%" :min="0" />
+                  <a-input-number
+                    v-model:value="options.gridSize"
+                    @change="onChangeData('gridSize', options.gridSize)"
+                    style="width: 100%"
+                    :min="0"
+                  />
                 </a-form-item>
                 <a-form-item label="网格角度">
-                  <a-input-number v-model:value="options.gridRotate" @change="onChangeData('gridRotate', options.gridRotate)" style="width: 100%" :min="0" />
+                  <a-input-number
+                    v-model:value="options.gridRotate"
+                    @change="onChangeData('gridRotate', options.gridRotate)"
+                    style="width: 100%"
+                    :min="0"
+                  />
                 </a-form-item>
                 <a-form-item label="标尺">
-                  <a-switch v-model:checked="options.rule" @change="onChangeData('rule', options.rule)" />
+                  <a-switch
+                    v-model:checked="options.rule"
+                    @change="onChangeData('rule', options.rule)"
+                  />
                 </a-form-item>
                 <a-form-item label="标尺颜色">
-                  <t-color-picker class="w-full" v-model="options.ruleColor" :show-primary-color-preview="false" format="CSS" :color-modes="['monochrome']" @change="onChangeData('ruleColor', options.ruleColor)" clearable />
+                  <t-color-picker
+                    class="w-full"
+                    v-model="options.ruleColor"
+                    :show-primary-color-preview="false"
+                    format="CSS"
+                    :color-modes="['monochrome']"
+                    @change="onChangeData('ruleColor', options.ruleColor)"
+                    clearable
+                  />
                 </a-form-item>
                 <a-form-item label="初始化JS">
                   <a-button @click="openEditContainer">...</a-button>
@@ -58,12 +125,26 @@
       </a-tab-pane>
       <a-tab-pane :key="2" tab="通信">
         <div class="mb-12">
-          <a-collapse v-model:activeKey="activeKey" size="small" expand-icon-position="right">
+          <a-collapse
+            v-model:activeKey="activeKey"
+            size="small"
+            expand-icon-position="right"
+          >
             <a-collapse-panel :key="1" :forceRender="true" header="WebSocket">
-              <a-input v-model:value="data.websocket" placeholder="请输入websocket地址" @blur="getWebSocketData" />
+              <a-input
+                v-model:value="data.websocket"
+                placeholder="请输入websocket地址"
+                @blur="getWebSocketData"
+              />
             </a-collapse-panel>
             <a-collapse-panel :key="2" :forceRender="true" header="MQTT">
-              <a-form :model="mqttForm" :rules="mqttRules" label-align="left" :label-col="{ span: 10 }" @finish="onMqttDataFinish">
+              <a-form
+                :model="mqttForm"
+                :rules="mqttRules"
+                label-align="left"
+                :label-col="{ span: 10 }"
+                @finish="onMqttDataFinish"
+              >
                 <a-form-item label="URL地址" name="mqtt">
                   <a-input v-model:value="mqttForm.mqtt" />
                 </a-form-item>
@@ -71,7 +152,9 @@
                   <a-input v-model:value="mqttForm.mqttOptions.clientId" />
                 </a-form-item>
                 <a-form-item label="关闭自动生成">
-                  <a-switch v-model:checked="mqttForm.mqttOptions.customClientId" />
+                  <a-switch
+                    v-model:checked="mqttForm.mqttOptions.customClientId"
+                  />
                 </a-form-item>
                 <a-form-item label="用户名">
                   <a-input v-model:value="mqttForm.mqttOptions.username" />
@@ -80,7 +163,10 @@
                   <a-input v-model:value="mqttForm.mqttOptions.password" />
                 </a-form-item>
                 <a-form-item label="Topics" name="mqttTopics">
-                  <a-input v-model:value="mqttForm.mqttTopics" placeholder="多个topic以英文逗号“,”分隔" />
+                  <a-input
+                    v-model:value="mqttForm.mqttTopics"
+                    placeholder="多个topic以英文逗号“,”分隔"
+                  />
                 </a-form-item>
                 <a-form-item label="操作">
                   <a-button type="primary" html-type="submit" class="w-full">
@@ -92,26 +178,51 @@
             <a-collapse-panel :key="3" :forceRender="true" header="HTTP通信">
               <a-form label-align="left" :label-col="{ span: 7 }">
                 <template v-for="(vo, idx) in https" :key="idx">
-                  <a-card :title="'http' + (idx + 1)" size="small" style="width: 100%`" :bordered="false">
+                  <a-card
+                    :title="'http' + (idx + 1)"
+                    size="small"
+                    style="width: 100%`"
+                    :bordered="false"
+                  >
                     <template #extra>
                       <template v-if="idx !== 0">
                         <a @click="onDeleteHttpNode(vo, idx)">删除</a>
                       </template>
                     </template>
-                    <a-form-item label="URL地址" name="gridSize" @change="setHttpData(vo, idx)">
-                      <a-input v-model:value="vo.http" @blur="onChangeOptions" style="width: 100%" />
+                    <a-form-item
+                      label="URL地址"
+                      name="gridSize"
+                      @change="setHttpData(vo, idx)"
+                    >
+                      <a-input
+                        v-model:value="vo.http"
+                        @blur="onChangeOptions"
+                        style="width: 100%"
+                      />
                     </a-form-item>
                     <a-form-item label="请求方式" name="name">
-                      <a-select v-model:value="vo.method" placeholder="默认GET" auto-width clearable @change="setHttpData(vo, idx)">
+                      <a-select
+                        v-model:value="vo.method"
+                        placeholder="默认GET"
+                        auto-width
+                        clearable
+                        @change="setHttpData(vo, idx)"
+                      >
                         <a-select-option value="GET">GET</a-select-option>
                         <a-select-option value="POST">POST</a-select-option>
                       </a-select>
                     </a-form-item>
                     <a-form-item label="时间间隔">
-                      <a-input-number v-model:value="vo.httpTimeInterval" @blur="setHttpData(vo, idx)" style="width: 100%" />
+                      <a-input-number
+                        v-model:value="vo.httpTimeInterval"
+                        @blur="setHttpData(vo, idx)"
+                        style="width: 100%"
+                      />
                     </a-form-item>
                     <a-form-item label="请求头">
-                      <a-button @click="openEditContainerSettingHeader(vo, idx)">
+                      <a-button
+                        @click="openEditContainerSettingHeader(vo, idx)"
+                      >
                         ...
                       </a-button>
                     </a-form-item>
@@ -122,10 +233,16 @@
                 </a-button>
               </a-form>
             </a-collapse-panel>
-            <a-collapse-panel :key="4" :forceRender="true" header="消息处理JavaScript">
+            <a-collapse-panel
+              :key="4"
+              :forceRender="true"
+              header="消息处理JavaScript"
+            >
               <a-form label-align="left" :label-col="{ span: 8 }">
                 <a-form-item label="消息处理">
-                  <a-button @click="onOpenEditContainerSocketCbJs">...</a-button>
+                  <a-button @click="onOpenEditContainerSocketCbJs"
+                    >...</a-button
+                  >
                 </a-form-item>
               </a-form>
             </a-collapse-panel>
@@ -134,14 +251,21 @@
       </a-tab-pane>
       <a-tab-pane :key="3" tab="布局">
         <div class="layout mb-12">
-          <a-collapse v-model:activeKey="layoutKey" size="small" expand-icon-position="right">
+          <a-collapse
+            v-model:activeKey="layoutKey"
+            size="small"
+            expand-icon-position="right"
+          >
             <a-collapse-panel :key="1" :forceRender="true" header="布局">
               <a-form label-align="left" :label-col="{ span: 7 }">
                 <a-form-item label="最大宽度">
                   <a-input v-model:value="layout.width" placeholder="自适应" />
                 </a-form-item>
                 <a-form-item label="间距">
-                  <a-input-number v-model:value="layout.space" placeholder="自适应" />
+                  <a-input-number
+                    v-model:value="layout.space"
+                    placeholder="自适应"
+                  />
                 </a-form-item>
                 <a-form-item>
                   <a-button type="primary" block @click="onSetLayout()">
@@ -157,16 +281,27 @@
         <div class="structure">
           <ul>
             <template v-for="(item, index) in data.pens" :key="index">
-              <li class="flex items-center justify-between p-3" @click="onActive(item)">
+              <li
+                class="flex items-center justify-between p-3"
+                @click="onActive(item)"
+              >
                 <span>{{ item.name }}</span>
                 <div class="flex items-center" @click.stop>
                   <t-icon name="delete" @click="onDeletePen(item)" />
                   <a-divider type="vertical" />
                   <template v-if="item.visible">
-                    <t-icon name="browse" title="显示" @click="openPen(item, index, false)" />
+                    <t-icon
+                      name="browse"
+                      title="显示"
+                      @click="openPen(item, index, false)"
+                    />
                   </template>
                   <template v-else>
-                    <t-icon name="browse-off" title="隐藏" @click="openPen(item, index, true)" />
+                    <t-icon
+                      name="browse-off"
+                      title="隐藏"
+                      @click="openPen(item, index, true)"
+                    />
                   </template>
                 </div>
               </li>
@@ -175,8 +310,17 @@
         </div>
       </a-tab-pane>
     </a-tabs>
-    <EditContainer ref="editContainer" :title="editContainerTitle" @oks="getEditTextValue" @close="closeEditContainer" />
-    <FileManager ref="fileManagerRef" :mode="'single'" @oks="onFileManagerOks" />
+    <EditContainer
+      ref="editContainer"
+      :title="editContainerTitle"
+      @oks="getEditTextValue"
+      @close="closeEditContainer"
+    />
+    <FileManager
+      ref="fileManagerRef"
+      :mode="'single'"
+      @oks="onFileManagerOks"
+    />
   </div>
 </template>
 

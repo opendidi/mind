@@ -16,6 +16,32 @@ CREATE DATABASE /*!32312 IF NOT EXISTS*/`mind` /*!40100 DEFAULT CHARACTER SET ut
 
 USE `mind`;
 
+/*Table structure for table `blueprint` */
+
+DROP TABLE IF EXISTS `blueprint`;
+
+CREATE TABLE `blueprint` (
+  `id` varchar(33) NOT NULL,
+  `name` varchar(255) DEFAULT NULL COMMENT '文件名称',
+  `color` varchar(255) DEFAULT NULL COMMENT '默认颜色',
+  `penBackground` varchar(255) DEFAULT NULL COMMENT '画笔填充颜色',
+  `background` varchar(255) DEFAULT NULL COMMENT '背景颜色',
+  `bkImage` varchar(255) DEFAULT NULL COMMENT '背景图片地址',
+  `grid` varchar(10) DEFAULT '0' COMMENT '背景网格',
+  `gridColor` varchar(255) DEFAULT NULL COMMENT '网格颜色',
+  `gridSize` varchar(255) DEFAULT NULL COMMENT '网格大小',
+  `gridRotate` varchar(255) DEFAULT NULL COMMENT '网格角度',
+  `rule` varchar(10) DEFAULT '0' COMMENT '标尺',
+  `ruleColor` varchar(255) DEFAULT NULL COMMENT '标尺颜色',
+  `initJs` text COMMENT '初始化JS',
+  `pens` text COMMENT '画笔数据',
+  `https` text COMMENT 'https数组数据',
+  `del` int(11) DEFAULT '0' COMMENT '逻辑删除',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+/*Data for the table `blueprint` */
+
 /*Table structure for table `categories` */
 
 DROP TABLE IF EXISTS `categories`;
@@ -59,8 +85,6 @@ CREATE TABLE `material` (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /*Data for the table `material` */
-
-insert  into `material`(`id`,`name`,`url`,`file_path`,`thumb_path`,`size`,`extension`,`created_at`,`updated_at`,`description`,`del`,`parent_id`,`type`,`lock`,`sort_order`,`path`,`user_id`) values ('10894dadb1dc44188929b14e8d7dbfaf','6a2ae9972c2e30f71b22cb745328445e','http://192.168.1.78:9000/pano/1755229231/6a2ae9972c2e30f71b22cb745328445e.png',NULL,'',124494,'png','2025-08-15 11:40:31','2025-08-15 11:40:31',NULL,0,'be708e3035354e70acc3789931eecdbe','.png',0,0,NULL,NULL),('3c54e7dcb3c04b3b87a118a09b2dd0af','zFpmhzyrxz9p7',NULL,NULL,NULL,NULL,NULL,'2025-08-15 12:01:08','2025-08-15 12:01:08',NULL,0,'be708e3035354e70acc3789931eecdbe','dir',0,0,'RnNKDYZ5mf5RX/zFpmhzyrxz9p7',NULL),('98cffdb32f90430c9f0718009bea91b9','084eCAebZaPPhEJVKbKIK1YEkhBBAq','http://192.168.1.78:9000/pano/1755251446/084eCAebZaPPhEJVKbKIK1YEkhBBAq.png',NULL,'',1824252,'png','2025-08-15 17:50:46','2025-08-15 17:50:46',NULL,0,'be708e3035354e70acc3789931eecdbe','.png',0,0,NULL,NULL),('be708e3035354e70acc3789931eecdbe','RnNKDYZ5mf5RX',NULL,NULL,NULL,NULL,NULL,'2025-08-15 10:56:26','2025-08-15 10:56:26',NULL,0,NULL,'dir',0,0,'RnNKDYZ5mf5RX',NULL),('d31b4b8a8ef640e8aaf58360f952de53','f12c41c38266e1a1f3f63861e80eeed5','http://192.168.1.78:9000/pano/1755251651/f12c41c38266e1a1f3f63861e80eeed5.gif',NULL,'',544865,'gif','2025-08-15 17:54:11','2025-08-15 17:54:11',NULL,0,'be708e3035354e70acc3789931eecdbe','.gif',0,0,NULL,NULL);
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;
 /*!40014 SET FOREIGN_KEY_CHECKS=@OLD_FOREIGN_KEY_CHECKS */;

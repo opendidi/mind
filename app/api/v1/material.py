@@ -2,10 +2,20 @@
 Descripttion:
 version: 1.0.0
 Author: htang
+Date: 2025-07-09 14:19:33
+LastEditors: htang
+LastEditTime: 2025-08-22 14:50:29
+'''
+'''
+Descripttion:
+version: 1.0.0
+Author: htang
 Date: 2024-08-09 16:48:11
 LastEditors: htang
 LastEditTime: 2025-08-15 15:09:31
 '''
+# -*- coding: UTF-8 -*-
+
 from flask import Blueprint, Flask, render_template, request, Response, jsonify
 from app.package.module.material_mysql import MaterialMysqlHandler
 from app.util.file import build_tree
@@ -135,7 +145,7 @@ def upload_material():
   return jsonify(response)
 
 '''
-  上传文件到minio对象存储
+  删除素材文件
 '''
 @material_api.route('/delete', methods=['POST'])
 def delete_material():
