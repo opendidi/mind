@@ -814,6 +814,10 @@ function onView() {
 function onSave(flag: boolean) {
   // 本地存储
   const data: any = meta2d.data();
+  if (!data.pens.length) {
+    message.error('无法下载，宽度不合法，画布可能没有画笔/画布大小超出浏览器最大限制')
+    return false;
+  }
   useCommonStoreWithOut().setTopology(meta2d);
   const commonStore = useCommonStore();
   localStorage.setItem("meta2d", JSON.stringify(data));
