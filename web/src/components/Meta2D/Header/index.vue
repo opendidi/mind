@@ -707,26 +707,6 @@ function onRedo() {
   meta2d.redo();
 }
 
-function onCut() {
-  meta2d.cut();
-}
-
-function onCopy() {
-  meta2d.copy();
-}
-
-function onPaste() {
-  meta2d.paste();
-}
-
-function onAll() {
-  meta2d.activeAll();
-}
-
-function onDelete() {
-  meta2d.delete();
-}
-
 const onOpenMap = () => {
   visibleMap.value = visibleMap.value ? false : true;
   if (visibleMap.value) {
