@@ -800,6 +800,10 @@ function onView() {
 
 function onSave(flag: boolean) {
   const data: any = meta2d.data();
+  if (!data.pens.length) {
+    message.error("无法保存，画布可能没有画笔/画布大小超出浏览器最大限制");
+    return false;
+  }
   localStorage.setItem("meta2d", JSON.stringify(data));
   useCommonStoreWithOut().setTopology(meta2d);
   const commonStore = useCommonStore();
