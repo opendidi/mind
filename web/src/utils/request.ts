@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2024-05-13 20:30:45
  * @LastEditors: htang
- * @LastEditTime: 2024-10-09 10:23:08
+ * @LastEditTime: 2025-08-26 15:07:26
  */
 import axios from 'axios'
 import { message } from 'ant-design-vue'
@@ -26,7 +26,8 @@ instance.interceptors.request.use(function (config: any) {
 // 添加响应拦截器
 instance.interceptors.response.use(function (response: any) {
   // 对响应数据做点什么
-  let { code, msg } = response['data'];
+  let { code } = response['data'];
+  const msg = response['data']['message'];
   switch (code) {
     case 500:
       message.error(msg);

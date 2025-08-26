@@ -4,7 +4,7 @@ version: 1.0.0
 Author: htang
 Date: 2025-08-22 14:03:29
 LastEditors: htang
-LastEditTime: 2025-08-22 16:29:34
+LastEditTime: 2025-08-26 15:20:22
 '''
 # -*- coding: UTF-8 -*-
 
@@ -84,8 +84,12 @@ class BlueprintMysqlHandler:
         result = cursor.fetchone()
         if result is None:
           return False
-        result['initJs'] = json.loads(result['initJs'])
-        result['pens'] = json.loads(result['pens'])
+        if result['initJs']:
+          result['initJs'] = json.loads(result['initJs'])
+        if result['https']:
+          result['https'] = json.loads(result['https'])
+        if result['pens']:
+          result['pens'] = json.loads(result['pens'])
         return result
     except Exception as e:
       # 发生错误时打印错误信息
@@ -95,21 +99,21 @@ class BlueprintMysqlHandler:
 
   def add(data):
     id = str(uuid.uuid4()).replace("-", "")
-    name = data['name']
-    color = data['color']
-    penBackground = data['penBackground']
-    background = data['background']
-    bkImage = data['bkImage']
-    grid = data['grid']
-    gridColor = data['gridColor']
-    gridSize = data['gridSize']
-    gridRotate = data['gridRotate']
-    rule = data['rule']
-    ruleColor = data['ruleColor']
-    initJs = data['initJs']
-    pens = data['pens']
-    https = data['https']
-    thumbnail = data['thumbnail']
+    name = data.get('name')
+    color = data.get('color')
+    penBackground = data.get('penBackground')
+    background = data.get('background')
+    bkImage = data.get('bkImage')
+    grid = data.get('grid')
+    gridColor = data.get('gridColor')
+    gridSize = data.get('gridSize')
+    gridRotate = data.get('gridRotate')
+    rule = data.get('rule')
+    ruleColor = data.get('ruleColor')
+    initJs = data.get('initJs')
+    pens = data.get('pens')
+    https = data.get('https')
+    thumbnail = data.get('thumbnail')
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:

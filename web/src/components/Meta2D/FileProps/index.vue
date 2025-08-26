@@ -338,31 +338,15 @@ export default defineComponent({
 </script>
 
 <script lang="ts" setup>
-import {
-  onMounted,
-  ref,
-  nextTick,
-  watch,
-  reactive,
-  getCurrentInstance,
-} from "vue";
-import { PlusOutlined, DeleteOutlined } from "@ant-design/icons-vue";
+import { onMounted, ref, nextTick, reactive, getCurrentInstance } from "vue";
 import { message } from "ant-design-vue";
 import FileManager from "@/components/FileManager/index.vue";
 import EditContainer from "@/components/Meta2D/EditContainer/index.vue";
 import { useCommonStore } from "@/store/modules/common";
-import { Meta2d } from "@meta2d/core";
 
-let { proxy } = getCurrentInstance();
-
+const { proxy } = getCurrentInstance();
 const commonStore = useCommonStore();
-
 const fileManagerRef = ref(null);
-
-let tags = ref<number>(1);
-let fileKey = ref<number>([1, 2, 3, 4]);
-let layoutKey = ref<number>([1]);
-let activeKey = ref<number>([1, 2, 3]);
 
 // 图纸数据
 const data = reactive<any>({
@@ -377,6 +361,11 @@ const layout = ref({
   // 间距
   space: 30,
 });
+
+let tags = ref<number>(1);
+let fileKey = ref<number>([1, 2, 3, 4]);
+let layoutKey = ref<number>([1]);
+let activeKey = ref<number>([1, 2, 3]);
 
 let tabBarStyle = reactive({
   background: "#fff",
@@ -652,7 +641,6 @@ const onActive = (params: any) => {
 
 const onDeletePen = (param: any) => {
   meta2d.delete([param]);
-  meta2d.render();
   onSave();
 };
 
@@ -662,23 +650,20 @@ const openPen = (params: any, index: number, visible: any) => {
     id: params.id,
     visible,
   });
+  onSave();
 };
 
 const onSave = () => {
-  // 本地存储
+  meta2d.render();
   const _: any = meta2d.data();
   localStorage.setItem("meta2d", JSON.stringify(_));
   Object.assign(data, { ..._ });
+  commonStore.setIsSave("0");
 };
 
 defineExpose({
   onInit,
 });
-
-// setTimeout(() => {
-//   // websocket
-//   meta2d.websocket.send('[{dataId: 43,value: 1}]');
-// }, 6000);
 </script>
 
 <style lang="less" scoped>
@@ -687,17 +672,9 @@ defineExpose({
   background: #fff;
 
   .ant-tabs {
-    .ant-divider {
-      // margin: 6px 0;
-    }
-
     :deep .ant-collapse-item {
       border-bottom: 1px solid #d9d9d9;
       box-sizing: border-box;
-
-      .ant-collapse-header {
-        // padding: 6px 0;
-      }
     }
 
     :deep .ant-collapse-content-box {

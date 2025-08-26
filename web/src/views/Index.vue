@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2025-08-22 10:38:47
+ * @LastEditTime: 2025-08-26 15:24:39
 -->
 <template>
   <div class="app-page">
@@ -65,6 +65,7 @@ import {
 import GET_IMAGE_PATH from "@/utils/graphicGroups.ts";
 import { useSelection } from "@/services/selections";
 import { useCommonStore, useCommonStoreWithOut } from "@/store/modules/common";
+import { apiBlueprintFind } from "@/api/blueprint";
 
 const { proxy } = getCurrentInstance();
 
@@ -101,7 +102,11 @@ function save() {
 /**
  * 初始化监听事件
  */
-function onInit() {
+async function onInit() {
+  const id = proxy.$route.query.id;
+  if (id) {
+    const data = await apiBlueprintFind({ id: proxy.$route.query.id });
+  }
   // 参考: https://doc.le5le.com/document/138387361#%E6%80%BB%E7%BB%93
   // 缩放画布
   meta2d.on("scale", save);

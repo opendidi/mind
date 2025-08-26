@@ -79,6 +79,27 @@ def modify():
       id = data['id']
       if id == None or id == '':
         return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, 'ID不能为空')
+      ok = BlueprintMysqlHandler.modify(id, **{
+        'name': data.get('name'),
+        'color': data.get('color') ,
+        'penBackground': data.get('penBackground'),
+        'background':data.get('background'),
+        'bkImage': data.get('bkImage'),
+        'grid': data.get('grid'),
+        'gridColor': data.get('gridColor'),
+        'gridSize': data.get('gridSize'),
+        'gridRotate': data.get('gridRotate'),
+        'rule': data.get('rule'),
+        'ruleColor': data.get('ruleColor'),
+        'initJs': data.get('initJs'),
+        'pens': data.get('pens'),
+        'https': data.get('https'),
+        'thumbnail': data.get('thumbnail'),
+      })
+      if ok:
+        return ProtocolBuilder.build_response({}, StatusCode.SUCCESS, '修改成功')
+      else:
+        return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, '修改失败')
   except Exception as e:
     return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, str(e))
 

@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2025-08-22 14:57:15
  * @LastEditors: htang
- * @LastEditTime: 2025-08-22 16:16:17
+ * @LastEditTime: 2025-08-26 15:04:12
  */
 import http from '@/utils/request';
 
@@ -54,7 +54,7 @@ export function apiBlueprintAdd(data: any) {
         'Content-Type': 'multipart/form-data',
       },
     }).then((res: any) => {
-      resolve(res);
+      resolve(res.data);
     })
   })
 }

@@ -390,7 +390,6 @@ import {
   reactive,
   ref,
   getCurrentInstance,
-  computed,
   watch,
   nextTick,
 } from "vue";
@@ -402,7 +401,9 @@ import BluePrintModal from "@/components/blueprint/index.vue";
 import ShareModal from "../Share/index.vue";
 import { Icon } from "tdesign-vue-next";
 import { useCommonStore, useCommonStoreWithOut } from "@/store/modules/common";
+import { apiBlueprintAdd, apiBlueprintModify } from "@/api/blueprint";
 import FileManager from "@/components/FileManager/index.vue";
+import { UrlParamsManager } from "@/utils/urlParamsManager";
 
 let { proxy } = getCurrentInstance();
 
@@ -418,14 +419,6 @@ let originalData = ref({});
 let isOnDrawLine = ref(false);
 
 let dot = ref(false);
-
-watch(
-  () => useCommonStore().isSave,
-  (v) => {
-    v == "1" ? (dot.value = false) : (dot.value = true);
-  },
-  { immediate: true }
-);
 
 let isDrawingPencil = ref<boolean>(false);
 
@@ -446,27 +439,13 @@ const scale = ref(0);
 
 let lineWidthVisible = ref(false);
 
-onMounted(() => {
-  const timer = setInterval(() => {
-    if (meta2d) {
-      data.value = meta2d.store.data;
-      if (meta2d.store.data["lineWidth"] == undefined) {
-        meta2d.store.data["lineWidth"] = 1;
-        meta2d.setValue({
-          lineWidth: 1,
-        });
-      }
-      clearInterval(timer);
-      // 获取初始缩放比例
-      scaleSubscriber(meta2d.store.data.scale);
-      // 监听缩放
-      meta2d.on("scale", scaleSubscriber);
-      let options: any = meta2d.getOptions();
-      // 自动锚点
-      isAutoAnchor.value = options.autoAnchor;
-    }
-  }, 200);
-});
+watch(
+  () => useCommonStore().isSave,
+  (v) => {
+    v == "1" ? (dot.value = false) : (dot.value = true);
+  },
+  { immediate: true }
+);
 
 function scaleSubscriber(val: number) {
   scale.value = Math.round(val * 100);
@@ -628,7 +607,15 @@ function openFile() {
   input.click();
 }
 
-const createBluePrint = () => {};
+const createBluePrint = () => {
+  UrlParamsManager.clearParams("");
+  const data: any = meta2d.data();
+  data.name = "";
+  data.pens = [];
+  data.https = [];
+  data.initJS = "";
+  localStorage.setItem("meta2d", JSON.stringify(data));
+};
 
 const downloadJson = () => {
   const data: any = meta2d.data();
@@ -812,15 +799,71 @@ function onView() {
 }
 
 function onSave(flag: boolean) {
-  // 本地存储
   const data: any = meta2d.data();
+  localStorage.setItem("meta2d", JSON.stringify(data));
   useCommonStoreWithOut().setTopology(meta2d);
   const commonStore = useCommonStore();
-  localStorage.setItem("meta2d", JSON.stringify(data));
   if (flag) {
-    commonStore.setIsSave("1");
-    message.success("保存成功");
+    const fields: any = [
+      "name",
+      "color",
+      "penBackground",
+      "background",
+      "bkImage",
+      "grid",
+      "gridColor",
+      "gridSize",
+      "gridRotate",
+      "rule",
+      "ruleColor",
+      "initJs",
+      "pens",
+      "https",
+      "thumbnail",
+    ];
+    const params: any = {
+      // name: data["name"],
+      // color: data["color"] || "",
+      // penBackground: data["penBackground"] || "",
+      // background: data["background"] || "",
+      // bkImage: data["bkImage"] || "",
+      // grid: data["grid"] || "",
+      // gridColor: data["gridColor"] || "",
+      // gridSize: data["gridSize"] || "",
+      // gridRotate: data["gridRotate"] || "",
+      // rule: data["rule"] || "",
+      // ruleColor: data["ruleColor"] || "",
+      // initJs: data["initJs"] || "",
+      // pens: JSON.stringify(data["pens"]) || "",
+      // https: JSON.stringify(data["https"]) || "",
+      // thumbnail: data["thumbnail"] || "",
+    };
+    Object.keys(data).forEach((key) => {
+      if (fields.includes(key)) {
+        if (["https", "pens"].includes(key)) {
+          params[key] = JSON.stringify(data[key]) || "";
+        } else {
+          params[key] = data[key] || "";
+        }
+      }
+    });
     // const blob = meta2d.toPng(50, undefined, true, 500);
+    if (!proxy.$route.query["id"]) {
+      apiBlueprintAdd(params).then((res) => {
+        commonStore.setIsSave("1");
+        message.success("保存成功");
+        UrlParamsManager.setParams({
+          id: res.id,
+        });
+        data["id"] = res.id;
+      });
+    } else {
+      params.id = proxy.$route.query["id"];
+      apiBlueprintModify(params).then((res) => {
+        commonStore.setIsSave("1");
+        message.success("保存成功");
+      });
+    }
   }
 }
 
@@ -828,7 +871,7 @@ function onSave(flag: boolean) {
  * 操作画布锁定
  */
 function setLocked() {
-  let { locked } = data.value;
+  let { locked }: any = data.value;
   let key = 0;
   switch (locked) {
     case 0:
@@ -960,6 +1003,28 @@ const openBluePrintList = () => {
 function onSearch() {
   proxy.$refs.shareModal.visible = true;
 }
+
+onMounted(() => {
+  const timer = setInterval(() => {
+    if (meta2d) {
+      data.value = meta2d.store.data;
+      if (meta2d.store.data["lineWidth"] == undefined) {
+        meta2d.store.data["lineWidth"] = 1;
+        meta2d.setValue({
+          lineWidth: 1,
+        });
+      }
+      clearInterval(timer);
+      // 获取初始缩放比例
+      scaleSubscriber(meta2d.store.data.scale);
+      // 监听缩放
+      meta2d.on("scale", scaleSubscriber);
+      let options: any = meta2d.getOptions();
+      // 自动锚点
+      isAutoAnchor.value = options.autoAnchor;
+    }
+  }, 200);
+});
 </script>
 
 <style lang="less" scoped>
