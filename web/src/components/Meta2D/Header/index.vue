@@ -3,54 +3,82 @@
     <div class="head-left flex items-center">
       <a-dropdown>
         <a class="ant-dropdown-link flex items-center flex-col">
-          <t-icon name="file" />
+          <div class="flex items-center">
+            <t-icon name="folder" />
+            <t-icon name="chevron-down-s" />
+          </div>
           <span>文件</span>
         </a>
         <template #overlay>
           <a-menu>
-            <!-- <a-menu-item @click="newFile">
-              <a>新建文件</a>
-            </a-menu-item> -->
-            <!-- <a-menu-item @click="openFile" divider="true">
-              <a>打开文件</a>
-            </a-menu-item> -->
             <a-menu-item divider="true">
-              <a @click="downloadJson">下载JSON文件</a>
+              <a class="flex items-center" @click="createBluePrint">
+                <t-icon name="numbers-1-1" />
+                <span>新建图纸</span>
+              </a>
             </a-menu-item>
             <a-menu-item>
-              <a @click="downloadPng">下载为PNG</a>
+              <a class="flex items-center" @click="downloadJson">
+                <t-icon name="numbers-2" />
+                <span>下载JSON文件</span>
+              </a>
             </a-menu-item>
             <a-menu-item>
-              <a @click="downloadSvg">下载为SVG</a>
+              <a class="flex items-center" @click="downloadPng">
+                <t-icon name="numbers-3" />
+                <span>下载为PNG</span>
+              </a>
+            </a-menu-item>
+            <a-menu-item>
+              <a class="flex items-center" @click="downloadSvg">
+                <t-icon name="numbers-4" />
+                <span>下载为SVG</span>
+              </a>
             </a-menu-item>
           </a-menu>
         </template>
       </a-dropdown>
       <a-dropdown>
         <a class="ant-dropdown-link flex items-center flex-col">
-          <t-icon name="edit-1" />
+          <div class="flex items-center">
+            <t-icon name="edit-1" />
+            <t-icon name="chevron-down-s" />
+          </div>
           <span>编辑</span>
         </a>
         <template #overlay>
           <a-menu>
             <a-menu-item>
               <a @click="onToggleAnchorMode">
-                <div class="flex">增加/删除锚点</div>
+                <div class="flex items-center">
+                  <t-icon name="numbers-1-1" />
+                  <span>增加/删除锚点</span>
+                </div>
               </a>
             </a-menu-item>
             <a-menu-item>
               <a @click="onAddAnchorHand">
-                <div class="flex">添加手柄</div>
+                <div class="flex items-center">
+                  <t-icon name="numbers-2" />
+                  <span>添加手柄</span>
+                </div>
               </a>
             </a-menu-item>
             <a-menu-item>
               <a @click="onRemoveAnchorHand">
-                <div class="flex">删除手柄</div>
+                <div class="flex items-center">
+                  <t-icon name="numbers-3" />
+                  <span>删除手柄</span>
+                </div>
               </a>
             </a-menu-item>
           </a-menu>
         </template>
       </a-dropdown>
+      <a class="flex items-center flex-col" @click="openBluePrintList()">
+        <t-icon name="view-list" />
+        <span>列表</span>
+      </a>
       <a-badge :dot="dot">
         <a class="flex items-center flex-col" @click="onSave(true)">
           <t-icon name="save" />
@@ -82,6 +110,14 @@
       >
         <t-icon name="search" />
         <span>放大镜</span>
+      </a>
+      <a
+        class="flex items-center flex-col"
+        :class="[visibleMap == true ? 'active' : '']"
+        @click="onOpenMap()"
+      >
+        <t-icon name="location" />
+        <span>鹰眼地图</span>
       </a>
       <a class="flex items-center flex-col" @click="onUndo">
         <t-icon name="rollback" />
@@ -332,6 +368,7 @@
     </div>
     <ShareModal ref="shareModal" />
     <FileManager ref="fileManager" :mode="'multiple'" />
+    <BluePrintModal ref="bluePrintModalRef" />
   </div>
 </template>
 
@@ -353,7 +390,6 @@ import {
   reactive,
   ref,
   getCurrentInstance,
-  computed,
   watch,
   nextTick,
 } from "vue";
@@ -361,15 +397,19 @@ import { useRouter } from "vue-router";
 import { Pen, PenType, deepClone } from "@meta2d/core";
 import FileSaver from "file-saver";
 import { message } from "ant-design-vue";
-import { CaretDownOutlined } from "@ant-design/icons-vue";
+import BluePrintModal from "@/components/blueprint/index.vue";
 import ShareModal from "../Share/index.vue";
 import { Icon } from "tdesign-vue-next";
 import { useCommonStore, useCommonStoreWithOut } from "@/store/modules/common";
+import { apiBlueprintAdd, apiBlueprintModify } from "@/api/blueprint";
 import FileManager from "@/components/FileManager/index.vue";
+import { UrlParamsManager } from "@/utils/urlParamsManager";
 
 let { proxy } = getCurrentInstance();
 
 const router = useRouter();
+
+const bluePrintModalRef = ref(null);
 
 let data = ref({});
 
@@ -379,14 +419,6 @@ let originalData = ref({});
 let isOnDrawLine = ref(false);
 
 let dot = ref(false);
-
-watch(
-  () => useCommonStore().isSave,
-  (v) => {
-    v == "1" ? (dot.value = false) : (dot.value = true);
-  },
-  { immediate: true }
-);
 
 let isDrawingPencil = ref<boolean>(false);
 
@@ -399,33 +431,21 @@ let isDisableAnchor = ref<boolean>(false);
 // 是否开启放大镜
 let isShowMagnifier = ref<boolean>(false);
 
+const visibleMap = ref<boolean>(false);
+
 const isDrawLine = ref<boolean>(false);
 
 const scale = ref(0);
 
 let lineWidthVisible = ref(false);
 
-onMounted(() => {
-  const timer = setInterval(() => {
-    if (meta2d) {
-      data.value = meta2d.store.data;
-      if (meta2d.store.data["lineWidth"] == undefined) {
-        meta2d.store.data["lineWidth"] = 1;
-        meta2d.setValue({
-          lineWidth: 1,
-        });
-      }
-      clearInterval(timer);
-      // 获取初始缩放比例
-      scaleSubscriber(meta2d.store.data.scale);
-      // 监听缩放
-      meta2d.on("scale", scaleSubscriber);
-      let options: any = meta2d.getOptions();
-      // 自动锚点
-      isAutoAnchor.value = options.autoAnchor;
-    }
-  }, 200);
-});
+watch(
+  () => useCommonStore().isSave,
+  (v) => {
+    v == "1" ? (dot.value = false) : (dot.value = true);
+  },
+  { immediate: true }
+);
 
 function scaleSubscriber(val: number) {
   scale.value = Math.round(val * 100);
@@ -587,6 +607,16 @@ function openFile() {
   input.click();
 }
 
+const createBluePrint = () => {
+  UrlParamsManager.clearParams("");
+  const data: any = meta2d.data();
+  data.name = "";
+  data.pens = [];
+  data.https = [];
+  data.initJS = "";
+  localStorage.setItem("meta2d", JSON.stringify(data));
+};
+
 const downloadJson = () => {
   const data: any = meta2d.data();
   FileSaver.saveAs(
@@ -697,6 +727,15 @@ function onDelete() {
   meta2d.delete();
 }
 
+const onOpenMap = () => {
+  visibleMap.value = visibleMap.value ? false : true;
+  if (visibleMap.value) {
+    meta2d.showMap();
+  } else {
+    meta2d.hideMap();
+  }
+};
+
 function onAddShape(event: DragEvent | MouseEvent, name: string) {
   event.stopPropagation();
   let data: any;
@@ -760,14 +799,75 @@ function onView() {
 }
 
 function onSave(flag: boolean) {
-  // 本地存储
   const data: any = meta2d.data();
+  if (!data.pens.length) {
+    message.error("无法保存，画布可能没有画笔/画布大小超出浏览器最大限制");
+    return false;
+  }
+  localStorage.setItem("meta2d", JSON.stringify(data));
   useCommonStoreWithOut().setTopology(meta2d);
   const commonStore = useCommonStore();
-  localStorage.setItem("meta2d", JSON.stringify(data));
   if (flag) {
-    commonStore.setIsSave("1");
-    message.success("保存成功");
+    const fields: any = [
+      "name",
+      "color",
+      "penBackground",
+      "background",
+      "bkImage",
+      "grid",
+      "gridColor",
+      "gridSize",
+      "gridRotate",
+      "rule",
+      "ruleColor",
+      "initJs",
+      "pens",
+      "https",
+      "thumbnail",
+    ];
+    const params: any = {
+      // name: data["name"],
+      // color: data["color"] || "",
+      // penBackground: data["penBackground"] || "",
+      // background: data["background"] || "",
+      // bkImage: data["bkImage"] || "",
+      // grid: data["grid"] || "",
+      // gridColor: data["gridColor"] || "",
+      // gridSize: data["gridSize"] || "",
+      // gridRotate: data["gridRotate"] || "",
+      // rule: data["rule"] || "",
+      // ruleColor: data["ruleColor"] || "",
+      // initJs: data["initJs"] || "",
+      // pens: JSON.stringify(data["pens"]) || "",
+      // https: JSON.stringify(data["https"]) || "",
+      // thumbnail: data["thumbnail"] || "",
+    };
+    Object.keys(data).forEach((key) => {
+      if (fields.includes(key)) {
+        if (["https", "pens"].includes(key)) {
+          params[key] = JSON.stringify(data[key]) || "";
+        } else {
+          params[key] = data[key] || "";
+        }
+      }
+    });
+    // const blob = meta2d.toPng(50, undefined, true, 500);
+    if (!proxy.$route.query["id"]) {
+      apiBlueprintAdd(params).then((res) => {
+        commonStore.setIsSave("1");
+        message.success("保存成功");
+        UrlParamsManager.setParams({
+          id: res.id,
+        });
+        data["id"] = res.id;
+      });
+    } else {
+      params.id = proxy.$route.query["id"];
+      apiBlueprintModify(params).then((res) => {
+        commonStore.setIsSave("1");
+        message.success("保存成功");
+      });
+    }
   }
 }
 
@@ -775,7 +875,7 @@ function onSave(flag: boolean) {
  * 操作画布锁定
  */
 function setLocked() {
-  let { locked } = data.value;
+  let { locked }: any = data.value;
   let key = 0;
   switch (locked) {
     case 0:
@@ -897,12 +997,38 @@ function openFileManager() {
   });
 }
 
+const openBluePrintList = () => {
+  bluePrintModalRef.value.visible = true;
+};
+
 /**
  * 分享
  */
 function onSearch() {
   proxy.$refs.shareModal.visible = true;
 }
+
+onMounted(() => {
+  const timer = setInterval(() => {
+    if (meta2d) {
+      data.value = meta2d.store.data;
+      if (meta2d.store.data["lineWidth"] == undefined) {
+        meta2d.store.data["lineWidth"] = 1;
+        meta2d.setValue({
+          lineWidth: 1,
+        });
+      }
+      clearInterval(timer);
+      // 获取初始缩放比例
+      scaleSubscriber(meta2d.store.data.scale);
+      // 监听缩放
+      meta2d.on("scale", scaleSubscriber);
+      let options: any = meta2d.getOptions();
+      // 自动锚点
+      isAutoAnchor.value = options.autoAnchor;
+    }
+  }, 200);
+});
 </script>
 
 <style lang="less" scoped>
