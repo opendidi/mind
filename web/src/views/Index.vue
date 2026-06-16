@@ -51,7 +51,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, getCurrentInstance, onMounted, onUnmounted, provide } from "vue";
+import { ref, nextTick, getCurrentInstance, onMounted, onUnmounted } from "vue";
 import type { MenuProps } from "ant-design-vue";
 import Header from "@/components/Meta2D/Header/index.vue";
 import Graphics from "@/components/Meta2D/Graphics/index.vue";
@@ -88,13 +88,10 @@ let propsData = ref({});
 
 const agentPanelRef = ref<InstanceType<typeof AgentPanel>>();
 
-// Expose openAgentPanel globally so Header can call it
-function openAgentPanel() {
+// Expose on window so Header can call it directly
+(window as any).__openAgentPanel = () => {
   agentPanelRef.value?.open();
-}
-
-// Provide openAgentPanel to child components
-provide("openAgentPanel", openAgentPanel);
+};
 
 function save() {
   if (timer) {

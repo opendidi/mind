@@ -400,7 +400,6 @@ import {
   getCurrentInstance,
   watch,
   nextTick,
-  inject,
 } from "vue";
 import { useRouter } from "vue-router";
 import { Pen, PenType, deepClone } from "@meta2d/core";
@@ -416,8 +415,10 @@ import { UrlParamsManager } from "@/utils/urlParamsManager";
 
 let { proxy } = getCurrentInstance();
 
-// AI Agent Panel
-const openAgentPanel = inject<() => void>("openAgentPanel", () => {});
+// AI Agent Panel — call window method set by Index.vue
+function openAgentPanel() {
+  (window as any).__openAgentPanel?.();
+}
 
 const router = useRouter();
 
