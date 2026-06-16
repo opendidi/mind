@@ -51,7 +51,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, getCurrentInstance, onMounted, onUnmounted } from "vue";
+import { ref, nextTick, getCurrentInstance, onMounted, onUnmounted, provide } from "vue";
 import type { MenuProps } from "ant-design-vue";
 import Header from "@/components/Meta2D/Header/index.vue";
 import Graphics from "@/components/Meta2D/Graphics/index.vue";
@@ -94,7 +94,6 @@ function openAgentPanel() {
 }
 
 // Provide openAgentPanel to child components
-import { provide } from "vue";
 provide("openAgentPanel", openAgentPanel);
 
 function save() {
