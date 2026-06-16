@@ -9,6 +9,8 @@
 
 ---
 
+<img width="100%" align="center" src="./images/1731398154366.jpg" />
+
 ## 功能特性
 
 ### 图形编辑
