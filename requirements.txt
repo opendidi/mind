@@ -5,3 +5,7 @@ minio==7.2.6
 eventlet==0.36.1
 Flask-Cors==4.0.1
 Pillow==10.3.0
+# Agent 系统依赖
+openai>=1.0.0
+redis>=5.0.0
+python-dotenv>=1.0.0
