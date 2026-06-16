@@ -63,7 +63,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, watch, nextTick } from 'vue';
+import { ref, computed, watch, nextTick, onUnmounted } from 'vue';
 import { AgentStreamHandler } from './AgentStreamHandler';
 import AgentMessageItem from './AgentMessageItem.vue';
 import AgentPlanCard from './AgentPlanCard.vue';
@@ -107,8 +107,13 @@ function handleSend(text: string) {
 }
 
 function handleClose() {
-  // Don't abort — let response complete in background
+  stream.value.abort();
 }
+
+// Cleanup SSE on component unmount
+onUnmounted(() => {
+  stream.value.abort();
+});
 
 function open() {
   visible.value = true;

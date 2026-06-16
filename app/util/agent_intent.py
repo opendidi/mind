@@ -229,9 +229,10 @@ def unified_intent_and_plan(
                     "parallel_group": n.get("parallel_group"),
                 })
 
-            # Validate deps
+            # Validate deps（兼容 LLM 可能返回 null/None 的情况）
             for n in nodes:
-                n["depends_on"] = [d for d in n["depends_on"] if d in node_ids]
+                deps = n.get("depends_on") or []
+                n["depends_on"] = [d for d in deps if d in node_ids]
 
             # Cycle check
             from app.util.agent_dag import _has_cycle

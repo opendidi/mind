@@ -32,6 +32,8 @@ def agent_chat():
     message = data.get("message", "").strip()
     if not message:
         return {"code": 400, "message": "message is required"}, 400
+    if len(message) > 4096:
+        return {"code": 400, "message": f"message too long ({len(message)} > 4096)"}, 400
 
     user_id = data.get("user_id", request.headers.get("X-User-ID", "anonymous"))
     canvas_context = data.get("canvas_context")
@@ -54,9 +56,9 @@ def agent_chat():
                 ):
                     event_queue.put(event)
                 event_queue.put({"type": "done", "data": {"status": "completed"}})
-            except Exception as e:
+            except Exception:
                 logging.exception("Agent chat error: %s", task_id)
-                event_queue.put({"type": "error", "data": {"message": str(e)}})
+                event_queue.put({"type": "error", "data": {"message": "处理请求时发生内部错误"}})
                 event_queue.put({"type": "done", "data": {"status": "error"}})
 
         thread = threading.Thread(target=run_agent, daemon=True)
@@ -81,7 +83,6 @@ def agent_chat():
         headers={
             "Cache-Control": "no-cache",
             "X-Accel-Buffering": "no",
-            "Access-Control-Allow-Origin": "*",
         },
     )
 
@@ -100,10 +101,10 @@ def agent_mcp():
         server = get_mcp_server()
         result = server.handle_request(data)
         return result
-    except Exception as e:
+    except Exception:
         logging.exception("MCP request failed")
         return {
             "jsonrpc": "2.0",
             "id": data.get("id"),
-            "error": {"code": -32603, "message": str(e)},
+            "error": {"code": -32603, "message": "Internal server error"},
         }

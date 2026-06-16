@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 """AgentDispatcher — sub-agent registry, tool schema generation, and routing."""
 
+import atexit as _atexit
 import logging
 import threading
 import time
@@ -16,6 +17,14 @@ _MAX_CONCURRENT_DISPATCH = 3
 _PEER_QUERY_TIMEOUT = 15
 _dispatch_semaphore = threading.BoundedSemaphore(_MAX_CONCURRENT_DISPATCH)
 _dispatch_pool = ManagedPool(max_workers=_MAX_CONCURRENT_DISPATCH, prefix="subagent-")
+
+
+@_atexit.register
+def _shutdown_dispatch_pool():
+    """Clean up dispatch thread pool on application exit."""
+    pool = _dispatch_pool._pool
+    if pool and not getattr(pool, "_shutdown", 0):
+        pool.shutdown(wait=False)
 
 
 class AgentDispatcher:
@@ -135,4 +144,5 @@ class AgentDispatcher:
                 future.cancel()
             return {"success": False, "result": f"子 Agent 调度异常: {ex}", "tool_calls_made": 0}
         finally:
-            _dispatch_semaphore.release()
+            if acquired:
+                _dispatch_semaphore.release()

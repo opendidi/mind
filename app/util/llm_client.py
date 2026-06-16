@@ -42,16 +42,14 @@ def _build_llm_client():
 
 
 _llm_client = None
-_llm_client_lock = None
+_llm_client_lock = threading.Lock()  # init at module level — no race
 
 
 def get_llm_client():
     """Lazy-init LLM client singleton."""
-    global _llm_client, _llm_client_lock
+    global _llm_client
     if _llm_client is not None:
         return _llm_client
-    if _llm_client_lock is None:
-        _llm_client_lock = threading.Lock()
     with _llm_client_lock:
         if _llm_client is None:
             _llm_client = _build_llm_client()

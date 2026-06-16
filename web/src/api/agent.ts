@@ -59,9 +59,17 @@ export function agentChat(options: AgentChatOptions): AbortController {
 
       const decoder = new TextDecoder();
       let buffer = '';
+      const READ_TIMEOUT_MS = 120_000; // 2 min idle timeout
+      let lastReadTime = Date.now();
 
       while (true) {
+        // Add read timeout — AbortController fires if server hangs
+        if (Date.now() - lastReadTime > READ_TIMEOUT_MS) {
+          options.onError?.(new Error('SSE read timeout'));
+          return;
+        }
         const { done, value } = await reader.read();
+        lastReadTime = Date.now();
         if (done) break;
 
         buffer += decoder.decode(value, { stream: true });

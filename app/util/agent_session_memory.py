@@ -39,9 +39,23 @@ class SessionMemory:
         return ""
 
     @staticmethod
+    def _extract_entities(messages: list) -> dict:
+        """Extract key entities from messages (blueprint IDs, tool args, etc.)."""
+        import re
+        entities = {}
+        for msg in messages:
+            content = str(msg.get("content", "") or "")
+            # Extract blueprint_id from tool calls or text
+            for key in ("blueprint_id", "pen_id", "name"):
+                m = re.search(rf'"{key}"\s*:\s*"([^"]+)"', content)
+                if m and key not in entities:
+                    entities[key] = m.group(1)
+        return entities
+
+    @staticmethod
     def persist(user_id: str, session_id: str, messages: list, summary: str = ""):
         """Persist session memory after a chat completes."""
-        entities = {}
+        entities = SessionMemory._extract_entities(messages)
         summary = (summary or "")[:MEMORY_MAX_SUMMARY_CHARS]
         if not entities and not summary:
             return
@@ -52,7 +66,8 @@ class SessionMemory:
         try:
             from app.util.redis_utils import get_redis
             r = get_redis(db=5)
-            r.setex(f"agent:memory:{user_id}", MEMORY_TTL_REDIS, json.dumps(data, ensure_ascii=False))
+            if r:
+                r.setex(f"agent:memory:{user_id}", MEMORY_TTL_REDIS, json.dumps(data, ensure_ascii=False))
         except Exception:
             logging.debug("SessionMemory Redis cache set failed for %s", user_id)
 
@@ -64,6 +79,8 @@ class SessionMemory:
         if not entities and not summary:
             return ""
         parts = ["## 上次会话记忆"]
+        for k, v in entities.items():
+            parts.append(f"- {k}: {v}")
         if summary:
             parts.append(f"会话摘要: {summary}")
         return "\n".join(parts)

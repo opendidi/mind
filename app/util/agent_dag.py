@@ -16,8 +16,17 @@ from typing import Generator
 from app.config import LLM_TIMEOUT
 from app.util.agent_pheromone import SharedContext, extract_discoveries
 from app.util.executor import ExecutorTimeout, ManagedPool
+import atexit as _atexit
 
 _dag_pool = ManagedPool(max_workers=8, prefix="dag-")
+
+
+@_atexit.register
+def _shutdown_dag_pool():
+    """Clean up DAG thread pool on application exit."""
+    pool = _dag_pool._pool
+    if pool and not getattr(pool, "_shutdown", 0):
+        pool.shutdown(wait=False)
 
 
 # ── Data Structures ────────────────────────────────────────────────────────

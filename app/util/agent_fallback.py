@@ -42,7 +42,8 @@ class _FallbackCompletions:
             if idx > 0:
                 self._fb.stats["fallbacks"] += 1
                 logging.warning("Falling back to tier %d (model=%s) after: %s", idx, tier["model"], last_error)
-                call_kwargs.pop("stream", None)
+                if call_kwargs.pop("stream", None):
+                    logging.warning("Streaming mode dropped for fallback tier %d — response will be non-streaming", idx)
 
             try:
                 call_kwargs["model"] = tier["model"]

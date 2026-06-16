@@ -168,23 +168,31 @@ class AgentSession:
             self.history = recent_msgs
 
     def _trim_history(self):
-        """Fallback truncation when compaction isn't possible."""
+        """Fallback truncation when compaction isn't possible.
+
+        Only truncates when the total token estimate exceeds the budget.
+        The `trimmed_at` sentinel pattern avoids the fencepost bug where
+        keep_from stayed at len(self.history) and wiped everything.
+        """
         if not self.history:
             return
         total = 0
-        keep_from = len(self.history)
+        trimmed_at = None  # sentinel: only truncate if actually over budget
         for i in range(len(self.history) - 1, -1, -1):
             tokens = _msg_tokens(self.history[i])
             if total + tokens > MAX_HISTORY_TOKENS:
-                keep_from = i + 1
+                trimmed_at = i + 1
                 break
             total += tokens
-        if keep_from > 0 and keep_from < len(self.history):
-            trimmed = self.history[:keep_from]
-            if trimmed and trimmed[0]["role"] == "assistant":
-                keep_from = max(0, keep_from - 1)
-            logging.info("Agent 历史截断：%d → %d 条", len(self.history), len(self.history) - keep_from)
-            self.history = self.history[keep_from:]
+        if trimmed_at is None:
+            return  # under budget — nothing to do
+        if trimmed_at >= len(self.history):
+            return  # edge: trim point at very end — nothing to drop
+        # Avoid starting on an assistant-only message (loses context)
+        if self.history[trimmed_at].get("role") == "assistant":
+            trimmed_at = min(trimmed_at + 1, len(self.history) - 1)
+        logging.info("Agent 历史截断：%d → %d 条", len(self.history), len(self.history) - trimmed_at)
+        self.history = self.history[trimmed_at:]
 
     def _build_system_prompt(self, user_message: str, canvas_context: dict = None,
                              memory_prompt: str = "", unified_result: dict = None,

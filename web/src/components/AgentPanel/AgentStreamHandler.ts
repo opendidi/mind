@@ -6,6 +6,7 @@
  */
 
 import { agentChat, type AgentEvent, type AgentChatOptions } from '@/api/agent';
+import { useCommonStoreWithOut } from '@/store/modules/common';
 
 export interface StreamState {
   connected: boolean;
@@ -107,27 +108,26 @@ export class AgentStreamHandler {
 
     this.notify();
 
-    // Build canvas context from meta2d store if available
+    // Build canvas context from Pinia common store
     let canvasContext = undefined;
     try {
-      const store = (window as any).__META2D_STORE__;
-      if (store) {
-        const pens = store.getPens?.() || [];
+      const commonStore = useCommonStoreWithOut();
+      const topology = commonStore.topology as any;
+      if (topology && typeof topology.data === 'function') {
+        const data = topology.data();
+        const pens = data?.pens || [];
         canvasContext = {
           pens: pens.map((p: any) => ({
-            id: p.id,
-            type: p.type,
-            text: p.text,
-            x: p.x, y: p.y,
-            width: p.width, height: p.height,
+            id: p.id || p.penId,
+            type: p.type || 'rectangle',
+            text: p.text || '',
+            x: p.x || 0, y: p.y || 0,
+            width: p.width || 100, height: p.height || 60,
           })),
-          lines: pens.filter((p: any) => p.type === 'line').map((l: any) => ({
-            id: l.id,
-            from: l.from, to: l.to,
-          })),
+          lines: data?.lines || [],
         };
       }
-    } catch { /* ignore */ }
+    } catch { /* ignore — canvas context is optional */ }
 
     this.controller = agentChat({
       userMessage,
