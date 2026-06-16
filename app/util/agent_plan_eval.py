@@ -32,13 +32,13 @@ class PlanFeedback:
             return ""
         lines = []
         if self.steps_failed > 0:
-            lines.append(f"⚠️ 最近一次类似任务中，{self.steps_failed}/{self.steps_total} 个步骤失败。")
+            lines.append(f"[!] 最近一次类似任务中，{self.steps_failed}/{self.steps_total} 个步骤失败。")
         if self.reflections_triggered > 0:
-            lines.append(f"⚠️ 该任务触发了 {self.reflections_triggered} 次自省重试，说明初始计划可能需要更精确的工具选择或步骤拆分。")
+            lines.append(f"[!] 该任务触发了 {self.reflections_triggered} 次自省重试，说明初始计划可能需要更精确的工具选择或步骤拆分。")
         for issue in self.issues:
-            lines.append(f"🔧 {issue}")
+            lines.append(f"[FIX] {issue}")
         if self.score < 0.5:
-            lines.append("🔴 该计划执行质量较差（评分<0.5），请重新思考步骤设计和依赖关系。")
+            lines.append("[!!] 该计划执行质量较差（评分<0.5），请重新思考步骤设计和依赖关系。")
         if lines:
             lines.insert(0, "## 历史教训（请参考以下反馈改进本次计划）")
             lines.append("建议：优先使用更精确的 tool_hint，避免依赖需要多次重试的操作，确保 depends_on 正确反映步骤间的数据依赖。")

@@ -32,7 +32,7 @@ MAX_HISTORY_COMPACT = 4000
 
 BASE_PROMPT = """你是"小M"，一个图形编辑助手。通过工具帮助用户创建和编辑 2D 图表、蓝图和思维导图。
 
-## 🔴 核心铁律（最高优先级）
+## [!!] 核心铁律（最高优先级）
 
 1. **写操作必须调用工具！** 创建、修改、删除图形等操作绝对不能仅用文字回复。不调用工具就说"已完成"是欺骗用户，绝对禁止。
 2. **只看工具结果！** 只有当工具返回 `success: true` 时才报告成功。失败时必须如实告知原因。
@@ -223,7 +223,7 @@ class AgentSession:
         # Write guard
         has_write = (unified_result or {}).get("has_write", False)
         if has_write:
-            sections.append("⚠️ 用户要求执行写操作（创建/修改/删除）。你必须调用工具函数实际完成，不能仅用文字回复。")
+            sections.append("[!] 用户要求执行写操作（创建/修改/删除）。你必须调用工具函数实际完成，不能仅用文字回复。")
 
         return "\n\n".join(sections)
 

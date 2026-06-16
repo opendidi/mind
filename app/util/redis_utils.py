@@ -27,25 +27,47 @@ def _get_lock():
     return _pool_lock
 
 
-def get_redis(db: int = 0, max_connections: int = 30) -> redis.Redis:
+def get_redis(db: int = 0, max_connections: int = 30):
     """获取指定 DB 号的 Redis 客户端（线程安全，连接池复用）。
 
     Args:
         db: Redis 数据库编号（0-15）
         max_connections: 连接池最大连接数（默认 30）
+
+    Returns:
+        redis.Redis 实例，或 None（当 Redis 不可用时）。
     """
+    import logging
     pool = _pools.get(db)
     if pool is None:
         with _get_lock():
             pool = _pools.get(db)
             if pool is None:
-                pool = redis.ConnectionPool(
-                    host=redis_config["host"],
-                    port=redis_config["port"],
-                    password=redis_config.get("password") or None,
-                    db=db,
-                    decode_responses=True,
-                    max_connections=max_connections,
-                )
-                _pools[db] = pool
-    return redis.Redis(connection_pool=pool)
+                try:
+                    pool = redis.ConnectionPool(
+                        host=redis_config["host"],
+                        port=redis_config["port"],
+                        password=redis_config.get("password") or None,
+                        db=db,
+                        decode_responses=True,
+                        max_connections=max_connections,
+                        socket_connect_timeout=2,
+                        socket_keepalive=True,
+                        retry_on_timeout=False,
+                    )
+                    # Verify connection works
+                    r = redis.Redis(connection_pool=pool)
+                    r.ping()
+                    _pools[db] = pool
+                    return r
+                except Exception:
+                    logging.debug("Redis not available (db=%d), will use in-memory fallback", db)
+                    return None
+    try:
+        r = redis.Redis(connection_pool=pool)
+        r.ping()
+        return r
+    except Exception:
+        logging.debug("Redis connection lost (db=%d)", db)
+        del _pools[db]
+        return None

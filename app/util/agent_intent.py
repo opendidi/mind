@@ -117,9 +117,9 @@ UNIFIED_INTENT_PLAN_PROMPT = """你是任务分类与规划专家。分析用户
 - tool_hint="dispatch_agent" 时，agent_name 必填（canvas_agent/blueprint_agent/file_agent/code_agent）
 - 步骤 2~7 步，简洁明确
 - 只有真正需要多步操作的才用 dag 模式，单步操作用 mode="simple"
-- ⚠️ 知识优先：历史/百科/常识等纯知识问答，模型自身知识已足够，优先用 mode="simple"
-- ⚠️ 先查询再操作：需要知道画布当前状态时，先用 canvas_get_state 获取信息
-- ⚠️ 如果历史教训中有相关反馈，优先参考并调整计划以避免重复已知错误
+- [!] 知识优先：历史/百科/常识等纯知识问答，模型自身知识已足够，优先用 mode="simple"
+- [!] 先查询再操作：需要知道画布当前状态时，先用 canvas_get_state 获取信息
+- [!] 如果历史教训中有相关反馈，优先参考并调整计划以避免重复已知错误
 """
 
 # Dynamic suffix appended to the planner prompt when feedback hints are available

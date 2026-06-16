@@ -27,7 +27,7 @@ CORE_SKILL_MAP = {
 
 # Tier 2: Context-aware snippets
 CONTEXT_TRIGGERS = {
-    "has_failures": (lambda: "\n\n⚠️ 前方步骤有失败，请尝试替代方案或跳过该步骤。", "错误恢复"),
+    "has_failures": (lambda: "\n\n[!] 前方步骤有失败，请尝试替代方案或跳过该步骤。", "错误恢复"),
 }
 
 
