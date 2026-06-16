@@ -353,6 +353,14 @@
         <t-icon name="folder-open" />
         <span>文件管理</span>
       </a>
+      <a
+        class="flex items-center flex-col ai-btn"
+        title="AI 助手"
+        @click="openAgentPanel"
+      >
+        <span class="ai-icon">🤖</span>
+        <span>AI 助手</span>
+      </a>
       <a class="flex items-center flex-col" @click="onSearch">
         <t-icon name="share" />
         <span>分享</span>
@@ -392,6 +400,7 @@ import {
   getCurrentInstance,
   watch,
   nextTick,
+  inject,
 } from "vue";
 import { useRouter } from "vue-router";
 import { Pen, PenType, deepClone } from "@meta2d/core";
@@ -406,6 +415,9 @@ import FileManager from "@/components/FileManager/index.vue";
 import { UrlParamsManager } from "@/utils/urlParamsManager";
 
 let { proxy } = getCurrentInstance();
+
+// AI Agent Panel
+const openAgentPanel = inject<() => void>("openAgentPanel", () => {});
 
 const router = useRouter();
 
@@ -1095,6 +1107,19 @@ onMounted(() => {
 .middle {
   &.active {
     color: #0c56eb;
+  }
+}
+
+.ai-btn {
+  .ai-icon {
+    font-size: 16px !important;
+  }
+
+  &:hover {
+    color: #1677ff !important;
+    .ai-icon {
+      transform: scale(1.15);
+    }
   }
 }
 </style>

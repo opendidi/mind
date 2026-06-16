@@ -46,6 +46,7 @@
         <Props :data="propsData" />
       </template>
     </div>
+    <AgentPanel ref="agentPanelRef" />
   </div>
 </template>
 
@@ -57,6 +58,7 @@ import Graphics from "@/components/Meta2D/Graphics/index.vue";
 import Editor from "@/components/Meta2D/Editor/index.vue";
 import Props from "@/components/Meta2D/Props/index.vue";
 import Appearance from "@/components/Meta2D/Appearance/index.vue";
+import AgentPanel from "@/components/AgentPanel/index.vue";
 import { MENUS as menus } from "@/utils/config-contentmenu.ts";
 import {
   LOCK_STATE_DATA as lockState,
@@ -83,6 +85,17 @@ let pens = ref([]);
 let timer: any;
 
 let propsData = ref({});
+
+const agentPanelRef = ref<InstanceType<typeof AgentPanel>>();
+
+// Expose openAgentPanel globally so Header can call it
+function openAgentPanel() {
+  agentPanelRef.value?.open();
+}
+
+// Provide openAgentPanel to child components
+import { provide } from "vue";
+provide("openAgentPanel", openAgentPanel);
 
 function save() {
   if (timer) {
