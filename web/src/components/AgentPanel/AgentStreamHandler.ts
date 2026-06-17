@@ -5,6 +5,7 @@
  * typed events to the AgentPanel UI components.
  */
 
+import { reactive } from 'vue';
 import { agentChat, type AgentEvent, type AgentChatOptions } from '@/api/agent';
 import { useCommonStoreWithOut } from '@/store/modules/common';
 
@@ -62,7 +63,7 @@ export class AgentStreamHandler {
   private controller: AbortController | null = null;
   private currentAssistantMsg: ChatMessage | null = null;
 
-  state: StreamState = {
+  state = reactive<StreamState>({
     connected: false,
     loading: false,
     error: null,
@@ -70,15 +71,20 @@ export class AgentStreamHandler {
     toolCalls: [],
     plan: null,
     traceId: null,
-  };
+  });
 
   private listeners: Array<(state: StreamState) => void> = [];
+  private _onToolResult: ((tool: string, args: Record<string, unknown>, success: boolean, result: unknown) => void) | null = null;
 
   onChange(fn: (state: StreamState) => void) {
     this.listeners.push(fn);
     return () => {
       this.listeners = this.listeners.filter((l) => l !== fn);
     };
+  }
+
+  onToolResult(fn: (tool: string, args: Record<string, unknown>, success: boolean, result: unknown) => void) {
+    this._onToolResult = fn;
   }
 
   private notify() {
@@ -210,11 +216,13 @@ export class AgentStreamHandler {
         const success = event.data?.success;
         const result = event.data?.result;
         // Update last matching pending tool call
+        let matchedArgs: Record<string, unknown> = {};
         for (let i = this.state.toolCalls.length - 1; i >= 0; i--) {
           if (this.state.toolCalls[i].tool === toolName && this.state.toolCalls[i].status === 'running') {
             this.state.toolCalls[i].status = success ? 'success' : 'error';
             this.state.toolCalls[i].success = success;
             this.state.toolCalls[i].result = result;
+            matchedArgs = this.state.toolCalls[i].args as Record<string, unknown>;
             break;
           }
         }
@@ -229,6 +237,8 @@ export class AgentStreamHandler {
             }
           }
         }
+        // Bridge to canvas execution
+        this._onToolResult?.(toolName, matchedArgs, success, result);
         break;
       }
 
@@ -311,7 +321,7 @@ export class AgentStreamHandler {
 
   clear() {
     this.abort();
-    this.state = {
+    Object.assign(this.state, {
       connected: false,
       loading: false,
       error: null,
@@ -319,7 +329,7 @@ export class AgentStreamHandler {
       toolCalls: [],
       plan: null,
       traceId: null,
-    };
+    });
     this.currentAssistantMsg = null;
     this.notify();
   }

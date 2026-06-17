@@ -15,19 +15,39 @@
         :content="message.thinking"
       />
 
-      <!-- Tool calls -->
+      <!-- Tool calls (grouped for canvas) -->
       <div v-if="message.toolCalls?.length" class="tool-calls-block">
-        <AgentToolCard
-          v-for="tc in message.toolCalls"
-          :key="tc.id"
-          :tool-call="tc"
-        />
+        <template v-for="item in groupedCalls" :key="Array.isArray(item) ? item[0].id : item.id">
+          <AgentToolGroupCard
+            v-if="Array.isArray(item) && item.length > 1"
+            :tool-calls="item"
+          />
+          <AgentToolCard
+            v-else
+            :tool-call="Array.isArray(item) ? item[0] : item"
+          />
+        </template>
       </div>
 
-      <!-- Text content -->
-      <div v-if="message.content" class="msg-bubble assistant-bubble">
-        <div v-html="renderContent(message.content)"></div>
-      </div>
+      <!-- Map / Route cards + text from content -->
+      <template v-if="message.content">
+        <template v-for="(part, pi) in contentParts" :key="pi">
+          <MapCard
+            v-if="part.type === 'map'"
+            :title="part.data.title"
+            :center="part.data.center"
+            :zoom="part.data.zoom"
+            :markers="part.data.markers"
+          />
+          <RouteCard
+            v-else-if="part.type === 'route'"
+            :mode="part.data.mode"
+            :from="part.data.from"
+            :to="part.data.to"
+          />
+          <div v-else class="msg-bubble assistant-bubble" v-html="part.html"></div>
+        </template>
+      </template>
     </div>
 
     <!-- System message -->
@@ -38,13 +58,89 @@
 </template>
 
 <script setup lang="ts">
-import type { ChatMessage } from './AgentStreamHandler';
+import { computed } from 'vue';
+import type { ChatMessage, ToolCallRecord } from './AgentStreamHandler';
 import AgentThinkCard from './AgentThinkCard.vue';
 import AgentToolCard from './AgentToolCard.vue';
+import AgentToolGroupCard from './AgentToolGroupCard.vue';
+import MapCard from './MapCard.vue';
+import RouteCard from './RouteCard.vue';
 
-defineProps<{
+const props = defineProps<{
   message: ChatMessage;
 }>();
+
+interface ContentPart {
+  type: 'text' | 'map' | 'route';
+  html?: string;
+  data?: any;
+}
+
+const contentParts = computed<ContentPart[]>(() => {
+  const text = props.message.content;
+  if (!text) return [];
+
+  const parts: ContentPart[] = [];
+
+  // Match ```map or ```route blocks, extract JSON content
+  const combinedRegex = /```(map|route)\s*\n([\s\S]*?)```/g;
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+
+  while ((match = combinedRegex.exec(text)) !== null) {
+    // Text before this match
+    if (match.index > lastIndex) {
+      const before = text.slice(lastIndex, match.index).trim();
+      if (before) {
+        parts.push({ type: 'text', html: renderContent(before) });
+      }
+    }
+
+    const blockType = match[1];
+    const blockContent = match[2].trim();
+
+    try {
+      const data = JSON.parse(blockContent);
+      if (blockType === 'map') {
+        parts.push({ type: 'map', data });
+      } else {
+        parts.push({ type: 'route', data });
+      }
+    } catch {
+      // Invalid JSON — render as code block
+      parts.push({ type: 'text', html: renderContent(`\`\`\`${blockType}\n${blockContent}\n\`\`\``) });
+    }
+
+    lastIndex = match.index + match[0].length;
+  }
+
+  // Remaining text after last match
+  if (lastIndex < text.length) {
+    const after = text.slice(lastIndex).trim();
+    if (after) {
+      parts.push({ type: 'text', html: renderContent(after) });
+    }
+  }
+
+  return parts;
+});
+
+const groupedCalls = computed(() => {
+  const tcs = props.message.toolCalls;
+  if (!tcs || tcs.length === 0) return [];
+  const groups: Array<ToolCallRecord | ToolCallRecord[]> = [];
+  let canvasGroup: ToolCallRecord[] = [];
+  for (const tc of tcs) {
+    if (tc.tool === 'canvas' || tc.tool.startsWith('canvas_')) {
+      canvasGroup.push(tc);
+    } else {
+      if (canvasGroup.length > 0) { groups.push([...canvasGroup]); canvasGroup = []; }
+      groups.push(tc);
+    }
+  }
+  if (canvasGroup.length > 0) groups.push([...canvasGroup]);
+  return groups;
+});
 
 function renderContent(text: string): string {
   // Simple markdown: code blocks and line breaks

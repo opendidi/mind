@@ -11,24 +11,18 @@ CACHE_TTL = 30
 CACHE_DB = 5
 
 READ_TOOLS = {
-    "canvas_get_state",
+    "canvas",
     "blueprint_list",
     "blueprint_search",
     "file_search",
 }
 
 WRITE_INVALIDATION_MAP = {
-    "canvas_add_pen": ["canvas_get_state"],
-    "canvas_update_pen": ["canvas_get_state"],
-    "canvas_delete_pen": ["canvas_get_state"],
-    "canvas_add_line": ["canvas_get_state"],
-    "canvas_clear": ["canvas_get_state"],
-    "canvas_undo": ["canvas_get_state"],
-    "canvas_redo": ["canvas_get_state"],
+    "canvas": ["canvas"],
     "blueprint_save": ["blueprint_list", "blueprint_search"],
-    "blueprint_load": ["canvas_get_state"],
-    "layout_auto_arrange": ["canvas_get_state"],
-    "layout_align": ["canvas_get_state"],
+    "blueprint_load": ["canvas"],
+    "layout_auto_arrange": ["canvas"],
+    "layout_align": ["canvas"],
 }
 
 

@@ -4,11 +4,11 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2025-08-26 15:24:39
+ * @LastEditTime: 2026-06-17 14:10:55
 -->
 <template>
   <div class="app-page">
-    <Header />
+    <Header @openAgentPanel="onOpenAgentPanel" />
     <div class="designer">
       <Graphics />
       <a-dropdown
@@ -73,6 +73,8 @@ const { proxy } = getCurrentInstance();
 
 const { selections } = useSelection();
 
+const agentPanelRef = ref();
+
 let menuLists = ref(menus);
 
 // 选中的画笔状态
@@ -85,13 +87,6 @@ let pens = ref([]);
 let timer: any;
 
 let propsData = ref({});
-
-const agentPanelRef = ref<InstanceType<typeof AgentPanel>>();
-
-// Expose on window so Header can call it directly
-(window as any).__openAgentPanel = () => {
-  agentPanelRef.value?.open();
-};
 
 function save() {
   if (timer) {
@@ -441,6 +436,10 @@ const handleMenuClick: MenuProps["onClick"] = (e: any) => {
   save();
 };
 
+const onOpenAgentPanel = () => {
+  agentPanelRef.value.open();
+};
+
 onMounted(() => {
   onInit();
 });
@@ -473,11 +472,11 @@ onUnmounted(() => {
     grid-template-columns: 200px 1fr 301px;
   }
 
-  :deep .t-input--auto-width {
+  :deep(.t-input--auto-width) {
     width: 100% !important;
   }
 
-  :deep .ant-form {
+  :deep(.ant-form) {
     .ant-collapse {
       .ant-collapse-content > .ant-collapse-content-box {
         padding: 6px;
@@ -493,7 +492,7 @@ onUnmounted(() => {
 .canvas-context-menu {
   min-width: 200px;
 
-  :deep .ant-dropdown-menu-title-content {
+  :deep(.ant-dropdown-menu-title-content) {
     display: flex;
     justify-content: space-between;
   }

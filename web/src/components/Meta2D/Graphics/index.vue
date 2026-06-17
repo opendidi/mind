@@ -325,7 +325,7 @@ heandleGraphicGroups();
     border-top: 1px solid #e5e5e5;
     box-sizing: border-box;
   }
-  :deep .ant-collapse {
+  :deep(.ant-collapse) {
     border-top: none;
     .ant-collapse-item {
       .ant-collapse-header {

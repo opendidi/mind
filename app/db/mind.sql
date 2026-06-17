@@ -2,7 +2,7 @@
 SQLyog Ultimate v10.00 Beta1
 MySQL - 5.7.26 : Database - mind
 *********************************************************************
-*/
+*/
 
 /*!40101 SET NAMES utf8 */;
 
@@ -34,12 +34,14 @@ CREATE TABLE `blueprint` (
   `rule` varchar(10) DEFAULT '0' COMMENT '标尺',
   `ruleColor` varchar(255) DEFAULT NULL COMMENT '标尺颜色',
   `initJs` text COMMENT '初始化JS',
-  `pens` text COMMENT '画笔数据',
-  `https` text COMMENT 'https数组数据',
+  `pens` longtext COMMENT '画笔数据',
+  `https` longtext COMMENT 'https数组数据',
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
   `del` int(11) DEFAULT '0' COMMENT '逻辑删除',
   `thumbnail` varchar(255) DEFAULT NULL COMMENT '缩略图',
-  PRIMARY KEY (`id`)
+  `user_id` varchar(33) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
 
 /*Table structure for table `categories` */
@@ -54,7 +56,9 @@ CREATE TABLE `categories` (
   `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   `status` tinyint(1) NOT NULL DEFAULT '1',
-  PRIMARY KEY (`id`)
+  `user_id` varchar(33) NOT NULL,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /*Table structure for table `material` */
@@ -80,6 +84,42 @@ CREATE TABLE `material` (
   `path` varchar(255) DEFAULT NULL COMMENT '文件夹路径',
   `user_id` varchar(33) DEFAULT NULL COMMENT '用户ID',
   PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+/*Table structure for table `conversations` */
+
+DROP TABLE IF EXISTS `conversations`;
+
+CREATE TABLE `conversations` (
+  `id` varchar(33) NOT NULL,
+  `user_id` varchar(33) NOT NULL,
+  `title` varchar(255) DEFAULT '新对话',
+  `messages` longtext,
+  `pinned` tinyint(1) DEFAULT '0',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  KEY `idx_user_id` (`user_id`),
+  KEY `idx_updated_at` (`updated_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+/*Table structure for table `users` */
+
+DROP TABLE IF EXISTS `users`;
+
+CREATE TABLE `users` (
+  `id` varchar(33) NOT NULL,
+  `username` varchar(50) NOT NULL,
+  `password_hash` varchar(255) NOT NULL,
+  `email` varchar(100) DEFAULT NULL,
+  `is_active` tinyint(1) DEFAULT '1',
+  `created_at` timestamp NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `last_login` timestamp NULL DEFAULT NULL,
+  `failed_login_attempts` int(11) DEFAULT '0',
+  `account_locked` tinyint(1) DEFAULT '0',
+  `locked_until` varchar(255) DEFAULT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 /*!40101 SET SQL_MODE=@OLD_SQL_MODE */;

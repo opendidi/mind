@@ -12,6 +12,9 @@
 
 <script lang="ts" setup>
 import { ref, getCurrentInstance, onMounted, onUnmounted } from "vue";
+import { useRoute } from "vue-router";
+import { message } from "ant-design-vue";
+import { apiBlueprintFind } from "@/api/blueprint";
 import { register as registerEcharts } from "@meta2d/chart-diagram";
 import { flowPens, flowAnchors } from "@meta2d/flow-diagram";
 import {
@@ -42,6 +45,8 @@ const { select } = useSelection();
 
 let { proxy } = getCurrentInstance();
 
+let onStorageChange: ((e: StorageEvent) => void) | null = null;
+
 onMounted(() => {
   const meta2dOptions: any = {
     background: "transparent",
@@ -52,6 +57,7 @@ onMounted(() => {
     meta2dOptions["rule"] = true;
   }
   let meta2d = new Meta2d("meta2d", meta2dOptions);
+  (window as any).meta2d = meta2d;
 
   // 按需注册图形库，以下为自带基础图形库
   register(flowPens());
@@ -70,15 +76,30 @@ onMounted(() => {
   // 初始化插件
   initPlugin();
 
-  // 读取本地存储
-  let data: any = localStorage.getItem("meta2d");
-  if (data) {
-    data = JSON.parse(data);
-    // 判断是否为运行查看，是-设置为预览模式
-    if (!data.locked) {
-      data["locked"] = 0;
-    }
-    meta2d.open(data);
+  // 加载数据：有 ID 从后端加载，无 ID 新建空白画布
+  const route = useRoute();
+  const blueprintId = route.query.id as string | undefined;
+
+  if (blueprintId) {
+    apiBlueprintFind({ id: blueprintId }).then((res: any) => {
+      if (res?.data) {
+        const bp = res.data;
+        const canvasData: any = { name: bp.name || '', pens: bp.pens || [], lines: [] };
+        if (bp.background) canvasData.background = bp.background;
+        if (bp.grid !== undefined) canvasData.grid = bp.grid;
+        if (bp.gridColor) canvasData.gridColor = bp.gridColor;
+        if (bp.gridSize) canvasData.gridSize = bp.gridSize;
+        if (bp.rule !== undefined) canvasData.rule = bp.rule;
+        if (bp.ruleColor) canvasData.ruleColor = bp.ruleColor;
+        if (!canvasData.locked) canvasData.locked = 0;
+        meta2d.open(canvasData);
+        window.dispatchEvent(new CustomEvent('meta2d:dataLoaded'));
+      } else {
+        message.error("图纸加载失败");
+      }
+    }).catch(() => {
+      message.error("图纸加载失败");
+    });
   }
 
   setTimeout(() => {
@@ -87,16 +108,29 @@ onMounted(() => {
     }
   }, 1000);
 
+  // Cross-tab sync: reload canvas when another tab (e.g. chat) modifies localStorage
+  onStorageChange = (e: StorageEvent) => {
+    if (e.key === 'meta2d' && e.newValue) {
+      try {
+        const data = JSON.parse(e.newValue);
+        if (!data.locked) data.locked = 0;
+        meta2d.open(data);
+        window.dispatchEvent(new CustomEvent('meta2d:dataLoaded'));
+      } catch { /* ignore malformed data */ }
+    }
+  };
+  window.addEventListener('storage', onStorageChange);
+
   meta2d.on("active", active);
   meta2d.on("inactive", inactive);
 
   meta2d.socketFn = (message, context) => {
     if (message) {
-      let info = JSON.parse(message);
+      let info = typeof message === 'string' ? JSON.parse(message) : message;
       if (info.data["data"]) {
-        let dataList = JSON.parse(info.data["data"]);
+        let raw = info.data["data"];
+        let dataList = typeof raw === 'string' ? JSON.parse(raw) : raw;
         console.table("数据返回", dataList);
-        useCommonStoreWithOut().setVariableData(dataList);
         dataList.map((item) => {
           if (item["dot"] == 0) {
             item["id"] = `a${item["dot"]}`;
@@ -143,6 +177,7 @@ function initPlugin() {
 }
 
 onUnmounted(() => {
+  if (onStorageChange) window.removeEventListener('storage', onStorageChange);
   meta2d.destroy();
   // 取消订阅
   meta2d.off("active", active);

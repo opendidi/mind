@@ -24,7 +24,7 @@ export interface AgentChatOptions {
   signal?: AbortSignal;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL || '/v1';
+const API_BASE = import.meta.env.VITE_GLOB_API_URL as string || '/v1';
 
 /**
  * Send a message to the Agent and receive SSE events.

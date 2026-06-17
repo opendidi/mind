@@ -184,7 +184,7 @@ export default defineComponent({
   overflow-y: auto;
   z-index: 2;
   .appearance-layout {
-    :deep .ant-tabs {
+    :deep(.ant-tabs) {
       .ant-collapse-content {
         .ant-collapse-content-box {
           padding: 6px;

@@ -16,13 +16,14 @@ LastEditTime: 2025-08-15 15:09:31
 '''
 # -*- coding: UTF-8 -*-
 
-from flask import Blueprint, Flask, render_template, request, Response, jsonify
+from flask import Blueprint, Flask, render_template, request, Response, jsonify, g
 from app.package.module.material_mysql import MaterialMysqlHandler
 from app.util.file import build_tree
 from app.util import contains_special_chars, generate_random_string
 from app.plugin.minio.app.controller import MinioUtil
 from app.util.protocol_handler import ProtocolBuilder
 from app.config.protocol import StatusCode
+from app.util.decorators import token_required
 import app.util.file as PanoFile
 import time
 import shutil
@@ -35,6 +36,7 @@ material_api = Blueprint("material", __name__)
 platform = os.name
 
 @material_api.route("/lists", methods=['GET'])
+@token_required
 def material_lists():
   current = request.args.get('current')
   size = request.args.get('page_size')
@@ -51,7 +53,7 @@ def material_lists():
     'folder': folder,
     'keyword': keyword,
     'type': type,
-  })
+  }, g.user_id)
   return ProtocolBuilder.build_response(data)
 
 @material_api.route("/preview", methods=['GET'])
@@ -73,14 +75,16 @@ def preview():
   获取文件管理器的目录
 '''
 @material_api.route("/folder", methods=['GET'])
+@token_required
 def material_folder():
-  data = MaterialMysqlHandler.foldertree()
+  data = MaterialMysqlHandler.foldertree(g.user_id)
   return ProtocolBuilder.build_response(build_tree(data), StatusCode.SUCCESS, '创建成功')
 
 '''
   创建文件夹
 '''
 @material_api.route("/create_dir", methods=['POST'])
+@token_required
 def create_dir():
   parent_id = request.form.get('parent_id')
   name = generate_random_string()
@@ -91,7 +95,7 @@ def create_dir():
   done = MaterialMysqlHandler.create_dir({
     "name": name,
     "parent_id": parent_id,
-  })
+  }, g.user_id)
   if done == None:
     return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, '新建失败')
   return ProtocolBuilder.build_response({}, StatusCode.SUCCESS, '新建成功')
@@ -100,6 +104,7 @@ def create_dir():
   上传文件到minio对象存储
 '''
 @material_api.route('/upload', methods=['POST'])
+@token_required
 def upload_material():
   # 检查是否有文件被上传
   if 'file' not in request.files:
@@ -135,7 +140,7 @@ def upload_material():
     'root_path': root_path,
     'parent_id': parent_id,
     'timestamp': timestamp,
-  })
+  }, g.user_id)
   # 删除临时文件夹
   shutil.rmtree(root_path)
   if success_info == None:
@@ -148,6 +153,7 @@ def upload_material():
   删除素材文件
 '''
 @material_api.route('/delete', methods=['POST'])
+@token_required
 def delete_material():
   # 文件类型
   id = request.form.get("id")
@@ -156,13 +162,14 @@ def delete_material():
   data = MaterialMysqlHandler.delete_material({
     'id': id,
     'del': 1
-  })
+  }, g.user_id)
   if data is not None:
     return ProtocolBuilder.build_response({}, StatusCode.SUCCESS, '删除成功')
   else:
     return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, '删除失败')
 
 @material_api.route('/modify', methods=['POST'])
+@token_required
 def material_modify():
   try:
     if request.content_type.startswith('multipart/form-data'):
@@ -171,7 +178,7 @@ def material_modify():
       if id == None or id == '':
         return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, '请选择要修改的数据')
       name = data['name']
-      bool = MaterialMysqlHandler.modify(id, name=name)
+      bool = MaterialMysqlHandler.modify(id, g.user_id, name=name)
       if bool:
         return ProtocolBuilder.build_response({}, StatusCode.SUCCESS, '修改成功')
       else:
@@ -180,6 +187,7 @@ def material_modify():
     return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, str(e))
 
 @material_api.route('/scissors', methods=['POST'])
+@token_required
 def scissors():
   try:
     if request.content_type.startswith('multipart/form-data'):
@@ -188,7 +196,7 @@ def scissors():
       folder = data['folder']
       if id == None or id == '':
         return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, '请选择要剪切的数据')
-      done = MaterialMysqlHandler.scissors_file(id, folder)
+      done = MaterialMysqlHandler.scissors_file(id, folder, g.user_id)
       if done:
         return ProtocolBuilder.build_response({}, StatusCode.SUCCESS, '剪切成功')
       else:
@@ -197,6 +205,7 @@ def scissors():
     return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, str(e))
 
 @material_api.route('/copy', methods=['POST'])
+@token_required
 def copy():
   try:
     if request.content_type.startswith('multipart/form-data'):
@@ -205,7 +214,7 @@ def copy():
       folder = data['folder']
       if id == None or id == '':
         return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, '请选择要复制的数据')
-      done = MaterialMysqlHandler.copy_file(id, folder)
+      done = MaterialMysqlHandler.copy_file(id, folder, g.user_id)
       if done:
         return ProtocolBuilder.build_response({}, StatusCode.SUCCESS, '复制成功')
       else:

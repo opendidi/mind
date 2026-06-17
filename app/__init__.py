@@ -59,8 +59,10 @@ def create_app():
     # Rate limiting middleware
     @app.before_request
     def rate_limit():
-        # Skip static files
+        # Skip static files and CORS preflight
         if request.path.startswith('/v1/static'):
+            return None
+        if request.method == 'OPTIONS':
             return None
 
         client_ip = request.headers.get('X-Forwarded-For', request.remote_addr or 'unknown')

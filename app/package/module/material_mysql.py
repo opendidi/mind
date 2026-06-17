@@ -38,7 +38,7 @@ def extract_path_segment(url, start_segment="/pano/", levels=2):
 
 class MaterialMysqlHandler:
 
-  def query_list(material_data):
+  def query_list(material_data, user_id):
     page_num = material_data.get('current')
     page_size = material_data.get('page_size')
     keyword = material_data.get('keyword')
@@ -46,7 +46,8 @@ class MaterialMysqlHandler:
     folder = material_data.get('folder')
     parent_id = material_data.get('parent_id')
     sort_order = material_data.get('sort_order')
-    params = []
+    params = [user_id]
+    connect = None
     try:
       # 计算起始记录的偏移量
       offset = (int(page_num) - 1) * int(page_size)
@@ -60,6 +61,7 @@ class MaterialMysqlHandler:
             material
           WHERE
             del = 0
+            AND user_id = %s
         """
         if type is not None:
           sql += "AND type = %s "
@@ -93,10 +95,10 @@ class MaterialMysqlHandler:
           elif isinstance(row['created_at'], datetime):
             row['created_at'] = row['created_at'].strftime('%Y-%m-%d %H:%M:%S')
 
-        params_count = []
+        params_count = [user_id]
 
         count_sql = '''
-          SELECT COUNT(*) as total FROM material WHERE del = 0
+          SELECT COUNT(*) as total FROM material WHERE del = 0 AND user_id = %s
         '''
         if parent_id is not None:
           count_sql += "AND parent_id = %s "
@@ -118,41 +120,62 @@ class MaterialMysqlHandler:
       print(f"发生错误：{e}")
     finally:
       # 关闭数据库连接
-      connect.close()
+      if connect:
+          connect.close()
 
-  def find_material_by_id(id):
+  def find_material_by_id(id, user_id=None):
+    connect = None
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
-        sql = '''
-          SELECT
-            id, name, url, file_path, thumb_path, size, extension,
-            created_at,
-            description,
-            parent_id,
-            type,
-            `lock`,
-            `path`
-          FROM
-            material
-          WHERE
-            id = %s and del = 0
-        '''
-        cursor.execute(sql, (id,))
+        if user_id:
+          sql = '''
+            SELECT
+              id, name, url, file_path, thumb_path, size, extension,
+              created_at,
+              description,
+              parent_id,
+              type,
+              `lock`,
+              `path`
+            FROM
+              material
+            WHERE
+              id = %s and del = 0 and user_id = %s
+          '''
+          cursor.execute(sql, (id, user_id))
+        else:
+          sql = '''
+            SELECT
+              id, name, url, file_path, thumb_path, size, extension,
+              created_at,
+              description,
+              parent_id,
+              type,
+              `lock`,
+              `path`
+            FROM
+              material
+            WHERE
+              id = %s and del = 0
+          '''
+          cursor.execute(sql, (id,))
         # 获取所有记录列表
         return cursor.fetchone()
     except Exception as ex:
       logging.warning(ex)
     finally:
-      connect.close()
+      if connect:
+          connect.close()
 
   '''
     查询所有目录文件数据
   '''
-  def foldertree():
+  def foldertree(user_id):
+    connect = None
     try:
       connect = ConnectMysqlHandler.connect_mysql()
-      params = []
+      params = [user_id]
       with connect.cursor() as cursor:
         sql = '''
           SELECT
@@ -168,6 +191,8 @@ class MaterialMysqlHandler:
             del = 0
           AND
             type = 'dir'
+          AND
+            user_id = %s
         '''
         cursor.execute(sql, tuple(params))
         results = cursor.fetchall()
@@ -182,29 +207,31 @@ class MaterialMysqlHandler:
     except Exception as ex:
       logging.warning(ex)
     finally:
-      connect.close()
+      if connect:
+          connect.close()
 
   '''
     创建文件夹数据
     name: 文件夹名称
   '''
-  def create_dir(material_data):
+  def create_dir(material_data, user_id):
+    connect = None
     try:
       id = str(uuid.uuid4()).replace("-", "")
       name = material_data.get('name')
       parent_id = material_data.get('parent_id')
       path = name # 默认路径为当前目录名
       if parent_id:
-        parent = MaterialMysqlHandler.find_material_by_id(parent_id)
+        parent = MaterialMysqlHandler.find_material_by_id(parent_id, user_id)
         if parent and parent.get('path'):
           path = f"{parent['path']}/{material_data['name']}"
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
         sql = '''
-          INSERT INTO `material` (`id`, `name`, `type`, `parent_id`, `path`) VALUES (%s, %s, %s, %s, %s)
+          INSERT INTO `material` (`id`, `name`, `type`, `parent_id`, `path`, `user_id`) VALUES (%s, %s, %s, %s, %s, %s)
         '''
         # 执行 SQL 语句
-        cursor.execute(sql, (id, name, 'dir', parent_id, path))
+        cursor.execute(sql, (id, name, 'dir', parent_id, path, user_id))
         # 提交事务
         connect.commit()
         return True
@@ -212,9 +239,10 @@ class MaterialMysqlHandler:
       logging.warning(ex)
       return False
     finally:
-      connect.close()
+      if connect:
+          connect.close()
 
-  def update_material(material_data):
+  def update_material(material_data, user_id):
     id = str(uuid.uuid4()).replace("-", "")
     # 文件列表
     file_list = material_data.get('file_list')
@@ -226,6 +254,7 @@ class MaterialMysqlHandler:
     timestamp = material_data.get('timestamp')
     # 用于存放每条插入记录的成功信息
     success_info = []
+    connect = None
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
@@ -262,11 +291,11 @@ class MaterialMysqlHandler:
             extension = file_extension
 
             sql = """
-              INSERT INTO `material` (`id`, `name`, `url`, `thumb_path`, `size`, `extension`, `type`, `parent_id`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+              INSERT INTO `material` (`id`, `name`, `url`, `thumb_path`, `size`, `extension`, `type`, `parent_id`, `user_id`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
             """
 
             # 执行 SQL 语句
-            cursor.execute(sql, (id, name, url, thumb_path, size, extension, '', parent_id))
+            cursor.execute(sql, (id, name, url, thumb_path, size, extension, '', parent_id, user_id))
 
             # 收集成功信息
             success_info.append(cursor.lastrowid)
@@ -281,14 +310,15 @@ class MaterialMysqlHandler:
       logging.warning(ex)
       return None
     finally:
-      connect.close()
+      if connect:
+          connect.close()
 
   '''
     url: 文件存储路径
     thumb_path: 全景图缩略图
     extension: 文件后缀
   '''
-  def install_material(material_data):
+  def install_material(material_data, user_id):
     id = str(uuid.uuid4()).replace("-", "")
     url = material_data.get('url')
     thumb_path = material_data.get('thumb_path')
@@ -297,48 +327,53 @@ class MaterialMysqlHandler:
     type = material_data.get('type')
     parent_id = material_data.get('parent_id')
     name = os.path.basename(url)
+    connect = None
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
         sql = """
-          INSERT INTO `material` (`id`, `name`, `url`, `thumb_path`, `size`, `extension`, `type`, `parent_id`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)
+          INSERT INTO `material` (`id`, `name`, `url`, `thumb_path`, `size`, `extension`, `type`, `parent_id`, `user_id`) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)
         """
-        cursor.execute(sql, (id, name, url, thumb_path, size, extension, type, parent_id))
+        cursor.execute(sql, (id, name, url, thumb_path, size, extension, type, parent_id, user_id))
         connect.commit()
         return cursor.rowcount
     except Exception as ex:
       logging.warning(ex)
       return False
     finally:
-      connect.close()
+      if connect:
+          connect.close()
 
   '''
     删除素材数据
   '''
-  def delete_material(material_data):
+  def delete_material(material_data, user_id):
     id = material_data.get('id')
     is_del = material_data.get('del')
+    connect = None
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
         sql = """
-          UPDATE `material` SET del = %s WHERE id = %s
+          UPDATE `material` SET del = %s WHERE id = %s AND user_id = %s
         """
-        cursor.execute(sql, (is_del, id))
+        cursor.execute(sql, (is_del, id, user_id))
         connect.commit()
         return cursor.lastrowid
     except Exception as ex:
       logging.warning(ex)
     finally:
-      connect.close()
+      if connect:
+          connect.close()
 
-  def modify(id, **kwargs):
+  def modify(id, user_id, **kwargs):
     if not id:
       logging.warning("ID 不能为空")
       return False
     if not kwargs:
       logging.warning("没有可更新的字段")
       return False
+    connect = None
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
@@ -350,8 +385,9 @@ class MaterialMysqlHandler:
         update_fields = [f"{key} = %s" for key in kwargs.keys()]
         values = list(kwargs.values())
 
-        sql = f"UPDATE material SET {', '.join(update_fields)} WHERE id = %s"
+        sql = f"UPDATE material SET {', '.join(update_fields)} WHERE id = %s AND user_id = %s"
         values.append(id)
+        values.append(user_id)
 
         cursor.execute(sql, values)
         connect.commit()
@@ -362,20 +398,22 @@ class MaterialMysqlHandler:
     except Exception as ex:
       logging.warning(f"数据增加失败：{ex}")
     finally:
-      connect.close()
+      if connect:
+          connect.close()
 
-  def scissors_file(id, folder = None):
-    done = MaterialMysqlHandler.copy_file(id, folder)
+  def scissors_file(id, folder, user_id):
+    done = MaterialMysqlHandler.copy_file(id, folder, user_id)
     if done:
-      MaterialMysqlHandler.delete_material({'id' : id, 'del' : 1})
+      MaterialMysqlHandler.delete_material({'id' : id, 'del' : 1}, user_id)
       return True
     else:
       return False
 
-  def copy_file(id, folder = None):
+  def copy_file(id, folder, user_id):
+    connect = None
     try:
       # 根据ID查询文件信息
-      info = MaterialMysqlHandler.find_material_by_id(id)
+      info = MaterialMysqlHandler.find_material_by_id(id, user_id)
 
       # 获取文件名
       file_name = info['name']
@@ -396,7 +434,7 @@ class MaterialMysqlHandler:
           'type': 'panorama',
           'parent_id': folder,
         }
-        done = MaterialMysqlHandler.install_material(data)
+        done = MaterialMysqlHandler.install_material(data, user_id)
         if done:
           return True
       else:
@@ -405,4 +443,5 @@ class MaterialMysqlHandler:
       logging.warning(ex)
       return False
     finally:
-      connect.close()
+      if connect:
+          connect.close()

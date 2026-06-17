@@ -3,6 +3,7 @@
 
 import json
 import logging
+import threading
 import time
 from typing import Callable
 
@@ -28,21 +29,23 @@ class ToolRegistry:
 
     _tools: dict = {}  # name -> {schema, validator, func, enabled}
     _exec_hook: Callable | None = None  # optional hook for execution wrapping
+    _lock: threading.RLock = threading.RLock()  # guards concurrent access to _tools
 
     @classmethod
     def register(cls, name: str, description: str, parameters: dict,
                  validator: Callable = None):
         """Decorator: register a tool function."""
         def wrapper(func):
-            cls._tools[name] = {
-                "name": name,
-                "description": description,
-                "parameters": parameters,
-                "validator": validator,
-                "func": func,
-                "enabled": True,
-            }
-            logging.info("ToolRegistry registered: %s", name)
+            with cls._lock:
+                cls._tools[name] = {
+                    "name": name,
+                    "description": description,
+                    "parameters": parameters,
+                    "validator": validator,
+                    "func": func,
+                    "enabled": True,
+                }
+                logging.info("ToolRegistry registered: %s", name)
             return func
         return wrapper
 
@@ -58,9 +61,10 @@ class ToolRegistry:
         Returns:
             dict with at least {"success": bool}. On error: {"success": False, "error": str}.
         """
-        if name not in cls._tools:
-            return {"success": False, "error": f"未知工具: {name}"}
-        tool = cls._tools[name]
+        with cls._lock:
+            if name not in cls._tools:
+                return {"success": False, "error": f"未知工具: {name}"}
+            tool = dict(cls._tools[name])  # snapshot under lock
         if not tool["enabled"]:
             return {"success": False, "error": f"工具 {name} 已禁用"}
 
@@ -100,36 +104,51 @@ class ToolRegistry:
     @classmethod
     def get_schema(cls, name: str) -> dict | None:
         """Get the function-calling schema for a single tool."""
-        tool = cls._tools.get(name)
-        if not tool or not tool["enabled"]:
-            return None
-        return {
-            "type": "function",
-            "function": {
-                "name": tool["name"],
-                "description": tool["description"],
-                "parameters": tool["parameters"],
-            },
-        }
+        with cls._lock:
+            tool = cls._tools.get(name)
+            if not tool or not tool["enabled"]:
+                return None
+            return {
+                "type": "function",
+                "function": {
+                    "name": tool["name"],
+                    "description": tool["description"],
+                    "parameters": tool["parameters"],
+                },
+            }
 
     @classmethod
     def get_schemas(cls) -> list:
         """Get all enabled tool schemas in OpenAI function-calling format."""
-        return [cls.get_schema(name) for name in cls._tools if cls._tools[name]["enabled"]]
+        with cls._lock:
+            return [
+                {
+                    "type": "function",
+                    "function": {
+                        "name": t["name"],
+                        "description": t["description"],
+                        "parameters": t["parameters"],
+                    },
+                }
+                for t in cls._tools.values() if t["enabled"]
+            ]
 
     @classmethod
     def disable(cls, name: str):
         """Disable a tool at runtime (e.g., circuit breaker open)."""
-        if name in cls._tools:
-            cls._tools[name]["enabled"] = False
+        with cls._lock:
+            if name in cls._tools:
+                cls._tools[name]["enabled"] = False
 
     @classmethod
     def enable(cls, name: str):
         """Re-enable a previously disabled tool."""
-        if name in cls._tools:
-            cls._tools[name]["enabled"] = True
+        with cls._lock:
+            if name in cls._tools:
+                cls._tools[name]["enabled"] = True
 
     @classmethod
     def list_tools(cls) -> list:
         """Return list of (name, enabled) tuples."""
-        return [(name, t["enabled"]) for name, t in cls._tools.items()]
+        with cls._lock:
+            return [(name, t["enabled"]) for name, t in cls._tools.items()]

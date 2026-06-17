@@ -12,7 +12,8 @@ from .connect import ConnectMysqlHandler
 
 class CategoriesMysqlHandler:
 
-  def query_list():
+  def query_list(user_id):
+    connect = None
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
@@ -22,16 +23,17 @@ class CategoriesMysqlHandler:
             DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS created_time, status
           FROM
             categories
+          WHERE
+            user_id = %s
           ORDER BY
             sort_order
           DESC
         """
-        cursor.execute(sql)
+        cursor.execute(sql, (user_id,))
         result = cursor.fetchall()
         return result
     except Exception as e:
-      # 发生错误时打印错误信息
       print("发生错误：", e)
     finally:
-      # 关闭数据库连接
-      connect.close()
+      if connect:
+          connect.close()

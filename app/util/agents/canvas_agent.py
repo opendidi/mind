@@ -5,9 +5,7 @@ from app.util.agents.base import AgentBase
 from app.util.agent_tools import TOOL_SCHEMAS
 
 CANVAS_TOOLS = [
-    "canvas_add_pen", "canvas_update_pen", "canvas_delete_pen",
-    "canvas_add_line", "canvas_get_state", "canvas_clear",
-    "canvas_undo", "canvas_redo",
+    "canvas",
     "layout_auto_arrange", "layout_align",
 ]
 
@@ -26,16 +24,18 @@ class CanvasAgent(AgentBase):
 - 对图形进行自动布局排列和对齐
 
 ## 核心工具
-- canvas_get_state: 获取画布当前状态（操作前应先调用）
-- canvas_add_pen: 创建图形
-- canvas_add_line: 创建连线
-- canvas_update_pen: 修改图形
-- canvas_delete_pen: 删除图形
+- canvas: 统一画布操作工具，通过 action 参数切换：
+  - action="add_pen": 创建图形 (需 type, x, y, text 等)
+  - action="add_line": 创建连线 (需 from_pen, to_pen 等)
+  - action="update_pen": 修改图形 (需 pen_id, props)
+  - action="delete_pen": 删除图形 (需 pen_id 或 pen_ids)
+  - action="get_state": 获取画布状态
+  - action="undo"/"redo"/"clear": 撤销/重做/清空
 - layout_auto_arrange: 自动排版
 - layout_align: 对齐图形
 
 ## 最佳实践
-1. **先看再动**：操作前用 canvas_get_state 查看画布现状
+1. **先看再动**：如需确认画布现状，用 canvas(action="get_state")
 2. **合理布局**：流程图通常垂直排列，架构图可水平排列
 3. **间距适当**：图形之间保持 40-60px 间距
 4. **命名清晰**：图形文字应简洁明了

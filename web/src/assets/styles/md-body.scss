@@ -1,0 +1,155 @@
+// Markdown rendering styles — for chat page
+
+$primary: #4f46e5;
+$text: #1e293b;
+$text-secondary: #64748b;
+$text-muted: #94a3b8;
+$border: #e2e8f0;
+
+.md-body {
+  line-height: 1.75;
+  word-break: break-word;
+
+  h1, h2, h3, h4 {
+    font-weight: 700;
+    margin: 16px 0 8px;
+    line-height: 1.35;
+    &:first-child { margin-top: 0; }
+  }
+  h1 { font-size: 18px; color: $text; }
+  h2 { font-size: 16px; color: $text; }
+  h3 { font-size: 14px; color: $text-secondary; }
+  h4 { font-size: 13px; color: $text-muted; }
+
+  p {
+    margin: 0 0 8px;
+    &:last-child { margin-bottom: 0; }
+  }
+
+  strong { font-weight: 700; color: #0f172a; }
+  em { font-style: italic; color: $text-secondary; }
+
+  ul, ol {
+    margin: 6px 0;
+    padding-left: 22px;
+  }
+  li {
+    margin-bottom: 3px;
+    &::marker { color: $text-muted; }
+  }
+  ul li { list-style-type: disc; }
+  ol li { list-style-type: decimal; }
+
+  code {
+    background: #eef2ff;
+    color: #4f46e5;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-family: "Fira Code", "Cascadia Code", "Consolas", monospace;
+    font-weight: 500;
+  }
+
+  pre {
+    background: #1e293b;
+    color: #e2e8f0;
+    padding: 14px 16px;
+    border-radius: 12px;
+    overflow-x: auto;
+    margin: 10px 0;
+    font-size: 12.5px;
+    line-height: 1.6;
+    code {
+      background: transparent;
+      padding: 0;
+      color: inherit;
+      font-weight: 400;
+    }
+  }
+
+  blockquote {
+    border-left: 3px solid $primary;
+    padding: 6px 14px;
+    margin: 10px 0;
+    background: #f8fafc;
+    border-radius: 0 8px 8px 0;
+    color: $text-secondary;
+    font-style: italic;
+    p { margin-bottom: 4px; }
+  }
+
+  a {
+    color: $primary;
+    text-decoration: none;
+    border-bottom: 1px solid rgba($primary, 0.3);
+    transition: border-color 0.15s, color 0.15s;
+    &:hover {
+      border-bottom-color: $primary;
+      color: #4338ca;
+    }
+  }
+
+  table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin: 12px 0;
+    font-size: 13px;
+    border: 1px solid $border;
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  thead {
+    th {
+      background: linear-gradient(135deg, #f1f5f9, #e2e8f0);
+      font-weight: 700;
+      color: #334155;
+      padding: 9px 12px;
+      text-align: center;
+      border-bottom: 2px solid $border;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.3px;
+    }
+  }
+  tbody {
+    td {
+      padding: 9px 12px;
+      border-bottom: 1px solid #f1f5f9;
+      color: $text;
+      text-align: center;
+      vertical-align: middle;
+    }
+    tr {
+      transition: background 0.15s;
+      &:nth-child(even) { background: #fafbfc; }
+      &:hover { background: #eef2ff; }
+      &:last-child td { border-bottom: none; }
+    }
+  }
+
+  img {
+    max-width: 100%;
+    height: auto;
+    border-radius: 10px;
+    margin: 8px 0;
+    border: 1px solid $border;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
+    &:hover {
+      transform: scale(1.02);
+      box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+    }
+  }
+
+  hr {
+    border: none;
+    border-top: 1px solid $border;
+    margin: 14px 0;
+  }
+
+  input[type="checkbox"] {
+    margin-right: 6px;
+    accent-color: $primary;
+  }
+}

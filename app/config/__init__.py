@@ -20,7 +20,7 @@ load_dotenv()  # 从 .env 文件加载环境变量
 db_config = {
   'host': os.environ.get('DB_HOST', 'localhost'),
   'user': os.environ.get('DB_USER', 'root'),
-  'passwd': os.environ.get('DB_PASSWORD', 'root123'),
+  'passwd': os.environ.get('DB_PASSWORD', ''),
   'port': int(os.environ.get('DB_PORT', 3306)),
   'db': os.environ.get('DB_NAME', 'mind'),
   'cursorclass': pymysql.cursors.DictCursor
@@ -61,5 +61,11 @@ vision_config = {
 # LLM 统一超时（秒）
 LLM_TIMEOUT = int(os.environ.get("LLM_TIMEOUT", 120))
 
+# Agent 默认模型
+AGENT_DEFAULT_MODEL = os.environ.get("AGENT_DEFAULT_MODEL", "deepseek-chat")
+
 # 前端站点地址
 app_url = os.environ.get("APP_URL", "http://localhost:3100")
+
+# 高德地图 Web API Key
+AMAP_KEY = os.environ.get("AMAP_KEY", "")

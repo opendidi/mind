@@ -103,3 +103,36 @@ def estimate_tokens_from_messages(messages: list, chars_per_token: float = 2.5) 
             args = tc.get("function", {}).get("arguments", "")
             total += len(args) / chars_per_token
     return int(total)
+
+
+# ── Shared Utilities (used by agent_dag + sub-agents) ──────────────────────
+
+import hashlib
+import json as _json
+
+MAX_TOOL_RESULT_CHARS = 800
+
+
+def truncate_tool_result(result: dict, max_chars: int = MAX_TOOL_RESULT_CHARS) -> dict:
+    """Truncate a tool result dict to prevent context bloat."""
+    truncated = {}
+    for k, v in result.items():
+        if isinstance(v, str) and len(v) > max_chars:
+            truncated[k] = v[:max_chars] + f"…(截断/{len(v)}字符)"
+        elif isinstance(v, list) and len(v) > 5:
+            truncated[k] = v[:3] + [f"…(共{len(v)}项/已截断)"]
+        elif isinstance(v, dict):
+            s = _json.dumps(v, ensure_ascii=False)
+            if len(s) > max_chars:
+                truncated[k] = {"_truncated": True, "preview": s[:max_chars]}
+            else:
+                truncated[k] = v
+        else:
+            truncated[k] = v
+    return truncated
+
+
+def loop_key(tool_name: str, tool_args: dict) -> str:
+    """Generate a stable key for loop detection (same tool + same args)."""
+    args_str = _json.dumps(tool_args, ensure_ascii=False, sort_keys=True)
+    return f"{tool_name}:{hashlib.md5(args_str.encode()).hexdigest()[:8]}"

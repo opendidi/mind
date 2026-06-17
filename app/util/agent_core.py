@@ -18,6 +18,7 @@ import logging
 import time
 from datetime import datetime
 
+from app.config import AGENT_DEFAULT_MODEL
 from app.util.agent_engine import AgentEngine
 from app.util.agent_intent import classify_domain, unified_intent_and_plan
 from app.util.agent_skills import get_skills_for_intent
@@ -40,18 +41,51 @@ BASE_PROMPT = """你是"小M"，一个图形编辑助手。通过工具帮助用
 
 ## 行为准则
 
-- **先看再动** — 操作前先查看当前画布状态（用 canvas_get_state）
+- **先看再动** — 如需确认画布现状，用 canvas(action='get_state') 查看
 - **先规划后执行** — 复杂任务用 `[思考]` 简述步骤（1~2句），再逐步执行
 - **确认删除** — 删除图形或清空画布前向用户确认并说明后果
 - **不要加戏** — 只执行用户明确要求的操作，不自行扩展
 - **失败止损** — 同一操作连续失败 2 次即停止，向用户说明原因
 - **主动建议** — 完成操作后可附带一条简短建议
+- **位置可视化** — 涉及地点/坐标时主动附上 ```map 代码块展示位置
+- **路线规划** — 用户询问两地之间怎么走时，先用 geocode 查询起终点坐标，再用 ```route 代码块输出路线
 
 ## 回复格式
 
 - 用中文回复，简洁专业，语气友好
 - 操作成功 → 简明告知结果
 - 操作失败 → 说明原因 + 替代方案
+
+## 地图标记格式 (```map)
+
+输出 JSON，center 为中心经纬度，markers 为标记数组：
+```map
+{
+  "title": "位置标注",
+  "center": [lng, lat],
+  "zoom": 14,
+  "markers": [
+    {
+      "lat": 22.81,
+      "lng": 113.29,
+      "title": "地点名称",
+      "desc": "描述信息（可选）"
+    }
+  ]
+}
+```
+
+## 路线规划格式 (```route)
+
+输出 JSON，mode 为路线模式，from/to 为起终点坐标与名称：
+```route
+{
+  "mode": "driving",
+  "from": { "lng": 113.29, "lat": 22.81, "name": "广州塔" },
+  "to": { "lng": 113.95, "lat": 22.53, "name": "深圳湾公园" }
+}
+```
+mode 可选值：driving(驾车) / walking(步行) / riding(骑行) / transit(公交)
 
 ## 支持的图形类型
 
@@ -104,7 +138,7 @@ class AgentSession:
         self.created_at = time.time()
         self._compact_summary: str = ""
 
-    def _compact_history(self, llm_client, model: str = "deepseek-chat"):
+    def _compact_history(self, llm_client, model: str = AGENT_DEFAULT_MODEL):
         """LLM-driven context compaction."""
         if not self.history:
             return
@@ -259,11 +293,11 @@ class AgentSession:
     @property
     def _engine(self):
         if not hasattr(self, "_engine_inst"):
-            self._engine_inst = AgentEngine(get_llm_client(), self.user_id, "deepseek-chat")
+            self._engine_inst = AgentEngine(get_llm_client(), self.user_id, AGENT_DEFAULT_MODEL)
         return self._engine_inst
 
     def chat_v3(self, user_message: str, canvas_context: dict = None,
-                confirm_handler=None, model: str = "deepseek-chat",
+                confirm_handler=None, model: str = AGENT_DEFAULT_MODEL,
                 redis_client=None, task_id: str = "", stream: bool = False):
         """V3 unified agent chat — single LLM call for intent+plan, then execute."""
         self.history.append({"role": "user", "content": user_message})

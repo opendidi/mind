@@ -201,4 +201,45 @@ class PlanMemory:
 
     @staticmethod
     def get_failure_summary(limit: int = 3) -> str:
-        return ""
+        """Return recent failure patterns as planner hints.
+
+        Reads from Redis recent plan list (in-memory fallback).
+        Returns empty string when no failures are recorded.
+        """
+        failures: list[str] = []
+        r = _get_plan_memory_redis()
+        if r:
+            try:
+                recent_key = _plan_recent_key()
+                recent_raws = r.lrange(recent_key, 0, _PLAN_MEMORY_MAX_RECENT - 1) or []
+                for raw in recent_raws:
+                    try:
+                        fb = PlanFeedback.from_dict(json.loads(raw))
+                        if fb.steps_failed > 0:
+                            failures.append(
+                                f"目标「{fb.goal[:60]}」: {fb.steps_failed}/{fb.steps_total} 步骤失败，"
+                                f"评分 {fb.score:.2f}"
+                            )
+                    except (json.JSONDecodeError, KeyError):
+                        continue
+            except Exception:
+                logging.warning("PlanMemory Redis failure_summary failed", exc_info=True)
+
+        # In-memory fallback
+        if not failures:
+            for fb in _mem_recent:
+                if fb.steps_failed > 0:
+                    failures.append(
+                        f"目标「{fb.goal[:60]}」: {fb.steps_failed}/{fb.steps_total} 步骤失败，"
+                        f"评分 {fb.score:.2f}"
+                    )
+
+        if not failures:
+            return ""
+
+        lines = ["## 历史失败记录（请避免重复以下模式）"]
+        for f in failures[:limit]:
+            lines.append(f"- {f}")
+        if len(failures) > limit:
+            lines.append(f"- …还有 {len(failures) - limit} 条失败记录")
+        return "\n".join(lines)

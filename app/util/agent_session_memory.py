@@ -7,13 +7,15 @@ import time
 
 MEMORY_TTL_REDIS = 3600
 MEMORY_MAX_SUMMARY_CHARS = 500
+MEMORY_MAX_ENTRIES = 100  # max entries in in-memory fallback store
 
 
 class SessionMemory:
     """Manage cross-session conversation memory using Redis with in-memory fallback."""
 
-    # In-memory fallback storage
+    # In-memory fallback storage (LRU: oldest entry evicted when full)
     _mem_store: dict[str, dict] = {}
+    _mem_access_order: list[str] = []
 
     @staticmethod
     def restore(user_id: str) -> str:
@@ -35,6 +37,10 @@ class SessionMemory:
         # Fall back to in-memory
         data = SessionMemory._mem_store.get(user_id)
         if data:
+            # LRU: move to end on access
+            if user_id in SessionMemory._mem_access_order:
+                SessionMemory._mem_access_order.remove(user_id)
+            SessionMemory._mem_access_order.append(user_id)
             return SessionMemory._format_prompt(data.get("entities", {}), data.get("summary", ""))
         return ""
 
@@ -71,8 +77,16 @@ class SessionMemory:
         except Exception:
             logging.debug("SessionMemory Redis cache set failed for %s", user_id)
 
-        # In-memory fallback
+        # In-memory fallback with LRU eviction
+        if user_id in SessionMemory._mem_store:
+            SessionMemory._mem_access_order.remove(user_id)
+        elif len(SessionMemory._mem_store) >= MEMORY_MAX_ENTRIES:
+            evicted = SessionMemory._mem_access_order.pop(0) if SessionMemory._mem_access_order else None
+            if evicted:
+                SessionMemory._mem_store.pop(evicted, None)
+                logging.debug("SessionMemory evicted: %s (max entries %d)", evicted, MEMORY_MAX_ENTRIES)
         SessionMemory._mem_store[user_id] = data
+        SessionMemory._mem_access_order.append(user_id)
 
     @staticmethod
     def _format_prompt(entities: dict, summary: str) -> str:

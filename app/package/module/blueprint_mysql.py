@@ -25,35 +25,36 @@ dirname = os.path.dirname(os.path.abspath(__name__))
 
 class BlueprintMysqlHandler:
 
-  def query_list(params):
+  def query_list(params, user_id):
     page_num = params['current']
     page_size = params['page_size']
     keyword = params['keyword']
     data = []
+    connect = None
     try:
-      # 计算起始记录的偏移量
       offset = (int(page_num) - 1) * int(page_size)
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
-        sql = "SELECT id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail, created_at FROM blueprint WHERE del = 0 "
-        sql += "LIMIT {} OFFSET {}".format(page_size, offset)
-        cursor.execute(sql, tuple(data))
+        params = [user_id]
+        sql = "SELECT id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail, created_at FROM blueprint WHERE del = 0 AND user_id = %s "
+        if keyword:
+          sql += "AND name LIKE %s "
+          params.append('%' + keyword + '%')
+        sql += "ORDER BY created_at DESC LIMIT {} OFFSET {}".format(page_size, offset)
+        cursor.execute(sql, tuple(params))
         results = cursor.fetchall()
 
-        # 格式化时间
         for row in results:
-          # 检查 created_at 的类型
           if isinstance(row['created_at'], str):
             row['created_at'] = datetime.strptime(row['created_at'], '%a, %d %b %Y %H:%M:%S %Z').strftime('%Y-%m-%d %H:%M:%S')
           elif isinstance(row['created_at'], datetime):
             row['created_at'] = row['created_at'].strftime('%Y-%m-%d %H:%M:%S')
 
-        params_count = []
-
+        params_count = [user_id]
         count_sql = '''
-          SELECT COUNT(*) as total FROM blueprint WHERE del = 0
+          SELECT COUNT(*) as total FROM blueprint WHERE del = 0 AND user_id = %s
         '''
-        if keyword is not None:
+        if keyword:
           count_sql += "AND name LIKE %s "
           params_count.append('%' + keyword + '%')
         cursor.execute(count_sql, tuple(params_count))
@@ -66,21 +67,21 @@ class BlueprintMysqlHandler:
           'page_size': int(page_size),
         }
     except Exception as e:
-      # 发生错误时打印错误信息
       print(f"发生错误：{e}")
     finally:
-      # 关闭数据库连接
-      connect.close()
+      if connect:
+          connect.close()
 
-  def find(id):
+  def find(id, user_id):
     if not id:
       logging.warning("ID 不能为空")
       return False
+    connect = None
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
-        sql = ''' select id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail from blueprint where id = %s and del = 0 '''
-        cursor.execute(sql, (id,))
+        sql = ''' select id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail from blueprint where id = %s and del = 0 and user_id = %s '''
+        cursor.execute(sql, (id, user_id))
         result = cursor.fetchone()
         if result is None:
           return False
@@ -92,12 +93,12 @@ class BlueprintMysqlHandler:
           result['pens'] = json.loads(result['pens'])
         return result
     except Exception as e:
-      # 发生错误时打印错误信息
       print(f"发生错误：{e}")
     finally:
-      connect.close()
+      if connect:
+          connect.close()
 
-  def add(data):
+  def add(data, user_id):
     id = str(uuid.uuid4()).replace("-", "")
     name = data.get('name')
     color = data.get('color')
@@ -114,38 +115,40 @@ class BlueprintMysqlHandler:
     pens = data.get('pens')
     https = data.get('https')
     thumbnail = data.get('thumbnail')
+    connect = None
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
-        sql = "INSERT INTO blueprint (id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
-        cursor.execute(sql, (id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail))
+        sql = "INSERT INTO blueprint (id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail, user_id) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)"
+        cursor.execute(sql, (id, name, color, penBackground, background, bkImage, grid, gridColor, gridSize, gridRotate, rule, ruleColor, initJs, pens, https, thumbnail, user_id))
         connect.commit()
         if cursor.rowcount == 0:
           return False, "数据增加失败"
         return True, id
     except Exception as e:
-      # 发生错误时打印错误信息
       print(f"发生错误：{e}")
+      return False, str(e)
     finally:
-      connect.close()
+      if connect:
+          connect.close()
 
-  def modify(id, **kwargs):
+  def modify(id, user_id, **kwargs):
     if not id:
       logging.warning("ID 不能为空")
       return False
+    connect = None
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
         for key in kwargs:
-          # 如果值是字典
           if isinstance(kwargs[key], dict):
-            # 转成 JSON 字符串
             kwargs[key] = json.dumps(kwargs[key], ensure_ascii=False)
         update_fields = [f"{key} = %s" for key in kwargs.keys()]
         values = list(kwargs.values())
 
-        sql = f"UPDATE blueprint SET {', '.join(update_fields)} WHERE id = %s"
+        sql = f"UPDATE blueprint SET {', '.join(update_fields)} WHERE id = %s AND user_id = %s"
         values.append(id)
+        values.append(user_id)
 
         cursor.execute(sql, values)
         connect.commit()
@@ -156,24 +159,27 @@ class BlueprintMysqlHandler:
     except Exception as ex:
       logging.warning(f"数据增加失败：{ex}")
     finally:
-      connect.close()
+      if connect:
+          connect.close()
 
   '''
     删除图纸
   '''
-  def delete_blueprint(params):
+  def delete_blueprint(params, user_id):
     id = params.get('id')
     is_del = params.get('del')
+    connect = None
     try:
       connect = ConnectMysqlHandler.connect_mysql()
       with connect.cursor() as cursor:
         sql = """
-          UPDATE `blueprint` SET del = %s WHERE id = %s
+          UPDATE `blueprint` SET del = %s WHERE id = %s AND user_id = %s
         """
-        cursor.execute(sql, (is_del, id))
+        cursor.execute(sql, (is_del, id, user_id))
         connect.commit()
         return cursor.lastrowid
     except Exception as ex:
       logging.warning(ex)
     finally:
-      connect.close()
+      if connect:
+          connect.close()

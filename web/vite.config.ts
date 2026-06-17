@@ -2,6 +2,14 @@
  * @Descripttion:
  * @version: 1.0.0
  * @Author: htang
+ * @Date: 2026-06-17 08:49:24
+ * @LastEditors: htang
+ * @LastEditTime: 2026-06-17 10:20:48
+ */
+/*
+ * @Descripttion:
+ * @version: 1.0.0
+ * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
  * @LastEditTime: 2025-08-19 17:39:33
@@ -44,6 +52,9 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     },
     css: {
       preprocessorOptions: {
+        scss: {
+          api: 'modern',
+        },
         less: {
           modifyVars: {
             hack: `true; @import (reference) "${path.resolve("src/assets/css/base.less")}";`,

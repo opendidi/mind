@@ -1,27 +1,45 @@
-/*
- * @Descripttion:
- * @version: 1.0.0
- * @Author: htang
- * @Date: 2024-10-08 20:12:03
- * @LastEditors: htang
- * @LastEditTime: 2024-10-08 20:16:22
+/**
+ * Router permission guard — auth check + page title
  */
 import router from '@/router'
+import { getCache } from '@/utils/auth'
 import getPageTitle from '@/utils/get-page-title.ts'
-import NProgress from 'nprogress' // progress bar
-import 'nprogress/nprogress.css' // progress bar style
+import NProgress from 'nprogress'
+import 'nprogress/nprogress.css'
 
-NProgress.configure({ showSpinner: false }) // NProgress Configuration
+NProgress.configure({ showSpinner: false })
+
+// Public routes that don't require authentication
+const whiteList = ['/login', '/register']
+const publicPaths = ['/preview']
+
+function isWhiteListed(path) {
+  return whiteList.includes(path) || publicPaths.some((p) => path.startsWith(p))
+}
 
 router.beforeEach(async (to, from, next) => {
-  // set page title
-  document.title = getPageTitle(to.meta.title)
-  // start progress bar
   NProgress.start()
-  next()
+  document.title = getPageTitle(to.meta?.title)
+
+  const hasToken = getCache('auth-token')
+
+  if (hasToken) {
+    if (to.path === '/login') {
+      next({ path: '/' })
+      NProgress.done()
+    } else {
+      next()
+    }
+  } else {
+    if (isWhiteListed(to.path)) {
+      next()
+    } else {
+      next(`/login?redirect=${to.path}`)
+      NProgress.done()
+    }
+  }
 })
 
 router.afterEach(() => {
-  // finish progress bar
   NProgress.done()
 })

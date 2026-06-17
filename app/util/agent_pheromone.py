@@ -17,8 +17,7 @@ _EXTRACTABLE_KEYS = {
 
 # 工具名 → 结果中值得提取的子字段
 _TOOL_RESULT_PATHS = {
-    "canvas_get_state": ["data"],
-    "canvas_add_pen": ["data"],
+    "canvas": ["data"],
     "blueprint_list": ["data"],
     "blueprint_search": ["data"],
     "file_search": ["data"],

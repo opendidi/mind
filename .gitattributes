@@ -1,0 +1,23 @@
+# Auto-detect text files and normalize line endings
+* text=auto
+
+# Python
+*.py text eol=lf
+
+# Web
+*.js text eol=lf
+*.ts text eol=lf
+*.vue text eol=lf
+*.css text eol=lf
+*.less text eol=lf
+*.html text eol=lf
+*.json text eol=lf
+*.yaml text eol=lf
+*.yml text eol=lf
+*.md text eol=lf
+
+# Shell
+*.sh text eol=lf
+
+# Lock files (generated, don't diff)
+pnpm-lock.yaml text eol=lf -diff

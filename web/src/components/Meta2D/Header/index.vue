@@ -356,9 +356,9 @@
       <a
         class="flex items-center flex-col ai-btn"
         title="AI 助手"
-        @click="openAgentPanel"
+        @click="onOpenAgentPanel"
       >
-        <span class="ai-icon">🤖</span>
+        <t-icon name="robot" />
         <span>AI 助手</span>
       </a>
       <a class="flex items-center flex-col" @click="onSearch">
@@ -410,14 +410,16 @@ import ShareModal from "../Share/index.vue";
 import { Icon } from "tdesign-vue-next";
 import { useCommonStore, useCommonStoreWithOut } from "@/store/modules/common";
 import { apiBlueprintAdd, apiBlueprintModify } from "@/api/blueprint";
+import { apiChatUploadFile } from "@/api/chat";
 import FileManager from "@/components/FileManager/index.vue";
 import { UrlParamsManager } from "@/utils/urlParamsManager";
 
 let { proxy } = getCurrentInstance();
 
-// AI Agent Panel — call window method set by Index.vue
-function openAgentPanel() {
-  (window as any).__openAgentPanel?.();
+const emit = defineEmits(["openAgentPanel"]);
+
+function openChatPage() {
+  router.push({ name: "chat" });
 }
 
 const router = useRouter();
@@ -622,12 +624,28 @@ function openFile() {
 
 const createBluePrint = () => {
   UrlParamsManager.clearParams("");
-  const data: any = meta2d.data();
-  data.name = "";
-  data.pens = [];
-  data.https = [];
-  data.initJS = "";
-  localStorage.setItem("meta2d", JSON.stringify(data));
+  meta2d.open({
+    name: "",
+    pens: [],
+    lines: [],
+    background: "rgba(255, 255, 255, 1)",
+    color: "",
+    penBackground: "",
+    bkImage: "",
+    grid: "0",
+    gridColor: "",
+    gridSize: "",
+    gridRotate: "",
+    rule: "0",
+    ruleColor: "",
+    initJs: "",
+    https: [],
+    thumbnail: "",
+  });
+  meta2d.store.data.locked = 0;
+  meta2d.store.data.fromArrow = "";
+  meta2d.store.data.toArrow = "triangleSolid";
+  localStorage.removeItem("meta2d");
 };
 
 const downloadJson = () => {
@@ -791,6 +809,10 @@ function onView() {
   });
 }
 
+function onOpenAgentPanel() {
+  emit("openAgentPanel");
+}
+
 function onSave(flag: boolean) {
   const data: any = meta2d.data();
   if (!data.pens.length) {
@@ -818,23 +840,7 @@ function onSave(flag: boolean) {
       "https",
       "thumbnail",
     ];
-    const params: any = {
-      // name: data["name"],
-      // color: data["color"] || "",
-      // penBackground: data["penBackground"] || "",
-      // background: data["background"] || "",
-      // bkImage: data["bkImage"] || "",
-      // grid: data["grid"] || "",
-      // gridColor: data["gridColor"] || "",
-      // gridSize: data["gridSize"] || "",
-      // gridRotate: data["gridRotate"] || "",
-      // rule: data["rule"] || "",
-      // ruleColor: data["ruleColor"] || "",
-      // initJs: data["initJs"] || "",
-      // pens: JSON.stringify(data["pens"]) || "",
-      // https: JSON.stringify(data["https"]) || "",
-      // thumbnail: data["thumbnail"] || "",
-    };
+    const params: any = {};
     Object.keys(data).forEach((key) => {
       if (fields.includes(key)) {
         if (["https", "pens"].includes(key)) {
@@ -844,23 +850,42 @@ function onSave(flag: boolean) {
         }
       }
     });
-    // const blob = meta2d.toPng(50, undefined, true, 500);
-    if (!proxy.$route.query["id"]) {
-      apiBlueprintAdd(params).then((res) => {
-        commonStore.setIsSave("1");
-        message.success("保存成功");
-        UrlParamsManager.setParams({
-          id: res.id,
+
+    // 生成缩略图 → 上传 MinIO → 保存
+    generateThumbnail((thumbnailUrl) => {
+      params.thumbnail = thumbnailUrl || params.thumbnail;
+      if (!proxy.$route.query["id"]) {
+        apiBlueprintAdd(params).then((res) => {
+          commonStore.setIsSave("1");
+          message.success("保存成功");
+          UrlParamsManager.setParams({ id: res.id });
+          data["id"] = res.id;
         });
-        data["id"] = res.id;
-      });
-    } else {
-      params.id = proxy.$route.query["id"];
-      apiBlueprintModify(params).then((res) => {
-        commonStore.setIsSave("1");
-        message.success("保存成功");
-      });
-    }
+      } else {
+        params.id = proxy.$route.query["id"];
+        apiBlueprintModify(params).then((res) => {
+          commonStore.setIsSave("1");
+          message.success("保存成功");
+        });
+      }
+    });
+  }
+}
+
+function generateThumbnail(callback: (url: string) => void) {
+  try {
+    meta2d.toPng(20, async (blob: Blob | null) => {
+      if (!blob) return callback('');
+      try {
+        const file = new File([blob], `thumb_${Date.now()}.png`, { type: 'image/png' });
+        const result = await apiChatUploadFile(file);
+        callback(result?.url || '');
+      } catch {
+        callback('');
+      }
+    }, false, 400);
+  } catch {
+    callback('');
   }
 }
 

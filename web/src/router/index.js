@@ -1,8 +1,20 @@
-import { createRouter, createWebHashHistory, createWebHistory } from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
+import Layout from '@/layout/index.vue';
 
 const routes = [
-  { path: '/', component: () => import('@/views/Index.vue') },
-  { path: '/preview', component: () => import('@/views/Preview.vue') },
+  {
+    path: '/',
+    component: Layout,
+    redirect: '/',
+    children: [
+      { path: '/', component: () => import('@/views/Index.vue'), meta: { title: 'Mind' } },
+      { path: '/preview', component: () => import('@/views/Preview.vue'), meta: { title: '预览' } },
+      { path: '/chat/:id?', name: 'chat', component: () => import('@/views/chat/index.vue'), meta: { title: 'AI 对话' } },
+      { path: '/profile', name: 'profile', component: () => import('@/views/user/profile.vue'), meta: { title: '个人中心' } },
+    ],
+  },
+  { path: '/login', name: 'login', component: () => import('@/views/user/login.vue'), meta: { title: '登录' } },
+  { path: '/register', name: 'register', component: () => import('@/views/user/register.vue'), meta: { title: '注册' } },
 ];
 
 const router = createRouter({

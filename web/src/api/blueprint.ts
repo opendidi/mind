@@ -49,11 +49,7 @@ export function apiBlueprintFind(params: any) {
  */
 export function apiBlueprintAdd(data: any) {
   return new Promise(async (resolve, reject) => {
-    await http.post(API.add, data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }).then((res: any) => {
+    await http.post(API.add, data).then((res: any) => {
       resolve(res.data);
     })
   })
@@ -66,11 +62,7 @@ export function apiBlueprintAdd(data: any) {
  */
 export function apiBlueprintModify(data: any) {
   return new Promise(async (resolve, reject) => {
-    await http.post(API.modify, data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }).then((res: any) => {
+    await http.post(API.modify, data).then((res: any) => {
       resolve(res);
     })
   })
@@ -83,11 +75,7 @@ export function apiBlueprintModify(data: any) {
  */
 export function apiBlueprintDelete(data: any) {
   return new Promise(async (resolve, reject) => {
-    await http.post(API.delete, data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }).then((res: any) => {
+    await http.post(API.delete, data).then((res: any) => {
       resolve(res);
     })
   })

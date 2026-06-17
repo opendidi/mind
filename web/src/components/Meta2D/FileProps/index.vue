@@ -338,7 +338,8 @@ export default defineComponent({
 </script>
 
 <script lang="ts" setup>
-import { onMounted, ref, nextTick, reactive, getCurrentInstance } from "vue";
+import { onMounted, onUnmounted, ref, nextTick, reactive, getCurrentInstance, watch } from "vue";
+import { useRoute } from "vue-router";
 import { message } from "ant-design-vue";
 import FileManager from "@/components/FileManager/index.vue";
 import EditContainer from "@/components/Meta2D/EditContainer/index.vue";
@@ -458,6 +459,21 @@ function onInit(dataValue: any) {
 
 onMounted(() => {
   onInit(meta2d.data());
+  window.addEventListener('meta2d:dataLoaded', onMeta2dDataLoaded);
+});
+
+onUnmounted(() => {
+  window.removeEventListener('meta2d:dataLoaded', onMeta2dDataLoaded);
+});
+
+function onMeta2dDataLoaded() {
+  if (window.meta2d) onInit(window.meta2d.data());
+}
+
+// 新建图纸时同步清空表单（路由 id 被清除）
+const route = useRoute();
+watch(() => route.query.id, (val) => {
+  if (!val && window.meta2d) onInit(window.meta2d.data());
 });
 
 function onChangeData(key: string, dataValue: string) {
@@ -672,12 +688,12 @@ defineExpose({
   background: #fff;
 
   .ant-tabs {
-    :deep .ant-collapse-item {
+    :deep(.ant-collapse-item) {
       border-bottom: 1px solid #d9d9d9;
       box-sizing: border-box;
     }
 
-    :deep .ant-collapse-content-box {
+    :deep(.ant-collapse-content-box) {
       padding: 6px;
     }
 

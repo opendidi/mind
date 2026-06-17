@@ -3,10 +3,15 @@
 
 from typing import Generator
 
+from app.config import AGENT_DEFAULT_MODEL
 from app.util.agent_dag import DAGExecutor, DAGPlan, DAGNode
 from app.util.agent_dispatcher import AgentDispatcher
-from app.util.agent_tools import TOOL_SCHEMAS
+import app.util.search  # noqa: F401 — registers web_search tool via ToolRegistry
+from app.util.agent_tools import TOOL_SCHEMAS, _rebuild_schemas
 from app.util.agent_tracer import AgentTracer
+
+# Rebuild after search module registers additional tools
+_rebuild_schemas()
 
 
 class AgentEngine:
@@ -18,7 +23,7 @@ class AgentEngine:
     4. Full lifecycle traced via AgentTracer
     """
 
-    def __init__(self, llm_client, user_id: str, model: str = "deepseek-chat"):
+    def __init__(self, llm_client, user_id: str, model: str = AGENT_DEFAULT_MODEL):
         self.llm = llm_client
         self.user_id = user_id
         self.model = model
