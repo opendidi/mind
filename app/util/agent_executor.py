@@ -272,9 +272,9 @@ class BaseExecutor:
 
         guard = self.tool_context.get("_guard_check")
         if guard:
-            ok, reason, confirm = guard(tc_name, tool_args)
-            if not ok:
-                return {"success": False, "error": reason}
+            gr = guard(tc_name, tool_args)
+            if not gr.get("ok", True):
+                return {"success": False, "error": gr.get("reason", "工具调用被安全策略拦截")}
 
         from app.util.agent_tools import run_tool_call
 
@@ -306,9 +306,9 @@ class BaseExecutor:
 
         guard = self.tool_context.get("_guard_check")
         if guard:
-            ok, reason, confirm = guard(tc_name, tool_args)
-            if not ok:
-                return {"success": False, "error": reason}
+            gr = guard(tc_name, tool_args)
+            if not gr.get("ok", True):
+                return {"success": False, "error": gr.get("reason", "工具调用被安全策略拦截")}
 
         if event_queue is not None:
             event_queue.put(("tool_call", tc_name, tool_args, node_id))
