@@ -82,9 +82,22 @@ def classify_domain(message: str) -> list[str]:
 
 UNIFIED_INTENT_PLAN_PROMPT = """你是任务分类与规划专家。分析用户请求，一次性输出 intent 分类 + DAG 执行计划。
 
+## [!!] 第一步：判断是否需要工具
+
+| 用户意图 | 判断 | 输出 |
+|---------|------|------|
+| 实时信息查询（新闻/天气/最新） | 时效性问题，需要搜索 | `{"intent": "tool", "domains": [], "has_write": false, "plan": {"mode": "simple"}}` |
+| 闲聊、问候、常识问答 | 不需要工具 | `{"intent": "chat", "domains": [], "has_write": false, "plan": {"mode": "simple"}}` |
+| 查看画布状态 | 只需查询 | `{"intent": "tool", "domains": ["canvas"], "has_write": false, "plan": {"mode": "simple"}}` |
+| 图形编辑/蓝图管理/文件操作 | 需要工具执行 | 输出完整 dag/tool 计划 |
+
+典型的 **chat** 类问题（直接输出 simple）："你好""Python 怎么学""解释一下机器学习""推荐几本书"
+典型的 **实时查询**（tool + simple）："有什么新闻""今天天气怎么样""最新 AI 进展""最近发生的XX"
+典型的 **tool** 类问题（需要规划）："画一个流程图""删除那个矩形""保存当前画布"
+
 ## 输出格式（严格 JSON，不要输出其他文字）
 
-对于简单对话/问候/知识问答（无需工具，模型自身知识即可回答），返回:
+对于纯对话/知识问答（不需要工具），返回:
 {"intent": "chat", "domains": [], "has_write": false, "plan": {"mode": "simple"}}
 
 对于需要工具操作的请求，返回:
@@ -112,6 +125,7 @@ UNIFIED_INTENT_PLAN_PROMPT = """你是任务分类与规划专家。分析用户
 
 ## 规则
 - intent: "chat"=纯对话无需工具, "tool"=需要调用工具
+- [!] 用户问"新闻""天气""知识""推荐""教程""怎么学"等与图形编辑无关的内容 → 一定是 chat/simple
 - domains: 涉及的领域标签，从 [canvas, blueprint, file, mindmap, code] 中选择
 - has_write: 用户要求创建/修改/删除数据时为 true
 - depends_on 为前置步骤 id 列表，空数组=可立即执行

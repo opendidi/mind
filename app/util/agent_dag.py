@@ -415,6 +415,7 @@ class DAGExecutor:
                     self.messages.append(self._format_stream_tool_msg(tool_calls_received))
 
                     any_failure = False
+                    search_missing_keyword = False
                     for tc_name, tc_id, tc_args_str in tool_calls_received:
                         try:
                             tool_args = json.loads(tc_args_str)
@@ -432,10 +433,12 @@ class DAGExecutor:
                         yield ("tool_result", tc_name, result.get("success", False), result)
                         if not result.get("success"):
                             any_failure = True
+                            if tc_name in ("web_search", "web_fetch") and "keyword" in str(result.get("error", "")):
+                                search_missing_keyword = True
 
                     if any_failure and retries < MAX_REFLECT_RETRIES:
                         retries += 1
-                        self._append_simple_retry_msg(tool_calls_received, retries)
+                        self._append_simple_retry_msg(tool_calls_received, retries, search_missing_keyword)
                         loop_counter.clear()
                         continue
                     continue
@@ -461,6 +464,7 @@ class DAGExecutor:
                 self.messages.append(self._format_assistant_msg(msg))
 
                 any_failure = False
+                search_missing_keyword = False
                 for tc in msg.tool_calls:
                     tool_name = tc.function.name
                     try:
@@ -479,14 +483,22 @@ class DAGExecutor:
                     yield ("tool_result", tool_name, result.get("success", False), result)
                     if not result.get("success"):
                         any_failure = True
+                        if tool_name in ("web_search", "web_fetch") and "keyword" in str(result.get("error", "")):
+                            search_missing_keyword = True
 
                 if any_failure and retries < MAX_REFLECT_RETRIES:
                     retries += 1
                     failed_names = {tc.function.name for tc in msg.tool_calls}
                     if failed_names & {"web_search", "web_fetch"}:
-                        self.messages.append({"role": "user", "content": (
-                            "搜索工具暂时不可用。请直接用你自身的知识回答用户的问题，不需要再尝试搜索。直接给出文字回复即可。"
-                        )})
+                        if search_missing_keyword:
+                            self.messages.append({"role": "user", "content": (
+                                "web_search 需要 keyword 参数。请从用户的问题中提取搜索关键词，重新调用 web_search。"
+                                "例如用户问\"有什么新闻\"，keyword 应填 \"新闻\" 或 \"今日新闻\"。不要传空参数。"
+                            )})
+                        else:
+                            self.messages.append({"role": "user", "content": (
+                                "搜索工具暂时不可用。请直接用你自身的知识回答用户的问题，不需要再尝试搜索。直接给出文字回复即可。"
+                            )})
                     else:
                         self.messages.append({"role": "user", "content": (
                             f"上一步工具执行失败了。请分析错误原因，尝试用不同的参数或方法重试。（第 {retries}/{MAX_REFLECT_RETRIES} 次重试）"
@@ -784,13 +796,20 @@ class DAGExecutor:
             })
         return {"role": "assistant", "content": "", "tool_calls": tool_msgs}
 
-    def _append_simple_retry_msg(self, tool_calls_received: list, retries: int):
+    def _append_simple_retry_msg(self, tool_calls_received: list, retries: int,
+                                  search_missing_keyword: bool = False):
         """Append a retry hint message for simple (non-DAG) execution."""
         failed_names = {tc[0] for tc in tool_calls_received}
         if failed_names & {"web_search", "web_fetch"}:
-            self.messages.append({"role": "user", "content": (
-                "搜索工具暂时不可用。请直接用你自身的知识回答用户的问题，不需要再尝试搜索。直接给出文字回复即可。"
-            )})
+            if search_missing_keyword:
+                self.messages.append({"role": "user", "content": (
+                    "web_search 需要 keyword 参数。请从用户的问题中提取搜索关键词，重新调用 web_search。"
+                    "例如用户问\"有什么新闻\"，keyword 应填 \"新闻\" 或 \"今日新闻\"。不要传空参数。"
+                )})
+            else:
+                self.messages.append({"role": "user", "content": (
+                    "搜索工具暂时不可用。请直接用你自身的知识回答用户的问题，不需要再尝试搜索。直接给出文字回复即可。"
+                )})
         else:
             self.messages.append({"role": "user", "content": (
                 f"上一步工具执行失败了。请分析错误原因，尝试用不同的参数或方法重试。（第 {retries}/{MAX_REFLECT_RETRIES} 次重试）"

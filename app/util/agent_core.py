@@ -31,9 +31,22 @@ MAX_HISTORY_COMPACT = 4000
 
 # ── Base Prompt ───────────────────────────────────────────────────────────
 
-BASE_PROMPT = """你是"小M"，一个图形编辑助手。通过工具帮助用户创建和编辑 2D 图表、蓝图和思维导图。
+BASE_PROMPT = """你是"小M"，一个智能助手，专注于帮助用户创建和编辑 2D 图表、蓝图和思维导图，同时也能自然地进行日常对话和知识问答。
 
-## [!!] 核心铁律（最高优先级）
+## [!] 第一步：判断意图（最高优先级）
+
+每次回复前先判断用户意图，决定是否需要调用工具：
+
+| 意图类型 | 示例 | 处理方式 |
+|---------|------|---------|
+| **实时信息查询** | "有什么新闻""今天天气怎么样""最新XX是什么" | 用 web_search 搜索后总结回答。必须提供 keyword 参数（从用户问题中提取关键词）。例如问"有什么新闻"→ `web_search(keyword="今日新闻", search_type="news", timelimit="w")`。 |
+| **闲聊/知识问答** | "解释机器学习""推荐一本书""Python 怎么学" | **直接用自身知识回复**，不调用工具。这类常识性问题不需要搜索。 |
+| **图形查看** | "画布上有什么""当前有哪些节点" | 用 canvas(action='get_state') 查看后回复 |
+| **图形编辑** | "画一个流程图""删除那个矩形" | 必须调用对应工具完成实际操作 |
+
+[!] 判断标准：时效性问题（新闻/天气/最新）→ 搜索；常识知识 → 直接回答；图形相关 → 对应工具。
+
+## [!!] 核心铁律（图形操作时）
 
 1. **写操作必须调用工具！** 创建、修改、删除图形等操作绝对不能仅用文字回复。不调用工具就说"已完成"是欺骗用户，绝对禁止。
 2. **只看工具结果！** 只有当工具返回 `success: true` 时才报告成功。失败时必须如实告知原因。
@@ -41,6 +54,7 @@ BASE_PROMPT = """你是"小M"，一个图形编辑助手。通过工具帮助用
 
 ## 行为准则
 
+- **先判断再行动** — 区分对话和操作，对话不需要工具
 - **先看再动** — 如需确认画布现状，用 canvas(action='get_state') 查看
 - **先规划后执行** — 复杂任务用 `[思考]` 简述步骤（1~2句），再逐步执行
 - **确认删除** — 删除图形或清空画布前向用户确认并说明后果
@@ -49,6 +63,7 @@ BASE_PROMPT = """你是"小M"，一个图形编辑助手。通过工具帮助用
 - **主动建议** — 完成操作后可附带一条简短建议
 - **位置可视化** — 涉及地点/坐标时主动附上 ```map 代码块展示位置
 - **路线规划** — 用户询问两地之间怎么走时，先用 geocode 查询起终点坐标，再用 ```route 代码块输出路线
+- **知识问答** — 用户问知识性问题时直接回答，不要尝试画图或调用工具
 
 ## 回复格式
 
@@ -300,15 +315,20 @@ class AgentSession:
                 confirm_handler=None, model: str = AGENT_DEFAULT_MODEL,
                 redis_client=None, task_id: str = "", stream: bool = False):
         """V3 unified agent chat — single LLM call for intent+plan, then execute."""
-        self.history.append({"role": "user", "content": user_message})
 
-        # ── Restore cross-session memory ──
+        # ── Restore cross-session memory (messages + prompt) ──
         session_memory_prompt = ""
         try:
             from app.util.agent_session_memory import SessionMemory
-            session_memory_prompt = SessionMemory.restore(self.user_id)
+            restored = SessionMemory.restore(self.user_id)
+            session_memory_prompt = restored.get("prompt", "")
+            restored_msgs = restored.get("messages", [])
+            if restored_msgs:
+                self.history = list(restored_msgs)
         except Exception:
             logging.debug("SessionMemory restore skipped", exc_info=True)
+
+        self.history.append({"role": "user", "content": user_message})
 
         # ── Plan-Feedback 闭环 ──
         plan_feedback_hints = ""

@@ -8,6 +8,7 @@ import time
 MEMORY_TTL_REDIS = 3600
 MEMORY_MAX_SUMMARY_CHARS = 500
 MEMORY_MAX_ENTRIES = 100  # max entries in in-memory fallback store
+MEMORY_MAX_RECENT_MSGS = 20  # max conversation turns to retain across sessions
 
 
 class SessionMemory:
@@ -18,8 +19,11 @@ class SessionMemory:
     _mem_access_order: list[str] = []
 
     @staticmethod
-    def restore(user_id: str) -> str:
-        """Restore session memory for a user. Returns a prompt string or empty string."""
+    def restore(user_id: str) -> dict:
+        """Restore session memory for a user. Returns {"prompt": str, "messages": list}."""
+        result = {"prompt": "", "messages": []}
+        data = None
+
         # Try Redis first
         try:
             from app.util.redis_utils import get_redis
@@ -27,22 +31,27 @@ class SessionMemory:
             cached = r.get(f"agent:memory:{user_id}")
             if cached:
                 data = json.loads(cached)
-                entities = data.get("entities", {})
-                summary = data.get("summary", "")
-                if entities or summary:
-                    return SessionMemory._format_prompt(entities, summary)
         except Exception:
             logging.debug("SessionMemory Redis cache miss for %s", user_id)
 
         # Fall back to in-memory
-        data = SessionMemory._mem_store.get(user_id)
+        if data is None:
+            data = SessionMemory._mem_store.get(user_id)
+            if data:
+                if user_id in SessionMemory._mem_access_order:
+                    SessionMemory._mem_access_order.remove(user_id)
+                SessionMemory._mem_access_order.append(user_id)
+
         if data:
-            # LRU: move to end on access
-            if user_id in SessionMemory._mem_access_order:
-                SessionMemory._mem_access_order.remove(user_id)
-            SessionMemory._mem_access_order.append(user_id)
-            return SessionMemory._format_prompt(data.get("entities", {}), data.get("summary", ""))
-        return ""
+            entities = data.get("entities", {})
+            summary = data.get("summary", "")
+            messages = data.get("recent_messages", [])
+            if entities or summary:
+                result["prompt"] = SessionMemory._format_prompt(entities, summary)
+            if messages:
+                result["messages"] = messages
+
+        return result
 
     @staticmethod
     def _extract_entities(messages: list) -> dict:
@@ -63,10 +72,25 @@ class SessionMemory:
         """Persist session memory after a chat completes."""
         entities = SessionMemory._extract_entities(messages)
         summary = (summary or "")[:MEMORY_MAX_SUMMARY_CHARS]
-        if not entities and not summary:
+
+        # Extract recent conversation messages (user + assistant text only)
+        recent = []
+        for m in messages[-MEMORY_MAX_RECENT_MSGS:]:
+            role = m.get("role", "")
+            if role in ("user", "assistant"):
+                content = m.get("content", "")
+                if isinstance(content, str) and content.strip():
+                    recent.append({"role": role, "content": content[:2000]})
+
+        if not entities and not summary and not recent:
             return
 
-        data = {"entities": entities, "summary": summary, "updated_at": time.time()}
+        data = {
+            "entities": entities,
+            "summary": summary,
+            "recent_messages": recent,
+            "updated_at": time.time(),
+        }
 
         # Redis cache
         try:
