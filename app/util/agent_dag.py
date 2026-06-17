@@ -13,7 +13,8 @@ from dataclasses import dataclass, field
 from types import SimpleNamespace
 from typing import Generator
 
-from app.config import LLM_TIMEOUT
+from app.config import LLM_TIMEOUT, AGENT_DEFAULT_MODEL
+from app.util.agent_helpers import truncate_tool_result as _truncate_tool_result, loop_key as _loop_key
 from app.util.agent_pheromone import SharedContext, extract_discoveries
 from app.util.executor import ExecutorTimeout, ManagedPool
 import atexit as _atexit
@@ -105,31 +106,9 @@ MAX_REFLECT_RETRIES = 3
 MAX_LOOP_REPEAT = 3
 MAX_DAG_TOTAL_SECONDS = 300
 MAX_NODE_SECONDS = 120
-MAX_TOOL_RESULT_CHARS = 800
 
 
-def _truncate_tool_result(result: dict) -> dict:
-    truncated = {}
-    for k, v in result.items():
-        if isinstance(v, str) and len(v) > MAX_TOOL_RESULT_CHARS:
-            truncated[k] = v[:MAX_TOOL_RESULT_CHARS] + f"...(截断，原{len(v)}字符)"
-        elif isinstance(v, list) and len(v) > 5:
-            truncated[k] = v[:3] + [f"...(共{len(v)}项，已截断)"]
-        elif isinstance(v, dict):
-            s = json.dumps(v, ensure_ascii=False)
-            if len(s) > MAX_TOOL_RESULT_CHARS:
-                truncated[k] = {"_truncated": True, "preview": s[:MAX_TOOL_RESULT_CHARS]}
-            else:
-                truncated[k] = v
-        else:
-            truncated[k] = v
-    return truncated
-
-
-def _loop_key(tool_name: str, tool_args: dict) -> str:
-    args_str = json.dumps(tool_args, ensure_ascii=False, sort_keys=True)
-    return f"{tool_name}:{hashlib.md5(args_str.encode()).hexdigest()[:8]}"
-
+# ── MODELS ──────────────────────────────────────────────────────────────────
 
 class DAGExecutor:
     """Executes a DAGPlan using topological sort + parallel ThreadPoolExecutor."""
@@ -138,7 +117,7 @@ class DAGExecutor:
 
     def __init__(self, llm_client, tools_schemas: list, messages: list,
                  hooks: list = None, tool_context: dict = None, user_id: str = "",
-                 model: str = "deepseek-chat", confirm_handler=None, dispatcher=None,
+                 model: str = AGENT_DEFAULT_MODEL, confirm_handler=None, dispatcher=None,
                  tracer=None, stream: bool = False, redis_client=None, task_id: str = ""):
         self.llm = llm_client
         self.tools = tools_schemas
@@ -335,63 +314,46 @@ class DAGExecutor:
                 if time.time() - node_start > MAX_NODE_SECONDS:
                     return _finish_step(False, {"error": f"节点超时（{MAX_NODE_SECONDS}秒）"})
                 iteration += 1
-                response = self._call_llm(msgs)
-                if response is None:
-                    return _finish_step(False, {"error": "AI 服务不可用"})
-                if not response.choices:
-                    return _finish_step(False, {"error": "AI 返回异常"})
 
-                choice = response.choices[0]
-                finish = choice.finish_reason
+                # Unified path: always use streaming LLM; tokens only emitted when self.stream
+                tool_calls_received = []
+                full_text = ""
+                stream_error = None
 
-                if finish == "tool_calls":
-                    msg = choice.message
-                    msgs.append(self._format_assistant_msg(msg))
+                for se in self._call_llm_stream_with_msgs(msgs):
+                    skind = se[0]
+                    if skind == "token":
+                        if self.stream and event_queue is not None:
+                            event_queue.put(("token", se[1], node.id))
+                    elif skind == "llm_tool_call":
+                        tool_calls_received.append(se[1:])
+                    elif skind == "text_complete":
+                        full_text = se[1]
+                    elif skind == "error":
+                        stream_error = se[1]
+
+                if stream_error:
+                    return _finish_step(False, {"error": stream_error})
+
+                if tool_calls_received:
+                    msgs.append(self._format_stream_tool_msg(tool_calls_received))
 
                     tool_retry = False
-                    for tc in msg.tool_calls:
-                        tool_name = tc.function.name
+                    for tc_name, tc_id, tc_args_str in tool_calls_received:
                         try:
-                            tool_args = json.loads(tc.function.arguments)
+                            tool_args = json.loads(tc_args_str)
                         except json.JSONDecodeError:
                             tool_args = {}
 
-                        lk = _loop_key(tool_name, tool_args)
+                        lk = _loop_key(tc_name, tool_args)
                         loop_counter[lk] += 1
                         if loop_counter[lk] > MAX_LOOP_REPEAT:
-                            return _finish_step(False, {"error": f"操作 {tool_name} 重复多次仍失败"})
+                            return _finish_step(False, {"error": f"操作 {tc_name} 重复多次仍失败"})
 
-                        if self.tracer:
-                            tool_sid = self.tracer.start_span(f"tool:{tool_name}", input=tool_args)
-                        t0 = time.time()
-
-                        if event_queue is not None:
-                            event_queue.put(("tool_call", tool_name, tool_args, node.id))
-
-                        from app.util.agent_tools import run_tool_call
-
-                        result, _ = run_tool_call(tool_name, tool_args, self.tool_context,
-                                                  self.dispatcher, self.llm, self.model, self.tracer,
-                                                  self.shared_context.sniff())
-                        if self.tracer:
-                            self.tracer.end_span(tool_sid, "ok" if result.get("success") else "error",
-                                                 {"duration_ms": int((time.time() - t0) * 1000)})
-
-                        self._tool_call_count += 1
-
-                        if event_queue is not None:
-                            event_queue.put(("tool_result", tool_name, result.get("success", False), result, node.id))
-
-                        result = _truncate_tool_result(result)
-                        msgs.append({"role": "tool", "tool_call_id": tc.id,
-                                      "content": json.dumps(result, ensure_ascii=False)})
-
-                        discoveries = extract_discoveries(tool_name, tool_args, result)
-                        for k, v in discoveries.items():
-                            self.shared_context.deposit(k, v, source_node=node.id, source_tool=tool_name)
-
+                        result = self._run_dag_tool(tc_name, tool_args, tc_id, msgs,
+                                                    event_queue, node.id)
                         if not result.get("success"):
-                            reflection = self._reflect(node, tool_name, tool_args, result, state)
+                            reflection = self._reflect(node, tc_name, tool_args, result, state)
                             if reflection.get("recovery") == "retry" and retries < MAX_REFLECT_RETRIES:
                                 retries += 1
                                 adjusted = reflection.get("adjusted_args") or {}
@@ -410,11 +372,10 @@ class DAGExecutor:
                         break
                     continue
 
-                # Text response → success
-                content = choice.message.content or ""
-                if event_queue is not None and content:
-                    event_queue.put(("think", content, node.id))
-                return _finish_step(True, {"text": content})
+                if full_text:
+                    if event_queue is not None:
+                        event_queue.put(("think", full_text, node.id))
+                return _finish_step(True, {"text": full_text})
 
             if retries > MAX_REFLECT_RETRIES:
                 return _finish_step(False, {"error": f"重试 {MAX_REFLECT_RETRIES} 次后仍然失败"})
@@ -422,17 +383,68 @@ class DAGExecutor:
         return _finish_step(False, {"error": "步骤执行异常"})
 
     def _execute_simple(self) -> Generator:
-        """Simple single-round ReAct for non-tool queries."""
-        if self.stream:
-            yield from self._execute_simple_streaming()
-            return
-
+        """Simple single-round ReAct for non-tool queries. Uses streaming LLM when self.stream."""
         iteration = 0
         loop_counter = defaultdict(int)
         retries = 0
 
         while iteration < 10:
             iteration += 1
+
+            if self.stream:
+                tool_calls_received = []
+                full_text = ""
+                stream_error = None
+
+                for event in self._call_llm_stream():
+                    kind = event[0]
+                    if kind == "token":
+                        yield event
+                    elif kind == "llm_tool_call":
+                        tool_calls_received.append(event[1:])
+                    elif kind == "text_complete":
+                        full_text = event[1]
+                    elif kind == "error":
+                        stream_error = event[1]
+
+                if stream_error:
+                    yield ("error", stream_error)
+                    return
+
+                if tool_calls_received:
+                    self.messages.append(self._format_stream_tool_msg(tool_calls_received))
+
+                    any_failure = False
+                    for tc_name, tc_id, tc_args_str in tool_calls_received:
+                        try:
+                            tool_args = json.loads(tc_args_str)
+                        except json.JSONDecodeError:
+                            tool_args = {}
+
+                        lk = _loop_key(tc_name, tool_args)
+                        loop_counter[lk] += 1
+                        if loop_counter[lk] > MAX_LOOP_REPEAT:
+                            yield ("error", f"操作 {tc_name} 重复多次仍失败")
+                            return
+
+                        yield ("tool_call", tc_name, tool_args)
+                        result = self._run_simple_tool(tc_name, tool_args, tc_id)
+                        yield ("tool_result", tc_name, result.get("success", False), result)
+                        if not result.get("success"):
+                            any_failure = True
+
+                    if any_failure and retries < MAX_REFLECT_RETRIES:
+                        retries += 1
+                        self._append_simple_retry_msg(tool_calls_received, retries)
+                        loop_counter.clear()
+                        continue
+                    continue
+
+                llm_response = SimpleNamespace(message=SimpleNamespace(content=full_text), finish_reason="stop")
+                yield ("llm_response", llm_response, self._tool_call_count)
+                return
+
+            # Non-streaming path
             response = self._call_llm()
             if response is None:
                 yield ("error", "AI 服务不可用")
@@ -463,32 +475,10 @@ class DAGExecutor:
                         return
 
                     yield ("tool_call", tool_name, tool_args)
-
-                    if self.tracer:
-                        tool_sid = self.tracer.start_span(f"tool:{tool_name}", input=tool_args)
-                    t0 = time.time()
-                    from app.util.agent_tools import run_tool_call
-
-                    result, _ = run_tool_call(tool_name, tool_args, self.tool_context,
-                                              self.dispatcher, self.llm, self.model, self.tracer,
-                                              self.shared_context.sniff())
-                    if self.tracer:
-                        self.tracer.end_span(tool_sid, "ok" if result.get("success") else "error",
-                                             {"duration_ms": int((time.time() - t0) * 1000)})
-
-                    self._tool_call_count += 1
+                    result = self._run_simple_tool(tool_name, tool_args, tc.id)
                     yield ("tool_result", tool_name, result.get("success", False), result)
-
-                    result = _truncate_tool_result(result)
-                    self.messages.append({"role": "tool", "tool_call_id": tc.id,
-                                           "content": json.dumps(result, ensure_ascii=False)})
-
                     if not result.get("success"):
                         any_failure = True
-
-                    discoveries = extract_discoveries(tool_name, tool_args, result)
-                    for k, v in discoveries.items():
-                        self.shared_context.deposit(k, v, source_node="simple", source_tool=tool_name)
 
                 if any_failure and retries < MAX_REFLECT_RETRIES:
                     retries += 1
@@ -645,89 +635,166 @@ class DAGExecutor:
         circuit_record(False, service=self.model)
         yield ("error", "LLM 流式调用失败")
 
-    def _execute_simple_streaming(self) -> Generator:
-        iteration = 0
-        loop_counter = defaultdict(int)
+    def _call_llm_stream_with_msgs(self, messages: list) -> Generator:
+        """Streaming LLM call with explicit message list (used by DAG streaming nodes)."""
+        from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
+        from app.util.agent_circuit import circuit_allow, circuit_record
 
-        while iteration < 10:
-            iteration += 1
-            tool_calls_received = []
-            full_text = ""
-            error_msg = None
-
-            for event in self._call_llm_stream():
-                kind = event[0]
-                if kind == "token":
-                    yield event
-                elif kind == "llm_tool_call":
-                    tool_calls_received.append(event[1:])
-                elif kind == "text_complete":
-                    full_text = event[1]
-                elif kind == "error":
-                    error_msg = event[1]
-
-            if error_msg:
-                yield ("error", error_msg)
-                return
-
-            if tool_calls_received:
-                tool_msgs = []
-                for tc_name, tc_id, tc_args_str in tool_calls_received:
-                    try:
-                        tc_args = json.loads(tc_args_str)
-                    except json.JSONDecodeError:
-                        tc_args = {}
-                    tool_msgs.append({"id": tc_id, "type": "function", "function": {"name": tc_name, "arguments": tc_args_str}})
-
-                self.messages.append({"role": "assistant", "content": "", "tool_calls": tool_msgs})
-
-                for tc_name, tc_id, tc_args_str in tool_calls_received:
-                    try:
-                        tc_args = json.loads(tc_args_str)
-                    except json.JSONDecodeError:
-                        tc_args = {}
-
-                    lk = _loop_key(tc_name, tc_args)
-                    loop_counter[lk] += 1
-                    if loop_counter[lk] > MAX_LOOP_REPEAT:
-                        yield ("error", f"操作 {tc_name} 重复多次仍失败")
-                        return
-
-                    yield ("tool_call", tc_name, tc_args)
-
-                    if self.tracer:
-                        tool_sid = self.tracer.start_span(f"tool:{tc_name}", input=tc_args)
-                    t0 = time.time()
-                    from app.util.agent_tools import run_tool_call
-
-                    result, _ = run_tool_call(tc_name, tc_args, self.tool_context,
-                                              self.dispatcher, self.llm, self.model, self.tracer,
-                                              self.shared_context.sniff())
-                    if self.tracer:
-                        self.tracer.end_span(tool_sid, "ok" if result.get("success") else "error",
-                                             {"duration_ms": int((time.time() - t0) * 1000)})
-
-                    self._tool_call_count += 1
-                    yield ("tool_result", tc_name, result.get("success", False), result)
-
-                    result = _truncate_tool_result(result)
-                    self.messages.append({"role": "tool", "tool_call_id": tc_id,
-                                           "content": json.dumps(result, ensure_ascii=False)})
-
-                    discoveries = extract_discoveries(tc_name, tc_args, result)
-                    for k, v in discoveries.items():
-                        self.shared_context.deposit(k, v, source_node="simple", source_tool=tc_name)
-
-                    if not result.get("success") and tc_name in ("web_search", "web_fetch"):
-                        self.messages.append({"role": "user", "content": "搜索工具暂时不可用。请直接用你自身的知识回答用户的问题。"})
-                continue
-
-            if full_text:
-                llm_response = SimpleNamespace(message=SimpleNamespace(content=full_text), finish_reason="stop")
-                yield ("llm_response", llm_response, self._tool_call_count)
+        if not circuit_allow(service=self.model):
+            yield ("error", "AI 服务不可用（熔断）")
             return
 
-        yield ("error", "推理步数已达上限")
+        for attempt in range(3):
+            try:
+                response = self.llm.chat.completions.create(
+                    model=self.model, messages=messages, tools=self.tools,
+                    tool_choice="auto", stream=True, timeout=90,
+                )
+                tool_calls_acc = {}
+                full_text = ""
+                finish_reason = None
+
+                for chunk in response:
+                    if not chunk.choices:
+                        continue
+                    delta = chunk.choices[0].delta
+                    finish_reason = chunk.choices[0].finish_reason
+                    if delta.content:
+                        full_text += delta.content
+                        yield ("token", delta.content)
+                    if delta.tool_calls:
+                        for tc_delta in delta.tool_calls:
+                            idx = tc_delta.index
+                            if idx not in tool_calls_acc:
+                                tool_calls_acc[idx] = {"id": "", "name": "", "arguments": ""}
+                            acc = tool_calls_acc[idx]
+                            if tc_delta.id:
+                                acc["id"] = tc_delta.id
+                            if tc_delta.function:
+                                if tc_delta.function.name:
+                                    acc["name"] = tc_delta.function.name
+                                if tc_delta.function.arguments:
+                                    acc["arguments"] += tc_delta.function.arguments
+                    if finish_reason:
+                        break
+
+                circuit_record(True, service=self.model)
+
+                if finish_reason == "tool_calls" and tool_calls_acc:
+                    for idx in sorted(tool_calls_acc.keys()):
+                        acc = tool_calls_acc[idx]
+                        yield ("llm_tool_call", acc["name"], acc["id"], acc["arguments"])
+                    return
+
+                yield ("text_complete", full_text)
+                return
+
+            except (RateLimitError, APITimeoutError, APIConnectionError, APIError) as ex:
+                if isinstance(ex, APIError):
+                    status = getattr(ex, "http_status", None) or getattr(ex, "status_code", None) or 500
+                    if status < 500:
+                        circuit_record(False, service=self.model)
+                        yield ("error", f"API 错误: {ex}")
+                        return
+                if self._should_retry_llm(ex, attempt):
+                    self._llm_retry_sleep(attempt, isinstance(ex, RateLimitError))
+            except Exception as ex:
+                logging.exception("agent_dag: unexpected LLM streaming error: %s", ex)
+                if self._should_retry_llm(ex, attempt):
+                    self._llm_retry_sleep(attempt)
+
+        circuit_record(False, service=self.model)
+        yield ("error", "LLM 流式调用失败")
+
+    # ── Shared Tool Helpers ──────────────────────────────────────────────────
+
+    def _run_dag_tool(self, tc_name: str, tool_args: dict, tc_id: str,
+                      messages: list, event_queue=None, node_id: str = "") -> dict:
+        """Execute one tool call with tracing, events, discovery. Used by DAG nodes.
+
+        Returns the original (untruncated) result dict so callers can inspect success/error.
+        Appends the truncated version to messages.
+        """
+        if self.tracer:
+            tool_sid = self.tracer.start_span(f"tool:{tc_name}", input=tool_args)
+        t0 = time.time()
+
+        if event_queue is not None:
+            event_queue.put(("tool_call", tc_name, tool_args, node_id))
+
+        from app.util.agent_tools import run_tool_call
+
+        result, _ = run_tool_call(tc_name, tool_args, self.tool_context,
+                                 self.dispatcher, self.llm, self.model, self.tracer,
+                                 self.shared_context.sniff(), event_queue=event_queue)
+        if self.tracer:
+            self.tracer.end_span(tool_sid, "ok" if result.get("success") else "error",
+                                 {"duration_ms": int((time.time() - t0) * 1000)})
+
+        self._tool_call_count += 1
+
+        if event_queue is not None:
+            event_queue.put(("tool_result", tc_name, result.get("success", False), result, node_id))
+
+        truncated = _truncate_tool_result(result)
+        messages.append({"role": "tool", "tool_call_id": tc_id,
+                        "content": json.dumps(truncated, ensure_ascii=False)})
+
+        discoveries = extract_discoveries(tc_name, tool_args, result)
+        for k, v in discoveries.items():
+            self.shared_context.deposit(k, v, source_node=node_id, source_tool=tc_name)
+
+        return result
+
+    def _run_simple_tool(self, tc_name: str, tool_args: dict, tc_id: str) -> dict:
+        """Execute one tool call for simple (non-DAG) execution path."""
+        if self.tracer:
+            tool_sid = self.tracer.start_span(f"tool:{tc_name}", input=tool_args)
+        t0 = time.time()
+
+        from app.util.agent_tools import run_tool_call
+
+        result, _ = run_tool_call(tc_name, tool_args, self.tool_context,
+                                 self.dispatcher, self.llm, self.model, self.tracer,
+                                 self.shared_context.sniff(), event_queue=None)
+        if self.tracer:
+            self.tracer.end_span(tool_sid, "ok" if result.get("success") else "error",
+                                 {"duration_ms": int((time.time() - t0) * 1000)})
+
+        self._tool_call_count += 1
+
+        truncated = _truncate_tool_result(result)
+        self.messages.append({"role": "tool", "tool_call_id": tc_id,
+                             "content": json.dumps(truncated, ensure_ascii=False)})
+
+        discoveries = extract_discoveries(tc_name, tool_args, result)
+        for k, v in discoveries.items():
+            self.shared_context.deposit(k, v, source_node="simple", source_tool=tc_name)
+
+        return result
+
+    @staticmethod
+    def _format_stream_tool_msg(tool_calls_received: list) -> dict:
+        """Format stream-collected tool calls into an assistant message dict."""
+        tool_msgs = []
+        for tc_name, tc_id, tc_args_str in tool_calls_received:
+            tool_msgs.append({
+                "id": tc_id, "type": "function",
+                "function": {"name": tc_name, "arguments": tc_args_str},
+            })
+        return {"role": "assistant", "content": "", "tool_calls": tool_msgs}
+
+    def _append_simple_retry_msg(self, tool_calls_received: list, retries: int):
+        """Append a retry hint message for simple (non-DAG) execution."""
+        failed_names = {tc[0] for tc in tool_calls_received}
+        if failed_names & {"web_search", "web_fetch"}:
+            self.messages.append({"role": "user", "content": (
+                "搜索工具暂时不可用。请直接用你自身的知识回答用户的问题，不需要再尝试搜索。直接给出文字回复即可。"
+            )})
+        else:
+            self.messages.append({"role": "user", "content": (
+                f"上一步工具执行失败了。请分析错误原因，尝试用不同的参数或方法重试。（第 {retries}/{MAX_REFLECT_RETRIES} 次重试）"
+            )})
 
     def _reflect(self, node: DAGNode, tool_name: str, tool_args: dict,
                  error_result: dict, state: ExecutionState) -> dict:

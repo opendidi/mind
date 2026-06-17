@@ -4,6 +4,9 @@ Adapted for mind: canvas/blueprint/file/mindmap/code domains."""
 
 import json
 import logging
+import random
+
+from app.config import AGENT_DEFAULT_MODEL
 
 # ═══════════════════════════════════════════════════════════
 # Keyword lists — shared by _keyword_fallback and classify_domain
@@ -118,7 +121,7 @@ UNIFIED_INTENT_PLAN_PROMPT = """你是任务分类与规划专家。分析用户
 - 步骤 2~7 步，简洁明确
 - 只有真正需要多步操作的才用 dag 模式，单步操作用 mode="simple"
 - [!] 知识优先：历史/百科/常识等纯知识问答，模型自身知识已足够，优先用 mode="simple"
-- [!] 先查询再操作：需要知道画布当前状态时，先用 canvas_get_state 获取信息
+- [!] 画布状态已在上下文中提供，仅在确实需要确认状态变更时才查询
 - [!] 如果历史教训中有相关反馈，优先参考并调整计划以避免重复已知错误
 """
 
@@ -142,7 +145,7 @@ def unified_intent_and_plan(
     llm_client,
     user_message: str,
     history: list = None,
-    model: str = "deepseek-chat",
+    model: str = AGENT_DEFAULT_MODEL,
     plan_feedback_hints: str = "",
 ) -> dict:
     """Single LLM call for intent classification + domain detection + DAG plan generation.
@@ -169,15 +172,36 @@ def unified_intent_and_plan(
         msgs.extend(history[-6:])
     msgs.append({"role": "user", "content": user_message})
 
+    from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
+
     raw = ""
+    for attempt in range(3):
+        try:
+            resp = llm_client.chat.completions.create(
+                model=model,
+                messages=msgs,
+                temperature=0.1,
+                max_tokens=1024,
+                timeout=30,
+            )
+            break
+        except (RateLimitError, APITimeoutError, APIConnectionError) as ex:
+            if attempt >= 2:
+                logging.warning("unified_intent: LLM call failed after retries, falling back to keyword")
+                return _keyword_fallback(user_message)
+            import time as _t
+            _t.sleep((2 ** attempt) + random.uniform(0, 1))
+        except APIError as ex:
+            status = getattr(ex, "http_status", None) or getattr(ex, "status_code", None) or 500
+            if status < 500 or attempt >= 2:
+                logging.warning("unified_intent: LLM API error, falling back to keyword")
+                return _keyword_fallback(user_message)
+            import time as _t
+            _t.sleep(2 ** attempt)
+        except Exception:
+            logging.warning("unified_intent: LLM call failed, falling back to keyword")
+            return _keyword_fallback(user_message)
     try:
-        resp = llm_client.chat.completions.create(
-            model=model,
-            messages=msgs,
-            temperature=0.1,
-            max_tokens=1024,
-            timeout=30,
-        )
         raw = resp.choices[0].message.content or ""
         text = _extract_json(raw)
         if not text:
