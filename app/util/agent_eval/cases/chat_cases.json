@@ -1,0 +1,22 @@
+[
+  {"id": "chat_001", "category": "chat", "input": "你好", "expected": {"route": "chat", "has_tool_calls": false, "contains": ["你好", "小M"], "not_contains": ["tool_call", "canvas"]}, "tags": ["greeting"]},
+  {"id": "chat_002", "category": "chat", "input": "Hello", "expected": {"route": "chat", "has_tool_calls": false, "not_contains": ["tool_call"]}, "tags": ["greeting"]},
+  {"id": "chat_003", "category": "chat", "input": "谢谢你的帮助", "expected": {"route": "chat", "has_tool_calls": false, "not_contains": ["tool_call"]}, "tags": ["gratitude"]},
+  {"id": "chat_004", "category": "chat", "input": "再见", "expected": {"route": "chat", "has_tool_calls": false, "not_contains": ["tool_call"]}, "tags": ["farewell"]},
+  {"id": "chat_005", "category": "chat", "input": "Python是什么", "expected": {"route": "chat", "has_tool_calls": false, "contains": ["Python", "编程"], "not_contains": ["web_search"]}, "tags": ["knowledge"]},
+  {"id": "chat_006", "category": "chat", "input": "解释一下机器学习", "expected": {"route": "chat", "has_tool_calls": false, "contains": ["机器", "学习"], "not_contains": ["web_search", "canvas"]}, "tags": ["knowledge"]},
+  {"id": "chat_007", "category": "chat", "input": "推荐一本编程书", "expected": {"route": "chat", "has_tool_calls": false, "not_contains": ["web_search"]}, "tags": ["recommendation"]},
+  {"id": "chat_008", "category": "chat", "input": "什么是Docker", "expected": {"route": "chat", "has_tool_calls": false, "contains": ["Docker", "容器"], "not_contains": ["web_search"]}, "tags": ["knowledge"]},
+  {"id": "chat_009", "category": "chat", "input": "如何学习前端开发", "expected": {"route": "chat", "has_tool_calls": false, "not_contains": ["web_search", "canvas"]}, "tags": ["knowledge"]},
+  {"id": "chat_010", "category": "chat", "input": "你好吗", "expected": {"route": "chat", "has_tool_calls": false, "not_contains": ["tool_call"]}, "tags": ["greeting"]},
+  {"id": "chat_011", "category": "chat", "input": "什么是REST API", "expected": {"route": "chat", "has_tool_calls": false, "contains": ["REST", "API"], "not_contains": ["web_search"]}, "tags": ["knowledge"]},
+  {"id": "chat_012", "category": "chat", "input": "讲个笑话", "expected": {"route": "chat", "has_tool_calls": false, "not_contains": ["tool_call", "canvas"]}, "tags": ["entertainment"]},
+  {"id": "chat_013", "category": "chat", "input": "数据库有哪些类型", "expected": {"route": "chat", "has_tool_calls": false, "contains": ["数据库", "SQL"], "not_contains": ["web_search"]}, "tags": ["knowledge"]},
+  {"id": "chat_014", "category": "chat", "input": "今天心情不错", "expected": {"route": "chat", "has_tool_calls": false, "not_contains": ["tool_call"]}, "tags": ["casual"]},
+  {"id": "chat_015", "category": "chat", "input": "你能做什么", "expected": {"route": "chat", "has_tool_calls": false, "contains": ["画布", "图表", "蓝图"], "not_contains": ["tool_call"]}, "tags": ["capability"]},
+  {"id": "chat_016", "category": "chat", "input": "Git和SVN的区别", "expected": {"route": "chat", "has_tool_calls": false, "contains": ["Git"], "not_contains": ["web_search"]}, "tags": ["knowledge"]},
+  {"id": "chat_017", "category": "chat", "input": "怎么做番茄炒蛋", "expected": {"route": "chat", "has_tool_calls": false, "not_contains": ["web_search", "canvas"]}, "tags": ["knowledge"]},
+  {"id": "chat_018", "category": "chat", "input": "帮我取个变量名", "expected": {"route": "chat", "has_tool_calls": false, "not_contains": ["canvas"]}, "tags": ["knowledge"]},
+  {"id": "chat_019", "category": "chat", "input": "周末愉快", "expected": {"route": "chat", "has_tool_calls": false, "not_contains": ["tool_call"]}, "tags": ["casual"]},
+  {"id": "chat_020", "category": "chat", "input": "HTTP状态码有哪些", "expected": {"route": "chat", "has_tool_calls": false, "contains": ["HTTP", "状态码"], "not_contains": ["web_search"]}, "tags": ["knowledge"]}
+]

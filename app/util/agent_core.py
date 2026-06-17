@@ -316,6 +316,14 @@ class AgentSession:
                 redis_client=None, task_id: str = "", stream: bool = False):
         """V3 unified agent chat — single LLM call for intent+plan, then execute."""
 
+        # ── Input Guard (boundary defense) ──
+        from app.util.agent_guard import InputGuard
+        guard_result = InputGuard.check(user_message)
+        if not guard_result["ok"]:
+            yield {"type": "error", "data": {"message": guard_result.get("reason", "输入被安全策略拦截")}}
+            yield {"type": "done", "data": {"status": "blocked"}}
+            return
+
         # ── Restore cross-session memory (messages + prompt) ──
         session_memory_prompt = ""
         try:

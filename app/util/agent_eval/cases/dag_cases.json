@@ -1,0 +1,17 @@
+[
+  {"id": "dag_001", "category": "dag", "input": "帮我设计一个用户登录流程图并保存", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas", "blueprint_save"]}, "tags": ["multi_step"]},
+  {"id": "dag_002", "category": "dag", "input": "搜索最新AI新闻然后画一个AI发展时间线", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search", "canvas"]}, "tags": ["multi_step"]},
+  {"id": "dag_003", "category": "dag", "input": "画一个电商系统架构图并导出为PNG", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas", "blueprint_export"]}, "tags": ["multi_step"]},
+  {"id": "dag_004", "category": "dag", "input": "搜索最新的Vue3特性然后创建一个包含这些特性的思维导图", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search", "canvas"]}, "tags": ["multi_step"]},
+  {"id": "dag_005", "category": "dag", "input": "创建一个项目架构图，包含前端、后端、数据库三个部分，并用虚线连接", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["complex_canvas"]},
+  {"id": "dag_006", "category": "dag", "input": "查询今天的科技热点，整理成思维导图", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search", "canvas"]}, "tags": ["multi_step"]},
+  {"id": "dag_007", "category": "dag", "input": "画一个用户注册流程图，包含邮箱验证和手机验证两条路径", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["complex_canvas"]},
+  {"id": "dag_008", "category": "dag", "input": "搜索微服务架构的最佳实践，然后画一个微服务架构图", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search", "canvas"]}, "tags": ["multi_step"]},
+  {"id": "dag_009", "category": "dag", "input": "清空画布，然后画一个Git工作流图", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["multi_step"]},
+  {"id": "dag_010", "category": "dag", "input": "创建一个包含6个步骤的CI/CD流程图", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["complex_canvas"]},
+  {"id": "dag_011", "category": "dag", "input": "搜索Docker和Kubernetes最新版本，然后画一个容器编排架构图", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search", "canvas"]}, "tags": ["multi_step"]},
+  {"id": "dag_012", "category": "dag", "input": "画一个数据库ER图，包含用户、订单、商品三个实体", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["complex_canvas"]},
+  {"id": "dag_013", "category": "dag", "input": "搜索最新的前端框架对比，然后创建一个对比表格图表", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search", "canvas"]}, "tags": ["multi_step"]},
+  {"id": "dag_014", "category": "dag", "input": "设计一个三层架构图（表现层、业务层、数据层）并保存", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas", "blueprint_save"]}, "tags": ["multi_step"]},
+  {"id": "dag_015", "category": "dag", "input": "清除当前画布，搜索最新的设计模式，然后画一个设计模式分类图", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search", "canvas"]}, "tags": ["multi_step"]}
+]

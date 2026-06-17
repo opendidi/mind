@@ -1,0 +1,17 @@
+[
+  {"id": "search_001", "category": "search", "input": "有什么新闻", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["news"]},
+  {"id": "search_002", "category": "search", "input": "今天天气怎么样", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["weather"]},
+  {"id": "search_003", "category": "search", "input": "搜索一下Python最新版本", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["search"]},
+  {"id": "search_004", "category": "search", "input": "查一下最近的科技新闻", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["news"]},
+  {"id": "search_005", "category": "search", "input": "热搜是什么", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["trending"]},
+  {"id": "search_006", "category": "search", "input": "今天有什么热点", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["news"]},
+  {"id": "search_007", "category": "search", "input": "latest news about AI", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["news"]},
+  {"id": "search_008", "category": "search", "input": "帮我找到最近的AI新闻", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["news"]},
+  {"id": "search_009", "category": "search", "input": "今天是什么日子", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["date"]},
+  {"id": "search_010", "category": "search", "input": "今天的头条新闻", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["news"]},
+  {"id": "search_011", "category": "search", "input": "Google最新动态", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["search"]},
+  {"id": "search_012", "category": "search", "input": "最新股市行情", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["finance"]},
+  {"id": "search_013", "category": "search", "input": "today breaking news", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["news"]},
+  {"id": "search_014", "category": "search", "input": "搜一下最新的科技动态", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["search"]},
+  {"id": "search_015", "category": "search", "input": "实时新闻", "expected": {"route": "search", "has_tool_calls": true, "tool_names": ["web_search"]}, "tags": ["news"]}
+]

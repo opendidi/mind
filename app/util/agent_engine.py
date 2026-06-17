@@ -1,11 +1,13 @@
 # -*- coding: UTF-8 -*-
-"""AgentEngine — unified V3 entry point that ties DAG + Multi-Agent + Tracing together."""
+"""AgentEngine — unified V3 entry point that ties DAG + Multi-Agent + Guard + Tracing together."""
 
 from typing import Generator
 
 from app.config import AGENT_DEFAULT_MODEL
-from app.util.agent_dag import DAGExecutor, DAGPlan, DAGNode
+from app.util.agent_executor import AgentExecutor
+from app.util.agent_dag import DAGPlan, DAGNode
 from app.util.agent_dispatcher import AgentDispatcher
+from app.util.agent_guard import InputGuard, OutputGuard
 import app.util.search  # noqa: F401 — registers web_search tool via ToolRegistry
 from app.util.agent_tools import TOOL_SCHEMAS, _rebuild_schemas
 from app.util.agent_tracer import AgentTracer
@@ -15,12 +17,14 @@ _rebuild_schemas()
 
 
 class AgentEngine:
-    """V3 unified execution engine.
+    """V3 unified execution engine with guardrails.
 
-    1. Intent + plan from unified_intent_and_plan() (called upstream in AgentSession)
-    2. Simple chat → single-round ReAct; Complex → DAGExecutor (parallel steps)
-    3. Sub-agents dispatched via AgentDispatcher as a tool
-    4. Full lifecycle traced via AgentTracer
+    1. InputGuard validates user input at the boundary
+    2. Intent + plan from unified_intent_and_plan() (called upstream in AgentSession)
+    3. Simple chat → single-round ReAct; Complex → DAG parallel execution
+    4. Sub-agents dispatched via AgentDispatcher as a tool
+    5. OutputGuard sanitizes AI responses before user delivery
+    6. Full lifecycle traced via AgentTracer
     """
 
     def __init__(self, llm_client, user_id: str, model: str = AGENT_DEFAULT_MODEL):
@@ -41,7 +45,7 @@ class AgentEngine:
         stream: bool = False,
         precomputed_plan: dict = None,
     ) -> Generator:
-        """Unified V3 chat entry point.
+        """Unified V3 chat entry point with guardrails.
 
         Args:
             user_message: current user input
@@ -58,9 +62,17 @@ class AgentEngine:
             SSE-compatible event tuples: (type, data)
         """
         tracer = AgentTracer(user_id=self.user_id)
+        session_id = task_id or self.user_id
 
         with tracer.span("agent_chat", user_id=self.user_id):
-            # Inject dispatch_agent tool schema alongside existing tools
+            # ── Input Guard ──
+            guard_result = InputGuard.check(user_message)
+            if not guard_result["ok"]:
+                yield ("error", guard_result.get("reason", "输入被安全策略拦截"))
+                yield ("done", {"status": "blocked"})
+                return
+
+            # Build tool list
             full_tools = list(TOOL_SCHEMAS)
             dispatch_schema = self.dispatcher.get_dispatch_tool_schema()
             if dispatch_schema:
@@ -71,60 +83,71 @@ class AgentEngine:
                 tool_ctx["_redis"] = redis_client
                 tool_ctx["_task_id"] = task_id
 
-            # Use precomputed plan from unified_intent_and_plan() if available
+            # Create guarded executor
+            executor = AgentExecutor(
+                self.llm, full_tools, messages,
+                tool_context=tool_ctx, user_id=self.user_id, model=self.model,
+                confirm_handler=confirm_handler, dispatcher=self.dispatcher,
+                tracer=tracer, stream=stream, redis_client=redis_client,
+                task_id=task_id, session_id=session_id,
+            )
+
             if precomputed_plan:
                 plan_mode = precomputed_plan.get("mode", "simple")
-                if plan_mode == "simple":
-                    with tracer.span("simple_chat"):
-                        executor = DAGExecutor(
-                            self.llm,
-                            full_tools,
-                            messages,
-                            tool_context=tool_ctx,
-                            user_id=self.user_id,
-                            model=self.model,
-                            dispatcher=self.dispatcher,
-                            stream=stream,
-                            tracer=tracer,
+                nodes = []
+                if plan_mode == "dag":
+                    nodes = [
+                        DAGNode(
+                            id=n["id"], desc=n["desc"],
+                            tool_hint=n.get("tool_hint"),
+                            agent_name=n.get("agent_name"),
+                            confirm=n.get("confirm", False),
+                            depends_on=n.get("depends_on", []),
+                            parallel_group=n.get("parallel_group"),
                         )
-                        for event in executor.execute(DAGPlan(mode="simple")):
+                        for n in precomputed_plan.get("nodes", [])
+                    ]
+
+                plan = DAGPlan(
+                    mode=plan_mode,
+                    goal=precomputed_plan.get("goal", "") if plan_mode == "dag" else "",
+                    nodes=nodes,
+                    risk=precomputed_plan.get("risk", "low") if plan_mode == "dag" else "low",
+                )
+
+                with tracer.span("execute"):
+                    for event in executor.execute(plan):
+                        # Apply OutputGuard to text responses
+                        if event[0] == "llm_response":
+                            choice = event[1]
+                            text = choice.message.content or ""
+                            guard_out = OutputGuard.process(text)
+                            if not guard_out["ok"]:
+                                yield ("error", guard_out.get("reason", "响应被安全策略拦截"))
+                                yield ("done", {"status": "blocked"})
+                                return
+                            # Update content with sanitized text
+                            choice.message.content = guard_out.get("text", text)
                             yield event
-                else:
-                    with tracer.span("execute_dag") as sid:
-                        nodes = [
-                            DAGNode(
-                                id=n["id"],
-                                desc=n["desc"],
-                                tool_hint=n.get("tool_hint"),
-                                agent_name=n.get("agent_name"),
-                                confirm=n.get("confirm", False),
-                                depends_on=n.get("depends_on", []),
-                                parallel_group=n.get("parallel_group"),
-                            )
-                            for n in precomputed_plan.get("nodes", [])
-                        ]
-                        plan = DAGPlan(
-                            mode="dag",
-                            goal=precomputed_plan.get("goal", ""),
-                            nodes=nodes,
-                            risk=precomputed_plan.get("risk", "low"),
-                        )
-                        executor = DAGExecutor(
-                            self.llm,
-                            full_tools,
-                            messages,
-                            tool_context=tool_ctx,
-                            user_id=self.user_id,
-                            model=self.model,
-                            confirm_handler=confirm_handler,
-                            dispatcher=self.dispatcher,
-                            stream=stream,
-                            tracer=tracer,
-                            redis_client=redis_client,
-                            task_id=task_id,
-                        )
-                        for event in executor.execute(plan):
+                        else:
                             yield event
-                        tracer.end_span(sid, "ok")
+            else:
+                # No plan → simple chat fallback
+                plan = DAGPlan(mode="simple")
+                with tracer.span("simple_fallback"):
+                    for event in executor.execute(plan):
+                        if event[0] == "llm_response":
+                            choice = event[1]
+                            text = choice.message.content or ""
+                            guard_out = OutputGuard.process(text)
+                            if not guard_out["ok"]:
+                                yield ("error", guard_out.get("reason", "响应被安全策略拦截"))
+                                yield ("done", {"status": "blocked"})
+                                return
+                            choice.message.content = guard_out.get("text", text)
+                            yield event
+                        else:
+                            yield event
+
         tracer.flush()
         yield ("trace", {"trace_id": tracer.trace_id})

@@ -43,6 +43,17 @@ class AgentDispatcher:
     def agent_names(self) -> list:
         return list(self._agents.keys())
 
+    def build_agent_list(self) -> str:
+        """Build a formatted agent list string for Supervisor prompt injection."""
+        return "\n".join(
+            f"- {name}: {ag.description}" for name, ag in self._agents.items()
+        )
+
+    def get_supervisor(self, model: str = AGENT_DEFAULT_MODEL) -> "Supervisor":
+        """Create a Supervisor pre-configured with this dispatcher's agent list."""
+        from app.util.agent_supervisor import Supervisor
+        return Supervisor(model=model)
+
     def get_dispatch_tool_schema(self) -> dict:
         if not self._agents:
             return None

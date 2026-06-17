@@ -1,0 +1,22 @@
+[
+  {"id": "canvas_001", "category": "canvas", "input": "画一个矩形", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["create"]},
+  {"id": "canvas_002", "category": "canvas", "input": "画一个蓝色的圆形", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["create"]},
+  {"id": "canvas_003", "category": "canvas", "input": "删除那个矩形", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["delete"]},
+  {"id": "canvas_004", "category": "canvas", "input": "画布上有什么", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["query"]},
+  {"id": "canvas_005", "category": "canvas", "input": "创建一个流程图", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"], "contains": ["流程图"]}, "tags": ["create"]},
+  {"id": "canvas_006", "category": "canvas", "input": "画一个红色三角形", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["create"]},
+  {"id": "canvas_007", "category": "canvas", "input": "把那个矩形改成圆形", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["update"]},
+  {"id": "canvas_008", "category": "canvas", "input": "清空画布", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["delete"]},
+  {"id": "canvas_009", "category": "canvas", "input": "撤销上一步", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["undo"]},
+  {"id": "canvas_010", "category": "canvas", "input": "画一个菱形", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["create"]},
+  {"id": "canvas_011", "category": "canvas", "input": "把文字改成你好", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["update"]},
+  {"id": "canvas_012", "category": "canvas", "input": "画一个架构图", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["create"]},
+  {"id": "canvas_013", "category": "canvas", "input": "移动那个节点到左边", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["update"]},
+  {"id": "canvas_014", "category": "canvas", "input": "重做", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["redo"]},
+  {"id": "canvas_015", "category": "canvas", "input": "画一个思维导图", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["create"]},
+  {"id": "canvas_016", "category": "canvas", "input": "把背景色改成白色", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["update"]},
+  {"id": "canvas_017", "category": "canvas", "input": "在这两个节点之间加一条连线", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["create"]},
+  {"id": "canvas_018", "category": "canvas", "input": "画一个星形", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["create"]},
+  {"id": "canvas_019", "category": "canvas", "input": "把那个节点变大一点", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["update"]},
+  {"id": "canvas_020", "category": "canvas", "input": "删除所有连线", "expected": {"route": "canvas", "has_tool_calls": true, "tool_names": ["canvas"]}, "tags": ["delete"]}
+]

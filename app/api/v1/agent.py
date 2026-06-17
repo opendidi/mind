@@ -12,6 +12,20 @@ from flask import Blueprint, Response, request, stream_with_context
 agent_api = Blueprint("agent", __name__)
 
 
+@agent_api.route("/health", methods=["GET"])
+def agent_health():
+    """Agent 健康检查端点 — 各层状态汇总."""
+    from app.util.agent_observability import HealthChecker, MetricsCollector
+    return {
+        "code": 200,
+        "data": {
+            "layers": HealthChecker.check_all(),
+            "metrics": MetricsCollector.snapshot(),
+        },
+        "message": "ok",
+    }
+
+
 @agent_api.route("/chat", methods=["POST"])
 def agent_chat():
     """SSE 流式 Agent 对话端点。
@@ -38,6 +52,9 @@ def agent_chat():
     user_id = data.get("user_id", request.headers.get("X-User-ID", "anonymous"))
     canvas_context = data.get("canvas_context")
 
+    from app.util.agent_observability import AgentObservability
+    obs = AgentObservability(user_id=user_id)
+
     def generate():
         event_queue = queue.Queue()
         task_id = str(uuid.uuid4())[:8]
@@ -45,10 +62,10 @@ def agent_chat():
         def run_agent():
             try:
                 from app.util.agent_core import AgentSession
-                from app.util.llm_client import get_llm_client
 
                 session = AgentSession(user_id)
 
+                obs.trace("session_start", duration_ms=0.0)
                 for event in session.chat_v3(
                     user_message=message,
                     canvas_context=canvas_context,
@@ -58,6 +75,7 @@ def agent_chat():
                 event_queue.put({"type": "done", "data": {"status": "completed"}})
             except Exception:
                 logging.exception("Agent chat error: %s", task_id)
+                obs.trace("session_error", status="error")
                 event_queue.put({"type": "error", "data": {"message": "处理请求时发生内部错误"}})
                 event_queue.put({"type": "done", "data": {"status": "error"}})
 
@@ -69,8 +87,11 @@ def agent_chat():
                 event = event_queue.get(timeout=120)
                 yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
                 if event.get("type") == "done":
+                    flush_result = obs.flush()
+                    yield f"data: {json.dumps({'type': 'trace', 'data': flush_result})}\n\n"
                     break
             except queue.Empty:
+                obs.trace("session_timeout", status="error")
                 yield f"data: {json.dumps({'type': 'error', 'data': {'message': '请求超时'}})}\n\n"
                 yield f"data: {json.dumps({'type': 'done', 'data': {'status': 'timeout'}})}\n\n"
                 break
