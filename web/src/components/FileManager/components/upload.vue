@@ -17,7 +17,6 @@
       :action="action"
       :showUploadList="false"
       @change="handleChange"
-      :before-upload="beforeUpload"
       class="file-manager-upload"
     >
       <a-button type="primary" class="w-full">上传文件</a-button>
@@ -35,13 +34,13 @@ import { ref, getCurrentInstance, computed } from "vue";
 import { message } from "ant-design-vue";
 import { FileExplorer } from "@/utils/FileExplorer.ts";
 
+const fileExplorer = new FileExplorer();
+
 const emit = defineEmits(["oks"]);
 
 const api_url = import.meta.env.VITE_GLOB_API_URL;
 
 const { proxy }: any = getCurrentInstance();
-
-const visible = ref(false);
 
 const file_type = ref("");
 
@@ -49,13 +48,13 @@ const accept = computed(() => {
   switch (file_type.value) {
     case "image":
     case "panorama":
-      return new FileExplorer()._filterExt.image.join(",");
+      return fileExplorer._filterExt.image.join(",");
     case "video":
-      return new FileExplorer()._filterExt.video.join(",");
+      return fileExplorer._filterExt.video.join(",");
     case "audio":
-      return new FileExplorer()._filterExt.audio.join(",");
+      return fileExplorer._filterExt.audio.join(",");
     default:
-      break;
+      return fileExplorer._filterExt.image.join(",");
   }
 });
 
@@ -65,15 +64,12 @@ let data = ref({
 });
 
 let action = computed(() => {
-  return api_url + "material/upload";
+  const base = api_url.endsWith('/') ? api_url : api_url + '/';
+  return base + "material/upload";
 });
 
 // 文件列表
 let fileList = ref([]);
-
-const beforeUpload = (file: any) => {
-  console.log(file);
-};
 
 function handleChange(info: any) {
   const status = info.file.status;
@@ -81,7 +77,6 @@ function handleChange(info: any) {
     if (info.file.response.code == 200) {
       message.success(`${info.file.name} 文件上传成功`);
       fileList.value = [];
-      visible.value = false;
     } else {
       message.error(`文件上传失败。`);
     }

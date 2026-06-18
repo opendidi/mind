@@ -36,7 +36,7 @@
 
       <!-- Input -->
       <div class="agent-input-wrap">
-        <AgentInput :disabled="stream.state.loading" @send="handleSend" />
+        <AgentInput :disabled="stream.state.loading" :initial-value="presetInput" @send="handleSend" />
       </div>
     </div>
   </a-drawer>
@@ -48,6 +48,7 @@ import { AgentStreamHandler } from "./AgentStreamHandler";
 import AgentMessageItem from "./AgentMessageItem.vue";
 import AgentInput from "./AgentInput.vue";
 import { executeCanvasTool } from "@/utils/canvasBridge";
+import { useSelection } from "@/services/selections";
 
 const visible = ref(false);
 const msgListRef = ref<HTMLElement>();
@@ -82,8 +83,23 @@ onUnmounted(() => {
   stream.abort();
 });
 
-function open() {
+let presetInput = '';
+const { selections } = useSelection();
+
+// Auto-inject pen selection context when drawer is open
+watch(
+  () => selections.pen,
+  (pen) => {
+    if (!visible.value || !pen) return;
+    presetInput = `请帮我分析这个节点: ID=${pen.id}, 类型=${pen.name || 'unknown'}, 文字="${(pen.text || '').slice(0, 100)}", 位置=(${pen.x}, ${pen.y}), 大小=${pen.width}x${pen.height}`;
+  },
+);
+
+function open(context?: string) {
   visible.value = true;
+  if (context) {
+    presetInput = context;
+  }
 }
 
 function close() {

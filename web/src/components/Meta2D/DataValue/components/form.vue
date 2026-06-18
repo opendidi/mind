@@ -155,7 +155,6 @@ export default defineComponent({
 
     const init = (data) => {
       model.value = data;
-      console.log(data);
     };
 
     const onDelete = (idx) => {

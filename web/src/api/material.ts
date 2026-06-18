@@ -20,108 +20,59 @@ const API = {
 
 /**
  * 文件素材列表
- * @param data
- * @returns
  */
 export function apiMaterialList(params: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.get(API.lists, { params }).then((res: any) => {
-      resolve(res);
-    })
-  })
+  return http.get(API.lists, { params });
 }
 
 /**
  * 获取所有目录数据
- * @param params
- * @returns
  */
 export function apiMaterialFolder(params: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.get(API.folder, { params }).then((res: any) => {
-      resolve(res);
-    })
-  })
+  return http.get(API.folder, { params });
 }
 
 /**
- * 获取所有目录数据
- * @param params
- * @returns
+ * 创建目录
  */
 export function apiMaterialCreatedFolder(data: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.post(API.created, data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }).then((res: any) => {
-      resolve(res);
-    })
-  })
+  return http.post(API.created, data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 }
 
 /**
  * 剪切文件
- * @param {String} id 文件ID
- * @param {String} folder 父ID
- * @returns
  */
 export function apiMaterialScissors(data: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.post(API.scissors, data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }).then((res: any) => {
-      resolve(res);
-    })
-  })
+  return http.post(API.scissors, data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 }
 
 /**
  * 复制文件
- * @param {String} id 文件ID
- * @param {String} folder 父ID
- * @returns
  */
 export function apiMaterialCopy(data: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.post(API.copy, data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }).then((res: any) => {
-      resolve(res);
-    })
-  })
+  return http.post(API.copy, data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 }
 
 /**
  * 删除素材文件数据
- * @param params
- * @returns
  */
 export function apiMaterialDelete(data: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.post(API.delete, data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }).then((res: any) => {
-      resolve(res);
-    })
-  })
+  return http.post(API.delete, data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 }
 
+/**
+ * 修改素材文件数据
+ */
 export function apiMaterialModify(data: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.post(API.modify, data, {
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
-    }).then((res: any) => {
-      resolve(res);
-    })
-  })
+  return http.post(API.modify, data, {
+    headers: { 'Content-Type': 'multipart/form-data' },
+  });
 }

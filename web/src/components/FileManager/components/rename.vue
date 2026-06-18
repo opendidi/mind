@@ -60,7 +60,7 @@ const onFinish = async () => {
       formRef.value.resetFields();
     });
   } catch (error) {
-    console.log("验证失败:", error);
+    // validation failed, form stays open for correction
   }
 };
 

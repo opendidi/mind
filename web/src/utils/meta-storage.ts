@@ -12,11 +12,12 @@ const VARILE_DATA = 'variableData_meta2d'
 const GRAPHIC_KEY: string = 'meta2d-graphic-groups';
 
 export function getTopology() {
-  return localStorage.getItem(KEY)
+  const raw = localStorage.getItem(KEY)
+  try { return raw ? JSON.parse(raw) : null } catch { return null }
 }
 
 export function setTopology(token) {
-  return localStorage.setItem(KEY, token)
+  return localStorage.setItem(KEY, JSON.stringify(token))
 }
 
 export function removeTopology() {
@@ -36,7 +37,8 @@ export function removeOriginalData() {
 }
 
 export function getVariableData() {
-  return localStorage.getItem(VARILE_DATA)
+  const raw = localStorage.getItem(VARILE_DATA)
+  try { return raw ? JSON.parse(raw) : null } catch { return null }
 }
 
 export function setVariableData(data) {

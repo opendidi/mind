@@ -4,6 +4,11 @@
  * When the Agent calls canvas tools (add_pen, add_line, delete_pen, etc.),
  * the backend returns success results containing the operation data.
  * This module executes the corresponding Meta2D operations on the frontend.
+ *
+ * All operations go through notifyCanvasMutation() to ensure:
+ *   - localStorage is synced
+ *   - Save state is marked dirty (isSave = '0')
+ *   - Custom event dispatched for external listeners (e.g., Index.vue save pipeline)
  */
 
 export interface PenData {
@@ -59,6 +64,24 @@ const COLOR_DEFAULTS: Record<string, { background: string; color: string }> = {
 
 function getMeta2d(): any {
   return (window as any).meta2d
+}
+
+/**
+ * Notify the application that the canvas has been mutated.
+ * Ensures localStorage sync + save-state marking + event dispatch.
+ * Called by every executeCanvasTool operation.
+ */
+function notifyCanvasMutation(): void {
+  const meta2d = getMeta2d()
+  if (!meta2d) return
+  try {
+    const data = meta2d.data()
+    if (data) {
+      localStorage.setItem('meta2d', JSON.stringify(data))
+    }
+  } catch { /* ignore */ }
+  // Dispatch custom event for Index.vue save pipeline
+  window.dispatchEvent(new CustomEvent('meta2d:agent-mutation'))
 }
 
 export function resolvePenId(logicalId: string): string | undefined {
@@ -202,57 +225,71 @@ export function executeCanvasToolLocalStorage(
   }
 }
 
-export function executeCanvasTool(
+export async function executeCanvasTool(
   toolName: string,
   args: Record<string, unknown>,
   success: boolean,
   result: unknown,
-): boolean {
+): Promise<boolean> {
   const meta2d = getMeta2d()
   if (!meta2d) {
     return executeCanvasToolLocalStorage(toolName, args, success, result)
   }
 
   const action = (args.action as string) || toolName
+  let ok = false
 
   switch (action) {
     case 'add_pen':
     case 'canvas_add_pen':
-      return _addPen(meta2d, args, success, result)
+      ok = await _addPen(meta2d, args, success, result)
+      break
     case 'add_line':
     case 'canvas_add_line':
-      return _addLine(meta2d, args, success, result)
+      ok = await _addLine(meta2d, args, success, result)
+      break
     case 'update_pen':
     case 'canvas_update_pen':
-      return _updatePen(meta2d, args, success, result)
+      ok = _updatePen(meta2d, args, success, result)
+      break
     case 'delete_pen':
     case 'canvas_delete_pen':
-      return _deletePen(meta2d, args, success, result)
+      ok = _deletePen(meta2d, args, success, result)
+      break
     case 'clear':
     case 'canvas_clear':
-      return _clear(meta2d, args, success)
+      ok = _clear(meta2d, args, success)
+      break
     case 'undo':
     case 'canvas_undo':
-      return _undo(meta2d, success)
+      ok = _undo(meta2d, success)
+      break
     case 'redo':
     case 'canvas_redo':
-      return _redo(meta2d, success)
+      ok = _redo(meta2d, success)
+      break
     case 'get_state':
     case 'canvas_get_state':
       return true
     case 'add_diagram':
     case 'canvas_add_diagram':
-      return _addDiagram(meta2d, args, success, result)
+      ok = await _addDiagram(meta2d, args, success, result)
+      break
     case 'layout_auto_arrange':
-      return _autoArrange(meta2d, args, success)
+      ok = _autoArrange(meta2d, args, success)
+      break
     case 'layout_align':
-      return _align(meta2d, args, success)
+      ok = _align(meta2d, args, success)
+      break
     default:
       return false
   }
+
+  if (ok) notifyCanvasMutation()
+  return ok
 }
 
-function _addPen(meta2d: any, args: Record<string, unknown>, success: boolean, result: unknown): boolean {
+async function _addPen(meta2d: any, args: Record<string, unknown>, success: boolean, result: unknown): Promise<boolean> {
   if (!success) return false
 
   const r = result as Record<string, unknown> | undefined
@@ -275,46 +312,42 @@ function _addPen(meta2d: any, args: Record<string, unknown>, success: boolean, r
     borderColor: (args.borderColor as string) || '#d1d5db',
   }
 
-  // For circles, width == height
   if (name === 'circle') {
     pen.width = pen.height = Math.min(pen.width, pen.height) || 80
   }
 
-  // Pre-populate ID map so later line operations can resolve this pen
   if (penId) penIdMap.set(penId, penId)
 
-  meta2d.addPen(pen, true).then((p: any) => {
-    // Update with the actual Meta2D-assigned ID
-    if (penId && p && (p.id || p.penId)) penIdMap.set(penId, p.id || p.penId)
-    meta2d.render()
-  }).catch(() => {
-    // Pen already in map from pre-population
-  })
+  try {
+    const p = await meta2d.addPen(pen)
+    if (penId && p && (p.id || p.penId)) {
+      penIdMap.set(penId, p.id || p.penId)
+    }
+  } catch {
+    // pen already tracked via pre-populated penIdMap entry
+  }
 
   return true
 }
 
-function _addLine(meta2d: any, args: Record<string, unknown>, success: boolean, _result: unknown): boolean {
+async function _addLine(meta2d: any, args: Record<string, unknown>, success: boolean, _result: unknown): Promise<boolean> {
   if (!success) return false
 
   const fromId = resolvePenId(args.from_pen as string)
   const toId = resolvePenId(args.to_pen as string)
   if (!fromId || !toId) {
-    console.warn('canvasBridge: cannot add line — pen IDs not found', args.from_pen, args.to_pen)
     return false
   }
 
   const fromPen = meta2d.findOne(fromId)
   const toPen = meta2d.findOne(toId)
   if (!fromPen || !toPen) {
-    console.warn('canvasBridge: cannot add line — pens not on canvas', fromId, toId)
     return false
   }
 
   const lineType = (args.line_type as string) || 'straight'
   const arrow = (args.arrow as string) || 'end'
 
-  // Calculate anchors between the two pens
   const fx = fromPen.x + (fromPen.width || 120) / 2
   const fy = fromPen.y + (fromPen.height || 60)
   const tx = toPen.x + (toPen.width || 120) / 2
@@ -337,9 +370,7 @@ function _addLine(meta2d: any, args: Record<string, unknown>, success: boolean, 
   if (arrow === 'start' || arrow === 'both') line.fromArrow = 'triangleSolid'
   if (arrow === 'end' || arrow === 'both') line.toArrow = 'triangleSolid'
 
-  meta2d.addPen(line, true).then(() => {
-    meta2d.render()
-  }).catch(() => {})
+  await meta2d.addPen(line)
 
   return true
 }
@@ -388,7 +419,7 @@ function _clear(meta2d: any, args: Record<string, unknown>, success: boolean): b
   return true
 }
 
-function _addDiagram(meta2d: any, args: Record<string, unknown>, success: boolean, result: unknown): boolean {
+async function _addDiagram(meta2d: any, args: Record<string, unknown>, success: boolean, result: unknown): Promise<boolean> {
   if (!success) return false
 
   const r = result as Record<string, unknown> | undefined
@@ -400,7 +431,6 @@ function _addDiagram(meta2d: any, args: Record<string, unknown>, success: boolea
   const logicalToActual = new Map<string, string>()
 
   // Phase 1: Create all pens
-  const createdPens: any[] = []
   for (const node of nodes) {
     const penType = ((node.type as string) || 'rectangle').toLowerCase()
     const name = TYPE_MAP[penType] || 'rectangle'
@@ -421,9 +451,8 @@ function _addDiagram(meta2d: any, args: Record<string, unknown>, success: boolea
     if (name === 'circle') {
       pen.width = pen.height = Math.min(pen.width, pen.height) || 80
     }
-    const actualPen = meta2d.addPen(pen)
+    const actualPen = await meta2d.addPen(pen)
     if (actualPen) {
-      createdPens.push(actualPen)
       const logicalId = node.pen_id as string || node.id as string || ''
       const actualId = actualPen.id || actualPen.penId || ''
       if (logicalId) logicalToActual.set(logicalId, actualId)
@@ -431,7 +460,7 @@ function _addDiagram(meta2d: any, args: Record<string, unknown>, success: boolea
     }
   }
 
-  // Phase 2: Create all lines (after pens exist — needed for anchor calculation)
+  // Phase 2: Create all lines
   for (const edge of edges) {
     const fromLogical = edge._from_id as string || edge.from as string || ''
     const toLogical = edge._to_id as string || edge.to as string || ''
@@ -462,7 +491,7 @@ function _addDiagram(meta2d: any, args: Record<string, unknown>, success: boolea
     if (arrow === 'start' || arrow === 'both') line.fromArrow = 'triangleSolid'
     if (arrow === 'end' || arrow === 'both') line.toArrow = 'triangleSolid'
 
-    meta2d.addPen(line)
+    await meta2d.addPen(line)
   }
 
   meta2d.render()

@@ -1,8 +1,22 @@
 <template>
   <div class="canvas-preview-card">
     <div class="cp-header">
-      <span class="cp-title">🎨 画布预览</span>
+      <span class="cp-title">画布预览</span>
       <span v-if="nodeCount" class="cp-badge">{{ nodeCount }} 节点 · {{ edgeCount }} 连线</span>
+      <div class="cp-spacer"></div>
+      <a-button size="small" type="text" title="缩小" :disabled="!ready" @click="onZoomOut">
+        <template #icon><ZoomOutOutlined /></template>
+      </a-button>
+      <span class="cp-zoom-label">{{ scalePercent }}%</span>
+      <a-button size="small" type="text" title="放大" :disabled="!ready" @click="onZoomIn">
+        <template #icon><ZoomInOutlined /></template>
+      </a-button>
+      <a-button size="small" type="text" title="下载 PNG" :disabled="!ready" @click="onDownloadPng">
+        <template #icon><DownloadOutlined /></template>
+      </a-button>
+      <a-button size="small" type="text" title="下载 SVG" :disabled="!ready" @click="onDownloadSvg">
+        <template #icon><FileImageOutlined /></template>
+      </a-button>
     </div>
     <div :ref="setContainerRef" class="cp-body"></div>
   </div>
@@ -12,6 +26,7 @@
 import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
 import { Meta2d, register, registerAnchors } from "@meta2d/core";
 import { flowPens, flowAnchors } from "@meta2d/flow-diagram";
+import { DownloadOutlined, FileImageOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons-vue";
 
 interface DiagramNode {
   id?: string; pen_id?: string; type?: string; text?: string;
@@ -32,6 +47,9 @@ const props = defineProps<{
 
 const nodeCount = computed(() => props.nodes?.length || 0);
 const edgeCount = computed(() => props.edges?.length || 0);
+
+const ready = ref(false);
+const scalePercent = ref(100);
 
 let containerEl: HTMLElement | null = null;
 let meta2d: any = null;
@@ -68,17 +86,22 @@ function initCanvas() {
   meta2d = new Meta2d(containerEl as any, {
     background: "transparent",
     rule: false,
-    locked: 1,
+    locked: 2,
   });
 
+  ready.value = true;
   nextTick(() => renderContent());
 }
 
 function renderContent() {
   if (!meta2d || !props.nodes?.length) return;
+  renderAsync();
+}
+
+async function renderAsync() {
+  if (!meta2d || !props.nodes?.length) return;
 
   const logicalToActual = new Map<string, string>();
-  const stores: any[] = [];
 
   for (const node of props.nodes) {
     const penType = (node.type || "rectangle").toLowerCase();
@@ -96,14 +119,14 @@ function renderContent() {
       fontSize: node.fontSize || 14,
       lineWidth: node.borderWidth || 1,
       borderColor: node.borderColor || "#d1d5db",
+      locked: 2,
     };
     if (name === "circle") {
       pen.width = pen.height = Math.min(pen.width, pen.height) || 80;
     }
 
-    const actualPen = meta2d.addPen(pen);
+    const actualPen = await meta2d.addPen(pen);
     if (actualPen) {
-      stores.push(actualPen);
       const logicalId = node.pen_id || node.id || "";
       const actualId = actualPen.id || actualPen.penId || "";
       if (logicalId) logicalToActual.set(logicalId, actualId);
@@ -133,6 +156,7 @@ function renderContent() {
       text: edge.text || "",
       fontSize: 12,
       animate: false,
+      locked: 2,
     };
     const arrow = edge.arrow || "end";
     if (arrow === "end" || arrow === "both") line.toArrow = "triangleSolid";
@@ -145,7 +169,39 @@ function renderContent() {
   meta2d.render();
   setTimeout(() => {
     try { meta2d.fitView(40); } catch { /* ignore */ }
+    scalePercent.value = Math.round((meta2d?.store?.data?.scale || 1) * 100);
   }, 80);
+}
+
+function onDownloadPng() {
+  if (!meta2d) return;
+  try { meta2d.downloadPng("preview"); } catch { /* ignore */ }
+}
+
+function onDownloadSvg() {
+  if (!meta2d) return;
+  try { meta2d.downloadSvg(); } catch { /* ignore */ }
+}
+
+function getCanvasCenter() {
+  if (!containerEl) return { x: 0, y: 0 };
+  return { x: containerEl.clientWidth / 2, y: containerEl.clientHeight / 2 };
+}
+
+function onZoomIn() {
+  if (!meta2d) return;
+  const cur = meta2d.store.data.scale || 1;
+  const next = Math.min(cur * 1.3, 5);
+  meta2d.scale(next, getCanvasCenter());
+  scalePercent.value = Math.round(next * 100);
+}
+
+function onZoomOut() {
+  if (!meta2d) return;
+  const cur = meta2d.store.data.scale || 1;
+  const next = Math.max(cur / 1.3, 0.1);
+  meta2d.scale(next, getCanvasCenter());
+  scalePercent.value = Math.round(next * 100);
 }
 
 onMounted(() => {
@@ -179,7 +235,7 @@ onBeforeUnmount(() => {
 
 <style lang="scss" scoped>
 .canvas-preview-card {
-  margin: 10px 0;
+  margin: 6px 0;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   overflow: hidden;
@@ -208,6 +264,18 @@ onBeforeUnmount(() => {
     background: #f1f5f9;
     padding: 1px 8px;
     border-radius: 8px;
+  }
+
+  .cp-spacer {
+    flex: 1;
+  }
+
+  .cp-zoom-label {
+    font-size: 11px;
+    color: #64748b;
+    min-width: 36px;
+    text-align: center;
+    font-variant-numeric: tabular-nums;
   }
 }
 

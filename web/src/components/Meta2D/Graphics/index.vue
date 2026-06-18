@@ -11,7 +11,7 @@
           <a-input
             v-model:value="keyword"
             placeholder="搜索"
-            @input="filterGraphicGroups"
+            @input="debouncedFilter"
             :disabled="activeKey == 2 ? true : false"
           />
         </div>
@@ -101,7 +101,7 @@
       </a-tab-pane>
       <a-tab-pane key="2" tab="我的组件" force-render>
         <div
-          class="mkdir-head flex items-center pb-3"
+          class="mkdir-head flex items-center pb-2"
           @click="openCreatedFolder"
         >
           <folder-add-outlined />
@@ -130,28 +130,74 @@
         </template>
       </a-tab-pane>
       <a-tab-pane key="3" tab="图纸" force-render>
-        <div class="mt-10">
-          <a-empty description="暂没数据" />
-        </div>
+        <a-spin :spinning="blueprintLoading" tip="加载中...">
+          <template v-if="blueprintList.length !== 0">
+            <div class="blueprint-grid">
+              <template v-for="item in blueprintList" :key="item.id">
+                <div class="bp-card" @click="onOpenBlueprint(item)">
+                  <div class="bp-thumb">
+                    <img v-if="item.thumbnail" :src="item.thumbnail" alt="" />
+                    <template v-else>
+                      <t-icon
+                        name="image"
+                        size="28px"
+                        class="bp-placeholder-icon"
+                      />
+                    </template>
+                  </div>
+                  <div class="bp-name" :title="item.name">
+                    {{ item.name || "未命名" }}
+                  </div>
+                  <div class="bp-time">
+                    {{ item.created_at?.slice(0, 10) || "" }}
+                  </div>
+                  <div class="bp-card-actions" @click.stop>
+                    <a-popconfirm
+                      title="确定删除？"
+                      @confirm="onDeleteBlueprint(item)"
+                    >
+                      <delete-outlined class="bp-delete-btn" />
+                    </a-popconfirm>
+                  </div>
+                </div>
+              </template>
+            </div>
+          </template>
+          <template v-else>
+            <div class="pt-5">
+              <a-empty description="暂无图纸" />
+            </div>
+          </template>
+        </a-spin>
       </a-tab-pane>
     </a-tabs>
     <MoreModal ref="moreModal" @oks="heandleGraphicGroups" />
-    <CreatedFolder ref="createdFolder" />
+    <CreatedFolder ref="createdFolder" @oks="onFolderCreated" />
   </div>
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, nextTick, onMounted, getCurrentInstance } from "vue";
+import {
+  ref,
+  watch,
+  nextTick,
+  onMounted,
+  onUnmounted,
+  getCurrentInstance,
+} from "vue";
+import { message } from "ant-design-vue";
 import {
   FolderOutlined,
   FolderOpenOutlined,
   FolderAddOutlined,
-  AppstoreOutlined,
+  DeleteOutlined,
 } from "@ant-design/icons-vue";
 import { GRAPHIC_GROUPS as graphicGroups } from "@/utils/graphicGroups.ts";
 import { MoreModal, CreatedFolder } from "./components/index.ts";
 import { useCommonStore } from "@/store/modules/common";
 import { Icon } from "tdesign-icons-vue-next";
+import { useRouter } from "vue-router";
+import { apiBlueprintList, apiBlueprintDelete } from "@/api/blueprint";
 
 // 原数据
 let originalGraphicGroups = graphicGroups;
@@ -170,13 +216,23 @@ let directoryVisible = ref(false);
 let directoryName = ref("");
 
 // 文件夹列表
-let directoryList = ref([]);
+let directoryList = ref(useCommonStore().customFolders || []);
 
 // 折叠key
 let directoryKey = ref("");
 
+// 路由
+const router = useRouter();
+
+// 图纸列表
+let blueprintList = ref<any[]>([]);
+let blueprintLoading = ref(false);
+
 // 过滤值
 let keyword = ref("");
+
+// 防抖定时器
+let debounceTimer: ReturnType<typeof setTimeout> | null = null;
 
 watch(
   () => directoryVisible.value,
@@ -232,6 +288,16 @@ function heandleGraphicGroups() {
 }
 
 /**
+ * 防抖筛选
+ */
+function debouncedFilter() {
+  if (debounceTimer) clearTimeout(debounceTimer);
+  debounceTimer = setTimeout(() => {
+    filterGraphicGroups();
+  }, 200);
+}
+
+/**
  * 筛选过滤组件
  */
 function filterGraphicGroups() {
@@ -274,6 +340,60 @@ function filterGraphicGroups() {
 const openCreatedFolder = () => {
   proxy.$refs.createdFolder.visible = true;
 };
+
+const onFolderCreated = (folders: any) => {
+  directoryList.value = folders;
+};
+
+function loadBlueprints() {
+  blueprintLoading.value = true;
+  apiBlueprintList({ current: 1, page_size: 50 })
+    .then((res: any) => {
+      blueprintList.value = res.list || [];
+    })
+    .finally(() => {
+      blueprintLoading.value = false;
+    });
+}
+
+function onOpenBlueprint(item: any) {
+  router.push({ path: "/", query: { id: item.id } });
+}
+
+function onDeleteBlueprint(item: any) {
+  apiBlueprintDelete({ id: item.id }).then((res: any) => {
+    if (res.code === 200) {
+      message.success("已删除");
+      loadBlueprints();
+    } else {
+      message.error(res.message || "删除失败");
+    }
+  });
+}
+
+watch(
+  () => tabsActiveKey.value,
+  (key) => {
+    if (key === "3" && blueprintList.value.length === 0) {
+      loadBlueprints();
+    }
+  }
+);
+
+function onBlueprintDeleted() {
+  // refresh list if the blueprint tab has been loaded
+  if (blueprintList.value.length > 0) {
+    loadBlueprints();
+  }
+}
+
+onMounted(() => {
+  window.addEventListener("blueprint:deleted", onBlueprintDeleted);
+});
+
+onUnmounted(() => {
+  window.removeEventListener("blueprint:deleted", onBlueprintDeleted);
+});
 
 heandleGraphicGroups();
 </script>
@@ -324,6 +444,86 @@ heandleGraphicGroups();
     height: 54px;
     border-top: 1px solid #e5e5e5;
     box-sizing: border-box;
+  }
+
+  .blueprint-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+    padding: 8px;
+    max-height: calc(100vh - 88px);
+    overflow-y: auto;
+    align-content: start;
+  }
+
+  .bp-card {
+    cursor: pointer;
+    border: 1px solid #f0f0f0;
+    border-radius: 6px;
+    overflow: hidden;
+    transition: box-shadow 0.2s;
+    position: relative;
+    &:hover {
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border-color: #d9d9d9;
+    }
+  }
+
+  .bp-thumb {
+    position: relative;
+    height: 80px;
+    background: #fafafa;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+  }
+
+  .bp-placeholder-icon {
+    color: #d9d9d9;
+  }
+
+  .bp-name {
+    padding: 4px 6px 0;
+    font-size: 12px;
+    font-weight: 500;
+    color: #333;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .bp-time {
+    padding: 2px 6px 6px;
+    font-size: 10px;
+    color: #999;
+  }
+
+  .bp-card-actions {
+    position: absolute;
+    top: 2px;
+    right: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+    .bp-card:hover & {
+      opacity: 1;
+    }
+  }
+
+  .bp-delete-btn {
+    font-size: 14px;
+    color: #ff4d4f;
+    cursor: pointer;
+    padding: 2px;
+    border-radius: 4px;
+    &:hover {
+      background: rgba(255, 77, 79, 0.1);
+    }
   }
   :deep(.ant-collapse) {
     border-top: none;

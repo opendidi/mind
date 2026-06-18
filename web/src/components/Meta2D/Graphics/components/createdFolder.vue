@@ -26,9 +26,10 @@
   </a-modal>
 </template>
 
-<script setup>
-import { ref, onMounted, getCurrentInstance, watch } from "vue";
-import { Icon } from "tdesign-vue-next";
+<script setup lang="ts">
+import { ref, getCurrentInstance, watch } from "vue";
+import { message } from "ant-design-vue";
+import { useCommonStore } from "@/store/modules/common";
 
 const visible = ref(false);
 
@@ -56,15 +57,18 @@ watch(
   }
 );
 
-function onFinish(values) {
+function onFinish() {
   formRef.value.validate().then(() => {
-    let data = {};
-    let keys = Object.keys(model.value);
-    Object.values(model.value).map((_, i) => {
-      if (_ !== "") {
-        data[keys[i]] = _;
-      }
-    });
+    const name = model.value.name.trim();
+    if (!name) return;
+    let folders = useCommonStore().customFolders || [];
+    if (folders.some((f: any) => f.name === name)) {
+      message.warning("文件夹名称已存在");
+      return;
+    }
+    folders = [...folders, { name, items: [] }];
+    useCommonStore().setCustomFolders(folders);
+    emit("oks", folders);
     visible.value = false;
   });
 }

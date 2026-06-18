@@ -34,10 +34,7 @@ import png from "@/assets/images/file-explorer/png.svg";
 import ppt from "@/assets/images/file-explorer/ppt.svg";
 import psd from "@/assets/images/file-explorer/psd.svg";
 import rtf from "@/assets/images/file-explorer/rtf.svg";
-import search from "@/assets/images/file-explorer/search.svg";
 import svg from "@/assets/images/file-explorer/svg.svg";
-import trash from "@/assets/images/file-explorer/trash.svg";
-import trashbox from "@/assets/images/file-explorer/trashbox.svg";
 import txt from "@/assets/images/file-explorer/txt.svg";
 import xls from "@/assets/images/file-explorer/xls.svg";
 import xml from "@/assets/images/file-explorer/xml.svg";
@@ -79,10 +76,7 @@ const fileIconMap: any = {
   'file': file,
   'folder': folder,
   'folderfull': folderfull,
-  'folderopen': folderopen,
-  'search': search,
-  'trash': trash,
-  'trashbox': trashbox
+  'folderopen': folderopen
 };
 
 /**

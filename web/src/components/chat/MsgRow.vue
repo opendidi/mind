@@ -101,6 +101,9 @@
                   :to="seg.data.to"
                 />
               </template>
+              <template v-else-if="seg.type === 'chart'">
+                <ChartCard :option="seg.data.option" :height="seg.data.height" />
+              </template>
             </template>
           </div>
           <MsgReferenceCard :references="message.references" />
@@ -140,12 +143,13 @@
       <div class="msg-content">
         <div class="tool-card" :class="{ expanded: toolExpanded }">
           <div class="tool-header" @click="onToggleTool">
+            <span class="tool-icon">{{ toolIcon }}</span>
             <span class="tool-name">{{ message.tool.name }}</span>
             <template v-if="message.tool.success === undefined">
               <span class="tool-badge pending">执行中</span>
             </template>
             <template v-else-if="message.tool.success">
-              <span class="tool-badge ok">已完成</span>
+              <span class="tool-badge ok">完成</span>
             </template>
             <template v-else>
               <span class="tool-badge fail">失败</span>
@@ -159,10 +163,13 @@
               <pre class="tool-result" :class="{ fail: !message.tool.success }">{{ formattedToolResult }}</pre>
             </div>
           </template>
-          <template v-if="toolCanvasData">
-            <CanvasPreview :nodes="toolCanvasData.nodes" :edges="toolCanvasData.edges" />
-          </template>
         </div>
+        <template v-if="toolCanvasData">
+          <CanvasPreview :nodes="toolCanvasData.nodes" :edges="toolCanvasData.edges" />
+        </template>
+        <template v-if="toolChartData">
+          <ChartCard :option="toolChartData.option" :height="toolChartData.height" />
+        </template>
       </div>
     </div>
   </template>
@@ -226,6 +233,7 @@ import MindMapCard from "./MindMapCard.vue";
 import MapCard from "./MapCard.vue";
 import RouteCard from "./RouteCard.vue";
 import CanvasPreview from "./CanvasPreview.vue";
+import ChartCard from "./ChartCard.vue";
 import MsgContextMenu from "./MsgContextMenu.vue";
 import MsgReferenceCard from "./MsgReferenceCard.vue";
 
@@ -257,6 +265,15 @@ const fbClass = computed(() => ({
 
 watch(() => props.message.feedback, (val) => { fbState.value = val || ""; });
 
+const toolIcon = computed(() => {
+  const name = props.message.tool?.name || "";
+  if (name.includes("canvas")) return "▦";
+  if (name.includes("file") || name.includes("excel")) return "▤";
+  if (name.includes("blueprint")) return "▥";
+  if (name.includes("search")) return "⌕";
+  return "◆";
+});
+
 function onToggleTool() {
   if (props.message.tool?.result !== undefined) {
     toolExpanded.value = !toolExpanded.value;
@@ -282,6 +299,48 @@ const toolCanvasData = computed(() => {
   return null;
 });
 
+const toolChartData = computed(() => {
+  const result = props.message.tool?.result;
+  if (!result || typeof result !== "object") return null;
+  const r = result as Record<string, unknown>;
+  const t = (r.data || r) as Record<string, unknown>;
+  const rows = t?.rows as unknown[] | undefined;
+  if (!rows || !Array.isArray(rows) || rows.length < 2) return null;
+  try {
+    const headers = (rows[0] as unknown[]).map(String);
+    const dataRows = rows.slice(1, Math.min(rows.length, 51)) as unknown[][];
+    const numericCols: number[] = [];
+    for (let ci = 0; ci < headers.length; ci++) {
+      if (dataRows.some(r => typeof r[ci] === "number" || (!isNaN(Number(r[ci])) && r[ci] !== "" && r[ci] !== null))) {
+        numericCols.push(ci);
+      }
+    }
+    if (!numericCols.length) return null;
+    const labelCol = numericCols[0] === 0 ? (headers.length > 1 ? 1 : 0) : 0;
+    const labels = dataRows.map(r => String(r[labelCol] ?? ""));
+    const series = numericCols.slice(0, 3).map((ci, i) => ({
+      type: (["bar", "line", "line"][i] || "bar") as string,
+      data: dataRows.map(r => Number(r[ci]) || 0),
+      name: headers[ci],
+      itemStyle: i === 0 ? { color: "#4f46e5" } : undefined,
+    }));
+    return {
+      option: {
+        title: { text: (t.sheet_name as string) || "数据预览", left: "center", textStyle: { fontSize: 14 } },
+        tooltip: {},
+        legend: series.length > 1 ? { data: series.map(s => s.name), bottom: 0 } : undefined,
+        grid: series.length > 1 ? { bottom: 35 } : undefined,
+        xAxis: { type: "category", data: labels, axisLabel: { rotate: labels.length > 6 ? 30 : 0 } },
+        yAxis: { type: "value" },
+        series,
+      },
+      height: "320px",
+    };
+  } catch {
+    return null;
+  }
+});
+
 function onFeedBack(type: string) {
   fbState.value = fbState.value === type ? "" : type;
   emit("feedback", props.message.id, fbState.value);
@@ -289,10 +348,12 @@ function onFeedBack(type: string) {
 
 // ── Message segments (mindmap / map / route detection) ──
 
-const BLOCK_RE = /```(mindmap|map|route)\s*\n([\s\S]*?)```/g;
+const BLOCK_RE = /```(mindmap|map|route|chart)\s*\n([\s\S]*?)```/g;
+
+type BlockType = "mindmap" | "map" | "route" | "chart";
 
 interface MsgSegment {
-  type: "text" | "mindmap" | "map" | "route";
+  type: "text" | BlockType;
   content?: string;
   data?: any;
 }
@@ -314,7 +375,7 @@ const messageSegments = computed(() => {
     } else {
       try {
         const data = JSON.parse(blockContent);
-        segments.push({ type: blockType as "map" | "route", data });
+        segments.push({ type: blockType as BlockType, data });
       } catch {
         // Invalid JSON — render as code block
         segments.push({ type: "text", content: `\`\`\`${blockType}\n${blockContent}\n\`\`\`` });
@@ -430,6 +491,8 @@ onBeforeUnmount(() => {
 
   .msg-content { max-width: 75%; min-width: 0; }
 
+  &.tool-row .msg-content { max-width: 92%; flex: 1; }
+
   .msg-bubble {
     padding: 10px 16px; border-radius: 16px; font-size: 14px; line-height: 1.65;
     &.user { background: $primary; color: #fff; border-bottom-right-radius: 4px; }
@@ -533,22 +596,23 @@ onBeforeUnmount(() => {
 }
 
 .tool-card {
-  background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px;
-  padding: 8px 12px; font-size: 13px; cursor: pointer;
-  .tool-header { display: flex; align-items: center; gap: 8px; }
-  .tool-name { font-weight: 600; color: #92400e; font-family: "Fira Code", "Consolas", monospace; font-size: 12px; }
+  background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px;
+  padding: 6px 10px; font-size: 12px;
+  .tool-header { display: flex; align-items: center; gap: 6px; cursor: pointer; user-select: none; }
+  .tool-icon { font-size: 13px; color: #64748b; flex-shrink: 0; }
+  .tool-name { font-weight: 500; color: #475569; font-family: "Fira Code", "Consolas", monospace; font-size: 11px; }
   .tool-badge {
-    font-size: 11px; padding: 1px 7px; border-radius: 8px; font-weight: 500;
-    &.pending { background: #fef3c7; color: #b45309; }
+    font-size: 10px; padding: 0 6px; border-radius: 6px; font-weight: 500; line-height: 18px;
+    &.pending { background: #dbeafe; color: #1e40af; }
     &.ok { background: #d1fae5; color: #065f46; }
     &.fail { background: #fee2e2; color: #991b1b; }
   }
-  .tool-expand-icon { margin-left: auto; font-size: 10px; color: #a16207; }
-  .tool-detail { margin-top: 8px; padding-top: 8px; border-top: 1px solid #fde68a; }
+  .tool-expand-icon { margin-left: auto; font-size: 10px; color: #94a3b8; }
+  .tool-detail { margin-top: 6px; padding-top: 6px; border-top: 1px solid #e2e8f0; }
   .tool-result {
     margin: 0; padding: 8px; border-radius: 6px; font-size: 11px; line-height: 1.5;
     white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow-y: auto;
-    background: #f0fdf4; color: #166534;
+    background: #f1f5f9; color: #334155;
     &.fail { background: #fef2f2; color: #991b1b; }
   }
 }

@@ -134,6 +134,7 @@
   <DataDrawer ref="dataDrawer" @oks="getDataDrawer" />
   <VariableModal ref="variableModal" @oks="getDataId" />
   <SelectForm ref="selectForm" @oks="getSelectFormData" />
+  <EditContainer ref="editContainer" @oks="getEditTextValue" />
 </template>
 
 <script>
@@ -144,6 +145,7 @@ import { Empty, message } from 'ant-design-vue';
 import DataDrawer from './components/form.vue';
 import VariableModal from './components/variable.vue';
 import SelectForm from './components/selectForm.vue';
+import EditContainer from "@/components/Meta2D/EditContainer/index.vue";
 let dataIndex = -1;
 export default defineComponent({
   components: {
@@ -155,6 +157,7 @@ export default defineComponent({
     VariableModal,
     CloseOutlined,
     SelectForm,
+    EditContainer,
   },
   emits: ['oks', 'getDataValue', 'deleteDataValue'],
   setup(props, { emit }) {
@@ -216,9 +219,21 @@ export default defineComponent({
       proxy.$refs.editContainer.visible = true;
       dataIndex = index;
       nextTick(() => {
-        let _ = pen[data.key];
-        proxy.$refs.editContainer.init(_ ? _ : '');
+        let value = pen.value[data.key];
+        proxy.$refs.editContainer.init(value ? value : '');
       });
+    }
+
+    /**
+     * 获取代码编辑器返回值
+     */
+    function getEditTextValue(textValue) {
+      if (dataIndex >= 0 && pen.value.form) {
+        const formItem = pen.value.form[dataIndex];
+        pen.value[formItem.key] = textValue;
+        emit('oks', pen.value);
+      }
+      dataIndex = -1;
     }
 
     /**
@@ -318,7 +333,6 @@ export default defineComponent({
     watch(
       () => selections.pen,
       (val) => {
-        console.log(val);
         init(val);
       }
     );
@@ -332,6 +346,7 @@ export default defineComponent({
       onAdd,
       getDataDrawer,
       openEditContainer,
+      getEditTextValue,
       getDataValue,
       openVariable,
       getDataId,

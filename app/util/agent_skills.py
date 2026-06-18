@@ -12,7 +12,9 @@ _CANVAS_SKILL = """## 画布编辑能力
 - canvas(action="get_state"): 查看画布状态
 - canvas(action="undo"/"redo"): 撤销/重做
 - canvas(action="clear", confirm=true): 清空画布
-- 布局排版：layout_auto_arrange、layout_align"""
+- 布局排版：layout_auto_arrange、layout_align
+
+[!] 创建新图形时，请将 x/y 设置为画布上下文中 viewportCenter 附近的值（±200 范围），确保图形出现在用户可见区域。不要使用 (0,0) 或随机的坐标。"""
 
 _BLUEPRINT_SKILL = """## 蓝图管理能力
 你可以管理蓝图（保存的画布快照）：
@@ -25,7 +27,27 @@ _BLUEPRINT_SKILL = """## 蓝图管理能力
 _FILE_SKILL = """## 文件管理能力
 你可以搜索文件管理器中的素材和文件：
 - file_search: 按关键词和类型（image/svg/document）搜索文件
-- 支持图片、SVG、文档等多种格式"""
+- 支持图片、SVG、文档等多种格式
+
+### Excel 数据分析与图表
+当用户上传 Excel 文件（.xlsx/.xls）并要求分析时：
+1. 使用 `extract_excel` 工具解析文件数据
+2. 分析数据结构，选择合适的图表类型
+3. 在回复中使用 ```chart 代码块输出 ECharts 图表
+
+图表格式（JSON）：
+```chart
+{
+  "option": { "title": {"text":"标题"}, "xAxis": {"type":"category","data":[...]}, "yAxis": {"type":"value"}, "series": [{"type":"bar","data":[...]}] },
+  "height": "400px"
+}
+```
+
+支持的图表类型：bar（柱状图）、line（折线图）、pie（饼图）、scatter（散点图）
+- 数据对比 → bar
+- 趋势变化 → line
+- 占比分布 → pie
+- 相关性 → scatter"""
 
 _MINDMAP_SKILL = """## 思维导图能力
 你可以创建和编辑思维导图：

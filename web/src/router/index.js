@@ -1,3 +1,11 @@
+/*
+ * @Descripttion:
+ * @version: 1.0.0
+ * @Author: htang
+ * @Date: 2026-06-17 09:28:01
+ * @LastEditors: htang
+ * @LastEditTime: 2026-06-18 09:32:44
+ */
 import { createRouter, createWebHashHistory } from 'vue-router';
 import Layout from '@/layout/index.vue';
 

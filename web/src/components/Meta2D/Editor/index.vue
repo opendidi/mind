@@ -11,10 +11,11 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, getCurrentInstance, onMounted, onUnmounted } from "vue";
+import { ref, getCurrentInstance, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { message } from "ant-design-vue";
 import { apiBlueprintFind } from "@/api/blueprint";
+import * as echarts from "echarts";
 import { register as registerEcharts } from "@meta2d/chart-diagram";
 import { flowPens, flowAnchors } from "@meta2d/flow-diagram";
 import {
@@ -47,6 +48,32 @@ let { proxy } = getCurrentInstance();
 
 let onStorageChange: ((e: StorageEvent) => void) | null = null;
 
+const route = useRoute();
+
+function loadBlueprint(id: string) {
+  const meta2d = (window as any).meta2d;
+  if (!meta2d) return;
+  apiBlueprintFind({ id }).then((res: any) => {
+    if (res?.data) {
+      const bp = res.data;
+      const canvasData: any = { name: bp.name || '', pens: bp.pens || [], lines: [] };
+      if (bp.background) canvasData.background = bp.background;
+      if (bp.grid !== undefined) canvasData.grid = bp.grid;
+      if (bp.gridColor) canvasData.gridColor = bp.gridColor;
+      if (bp.gridSize) canvasData.gridSize = bp.gridSize;
+      if (bp.rule !== undefined) canvasData.rule = bp.rule;
+      if (bp.ruleColor) canvasData.ruleColor = bp.ruleColor;
+      if (!canvasData.locked) canvasData.locked = 0;
+      meta2d.open(canvasData);
+      window.dispatchEvent(new CustomEvent('meta2d:dataLoaded'));
+    } else {
+      message.error("图纸加载失败");
+    }
+  }).catch(() => {
+    message.error("图纸加载失败");
+  });
+}
+
 onMounted(() => {
   const meta2dOptions: any = {
     background: "transparent",
@@ -68,45 +95,27 @@ onMounted(() => {
   register(sequencePens());
   registerCanvasDraw(sequencePensbyCtx());
   registerCanvasDraw(formPens());
-  // registerCanvasDraw(chartsPens());
   register(ftaPens());
   registerCanvasDraw(ftaPensbyCtx());
   registerAnchors(ftaAnchors());
+
+  // 注册 ECharts 图表画笔
+  registerEcharts(echarts);
 
   // 初始化插件
   initPlugin();
 
   // 加载数据：有 ID 从后端加载，无 ID 新建空白画布
-  const route = useRoute();
   const blueprintId = route.query.id as string | undefined;
-
   if (blueprintId) {
-    apiBlueprintFind({ id: blueprintId }).then((res: any) => {
-      if (res?.data) {
-        const bp = res.data;
-        const canvasData: any = { name: bp.name || '', pens: bp.pens || [], lines: [] };
-        if (bp.background) canvasData.background = bp.background;
-        if (bp.grid !== undefined) canvasData.grid = bp.grid;
-        if (bp.gridColor) canvasData.gridColor = bp.gridColor;
-        if (bp.gridSize) canvasData.gridSize = bp.gridSize;
-        if (bp.rule !== undefined) canvasData.rule = bp.rule;
-        if (bp.ruleColor) canvasData.ruleColor = bp.ruleColor;
-        if (!canvasData.locked) canvasData.locked = 0;
-        meta2d.open(canvasData);
-        window.dispatchEvent(new CustomEvent('meta2d:dataLoaded'));
-      } else {
-        message.error("图纸加载失败");
-      }
-    }).catch(() => {
-      message.error("图纸加载失败");
-    });
+    loadBlueprint(blueprintId);
   }
 
-  setTimeout(() => {
-    if (window?.meta2dTools) {
-      window?.registerToolsNew();
-    }
-  }, 1000);
+  // Register custom tools immediately — meta2dTools is already available
+  // from synchronously loaded arrows.js and canvas2svg.js
+  if (window?.meta2dTools) {
+    window?.registerToolsNew();
+  }
 
   // Cross-tab sync: reload canvas when another tab (e.g. chat) modifies localStorage
   onStorageChange = (e: StorageEvent) => {
@@ -130,34 +139,49 @@ onMounted(() => {
       if (info.data["data"]) {
         let raw = info.data["data"];
         let dataList = typeof raw === 'string' ? JSON.parse(raw) : raw;
-        console.table("数据返回", dataList);
-        dataList.map((item) => {
+        let hasUpdate = false;
+        dataList.forEach((item: any) => {
           if (item["dot"] == 0) {
             item["id"] = `a${item["dot"]}`;
           } else {
             item["id"] = item["dot"];
           }
-          // 提升机泵液位
           if (item["vtype"] === "FLOAT") {
             let data = parseFloat(item["value"]).toFixed(2);
             item["text"] = Number(data);
-            // item['text'] = Number(item['value']);
           } else {
             item["text"] = item["value"];
           }
           if (item["id"] == 6) {
             item["progress"] = item["value"] / 10;
           }
-          meta2d.setValue({
-            ...item,
-          });
+          meta2d.setValue({ ...item }, { render: false });
+          hasUpdate = true;
         });
+        if (hasUpdate) {
+          meta2d.render();
+          // Sync to localStorage so data persists across refresh
+          localStorage.setItem('meta2d', JSON.stringify(meta2d.data()));
+          // Store variable data for binding UI (updates store + localStorage)
+          useCommonStoreWithOut().setVariableData(dataList);
+          // Mark save state as dirty
+          useCommonStoreWithOut().setIsSave("0");
+        }
       }
     }
-    // return false; //表示仅执行自定义的回调函数方法
-    return true; //表示除了执行自定义的回调方法外，还会执行核心库方法
+    return true;
   };
 });
+
+// 监听路由变化，切换图纸
+watch(
+  () => route.query.id,
+  (newId) => {
+    if (newId && typeof newId === 'string') {
+      loadBlueprint(newId);
+    }
+  }
+);
 
 function active(pens?: Pen[]) {
   select(pens);

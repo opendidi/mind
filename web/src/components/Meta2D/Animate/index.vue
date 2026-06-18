@@ -166,7 +166,6 @@ import { animateType } from "@/utils/defaultConfig.ts";
 import { useSelection } from "@/services/selections";
 import FramesDrawer from "@/components/Meta2D/Frames/index.vue";
 import { ColorPicker } from "tdesign-vue-next";
-import "tdesign-vue-next/es/style/index.css";
 export default defineComponent({
   components: {
     CaretRightOutlined,

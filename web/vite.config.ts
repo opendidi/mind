@@ -40,7 +40,6 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     // 参考：https://www.jianshu.com/p/4973bd983e96
     base: env.VITE_APP_BASE_URL,
     root,
-    envDir: 'env',
     plugins: [vue(), windiCSS()],
     server: {
       // Listening on all local IPs
@@ -101,6 +100,9 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
       rollupOptions: {
         // 参考：https://blog.cinob.cn/archives/393
         output: {
+          manualChunks: {
+            'monaco-editor': ['monaco-editor'],
+          },
           // 入口文件名
           entryFileNames: `assets/[name]-${TimeStamp}.js`,
           // 块文件名
@@ -120,6 +122,7 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
         '@iconify/iconify',
         'ant-design-vue/es/locale/zh_CN',
         'ant-design-vue/es/locale/en_US',
+        'monaco-editor',
       ]
     }
   })

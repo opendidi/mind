@@ -18,7 +18,9 @@ function isWhiteListed(path) {
 }
 
 router.beforeEach(async (to, from, next) => {
-  NProgress.start()
+  // Skip progress bar for same-route chat navigation (avoids scrollbar flash)
+  const isChatInternal = to.name === 'chat' && from.name === 'chat'
+  if (!isChatInternal) NProgress.start()
   document.title = getPageTitle(to.meta?.title)
 
   const hasToken = getCache('auth-token')
@@ -40,6 +42,7 @@ router.beforeEach(async (to, from, next) => {
   }
 })
 
-router.afterEach(() => {
+router.afterEach((to, from) => {
+  if (to.name === 'chat' && from.name === 'chat') return
   NProgress.done()
 })

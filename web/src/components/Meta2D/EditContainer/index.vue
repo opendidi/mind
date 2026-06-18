@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-14 17:27:29
  * @LastEditors: htang
- * @LastEditTime: 2024-02-02 09:25:37
+ * @LastEditTime: 2026-06-18 14:45:44
 -->
 <template>
   <a-modal
@@ -17,7 +17,11 @@
     wrapClassName="editor-modal"
     :cancel-button-props="{ style: { display: 'none' } }"
   >
-    <div ref="editContainer" :id="'edit-' + uuid" class="code-editor"></div>
+    <div
+      ref="editContainer"
+      class="code-editor"
+      :style="{ height: editorHeight }"
+    ></div>
     <span
       >打开图纸后，执行的初始脚本。 <br />可获取pen和context参数
       <br />例如，console.log('pen', 'context');return true;</span
@@ -30,26 +34,73 @@ import {
   ref,
   defineComponent,
   getCurrentInstance,
-  onMounted,
   watch,
   onUnmounted,
 } from "vue";
-import { buildUUID } from "@/utils/uuid";
-import * as monaco from "monaco-editor/esm/vs/editor/editor.main.js";
-// https://juejin.cn/post/7150587036729737252 参考
-import tsWorker from "monaco-editor/esm/vs/language/typescript/ts.worker?worker";
-import jsonWorker from "monaco-editor/esm/vs/language/json/json.worker?worker";
-// 解决vite Monaco提示错误
-self.MonacoEnvironment = {
-  getWorker(_, label) {
-    if (label === "json") {
-      return new jsonWorker();
-    }
-    if (["typescript", "javascript"].includes(label)) {
-      return new tsWorker();
-    }
-  },
-};
+
+// Lazy-loaded monaco module singleton
+let monacoModule = null;
+async function getMonaco() {
+  if (!monacoModule) {
+    monacoModule = await import("monaco-editor/esm/vs/editor/editor.main.js");
+  }
+  return monacoModule;
+}
+
+// Persistent editor instance — created once, reused across opens
+let monacoEditor = null;
+let persistentContainer = null;
+let editorReady = false;
+let currentType = "";
+
+function computeEditorHeight(value) {
+  const lineCount = (value || "").split("\n").length;
+  const lineHeight = 21;
+  const padding = 48;
+  const idealHeight = lineCount * lineHeight + padding;
+  const minHeight = Math.max(450, window.innerHeight * 0.4);
+  return (
+    Math.min(window.innerHeight * 0.8, Math.max(minHeight, idealHeight)) + "px"
+  );
+}
+
+async function ensureEditor(emit, container) {
+  if (editorReady && monacoEditor) return;
+
+  const monaco = await getMonaco();
+
+  // Create persistent hidden container for the editor
+  if (!persistentContainer) {
+    persistentContainer = document.createElement("div");
+    persistentContainer.id = "monaco-persistent-container";
+    persistentContainer.style.cssText =
+      "position:fixed;top:-9999px;left:0;width:100%;height:80vh;pointer-events:none;";
+    document.body.appendChild(persistentContainer);
+  }
+
+  monacoEditor = monaco.editor.create(persistentContainer, {
+    value: "",
+    readOnly: false,
+    language: "javascript",
+    theme: "vs-dark",
+    minimap: { enabled: false },
+    scrollBeyondLastLine: false,
+    lineNumbersMinChars: 3,
+    automaticLayout: true,
+    wordWrap: "on",
+    tabSize: 2,
+    selectOnLineNumbers: true,
+    renderSideBySide: false,
+  });
+
+  // Ctrl+S triggers save
+  monacoEditor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyS, () => {
+    emit("oks", monacoEditor.getValue(), currentType);
+  });
+
+  editorReady = true;
+}
+
 export default defineComponent({
   props: {
     title: {
@@ -62,22 +113,38 @@ export default defineComponent({
     let { proxy } = getCurrentInstance();
 
     let visible = ref(false);
-    let monacoEditor = null;
+    let editorHeight = ref("80vh");
+    let language = ref("javascript");
 
-    let uuid = ref();
+    async function init(value, lang = "JavaScript", t) {
+      language.value = (lang || "javascript").toLowerCase();
+      currentType = t || "";
 
-    let type = "";
+      await ensureEditor(emit, proxy.$refs.editContainer);
 
-    function init(value, language = "JavaScript", t) {
-      monacoEditor = monaco.editor.create(proxy.$refs.editContainer, {
-        value,
-        readOnly: false,
-        language,
-        theme: "vs-dark",
-        selectOnLineNumbers: true,
-        renderSideBySide: false,
-      });
-      type = t;
+      // Update language if needed
+      const monaco = await getMonaco();
+      const model = monacoEditor.getModel();
+      if (model) {
+        monaco.editor.setModelLanguage(model, language.value);
+      }
+
+      // Set value and compute adaptive height
+      monacoEditor.setValue(value || "");
+      editorHeight.value = computeEditorHeight(value || "");
+
+      // Move editor from hidden container into the visible modal area
+      if (persistentContainer && proxy.$refs.editContainer) {
+        if (persistentContainer.parentElement !== proxy.$refs.editContainer) {
+          proxy.$refs.editContainer.appendChild(persistentContainer);
+        }
+        persistentContainer.style.position = "relative";
+        persistentContainer.style.top = "0";
+        persistentContainer.style.pointerEvents = "auto";
+        persistentContainer.style.width = "100%";
+        persistentContainer.style.height = "100%";
+        monacoEditor.layout();
+      }
     }
 
     watch(
@@ -85,37 +152,50 @@ export default defineComponent({
       (bool) => {
         if (!bool) {
           emit("close");
-          if (monacoEditor) {
-            monacoEditor.dispose();
+          // Hide editor back — don't dispose, just move off-screen
+          if (persistentContainer) {
+            persistentContainer.style.position = "fixed";
+            persistentContainer.style.top = "-9999px";
+            persistentContainer.style.pointerEvents = "none";
+            if (persistentContainer.parentElement !== document.body) {
+              document.body.appendChild(persistentContainer);
+            }
           }
-        } else {
-          uuid.value = buildUUID();
         }
       }
     );
 
     function setMonacoEditorValue(dataValue) {
-      monacoEditor.setValue(dataValue);
+      if (monacoEditor) {
+        monacoEditor.setValue(dataValue);
+      }
     }
 
     function handleOk() {
-      emit("oks", monacoEditor.getValue(), type);
+      if (monacoEditor) {
+        emit("oks", monacoEditor.getValue(), currentType);
+      }
       visible.value = false;
-      monacoEditor.dispose();
     }
 
     onUnmounted(() => {
       if (monacoEditor) {
         monacoEditor.dispose();
+        monacoEditor = null;
+        editorReady = false;
+      }
+      if (persistentContainer && persistentContainer.parentElement) {
+        persistentContainer.parentElement.removeChild(persistentContainer);
+        persistentContainer = null;
       }
     });
 
     return {
       visible,
-      uuid,
       handleOk,
       setMonacoEditorValue,
       init,
+      editorHeight,
     };
   },
 });
@@ -127,7 +207,7 @@ export default defineComponent({
     padding: 0;
     .code-editor {
       width: 100%;
-      height: 80vh;
+      overflow: hidden;
     }
   }
 }

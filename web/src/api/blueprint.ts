@@ -1,11 +1,3 @@
-/*
- * @Descripttion:
- * @version: 1.0.0
- * @Author: htang
- * @Date: 2025-08-22 14:57:15
- * @LastEditors: htang
- * @LastEditTime: 2025-08-26 15:04:12
- */
 import http from '@/utils/request';
 
 const API = {
@@ -16,67 +8,22 @@ const API = {
   delete: '/blueprint/delete',
 }
 
-/**
- * 获取图纸列表
- * @param data
- * @returns
- */
-export function apiBlueprintList(params: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.get(API.lists, { params }).then((res: any) => {
-      resolve(res.data);
-    })
-  })
+export function apiBlueprintList(params: Record<string, unknown>) {
+  return http.get(API.lists, { params }).then((res: any) => res.data);
 }
 
-/**
- * 根据ID获取图纸详情
- * @param data
- * @returns
- */
-export function apiBlueprintFind(params: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.get(API.find, { params }).then((res: any) => {
-      resolve(res);
-    })
-  })
+export function apiBlueprintFind(params: Record<string, unknown>) {
+  return http.get(API.find, { params }).then((res: any) => res);
 }
 
-/**
- * 新增图纸
- * @param params
- * @returns
- */
-export function apiBlueprintAdd(data: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.post(API.add, data).then((res: any) => {
-      resolve(res.data);
-    })
-  })
+export function apiBlueprintAdd(data: Record<string, unknown>) {
+  return http.post(API.add, data).then((res: any) => res.data);
 }
 
-/**
- * 编辑图纸
- * @param params
- * @returns
- */
-export function apiBlueprintModify(data: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.post(API.modify, data).then((res: any) => {
-      resolve(res);
-    })
-  })
+export function apiBlueprintModify(data: Record<string, unknown>) {
+  return http.post(API.modify, data).then((res: any) => res);
 }
 
-/**
- * 删除图纸
- * @param params
- * @returns
- */
-export function apiBlueprintDelete(data: any) {
-  return new Promise(async (resolve, reject) => {
-    await http.post(API.delete, data).then((res: any) => {
-      resolve(res);
-    })
-  })
+export function apiBlueprintDelete(data: Record<string, unknown>) {
+  return http.post(API.delete, data).then((res: any) => res);
 }

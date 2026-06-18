@@ -37,6 +37,7 @@ import { ref, watch, nextTick } from "vue";
 
 const props = defineProps<{
   disabled: boolean;
+  initialValue?: string;
 }>();
 
 const emit = defineEmits<{
@@ -46,6 +47,18 @@ const emit = defineEmits<{
 const inputText = ref("");
 const textareaRef = ref<HTMLTextAreaElement>();
 const focused = ref(false);
+
+// Apply preset context on mount
+watch(
+  () => props.initialValue,
+  (val) => {
+    if (val) {
+      inputText.value = val;
+      nextTick(autoResize);
+    }
+  },
+  { immediate: true },
+);
 
 function autoResize() {
   const el = textareaRef.value;

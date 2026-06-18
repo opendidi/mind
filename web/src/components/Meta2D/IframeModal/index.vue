@@ -55,7 +55,7 @@ export default defineComponent({
      * 初始化数据
      */
     function init(params) {
-      console.log(params);
+      // initialize modal with params
     }
 
     /**

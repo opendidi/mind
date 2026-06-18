@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2026-06-17 14:10:55
+ * @LastEditTime: 2026-06-18 11:15:56
 -->
 <template>
   <div class="app-page">
@@ -19,7 +19,7 @@
         <template #overlay>
           <a-menu class="canvas-context-menu" @click="handleMenuClick">
             <template v-for="(vo, idx) in menuLists">
-              <template v-if="vo.visible == true">
+              <template v-if="vo.visible">
                 <template v-if="vo.title == 'divider'">
                   <a-menu-divider :key="idx" />
                 </template>
@@ -75,18 +75,18 @@ const { selections } = useSelection();
 
 const agentPanelRef = ref();
 
-let menuLists = ref(menus);
+const menuLists = ref(menus);
 
 // 选中的画笔状态
-let activePen = ref(false);
+const activePen = ref(false);
 // 多个画笔状态
-let multiPen = ref(false);
+const multiPen = ref(false);
 // 画笔数组
-let pens = ref([]);
+const pens = ref([]);
 
 let timer: any;
 
-let propsData = ref({});
+const propsData = ref({});
 
 function save() {
   if (timer) {
@@ -122,8 +122,6 @@ async function onInit() {
   meta2d.on("undo", save);
   // 恢复后
   meta2d.on("redo", save);
-  // 添加一个/多个画笔
-  meta2d.on("add", save);
   // 删除
   meta2d.on("delete", save);
   // 画笔大小改变
@@ -147,42 +145,20 @@ async function onInit() {
     } else {
       multiPen.value = false;
     }
-    if (args.length == 1) {
-      let [pen] = args;
-      if (pen["type"] !== undefined) {
-        menuLists.value.map((_: any) => {
-          switch (pen["type"]) {
+    if (args.length === 1) {
+      const [pen] = args;
+      if (pen.type !== undefined) {
+        menuLists.value.forEach((item: any) => {
+          switch (pen.type) {
             case 0:
               // 节点
-              switch (_.data) {
-                case "node":
-                  {
-                    _.visible = false;
-                  }
-                  break;
-                case "line":
-                case "penType":
-                  {
-                    _.visible = true;
-                  }
-                  break;
-              }
+              if (item.data === "node") item.visible = false;
+              if (item.data === "line" || item.data === "penType") item.visible = true;
               break;
             case 1:
               // 连线
-              switch (_.data) {
-                case "node":
-                case "penType":
-                  {
-                    _.visible = true;
-                  }
-                  break;
-                case "line":
-                  {
-                    _.visible = false;
-                  }
-                  break;
-              }
+              if (item.data === "node" || item.data === "penType") item.visible = true;
+              if (item.data === "line") item.visible = false;
               break;
           }
         });
@@ -207,88 +183,49 @@ async function onInit() {
  * 处理鼠标右键菜单显示
  */
 function handleMenuVisibleChange(e: any) {
-  let { pen } = selections;
+  const { pen } = selections;
   if (e) {
-    if (pen !== undefined) {
-      menuLists.value.some((_: any) => {
-        if (_.data == "delete") {
-          _.disabled = false;
-          _.visible = true;
+    const isLocked = pen?.locked === 2;
+    const hasChildren = pen?.children?.length > 0;
+    const hasPens = pens.value.length > 0;
+    menuLists.value.forEach((item: any) => {
+      const d = item.data;
+      if (pen !== undefined) {
+        if (d === "delete") {
+          item.disabled = false;
+          item.visible = true;
         }
-      });
-      switch (pen.locked) {
-        case 0:
-          menuLists.value.some((_: any) => {
-            if (_.data == "locked") {
-              _.disabled = false;
-            }
-            if (_.data == "unlocked") {
-              _.disabled = true;
-              _.visible = false;
-            }
-          });
-          break;
-        case 2:
-          menuLists.value.some((_: any) => {
-            if (_.data == "locked") {
-              _.disabled = true;
-              _.visible = false;
-            }
-            if (_.data == "unlocked") {
-              _.disabled = false;
-              _.visible = true;
-            }
-          });
-          break;
-        default:
-          menuLists.value.some((_: any) => {
-            if (_.data == "locked") {
-              _.disabled = false;
-            }
-            if (_.data == "unlocked") {
-              _.disabled = true;
-              _.visible = false;
-            }
-          });
-          break;
-      }
-      if (pen["children"]) {
-        if (pen.children.length !== 0) {
-          menuLists.value.map((_: any) => {
-            if (_.data == "locked") {
-              _.disabled = false;
-            }
-            if (_.data == "uncombine") {
-              _.visible = true;
-            }
-          });
+        if (d === "locked") {
+          item.disabled = isLocked;
+          item.visible = !isLocked;
+        }
+        if (d === "unlocked") {
+          item.disabled = !isLocked;
+          item.visible = isLocked;
+        }
+        if (hasChildren) {
+          if (d === "locked") item.disabled = false;
+          if (d === "uncombine") item.visible = true;
+        }
+      } else if (hasPens && activePen.value) {
+        if (d === "combine" || d === "delete") {
+          item.visible = true;
+          item.disabled = false;
         }
       }
-    } else {
-      if (pens.value.length !== 0) {
-        menuLists.value.map((_: any) => {
-          if (
-            ["combine", "delete"].includes(_.data) &&
-            activePen.value == true
-          ) {
-            _.visible = true;
-            _.disabled = false;
-          }
-        });
-      }
-    }
-  } else if (!e) {
-    menuLists.value.map((_: any) => {
-      switch (_.data) {
+    });
+  } else {
+    menuLists.value.forEach((item: any) => {
+      switch (item.data) {
         case "combine":
         case "uncombine":
         case "node":
         case "line":
         case "penType":
-          _.visible = false;
+          item.visible = false;
           break;
         case "delete":
-          _.disabled = true;
+          item.disabled = true;
           break;
       }
     });
@@ -299,8 +236,8 @@ function handleMenuVisibleChange(e: any) {
  * 右键菜单事件集合
  */
 const handleMenuClick: MenuProps["onClick"] = (e: any) => {
-  let { pen } = selections;
-  let list = menuLists.value;
+  const { pen } = selections;
+  const list = menuLists.value;
   if (pen || pens.value.length > 0) {
     switch (e.item.data) {
       // 置顶
@@ -321,15 +258,11 @@ const handleMenuClick: MenuProps["onClick"] = (e: any) => {
         break;
       // 组合为状态
       case "combine": {
-        list.some((_: any) => {
-          if (_.data == "combine") {
-            _.visible = false;
-          }
-          if (_.data == "uncombine") {
-            _.visible = true;
-          }
+        list.forEach((item: any) => {
+          if (item.data === "combine") item.visible = false;
+          if (item.data === "uncombine") item.visible = true;
         });
-        if (e.item.title == "组合") {
+        if (e.item.title === "组合") {
           meta2d.combine(pens.value);
         } else {
           meta2d.combine(pens.value, 0);
@@ -338,40 +271,32 @@ const handleMenuClick: MenuProps["onClick"] = (e: any) => {
       }
       // 取消组合为状态
       case "uncombine": {
-        list.some((_: any) => {
-          if (_.data == "combine") {
-            _.visible = true;
-          }
-          if (_.data == "uncombine") {
-            _.visible = false;
-          }
+        list.forEach((item: any) => {
+          if (item.data === "combine") item.visible = true;
+          if (item.data === "uncombine") item.visible = false;
         });
         meta2d.uncombine(pen);
         break;
       }
       case "locked": {
-        list.some((_: any) => {
-          if (_.data == "locked") {
-            _.visible = false;
-          }
+        list.forEach((item: any) => {
+          if (item.data === "locked") item.visible = false;
         });
-        pens.value.map((_: any) => {
+        pens.value.forEach((p: any) => {
           meta2d.setValue(
-            { id: _.id, locked: lockState.DisableMove },
+            { id: p.id, locked: lockState.DisableMove },
             { render: false }
           );
         });
         break;
       }
       case "unlocked": {
-        list.some((_: any) => {
-          if (_.data == "locked") {
-            _.visible = true;
-          }
+        list.forEach((item: any) => {
+          if (item.data === "locked") item.visible = true;
         });
-        pens.value.map((_: any) => {
+        pens.value.forEach((p: any) => {
           meta2d.setValue(
-            { id: _.id, locked: lockState.None },
+            { id: p.id, locked: lockState.None },
             { render: false }
           );
         });
@@ -428,6 +353,9 @@ const handleMenuClick: MenuProps["onClick"] = (e: any) => {
     case "paste":
       meta2d.paste();
       break;
+    case "askAi":
+      onAskAi();
+      break;
     default:
       break;
   }
@@ -440,8 +368,29 @@ const onOpenAgentPanel = () => {
   agentPanelRef.value.open();
 };
 
+/** Right-click "Ask AI" — opens AgentPanel with selected pen context */
+function onAskAi() {
+  const { pen } = selections;
+  let context = "";
+  if (pen) {
+    context = `选中节点: ID=${pen.id}, 类型=${pen.name || "unknown"}, 文字="${
+      pen.text || ""
+    }", 位置=(${pen.x}, ${pen.y}), 大小=${pen.width}x${pen.height}`;
+  } else if (pens.value.length > 0) {
+    const names = pens.value.map((p: any) => p.name || "unknown").join(", ");
+    context = `选中了 ${pens.value.length} 个节点: ${names}`;
+  }
+  agentPanelRef.value.open(context);
+}
+
+// Listen for Agent-triggered canvas mutations (unified pipeline)
+function onAgentMutation() {
+  useCommonStoreWithOut().setIsSave("0");
+}
+
 onMounted(() => {
   onInit();
+  window.addEventListener("meta2d:agent-mutation", onAgentMutation);
 });
 
 onUnmounted(() => {
@@ -451,19 +400,20 @@ onUnmounted(() => {
     "opened",
     "undo",
     "redo",
-    "add",
     "delete",
     "rotatePens",
     "translatePens",
-  ].map((_) => {
-    meta2d.off(_);
+  ].forEach((event) => {
+    meta2d.off(event);
   });
+  window.removeEventListener("meta2d:agent-mutation", onAgentMutation);
 });
 </script>
 
 <style lang="less" scoped>
 .app-page {
   height: 100vh;
+  background: #fff;
   overflow: hidden;
 
   .designer {

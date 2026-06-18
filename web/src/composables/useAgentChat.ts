@@ -1,10 +1,16 @@
 /**
- * Agent Chat Composable — SSE streaming communication
+ * useAgentChat — Unified Agent chat composable (SSE streaming).
+ *
+ * Used by both the full-page chat view (/chat/:id?) and the
+ * in-canvas AgentPanel drawer. All SSE event handling is centralized here.
  */
-import { ref, type Ref } from 'vue'
+import { ref, type Ref, type ComputedRef, computed } from 'vue'
 import { agentChat } from '@/api/agent'
+import { useCommonStoreWithOut } from '@/store/modules/common'
+import { useSelection } from '@/services/selections'
 
-// Types
+// ── Types ──────────────────────────────────────────────────────────
+
 export interface ToolInfo {
   name: string
   args: Record<string, unknown>
@@ -38,8 +44,36 @@ export interface ChatMessage {
   references?: Array<{ title?: string; url: string }>
 }
 
+export interface ToolCallRecord {
+  id: string
+  tool: string
+  args: Record<string, unknown>
+  success?: boolean
+  result?: unknown
+  status: 'pending' | 'running' | 'success' | 'error'
+  timestamp: number
+}
+
+export interface PlanNode {
+  id: string
+  desc: string
+  depends_on: string[]
+  parallel_group?: string
+  confirm?: boolean
+  status?: 'pending' | 'running' | 'completed' | 'failed'
+}
+
+export interface PlanInfo {
+  goal: string
+  nodes: PlanNode[]
+  risk: string
+  mode: string
+}
+
 export interface UseAgentChatOptions {
   userId?: string
+  /** Optional canvas context override (defaults to reading from Meta2D + selection) */
+  getCanvasContext?: () => CanvasContext | null
   onToolCall?: (name: string, args: Record<string, unknown>) => void
   onToolResult?: (name: string, args: Record<string, unknown>, success: boolean, result: unknown) => void
   onMessage?: (text: string) => void
@@ -48,11 +82,23 @@ export interface UseAgentChatOptions {
   onEvent?: (type: string, data: any) => void
 }
 
+export interface CanvasContext {
+  pens: any[]
+  lines: any[]
+  selectedIds: string[]
+  canvasInfo: { width: number; height: number }
+  viewportCenter: { x: number; y: number }
+}
+
 export interface UseAgentChatReturn {
   messages: Ref<ChatMessage[]>
   loading: Ref<boolean>
+  connected: Ref<boolean>
   currentTool: Ref<string>
   thinkingText: Ref<string>
+  plan: Ref<PlanInfo | null>
+  toolCalls: Ref<ToolCallRecord[]>
+  traceId: Ref<string | null>
   send: (text: string, images?: string[], model?: string, quote?: QuoteInfo, files?: ChatFile[]) => Promise<void>
   abort: () => void
   retry: () => void
@@ -61,12 +107,91 @@ export interface UseAgentChatReturn {
   addUserMessage: (text: string, images?: string[], quote?: QuoteInfo) => void
 }
 
+// ── Default canvas context builder ─────────────────────────────────
+
+export function buildCanvasContext(): CanvasContext | null {
+  try {
+    const meta2d = (window as any).meta2d
+    if (!meta2d || typeof meta2d.data !== 'function') return null
+
+    const data = meta2d.data()
+    if (!data) return null
+
+    const { selections } = useSelection()
+    const selectedPen = selections.pen
+
+    // If user has a pen selected, prioritize its neighborhood
+    const pens: any[] = []
+    if (selectedPen) {
+      pens.push({
+        id: selectedPen.id,
+        type: selectedPen.name || 'rectangle',
+        text: selectedPen.text || '',
+        x: selectedPen.x || 0, y: selectedPen.y || 0,
+        width: selectedPen.width || 100, height: selectedPen.height || 60,
+      })
+    }
+
+    // Include all pens (trimmed for large diagrams)
+    const MAX_PENS = 50
+    const allPens = (data.pens || []).slice(0, MAX_PENS)
+    for (const p of allPens) {
+      if (!pens.find(x => x.id === p.id)) {
+        pens.push({
+          id: p.id || p.penId,
+          type: p.name || p.type || 'rectangle',
+          text: (p.text || '').slice(0, 200),
+          x: p.x || 0, y: p.y || 0,
+          width: p.width || 100, height: p.height || 60,
+        })
+      }
+    }
+
+    // Include line data (was always empty before!)
+    const lines = (data.lines || []).map((l: any) => ({
+      from: l.fromPen || l.from,
+      to: l.toPen || l.to,
+      text: (l.text || '').slice(0, 200),
+    }))
+
+    // Viewport center in canvas coordinates — for placing new elements in view
+    const scale = meta2d.store?.data?.scale || 1
+    const scrollX = meta2d.canvas?.scroll?.scrollX || 0
+    const scrollY = meta2d.canvas?.scroll?.scrollY || 0
+    const vw = meta2d.canvas?.parentElement?.clientWidth || 1200
+    const vh = meta2d.canvas?.parentElement?.clientHeight || 800
+    const viewportCenter = {
+      x: Math.round((-scrollX + vw / 2) / scale),
+      y: Math.round((-scrollY + vh / 2) / scale),
+    }
+
+    return {
+      pens,
+      lines,
+      selectedIds: selectedPen ? [selectedPen.id] : [],
+      canvasInfo: {
+        width: data.width || 1920,
+        height: data.height || 1080,
+      },
+      viewportCenter,
+    }
+  } catch {
+    return null
+  }
+}
+
+// ── Composable ─────────────────────────────────────────────────────
+
 export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatReturn {
   const messages = ref<ChatMessage[]>([])
   const loading = ref(false)
+  const connected = ref(false)
   const currentTool = ref('')
   const thinkingText = ref('')
   const currentThinking = ref('')
+  const plan = ref<PlanInfo | null>(null)
+  const toolCalls = ref<ToolCallRecord[]>([])
+  const traceId = ref<string | null>(null)
 
   let msgIdCounter = 0
   let abortCtrl: AbortController | null = null
@@ -86,7 +211,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   }
 
   function addUserMessage(text: string, images?: string[], quote?: QuoteInfo, files?: ChatFile[]) {
-    // Strip internal markers from display text
     let displayText = text
     if (files) {
       for (const f of files) {
@@ -116,11 +240,31 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       tool: { name, args },
       timestamp: new Date().toLocaleTimeString(),
     })
+
+    toolCalls.value.push({
+      id,
+      tool: name,
+      args,
+      status: 'running',
+      timestamp: Date.now(),
+    })
     return id
   }
 
   function updateLastToolMessage(name: string, success: boolean, result: unknown): string | undefined {
     if (pendingToolCount <= 0) return undefined
+
+    // Update in toolCalls array
+    for (let i = toolCalls.value.length - 1; i >= 0; i--) {
+      if (toolCalls.value[i].tool === name && toolCalls.value[i].status === 'running') {
+        toolCalls.value[i].status = success ? 'success' : 'error'
+        toolCalls.value[i].success = success
+        toolCalls.value[i].result = result
+        break
+      }
+    }
+
+    // Update in messages
     for (let i = messages.value.length - 1; i >= 0; i--) {
       const m = messages.value[i]
       if (m.role === 'tool' && m.tool && m.tool.success === undefined && m.tool.name === name) {
@@ -152,28 +296,20 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         m.tool.result = '连接中断，工具可能未完成'
       }
     }
+    for (const tc of toolCalls.value) {
+      if (tc.status === 'running') {
+        tc.status = 'error'
+        tc.success = false
+        tc.result = '连接中断'
+      }
+    }
     pendingToolCount = 0
     pendingToolArgs.clear()
   }
 
   function handleSSEEvent(eventType: string, data: any) {
     switch (eventType) {
-      case 'tool_call': {
-        const name = data.tool as string
-        const args = { ...data.args } as Record<string, unknown>
-        addToolMessage(name, args)
-        currentTool.value = name
-        options.onToolCall?.(name, args)
-        break
-      }
-      case 'tool_result': {
-        const name = data.tool as string
-        const msgId = updateLastToolMessage(name, data.success, data.result)
-        const args = msgId ? (pendingToolArgs.get(msgId) ?? {}) : {}
-        currentTool.value = ''
-        options.onToolResult?.(name, args, data.success, data.result)
-        break
-      }
+      // ── Text streaming ──
       case 'token': {
         const text = data.text as string
         if (!text) break
@@ -196,6 +332,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         thinkingText.value = ''
         break
       }
+
       case 'message': {
         const msgText = data.text as string
         const lastMsg = messages.value[messages.value.length - 1]
@@ -218,29 +355,117 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         options.onMessage?.(msgText)
         break
       }
+
+      // ── Thinking ──
       case 'thinking':
-        currentThinking.value += (data.text || '')
-        thinkingText.value = data.text || ''
+        currentThinking.value += (data.text || data.content || '')
+        thinkingText.value = data.text || data.content || ''
         break
+
+      // ── Tool calls ──
+      case 'tool_call': {
+        const name = data.tool as string
+        const args = { ...data.args } as Record<string, unknown>
+        addToolMessage(name, args)
+        currentTool.value = name
+        options.onToolCall?.(name, args)
+        break
+      }
+
+      case 'tool_result': {
+        const name = data.tool as string
+        const msgId = updateLastToolMessage(name, data.success, data.result)
+        const args = msgId ? (pendingToolArgs.get(msgId) ?? {}) : {}
+        currentTool.value = ''
+        options.onToolResult?.(name, args, data.success, data.result)
+        break
+      }
+
+      // ── Plan / Steps ──
+      case 'plan': {
+        const d = data || {}
+        const rawNodes = d.nodes || d.steps || []
+        plan.value = {
+          goal: d.goal || '',
+          nodes: rawNodes.map((n: any) => ({
+            id: n.id || '',
+            desc: n.desc || n.description || '',
+            depends_on: n.depends_on || [],
+            parallel_group: n.parallel_group || undefined,
+            confirm: n.confirm ?? false,
+            status: 'pending' as const,
+          })),
+          risk: d.risk || 'low',
+          mode: d.mode || 'simple',
+        }
+        break
+      }
+
+      case 'step_start': {
+        if (plan.value) {
+          const node = plan.value.nodes.find(n => n.id === (data.step_id || data.id))
+          if (node) node.status = 'running'
+        }
+        break
+      }
+
+      case 'step_end': {
+        if (plan.value) {
+          const node = plan.value.nodes.find(n => n.id === (data.step_id || data.id))
+          if (node) node.status = 'completed'
+        }
+        break
+      }
+
+      case 'step_fail': {
+        if (plan.value) {
+          const node = plan.value.nodes.find(n => n.id === (data.step_id || data.id))
+          if (node) node.status = 'failed'
+        }
+        break
+      }
+
+      // ── Trace ──
+      case 'trace':
+        traceId.value = data.trace_id || data.traceId || null
+        break
+
+      // ── Progress ──
+      case 'progress':
+        // Hook for UI-level progress indicators
+        break
+
+      // ── Error ──
       case 'error':
         addMessage('error', data.message)
         flushPendingTools()
         loading.value = false
+        connected.value = false
         currentTool.value = ''
         thinkingText.value = ''
         currentThinking.value = ''
+        plan.value = null
         options.onError?.(data.message)
         break
+
+      // ── Done (handled in onComplete) ──
       case 'done':
-        // Handled by onComplete callback (agentChat calls both onEvent + onComplete for 'done')
         break
+
+      // ── Passthrough ──
       default:
         options.onEvent?.(eventType, data)
         break
     }
   }
 
-  async function send(text: string, images?: string[], _model?: string, quote?: QuoteInfo, files?: ChatFile[]): Promise<void> {
+  async function send(
+    text: string,
+    images?: string[],
+    _model?: string,
+    quote?: QuoteInfo,
+    files?: ChatFile[],
+  ): Promise<void> {
     const hasImages = images && images.length > 0
     const hasFiles = files && files.length > 0
     if ((!text.trim() && !quote && !hasImages && !hasFiles) || loading.value) return
@@ -255,18 +480,31 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       ? `> **${quote.role === 'user' ? '用户' : 'AI'}**：${quote.text}\n\n${text.trim()}`
       : text.trim()
 
+    // Build canvas context (caller override or default)
+    const canvasContext = options.getCanvasContext
+      ? options.getCanvasContext()
+      : buildCanvasContext()
+
     loading.value = true
+    connected.value = true
+    plan.value = null
+    toolCalls.value = []
+    traceId.value = null
+
     abortCtrl = agentChat({
       userMessage: apiText,
       user_id: options.userId,
+      canvasContext,
       onEvent: (event) => handleSSEEvent(event.type, event.data),
       onError: (err) => {
         addMessage('error', err.message)
         loading.value = false
+        connected.value = false
         options.onError?.(err.message)
       },
       onComplete: () => {
         loading.value = false
+        connected.value = false
         options.onDone?.()
       },
     })
@@ -276,6 +514,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     abortCtrl?.abort()
     abortCtrl = null
     loading.value = false
+    connected.value = false
     currentTool.value = ''
     thinkingText.value = ''
     pendingToolArgs.clear()
@@ -300,8 +539,11 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   function clear() {
     abort()
     messages.value = []
+    toolCalls.value = []
+    plan.value = null
     currentTool.value = ''
     thinkingText.value = ''
+    traceId.value = null
     msgIdCounter = 0
     pendingToolCount = 0
     pendingToolArgs.clear()
@@ -310,8 +552,12 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   return {
     messages,
     loading,
+    connected,
     currentTool,
     thinkingText,
+    plan,
+    toolCalls,
+    traceId,
     send,
     abort,
     retry,

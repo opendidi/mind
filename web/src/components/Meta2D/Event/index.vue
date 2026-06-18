@@ -416,6 +416,7 @@ export default defineComponent({
         onOk() {
           model.value.splice(idx, 1);
           activeKey.value.splice(idx, 1);
+          keysValue.value.splice(idx, 1);
           emit("oks", model.value);
         },
       });

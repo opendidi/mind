@@ -3,9 +3,30 @@
 
 import threading
 
+import httpx
 from openai import OpenAI
 
 from app.config import LLM_TIMEOUT, deepseek_config, fallback1_config, fallback2_config
+
+# Separate connect timeout (faster fail on network issues) vs read timeout
+_CONNECT_TIMEOUT = 15  # TCP handshake — fail fast if API unreachable
+_READ_TIMEOUT = LLM_TIMEOUT  # Response streaming — generous
+
+_HTTPX_TIMEOUT = httpx.Timeout(
+    connect=_CONNECT_TIMEOUT,
+    read=_READ_TIMEOUT,
+    write=_READ_TIMEOUT,
+    pool=_CONNECT_TIMEOUT,
+)
+
+
+def _build_client(api_key: str, base_url: str) -> OpenAI:
+    return OpenAI(
+        api_key=api_key,
+        base_url=base_url,
+        timeout=_HTTPX_TIMEOUT,
+        max_retries=1,  # Let FallbackLLM handle retries, not httpx
+    )
 
 
 def _build_llm_client():
@@ -13,21 +34,13 @@ def _build_llm_client():
     tiers = []
     if deepseek_config["key"]:
         tiers.append({
-            "client": OpenAI(
-                api_key=deepseek_config["key"],
-                base_url=deepseek_config["base_url"],
-                timeout=LLM_TIMEOUT,
-            ),
+            "client": _build_client(deepseek_config["key"], deepseek_config["base_url"]),
             "model": "deepseek-chat",
         })
     for fb_cfg in [fallback1_config, fallback2_config]:
         if fb_cfg["key"] and fb_cfg["model"]:
             tiers.append({
-                "client": OpenAI(
-                    api_key=fb_cfg["key"],
-                    base_url=fb_cfg["base_url"],
-                    timeout=LLM_TIMEOUT,
-                ),
+                "client": _build_client(fb_cfg["key"], fb_cfg["base_url"]),
                 "model": fb_cfg["model"],
             })
     if not tiers:

@@ -594,30 +594,54 @@ def _tool_extract_excel(args):
         return {"success": False, "error": f"从 MinIO 下载文件失败: {object_name}"}
 
     try:
-        from openpyxl import load_workbook
+        is_legacy = object_name.lower().endswith(".xls") and not object_name.lower().endswith(".xlsx")
 
-        wb = load_workbook(tmp_path, read_only=True, data_only=True)
-        sheet_names = wb.sheetnames
+        if is_legacy:
+            import xlrd
 
-        target = sheet_name or sheet_names[0]
-        if target not in sheet_names:
-            return {
-                "success": False,
-                "error": f"工作表 '{target}' 不存在，可用: {', '.join(sheet_names)}",
-            }
+            wb = xlrd.open_workbook(tmp_path)
+            sheet_names = wb.sheet_names()
 
-        ws = wb[target]
-        data = []
-        total_rows = 0
-        for ri, row in enumerate(ws.iter_rows(values_only=True)):
-            total_rows += 1
-            if ri < row_offset:
-                continue
-            if len(data) >= max_rows:
-                continue
-            data.append([str(c) if c is not None else "" for c in row])
+            target = sheet_name or sheet_names[0]
+            try:
+                ws = wb.sheet_by_name(target)
+            except xlrd.XLRDError:
+                return {
+                    "success": False,
+                    "error": f"工作表 '{target}' 不存在，可用: {', '.join(sheet_names)}",
+                }
 
-        wb.close()
+            total_rows = ws.nrows
+            data = []
+            for ri in range(min(total_rows, row_offset + max_rows)):
+                if ri < row_offset:
+                    continue
+                data.append([str(ws.cell_value(ri, ci)) if ws.cell_value(ri, ci) != "" else "" for ci in range(ws.ncols)])
+        else:
+            from openpyxl import load_workbook
+
+            wb = load_workbook(tmp_path, read_only=True, data_only=True)
+            sheet_names = wb.sheetnames
+
+            target = sheet_name or sheet_names[0]
+            if target not in sheet_names:
+                return {
+                    "success": False,
+                    "error": f"工作表 '{target}' 不存在，可用: {', '.join(sheet_names)}",
+                }
+
+            ws = wb[target]
+            data = []
+            total_rows = 0
+            for ri, row in enumerate(ws.iter_rows(values_only=True)):
+                total_rows += 1
+                if ri < row_offset:
+                    continue
+                if len(data) >= max_rows:
+                    continue
+                data.append([str(c) if c is not None else "" for c in row])
+
+            wb.close()
 
         truncated = (row_offset + len(data)) < total_rows
         return {

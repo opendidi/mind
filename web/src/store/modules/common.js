@@ -8,26 +8,17 @@
  */
 import { defineStore } from 'pinia';
 import { store } from '@/store';
-import { getTopology, getIsSave, setIsSave } from '@/utils/meta-storage'
+import { getTopology, getIsSave, setIsSave, getVariableData, setVariableData } from '@/utils/meta-storage'
 import { getGraphicGroups, setGraphicGroups } from '@/utils/graphicGroups'
 
 export const useCommonStore = defineStore('common', {
   state: () => ({
     topology: getTopology() || {},
     graphics: getGraphicGroups() || {},
-    isSave: getIsSave() || false,
+    isSave: getIsSave() || '1',
+    variableData: getVariableData() || [],
+    customFolders: JSON.parse(localStorage.getItem('custom_folders') || 'null') || [],
   }),
-  getters: {
-    getTopology(state) {
-      return state.topology || {};
-    },
-    getGraphicGroups(state) {
-      return state.graphics || {};
-    },
-    getIsSave(state) {
-      return state.isSave || false;
-    }
-  },
   actions: {
     setTopology(data) {
       this.topology = data;
@@ -39,6 +30,14 @@ export const useCommonStore = defineStore('common', {
     setIsSave(data) {
       this.isSave = data;
       setIsSave(data);
+    },
+    setVariableData(data) {
+      this.variableData = data;
+      setVariableData(data);
+    },
+    setCustomFolders(data) {
+      this.customFolders = data;
+      localStorage.setItem('custom_folders', JSON.stringify(data));
     }
   }
 })

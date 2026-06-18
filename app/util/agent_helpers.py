@@ -1,6 +1,7 @@
 # -*- coding: UTF-8 -*-
 """Shared helper utilities for the Agent system — JSON extraction, repair, etc."""
 
+import json as _json
 import re
 
 
@@ -108,7 +109,6 @@ def estimate_tokens_from_messages(messages: list, chars_per_token: float = 2.5) 
 # ── Shared Utilities (used by agent_dag + sub-agents) ──────────────────────
 
 import hashlib
-import json as _json
 
 MAX_TOOL_RESULT_CHARS = 800
 
@@ -122,14 +122,23 @@ def truncate_tool_result(result: dict, max_chars: int = MAX_TOOL_RESULT_CHARS) -
         elif isinstance(v, list) and len(v) > 5:
             truncated[k] = v[:3] + [f"…(共{len(v)}项/已截断)"]
         elif isinstance(v, dict):
-            s = _json.dumps(v, ensure_ascii=False)
+            s = _json.dumps(v, ensure_ascii=False, default=lambda o: f"<{type(o).__name__}>")
             if len(s) > max_chars:
                 truncated[k] = {"_truncated": True, "preview": s[:max_chars]}
             else:
-                truncated[k] = v
+                # Round-trip through JSON to strip non-serializable values (e.g. bound methods)
+                truncated[k] = _json.loads(s)
         else:
             truncated[k] = v
     return truncated
+
+
+def sanitize_for_json(obj):
+    """JSON round-trip to strip non-serializable values (bound methods, types, etc.).
+
+    Returns a plain dict/list/str/int/float/bool/None that is always JSON-safe.
+    """
+    return _json.loads(_json.dumps(obj, ensure_ascii=False, default=lambda o: f"<{type(o).__name__}>"))
 
 
 def loop_key(tool_name: str, tool_args: dict) -> str:

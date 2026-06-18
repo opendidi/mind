@@ -23,17 +23,36 @@
       <!-- Header -->
       <header class="chat-header">
         <div class="header-left">
-          <template v-if="sidebarCollapsed">
-            <a-button type="text" @click="sidebarCollapsed = false">
+          <a-button type="text" class="header-icon-btn" @click="sidebarCollapsed = !sidebarCollapsed">
+            <template v-if="sidebarCollapsed">
               <MenuUnfoldOutlined />
-            </a-button>
-          </template>
+            </template>
+            <template v-else>
+              <MenuFoldOutlined />
+            </template>
+          </a-button>
+          <span class="header-divider" />
           <span class="header-title">
             {{ activeConvTitle || "AI 对话" }}
           </span>
         </div>
         <div class="header-right">
-          <span class="user-name">{{ userName }}</span>
+          <span v-if="loading || switchingConv" class="header-status working">
+            <span class="status-dot" /> 处理中
+          </span>
+          <span v-else-if="messages.length > 0" class="header-status idle">
+            <span class="status-dot" /> 就绪
+          </span>
+          <a-tooltip title="新建对话">
+            <a-button class="header-icon-btn" size="small" type="text" @click="onNewChat">
+              <PlusOutlined />
+            </a-button>
+          </a-tooltip>
+          <a-tooltip title="文件管理">
+            <a-button class="header-icon-btn" size="small" type="text" @click="openFileManager">
+              <FolderOpenOutlined />
+            </a-button>
+          </a-tooltip>
           <span class="user-avatar">{{ userName.charAt(0) || "U" }}</span>
         </div>
       </header>
@@ -182,6 +201,42 @@
         @removeQuote="quotedText = null"
       />
     </main>
+
+    <!-- Canvas preview panel (shown when agent modified canvas) -->
+    <aside v-if="showCanvasPreview" class="canvas-preview-panel">
+      <div class="preview-header">
+        <span class="preview-title">画布预览</span>
+        <div class="preview-actions">
+          <a-button size="small" type="link" @click="openCanvasEditor">
+            打开编辑器
+          </a-button>
+          <a-button size="small" type="text" @click="showCanvasPreview = false">
+            ✕
+          </a-button>
+        </div>
+      </div>
+      <iframe
+        ref="previewIframe"
+        class="preview-iframe"
+        :src="previewUrl"
+        @load="onPreviewLoaded"
+      />
+    </aside>
+
+    <!-- Canvas preview toggle (when hidden but changes exist) -->
+    <transition name="fab-fade">
+      <div
+        v-if="!showCanvasPreview && hasCanvasChanges"
+        class="canvas-preview-fab"
+        @click="showCanvasPreview = true"
+        title="查看画布修改"
+      >
+        <span class="fab-badge" />
+        <span class="fab-label">画布</span>
+      </div>
+    </transition>
+
+    <FileManager ref="fileManagerRef" mode="view" />
   </div>
 </template>
 
@@ -190,9 +245,12 @@ import { ref, computed, watch, onMounted, onBeforeUnmount } from "vue";
 import { message } from "ant-design-vue";
 import {
   MenuUnfoldOutlined,
+  MenuFoldOutlined,
   DeleteOutlined,
   CheckSquareOutlined,
   CloseOutlined,
+  FolderOpenOutlined,
+  PlusOutlined,
 } from "@ant-design/icons-vue";
 import { useRouter, useRoute } from "vue-router";
 import MarkdownIt from "markdown-it";
@@ -212,6 +270,7 @@ import ChatInput from "@/components/chat/ChatInput.vue";
 import PlanCard from "@/components/chat/PlanCard.vue";
 import MsgRow from "@/components/chat/MsgRow.vue";
 import WelcomePanel from "@/components/chat/WelcomePanel.vue";
+import FileManager from "@/components/FileManager/index.vue";
 
 const md = new MarkdownIt({
   html: false,
@@ -228,20 +287,48 @@ const userName = computed(() => "用户");
 // UI state
 const sidebarCollapsed = ref(false);
 const quotedText = ref<QuoteInfo | null>(null);
+const fileManagerRef = ref<InstanceType<typeof FileManager>>();
 
-// Plan / confirm state
-interface PlanStep {
-  id: string;
-  desc: string;
-  tool: string | null;
-  confirm: boolean;
-  status?: "pending" | "active" | "done" | "failed";
+function openFileManager() {
+  fileManagerRef.value!.visible = true;
+  fileManagerRef.value!.init();
+  fileManagerRef.value!.initMaterialFolder();
 }
-const currentPlan = ref<{
-  goal: string;
-  steps: PlanStep[];
-  risk: string;
-} | null>(null);
+
+// Canvas preview
+const CANVAS_TOOLS = ['add_pen', 'canvas_add_pen', 'add_line', 'canvas_add_line',
+  'update_pen', 'canvas_update_pen', 'delete_pen', 'canvas_delete_pen',
+  'clear', 'canvas_clear', 'add_diagram', 'canvas_add_diagram',
+  'layout_auto_arrange', 'layout_align'];
+const hasCanvasChanges = ref(false);
+const showCanvasPreview = ref(false);
+const previewIframe = ref<HTMLIFrameElement>();
+const previewUrl = `${window.location.origin}${window.location.pathname}#/preview`;
+
+function onPreviewLoaded() {
+  // iframe loaded — canvas is displayed
+}
+
+function openCanvasEditor() {
+  window.open(`${window.location.origin}${window.location.pathname}#/`, '_blank');
+}
+
+// Plan state — driven by composable's built-in plan tracker
+const currentPlan = computed(() => {
+  const p = plan.value;
+  if (!p) return null;
+  return {
+    goal: p.goal,
+    risk: p.risk,
+    steps: p.nodes.map((n) => ({
+      id: n.id,
+      desc: n.desc,
+      tool: null as string | null,
+      confirm: n.confirm ?? false,
+      status: n.status,
+    })),
+  };
+});
 
 // Loading status labels
 const TOOL_LABELS: Record<string, string> = {
@@ -294,12 +381,13 @@ watch(activeModelIdx, (val) => {
   if (modelList.value[val]) localStorage.setItem("chat-model-idx", String(val));
 });
 
-// Agent composable
+// Agent composable — plan / tool calls / SSE events handled centrally
 const {
   messages,
   loading,
   currentTool,
   thinkingText,
+  plan,
   send: agentSend,
   abort: agentAbort,
   retry: agentRetry,
@@ -308,46 +396,9 @@ const {
   userId: useUserStore().userInfo?.id || undefined,
   onToolResult(tool, args, success, result) {
     executeCanvasTool(tool, args as Record<string, unknown>, success, result);
-  },
-  onEvent(type, data) {
-    switch (type) {
-      case "plan":
-        currentPlan.value = {
-          goal: data.goal,
-          steps: (data.steps || []).map((s: any) => ({
-            ...s,
-            status: "pending" as const,
-          })),
-          risk: data.risk || "low",
-        };
-        break;
-      case "step_start":
-        if (currentPlan.value) {
-          const step = currentPlan.value.steps.find(
-            (s) => s.id === data.step_id
-          );
-          if (step) step.status = "active";
-        }
-        break;
-      case "step_end":
-        if (currentPlan.value) {
-          const step = currentPlan.value.steps.find(
-            (s) => s.id === data.step_id
-          );
-          if (step) step.status = "done";
-        }
-        break;
-      case "step_fail":
-        if (currentPlan.value) {
-          const step = currentPlan.value.steps.find(
-            (s) => s.id === data.step_id
-          );
-          if (step) step.status = "failed";
-        }
-        break;
-      case "error":
-        currentPlan.value = null;
-        break;
+    if (success && CANVAS_TOOLS.includes(tool)) {
+      hasCanvasChanges.value = true;
+      showCanvasPreview.value = true;
     }
   },
   onDone() {
@@ -552,52 +603,111 @@ onBeforeUnmount(() => {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 20px;
+  padding: 0 16px;
   border-bottom: 1px solid $border;
   background: $surface;
   flex-shrink: 0;
-  min-height: 52px;
+  height: 48px;
+  gap: 12px;
+
   .header-left {
     display: flex;
     align-items: center;
     gap: 8px;
+    min-width: 0;
+    flex: 1;
   }
   .header-title {
-    font-size: 15px;
+    font-size: 14px;
     font-weight: 600;
     color: $text;
-  }
-  .header-right {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-  }
-  .user-name {
-    font-size: 13px;
-    color: $text-secondary;
-    max-width: 120px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+  .header-divider {
+    width: 1px;
+    height: 20px;
+    background: #e2e8f0;
+    flex-shrink: 0;
+  }
+  .header-right {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+  .header-icon-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    font-size: 15px;
+    transition: all 0.15s;
+    &:hover {
+      background: #f1f5f9;
+      color: #374151;
+    }
+  }
+  .header-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 12px;
+    font-weight: 500;
+    padding: 2px 10px;
+    border-radius: 12px;
+    margin-right: 6px;
+    &.working {
+      color: #b45309;
+      background: #fef3c7;
+    }
+    &.idle {
+      color: #64748b;
+      background: #f1f5f9;
+    }
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #94a3b8;
+    }
+    &.working .status-dot {
+      background: #f59e0b;
+      animation: status-blink 1.2s ease-in-out infinite;
+    }
+  }
   .user-avatar {
-    width: 30px;
-    height: 30px;
+    width: 28px;
+    height: 28px;
     border-radius: 50%;
     background: $primary-gradient;
     color: #fff;
-    font-size: 13px;
+    font-size: 12px;
     font-weight: 600;
     display: flex;
     align-items: center;
     justify-content: center;
     flex-shrink: 0;
+    margin-left: 4px;
   }
+}
+
+@keyframes status-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
 }
 
 .msg-area {
   flex: 1;
   overflow-y: auto;
+  scrollbar-gutter: stable;
   padding: 20px 0;
   position: relative;
   .msg-inner {
@@ -789,11 +899,21 @@ onBeforeUnmount(() => {
 }
 
 .msg-area::-webkit-scrollbar {
-  width: 4px;
+  width: 5px;
+}
+.msg-area::-webkit-scrollbar-track {
+  background: transparent;
 }
 .msg-area::-webkit-scrollbar-thumb {
-  background: #e2e8f0;
-  border-radius: 2px;
+  background: transparent;
+  border-radius: 3px;
+  transition: background 0.3s;
+}
+.msg-area:hover::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+}
+.msg-area::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
 }
 
 // Collapsible tool group (consecutive tool calls)
@@ -840,6 +960,76 @@ onBeforeUnmount(() => {
       margin-bottom: 4px;
     }
   }
+}
+
+// Canvas preview panel (chat page)
+.canvas-preview-panel {
+  width: 320px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  border-left: 1px solid $border;
+  background: #fafafa;
+  .preview-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-bottom: 1px solid $border;
+    .preview-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: $text;
+    }
+    .preview-actions {
+      display: flex;
+      gap: 4px;
+      align-items: center;
+    }
+  }
+  .preview-iframe {
+    flex: 1;
+    border: none;
+    width: 100%;
+  }
+}
+
+.canvas-preview-fab {
+  position: fixed;
+  bottom: 100px;
+  right: 24px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 14px;
+  background: $surface;
+  border: 1px solid $border;
+  border-radius: 20px;
+  cursor: pointer;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  z-index: 20;
+  transition: transform 0.15s, box-shadow 0.15s;
+  &:hover {
+    transform: scale(1.05);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+  }
+  .fab-badge {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #f59e0b;
+    animation: badge-pulse 2s infinite;
+  }
+  .fab-label {
+    font-size: 12px;
+    font-weight: 500;
+    color: $text-secondary;
+  }
+}
+
+@keyframes badge-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 </style>
 

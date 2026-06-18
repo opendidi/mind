@@ -12,6 +12,11 @@ from flask import Blueprint, Response, request, stream_with_context
 agent_api = Blueprint("agent", __name__)
 
 
+def _safe_json_dumps(obj, **kwargs):
+    """json.dumps with a fallback for non-serializable objects (bound methods, types, etc.)."""
+    return json.dumps(obj, ensure_ascii=False, default=lambda o: f"<{type(o).__name__}>", **kwargs)
+
+
 @agent_api.route("/health", methods=["GET"])
 def agent_health():
     """Agent 健康检查端点 — 各层状态汇总."""
@@ -85,15 +90,15 @@ def agent_chat():
         while True:
             try:
                 event = event_queue.get(timeout=120)
-                yield f"data: {json.dumps(event, ensure_ascii=False)}\n\n"
+                yield f"data: {_safe_json_dumps(event)}\n\n"
                 if event.get("type") == "done":
                     flush_result = obs.flush()
-                    yield f"data: {json.dumps({'type': 'trace', 'data': flush_result})}\n\n"
+                    yield f"data: {_safe_json_dumps({'type': 'trace', 'data': flush_result})}\n\n"
                     break
             except queue.Empty:
                 obs.trace("session_timeout", status="error")
-                yield f"data: {json.dumps({'type': 'error', 'data': {'message': '请求超时'}})}\n\n"
-                yield f"data: {json.dumps({'type': 'done', 'data': {'status': 'timeout'}})}\n\n"
+                yield f"data: {_safe_json_dumps({'type': 'error', 'data': {'message': '请求超时'}})}\n\n"
+                yield f"data: {_safe_json_dumps({'type': 'done', 'data': {'status': 'timeout'}})}\n\n"
                 break
 
         thread.join(timeout=5)

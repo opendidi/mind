@@ -397,7 +397,12 @@ class AgentSession:
         elif kind == "tool_call":
             return {"type": "tool_call", "data": {"tool": event[1], "args": event[2]}}
         elif kind == "tool_result":
-            return {"type": "tool_result", "data": {"tool": event[1], "success": event[2], "result": event[3]}}
+            from app.util.agent_helpers import sanitize_for_json
+            try:
+                safe_result = sanitize_for_json(event[3])
+            except Exception:
+                safe_result = str(event[3])[:1000]
+            return {"type": "tool_result", "data": {"tool": event[1], "success": event[2], "result": safe_result}}
         elif kind == "plan":
             return {"type": "plan", "data": event[1]}
         elif kind == "step_start":

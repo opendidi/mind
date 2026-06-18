@@ -181,7 +181,7 @@
                   <a-card
                     :title="'http' + (idx + 1)"
                     size="small"
-                    style="width: 100%`"
+                    style="width: 100%"
                     :bordered="false"
                   >
                     <template #extra>
@@ -280,7 +280,7 @@
       <a-tab-pane :key="4" tab="结构">
         <div class="structure">
           <ul>
-            <template v-for="(item, index) in data.pens" :key="index">
+            <template v-for="(item, index) in flatPens" :key="index">
               <li
                 class="flex items-center justify-between p-3"
                 @click="onActive(item)"
@@ -327,7 +327,6 @@
 <script lang="ts">
 import { defineComponent } from "vue";
 import { ColorPicker } from "tdesign-vue-next";
-import "tdesign-vue-next/es/style/index.css";
 import { Icon } from "tdesign-icons-vue-next";
 export default defineComponent({
   components: {
@@ -338,7 +337,7 @@ export default defineComponent({
 </script>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, nextTick, reactive, getCurrentInstance, watch } from "vue";
+import { onMounted, onUnmounted, ref, nextTick, reactive, getCurrentInstance, watch, computed } from "vue";
 import { useRoute } from "vue-router";
 import { message } from "ant-design-vue";
 import FileManager from "@/components/FileManager/index.vue";
@@ -364,9 +363,9 @@ const layout = ref({
 });
 
 let tags = ref<number>(1);
-let fileKey = ref<number>([1, 2, 3, 4]);
-let layoutKey = ref<number>([1]);
-let activeKey = ref<number>([1, 2, 3]);
+let fileKey = ref<number[]>([1, 2, 3, 4]);
+let layoutKey = ref<number[]>([1]);
+let activeKey = ref<number[]>([1, 2, 3]);
 
 let tabBarStyle = reactive({
   background: "#fff",
@@ -424,6 +423,27 @@ const options = reactive<{
 });
 
 let editContainerTitle = ref<string>();
+
+/**
+ * Flatten pens including children of grouped pens.
+ * Grouped pens nest children inside parent — this ensures
+ * every individual pen is selectable in the structure list.
+ */
+const flatPens = computed(() => {
+  const pens = data.pens || [];
+  const result: any[] = [];
+  const walk = (list: any[]) => {
+    for (const pen of list) {
+      if (!pen) continue;
+      result.push(pen);
+      if (pen.children && pen.children.length > 0) {
+        walk(pen.children);
+      }
+    }
+  };
+  walk(pens);
+  return result;
+});
 
 /**
  * 初始化数据
@@ -645,8 +665,11 @@ const onSetLayout = () => {
  * https://doc.le5le.com/document/119620524#MQTT
  */
 function onMqttDataFinish() {
-  // 连接新配置
-  meta2d.connectMqtt(mqttForm);
+  try {
+    meta2d.connectMqtt(mqttForm);
+  } catch {
+    message.error("MQTT 连接失败");
+  }
 }
 
 const onActive = (params: any) => {
@@ -660,20 +683,18 @@ const onDeletePen = (param: any) => {
   onSave();
 };
 
-const openPen = (params: any, index: number, visible: any) => {
-  data.pens[index]["visible"] = visible;
-  meta2d.setValue({
-    id: params.id,
-    visible,
-  });
+const openPen = (params: any, _index: number, visible: any) => {
+  const pen = data.pens.find((p: any) => p.id === params.id);
+  if (pen) pen.visible = visible;
+  meta2d.setValue({ id: params.id, visible });
   onSave();
 };
 
 const onSave = () => {
   meta2d.render();
-  const _: any = meta2d.data();
-  localStorage.setItem("meta2d", JSON.stringify(_));
-  Object.assign(data, { ..._ });
+  const bpData: any = meta2d.data();
+  localStorage.setItem("meta2d", JSON.stringify(bpData));
+  Object.assign(data, { ...bpData });
   commonStore.setIsSave("0");
 };
 

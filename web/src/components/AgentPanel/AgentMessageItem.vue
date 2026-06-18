@@ -60,6 +60,7 @@
 <script setup lang="ts">
 import { computed } from 'vue';
 import type { ChatMessage, ToolCallRecord } from './AgentStreamHandler';
+import { sanitizeHtml } from '@/utils/sanitize';
 import AgentThinkCard from './AgentThinkCard.vue';
 import AgentToolCard from './AgentToolCard.vue';
 import AgentToolGroupCard from './AgentToolGroupCard.vue';
@@ -143,12 +144,12 @@ const groupedCalls = computed(() => {
 });
 
 function renderContent(text: string): string {
-  // Simple markdown: code blocks and line breaks
-  return text
+  const html = text
     .replace(/```(\w*)\n?([^`]+)```/g, '<pre><code>$2</code></pre>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\n/g, '<br>')
     .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+  return sanitizeHtml(html);
 }
 </script>
 

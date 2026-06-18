@@ -75,10 +75,6 @@
           </a-menu>
         </template>
       </a-dropdown>
-      <a class="flex items-center flex-col" @click="openBluePrintList()">
-        <t-icon name="view-list" />
-        <span>列表</span>
-      </a>
       <a-badge :dot="dot">
         <a class="flex items-center flex-col" @click="onSave(true)">
           <t-icon name="save" />
@@ -376,25 +372,13 @@
     </div>
     <ShareModal ref="shareModal" />
     <FileManager ref="fileManager" :mode="'multiple'" />
-    <BluePrintModal ref="bluePrintModalRef" />
   </div>
 </template>
-
-<script lang="ts">
-import { defineComponent } from "vue";
-import { Icon } from "tdesign-vue-next";
-import { GithubOutlined } from "@ant-design/icons-vue";
-export default defineComponent({
-  components: {
-    GithubOutlined,
-    "t-icon": Icon,
-  },
-});
-</script>
 
 <script lang="ts" setup>
 import {
   onMounted,
+  onUnmounted,
   reactive,
   ref,
   getCurrentInstance,
@@ -405,10 +389,8 @@ import { useRouter } from "vue-router";
 import { Pen, PenType, deepClone } from "@meta2d/core";
 import FileSaver from "file-saver";
 import { message } from "ant-design-vue";
-import BluePrintModal from "@/components/blueprint/index.vue";
 import ShareModal from "../Share/index.vue";
-import { Icon } from "tdesign-vue-next";
-import { useCommonStore, useCommonStoreWithOut } from "@/store/modules/common";
+import { useCommonStoreWithOut } from "@/store/modules/common";
 import { apiBlueprintAdd, apiBlueprintModify } from "@/api/blueprint";
 import { apiChatUploadFile } from "@/api/chat";
 import FileManager from "@/components/FileManager/index.vue";
@@ -418,18 +400,9 @@ let { proxy } = getCurrentInstance();
 
 const emit = defineEmits(["openAgentPanel"]);
 
-function openChatPage() {
-  router.push({ name: "chat" });
-}
-
 const router = useRouter();
 
-const bluePrintModalRef = ref(null);
-
 let data = ref({});
-
-// 原始数据
-let originalData = ref({});
 
 let isOnDrawLine = ref(false);
 
@@ -454,8 +427,9 @@ const scale = ref(0);
 
 let lineWidthVisible = ref(false);
 
+const commonStore = useCommonStoreWithOut();
 watch(
-  () => useCommonStore().isSave,
+  () => commonStore.isSave,
   (v) => {
     v == "1" ? (dot.value = false) : (dot.value = true);
   },
@@ -585,43 +559,6 @@ const changeToArrow = (value: string) => {
   }
 };
 
-const newFile = () => {
-  meta2d.open({ name: "新建项目", pens: [] } as any);
-};
-
-function readFile(file: Blob) {
-  return new Promise<string>((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      resolve(reader.result as string);
-    };
-    reader.onerror = reject;
-    reader.readAsText(file);
-  });
-}
-
-function openFile() {
-  // 1. 显示选择文件对话框
-  const input = document.createElement("input");
-  input.type = "file";
-  input.onchange = async (event) => {
-    const elem = event.target as HTMLInputElement;
-    if (elem.files && elem.files[0]) {
-      // 2. 读取文件字符串内容
-      const text = await readFile(elem.files[0]);
-      try {
-        // 3. 打开文件内容
-        meta2d.open(JSON.parse(text));
-        // 可选：缩放到窗口大小展示
-        meta2d.fitView();
-      } catch (e) {
-        console.log(e);
-      }
-    }
-  };
-  input.click();
-}
-
 const createBluePrint = () => {
   UrlParamsManager.clearParams("");
   meta2d.open({
@@ -725,9 +662,7 @@ function downloadSvg() {
     `${(meta2d.store.data as any).name || "le5le.meta2d"}.svg`
   );
   a.setAttribute("href", url);
-  const evt = document.createEvent("MouseEvents");
-  evt.initEvent("click", true, true);
-  a.dispatchEvent(evt);
+  a.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
 }
 
 function onUndo() {
@@ -804,7 +739,7 @@ function onView() {
     path: "/preview",
     query: {
       r: Date.now() + "",
-      id: data._id,
+      id: data.value._id,
     },
   });
 }
@@ -820,8 +755,7 @@ function onSave(flag: boolean) {
     return false;
   }
   localStorage.setItem("meta2d", JSON.stringify(data));
-  useCommonStoreWithOut().setTopology(meta2d);
-  const commonStore = useCommonStore();
+  commonStore.setTopology(meta2d);
   if (flag) {
     const fields: any = [
       "name",
@@ -1015,10 +949,6 @@ function openFileManager() {
   });
 }
 
-const openBluePrintList = () => {
-  bluePrintModalRef.value.visible = true;
-};
-
 /**
  * 分享
  */
@@ -1026,7 +956,17 @@ function onSearch() {
   proxy.$refs.shareModal.visible = true;
 }
 
+// Keyboard shortcut handler
+function onKeyDown(e: KeyboardEvent) {
+  const ctrl = e.ctrlKey || e.metaKey;
+  if (!ctrl) return;
+  if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); onUndo(); }
+  if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); onRedo(); }
+  if (e.key === 's') { e.preventDefault(); onSave(true); }
+}
+
 onMounted(() => {
+  document.addEventListener('keydown', onKeyDown);
   const timer = setInterval(() => {
     if (meta2d) {
       data.value = meta2d.store.data;
@@ -1046,6 +986,10 @@ onMounted(() => {
       isAutoAnchor.value = options.autoAnchor;
     }
   }, 200);
+});
+
+onUnmounted(() => {
+  document.removeEventListener('keydown', onKeyDown);
 });
 </script>
 

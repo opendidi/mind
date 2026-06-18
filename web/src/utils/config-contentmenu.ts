@@ -116,6 +116,17 @@ export const MENUS = [{
   data: '',
   visible: true,
 }, {
+  title: "问问 AI",
+  keyCode: '',
+  disabled: false,
+  data: 'askAi',
+  visible: true,
+}, {
+  title: "divider",
+  keyCode: '',
+  data: 'askAiDivider',
+  visible: true,
+}, {
   title: "剪切",
   keyCode: "Ctrl + X",
   disabled: false,

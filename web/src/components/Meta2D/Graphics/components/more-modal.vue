@@ -109,7 +109,7 @@ export default defineComponent({
     }
 
     function reset() {
-      checkall.value = ref(true);
+      checkall.value = true;
       checkedList.value = [];
       dataValue.value = [];
     }

@@ -300,7 +300,7 @@ class DAGExecutor(BaseExecutor):
                 return _finish_step(False, {"error": f"节点超时（{MAX_NODE_SECONDS}秒）"})
             self._trim_step_messages(msgs)
             iteration = 0
-            while iteration < 5:
+            while iteration < 50:
                 if time.time() - node_start > MAX_NODE_SECONDS:
                     return _finish_step(False, {"error": f"节点超时（{MAX_NODE_SECONDS}秒）"})
                 iteration += 1
@@ -377,8 +377,10 @@ class DAGExecutor(BaseExecutor):
         iteration = 0
         loop_counter = defaultdict(int)
         retries = 0
+        accumulated_text = ""
+        consecutive_tool_calls = 0
 
-        while iteration < 10:
+        while iteration < 50:
             iteration += 1
 
             if self.stream:
@@ -431,8 +433,14 @@ class DAGExecutor(BaseExecutor):
                         self._append_simple_retry_msg(tool_calls_received, retries, search_missing_keyword)
                         loop_counter.clear()
                         continue
+                    consecutive_tool_calls += len(tool_calls_received)
+                    if consecutive_tool_calls >= 5:
+                        self.messages.append({"role": "user", "content": "已完成足够多的工具调用，请直接根据已有结果给出最终文字回复，不要再调用工具。"})
+                        consecutive_tool_calls = 0
                     continue
 
+                if full_text:
+                    accumulated_text += full_text
                 llm_response = SimpleNamespace(message=SimpleNamespace(content=full_text), finish_reason="stop")
                 yield ("llm_response", llm_response, self._tool_call_count)
                 return
@@ -495,12 +503,20 @@ class DAGExecutor(BaseExecutor):
                         )})
                     loop_counter.clear()
                     continue
+                consecutive_tool_calls += len(msg.tool_calls)
+                if consecutive_tool_calls >= 5:
+                    self.messages.append({"role": "user", "content": "已完成足够多的工具调用，请直接根据已有结果给出最终文字回复，不要再调用工具。"})
+                    consecutive_tool_calls = 0
                 continue
 
             yield ("llm_response", choice, self._tool_call_count)
             return
 
-        yield ("error", "推理步数已达上限")
+        if accumulated_text.strip():
+            llm_response = SimpleNamespace(message=SimpleNamespace(content=accumulated_text.strip()), finish_reason="stop")
+            yield ("llm_response", llm_response, self._tool_call_count)
+        else:
+            yield ("error", "推理步数已达上限")
 
     # ── DAG Execution ────────────────────────────────────────────────────
 
