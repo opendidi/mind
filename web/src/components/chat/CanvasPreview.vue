@@ -145,8 +145,22 @@ async function renderAsync() {
     const toPen = meta2d.findOne(toId);
     if (!fromPen || !toPen) continue;
 
-    const fromAnchor = fromPen.anchors?.[0];
-    const toAnchor = toPen.anchors?.[0];
+    // Shape-aware anchors (same logic as canvasBridge)
+    function _anchor(pen: any, side: 'top' | 'bottom'): { x: number; y: number } {
+      const x = pen.x || 0, y = pen.y || 0, w = pen.width || 120, h = pen.height || 60
+      const n = (pen.name || 'rectangle') as string
+      if (n === 'circle') {
+        const r = Math.min(w, h) / 2
+        return side === 'bottom' ? { x: x + w / 2, y: y + h / 2 + r } : { x: x + w / 2, y: y + h / 2 - r }
+      }
+      if (n === 'diamond' || n === 'triangle') {
+        return side === 'bottom' ? { x: x + w / 2, y: y + h } : { x: x + w / 2, y: y }
+      }
+      return side === 'bottom' ? { x: x + w / 2, y: y + h } : { x: x + w / 2, y: y }
+    }
+    const fromAnchor = _anchor(fromPen, 'bottom')
+    const toAnchor = _anchor(toPen, 'top')
+
     const line: any = {
       anchors: [fromAnchor, toAnchor],
       from: fromAnchor,

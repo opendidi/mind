@@ -170,14 +170,14 @@ export class AgentStreamHandler {
     this._onToolResult = fn;
   }
 
-  send(userMessage: string) {
+  send(userMessage: string, images?: string[]) {
     // Preserve conversation history — only reset transient state
     this.state.error = null;
     this.state.toolCalls = [];
     this.state.plan = null;
     this.currentAssistantMsg = null;
     this.currentAssistantTools = [];
-    this.chat.send(userMessage);
+    this.chat.send(userMessage, images);
   }
 
   abort() {

@@ -102,6 +102,14 @@ BASE_PROMPT = """你是"小M"，一个智能助手，专注于帮助用户创建
 ```
 mode 可选值：driving(驾车) / walking(步行) / riding(骑行) / transit(公交)
 
+## 视觉能力（图片理解）
+
+你可以理解用户上传的图片内容。当用户贴图时，系统会自动通过视觉模型分析图片并生成文字描述，以 `[系统提示] 用户在此消息中附带了 N 张图片...` 的格式注入到用户消息中。
+- 收到图片描述后，充分利用其中的信息回答用户问题
+- 当用户贴了架构图/流程图/截图/照片时，先复述你理解到的关键内容，再据此执行操作
+- 如果用户要求"照着图画"，根据描述中的结构/元素/关系调用 canvas 工具在画布上重建
+- 如果图片描述中包含了可操作的信息（如节点名、连接关系、布局等），主动建议用户是否需要在画布上绘制
+
 ## 支持的图形类型
 
 - rectangle（矩形）、circle（圆形）、triangle（三角形）、diamond（菱形）
@@ -117,6 +125,16 @@ mode 可选值：driving(驾车) / walking(步行) / riding(骑行) / transit(�
   - 子主题1
     - 细节A
   - 子主题2
+```
+
+## 文件列表格式 (```files)
+
+当使用 file_search 搜索到文件后，如有图片文件，用 ```files 代码块展示文件列表：
+```files
+[
+  {"name": "文件名.jpg", "url": "文件完整URL", "type": "image", "extension": "jpg", "size": 12345},
+  {"name": "文档.pdf", "url": "URL", "type": "document", "extension": "pdf", "size": 67890}
+]
 ```
 
 ## 常见图表类型
@@ -287,8 +305,13 @@ class AgentSession:
     def _prepare_messages(self, user_message: str, canvas_context: dict = None,
                           memory_prompt: str = "", llm_client=None,
                           unified_result: dict = None, session_memory: str = "",
-                          skill_context: dict = None) -> list:
-        """Build the full message list for LLM."""
+                          skill_context: dict = None, images: list = None) -> list:
+        """Build the full message list for LLM.
+
+        When images are provided, the latest user message is built as a
+        multimodal content array (text + image_url blocks) compatible with
+        OpenAI's vision / DeepSeek multimodal API.
+        """
         system_content = self._build_system_prompt(
             user_message, canvas_context, memory_prompt, unified_result,
             session_memory=session_memory, skill_context=skill_context,
@@ -299,7 +322,26 @@ class AgentSession:
             self._compact_history(llm_client)
         else:
             self._trim_history()
-        messages.extend(self.history)
+        # Shallow-copy each history message to avoid mutating self.history
+        messages.extend(dict(m) for m in self.history)
+
+        # ── Vision bridge: preprocess images → text description ──
+        # DeepSeek API 暂不支持 image_url multimodal 格式，采用旁路视觉模型桥接：
+        #   图片 → VisionHandler (Qwen-VL / GPT-4o 等) → 文字描述 → 注入 user message
+        has_images = bool(images)
+        if has_images:
+            vision_desc = self._describe_images(images)
+            if vision_desc:
+                # Find the last user message and prepend the vision description
+                for i in range(len(messages) - 1, -1, -1):
+                    if messages[i].get("role") == "user" and isinstance(messages[i].get("content"), str):
+                        messages[i]["content"] = (
+                            f"[系统提示] 用户在此消息中附带了 {len(images)} 张图片。"
+                            f"以下是图片的视觉分析结果，请基于这些信息回答用户问题：\n\n"
+                            f"{vision_desc}\n\n"
+                            f"---\n用户消息：{messages[i]['content']}"
+                        )
+                        break
 
         return messages
 
@@ -313,8 +355,14 @@ class AgentSession:
 
     def chat_v3(self, user_message: str, canvas_context: dict = None,
                 confirm_handler=None, model: str = AGENT_DEFAULT_MODEL,
-                redis_client=None, task_id: str = "", stream: bool = False):
-        """V3 unified agent chat — single LLM call for intent+plan, then execute."""
+                redis_client=None, task_id: str = "", stream: bool = False,
+                images: list = None):
+        """V3 unified agent chat — single LLM call for intent+plan, then execute.
+
+        Args:
+            images: Optional list of base64 data URL strings (data:image/...;base64,...)
+                    for multimodal vision input.
+        """
 
         # ── Input Guard (boundary defense) ──
         from app.util.agent_guard import InputGuard
@@ -361,7 +409,7 @@ class AgentSession:
         messages = self._prepare_messages(
             user_message, canvas_context=canvas_context, llm_client=self._engine.llm,
             unified_result=unified_result, session_memory=session_memory_prompt,
-            skill_context=skill_context,
+            skill_context=skill_context, images=images,
         )
 
         # Delegate to engine
@@ -385,6 +433,11 @@ class AgentSession:
                 evt = self._translate_event(event)
                 if evt is not None:
                     yield evt
+                    # ── References event: extract search/fetch results for citation display ──
+                    if event[0] == "tool_result":
+                        refs = self._extract_references(event[1], event[2], event[3])
+                        if refs:
+                            yield {"type": "references", "data": {"references": refs}}
 
         # Persist session memory
         self._persist_session()
@@ -424,6 +477,118 @@ class AgentSession:
         elif kind == "think":
             return {"type": "thinking", "data": {"content": event[1]}}
         return None
+
+    @staticmethod
+    def _extract_domain(url: str) -> str:
+        """Extract domain from a URL."""
+        import re
+        m = re.match(r'https?://([^/]+)', url)
+        return m.group(1).replace('www.', '') if m else ''
+
+    @staticmethod
+    def _clean_title(title: str, url: str) -> str:
+        """Clean a search result title: strip domain prefixes, fix garbled text."""
+        import re
+        title = (title or "").strip()
+        if not title:
+            return AgentSession._extract_domain(url) if url else ""
+        # Bing concatenation: "domain.comhttps://actual-url" — extract domain for title
+        m = re.match(r'^([\w.-]+\.\w{2,6})https?://', title)
+        if m:
+            domain = m.group(1)
+            # Use domain as fallback title
+            title = re.sub(r'^[\w.-]+\.\w{2,6}https?://\S+', domain, title).strip()
+        # Remove leading domain + breadcrumb arrow (e.g. "wikipedia.org › ")
+        title = re.sub(r'^[\w.-]+\.\w{2,6}\s*[›»>]\s*', '', title).strip()
+        # Strip pure URL prefixes
+        title = re.sub(r'^https?://\S+\s*', '', title).strip()
+        # Filter out garbled chars: replace U+FFFD, C1 controls, lone surrogates
+        title = re.sub(r'[�\x80-\x9f\ud800-\udfff]', '', title).strip()
+        if not title:
+            domain = AgentSession._extract_domain(url)
+            return domain if domain else url[:80]
+        return title[:200]
+
+    @staticmethod
+    def _extract_references(tool_name: str, success: bool, result) -> list | None:
+        """Extract citation references from web_search / web_fetch tool results.
+
+        Returns a list of {title, url, snippet, domain} dicts, or None if
+        no references can be extracted.
+        """
+        import re
+        if not success or not isinstance(result, dict):
+            return None
+        data = result.get("data") or result
+        if not isinstance(data, dict):
+            return None
+
+        if tool_name == "web_search":
+            results = data.get("results", [])
+            if not results:
+                return None
+            refs = []
+            for r in results:
+                url = r.get("url", "")
+                if not url:
+                    continue
+                # Bing tracking URLs: extract real URL from "domain+URL" text pattern
+                if "bing.com/ck/" in url:
+                    raw_title = r.get("title", "")
+                    m = re.match(r'^[\w.-]+\.\w{2,6}(https?://\S+)', raw_title)
+                    if m:
+                        url = m.group(1)
+                        # Title becomes just the domain
+                        title = AgentSession._extract_domain(url)
+                    else:
+                        title = AgentSession._clean_title(raw_title, url)
+                else:
+                    title = AgentSession._clean_title(r.get("title", ""), url)
+                refs.append({
+                    "title": title,
+                    "url": url,
+                    "snippet": (r.get("snippet", "") or "")[:300],
+                    "domain": r.get("domain", "") or AgentSession._extract_domain(url),
+                })
+                if len(refs) >= 10:
+                    break
+            return refs if refs else None
+
+        elif tool_name == "web_fetch":
+            url = data.get("url", "")
+            if not url:
+                return None
+            return [{
+                "title": AgentSession._clean_title(data.get("title", ""), url),
+                "url": url,
+                "snippet": (data.get("content", "") or "")[:300],
+                "domain": AgentSession._extract_domain(url),
+            }]
+
+        return None
+
+    @staticmethod
+    def _describe_images(images: list) -> str:
+        """Preprocess images through vision model → text description (vision bridge)."""
+        try:
+            from app.util.vision import VisionHandler
+            prompt = json.dumps({
+                "task": "describe",
+                "instructions": (
+                    "请详细描述这张图片的内容。如果是图表/架构图/流程图，请描述其中的结构、节点、连接关系和文字标注。"
+                    "如果是截图/照片，请描述场景、物体、文字和关键细节。"
+                    "输出纯文本中文描述，不要用 JSON 格式。"
+                ),
+            }, ensure_ascii=False)
+            ok, result = VisionHandler.analyze_images(images, prompt, task_type="describe")
+            if ok:
+                if isinstance(result, dict):
+                    return result.get("description") or result.get("raw") or str(result)
+                return str(result)
+            return None
+        except Exception:
+            logging.debug("Vision bridge failed, proceeding text-only", exc_info=True)
+            return None
 
     def clear_history(self):
         self.history = []

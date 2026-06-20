@@ -66,6 +66,61 @@ function getMeta2d(): any {
   return (window as any).meta2d
 }
 
+/** Push current state to Meta2D undo stack so Agent mutations are Ctrl+Z-able. */
+function pushUndoState(meta2d: any): void {
+  try {
+    if (typeof meta2d.addHistory === 'function') {
+      meta2d.addHistory(JSON.parse(JSON.stringify(meta2d.data())))
+    }
+  } catch { /* ignore */ }
+}
+
+/** Calculate connection anchor point on the edge of a pen, accounting for shape type. */
+function getAnchor(pen: any, side: 'top' | 'bottom' | 'center'): { x: number; y: number } {
+  const x = pen.x || 0
+  const y = pen.y || 0
+  const w = pen.width || 120
+  const h = pen.height || 60
+  const name = (pen.name || pen.type || 'rectangle') as string
+
+  if (side === 'center') {
+    return { x: x + w / 2, y: y + h / 2 }
+  }
+
+  // Circles: use radius-adjusted points on the circumference
+  if (name === 'circle') {
+    const cx = x + w / 2
+    const cy = y + h / 2
+    const r = Math.min(w, h) / 2
+    return side === 'bottom' ? { x: cx, y: cy + r } : { x: cx, y: cy - r }
+  }
+
+  // Diamonds: the visual tip extends beyond the bounding box
+  if (name === 'diamond') {
+    if (side === 'bottom') return { x: x + w / 2, y: y + h }
+    return { x: x + w / 2, y: y }
+  }
+
+  // Triangles: vertices are at mid-top and bottom corners
+  if (name === 'triangle') {
+    if (side === 'bottom') return { x: x + w / 2, y: y + h }
+    return { x: x + w / 2, y: y }
+  }
+
+  // Default (rectangle, pentagon, star, text, image, etc.): bounding box edge
+  if (side === 'bottom') return { x: x + w / 2, y: y + h }
+  return { x: x + w / 2, y: y }
+}
+
+/** Validate that referenced pens exist on the canvas. Returns the first missing ID or null. */
+function validatePens(meta2d: any, penIds: string[]): string | null {
+  for (const id of penIds) {
+    const actualId = resolvePenId(id) || id
+    if (!meta2d.findOne(actualId)) return id
+  }
+  return null
+}
+
 /**
  * Notify the application that the canvas has been mutated.
  * Ensures localStorage sync + save-state marking + event dispatch.
@@ -318,6 +373,7 @@ async function _addPen(meta2d: any, args: Record<string, unknown>, success: bool
 
   if (penId) penIdMap.set(penId, penId)
 
+  pushUndoState(meta2d)
   try {
     const p = await meta2d.addPen(pen)
     if (penId && p && (p.id || p.penId)) {
@@ -333,34 +389,30 @@ async function _addPen(meta2d: any, args: Record<string, unknown>, success: bool
 async function _addLine(meta2d: any, args: Record<string, unknown>, success: boolean, _result: unknown): Promise<boolean> {
   if (!success) return false
 
-  const fromId = resolvePenId(args.from_pen as string)
-  const toId = resolvePenId(args.to_pen as string)
-  if (!fromId || !toId) {
-    return false
-  }
+  const fromLogical = args.from_pen as string
+  const toLogical = args.to_pen as string
+  const fromId = resolvePenId(fromLogical) || fromLogical
+  const toId = resolvePenId(toLogical) || toLogical
 
   const fromPen = meta2d.findOne(fromId)
   const toPen = meta2d.findOne(toId)
   if (!fromPen || !toPen) {
+    console.warn(`[canvasBridge] add_line: pen not found — from="${fromId}" to="${toId}"`)
     return false
   }
 
   const lineType = (args.line_type as string) || 'straight'
   const arrow = (args.arrow as string) || 'end'
 
-  const fx = fromPen.x + (fromPen.width || 120) / 2
-  const fy = fromPen.y + (fromPen.height || 60)
-  const tx = toPen.x + (toPen.width || 120) / 2
-  const ty = toPen.y
+  // Use shape-aware anchor points (fix: was hardcoded rectangle bottom→top)
+  const fromAnchor = getAnchor(fromPen, 'bottom')
+  const toAnchor = getAnchor(toPen, 'top')
 
   const line: any = {
     name: 'line',
     type: 1,
     lineName: lineType === 'mind' ? 'mind' : lineType === 'curve' ? 'curve' : 'line',
-    anchors: [
-      { x: fx, y: fy },
-      { x: tx, y: ty },
-    ],
+    anchors: [fromAnchor, toAnchor],
     text: (args.text as string) || '',
     lineWidth: (args.lineWidth as number) || 2,
     color: (args.color as string) || '#6b7280',
@@ -370,6 +422,7 @@ async function _addLine(meta2d: any, args: Record<string, unknown>, success: boo
   if (arrow === 'start' || arrow === 'both') line.fromArrow = 'triangleSolid'
   if (arrow === 'end' || arrow === 'both') line.toArrow = 'triangleSolid'
 
+  pushUndoState(meta2d)
   await meta2d.addPen(line)
 
   return true
@@ -383,6 +436,13 @@ function _updatePen(meta2d: any, args: Record<string, unknown>, success: boolean
   const props = (args.props as Record<string, unknown>) || {}
   if (!actualId || Object.keys(props).length === 0) return false
 
+  const pen = meta2d.findOne(actualId)
+  if (!pen) {
+    console.warn(`[canvasBridge] update_pen: pen not found — id="${actualId}"`)
+    return false
+  }
+
+  pushUndoState(meta2d)
   meta2d.setValue({ id: actualId, ...props }, { render: false })
   meta2d.render()
   return true
@@ -400,10 +460,14 @@ function _deletePen(meta2d: any, args: Record<string, unknown>, success: boolean
   if (toDelete.length === 0) return false
 
   const pens = toDelete.map((id) => meta2d.findOne(id)).filter(Boolean)
-  if (pens.length > 0) {
-    meta2d.delete(pens)
-    meta2d.render()
+  if (pens.length === 0) {
+    console.warn(`[canvasBridge] delete_pen: no pens found for ids=${toDelete.join(',')}`)
+    return false
   }
+
+  pushUndoState(meta2d)
+  meta2d.delete(pens)
+  meta2d.render()
   for (const id of penIds) penIdMap.delete(id)
   return true
 }
@@ -412,6 +476,7 @@ function _clear(meta2d: any, args: Record<string, unknown>, success: boolean): b
   if (!success || !args.confirm) return false
   const data = meta2d.data()
   if (data?.pens?.length > 0) {
+    pushUndoState(meta2d)
     meta2d.delete(data.pens)
     meta2d.render()
   }
@@ -429,6 +494,8 @@ async function _addDiagram(meta2d: any, args: Record<string, unknown>, success: 
   const nodes = (diagram.nodes || []) as Record<string, unknown>[]
   const edges = (diagram.edges || []) as Record<string, unknown>[]
   const logicalToActual = new Map<string, string>()
+
+  pushUndoState(meta2d)
 
   // Phase 1: Create all pens
   for (const node of nodes) {
@@ -460,7 +527,7 @@ async function _addDiagram(meta2d: any, args: Record<string, unknown>, success: 
     }
   }
 
-  // Phase 2: Create all lines
+  // Phase 2: Create all lines (shape-aware anchors)
   for (const edge of edges) {
     const fromLogical = edge._from_id as string || edge.from as string || ''
     const toLogical = edge._to_id as string || edge.to as string || ''
@@ -473,16 +540,14 @@ async function _addDiagram(meta2d: any, args: Record<string, unknown>, success: 
 
     const lineType = (edge.line_type as string) || 'straight'
     const arrow = (edge.arrow as string) || 'end'
-    const fx = fromPen.x + (fromPen.width || 120) / 2
-    const fy = fromPen.y + (fromPen.height || 60)
-    const tx = toPen.x + (toPen.width || 120) / 2
-    const ty = toPen.y
+    const fromAnchor = getAnchor(fromPen, 'bottom')
+    const toAnchor = getAnchor(toPen, 'top')
 
     const line: any = {
       name: 'line',
       type: 1,
       lineName: lineType === 'mind' ? 'mind' : lineType === 'curve' ? 'curve' : 'line',
-      anchors: [{ x: fx, y: fy }, { x: tx, y: ty }],
+      anchors: [fromAnchor, toAnchor],
       text: (edge.text as string) || '',
       lineWidth: (edge.lineWidth as number) || 2,
       color: (edge.color as string) || '#6b7280',
@@ -521,6 +586,8 @@ function _autoArrange(meta2d: any, args: Record<string, unknown>, success: boole
   const pens = (data?.pens || []) as any[]
   if (pens.length < 2) return true
 
+  pushUndoState(meta2d)
+
   // Sort pens top-to-bottom, then arrange
   const sorted = [...pens].sort((a, b) => (a.y || 0) - (b.y || 0))
   let pos = sorted[0]?.y || 0
@@ -543,6 +610,8 @@ function _align(meta2d: any, args: Record<string, unknown>, success: boolean): b
   const data = meta2d.data()
   const pens = (data?.pens || []) as any[]
   if (pens.length < 2) return true
+
+  pushUndoState(meta2d)
 
   const refPen = pens[0]
   const refX = refPen.x || 0

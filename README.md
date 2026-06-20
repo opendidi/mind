@@ -421,7 +421,144 @@ Agent 系统参考 pypano 的 V3 Agent 架构，采用 **基础层完整复刻 +
 
 ---
 
-## 构建部署
+## Docker 部署
+
+### 环境要求
+
+| 依赖 | 用途 | 必需 |
+|------|------|------|
+| Docker Desktop | 运行后端容器 | ✅ |
+| MySQL 8.0 | 数据库（已有的即可） | ✅ |
+| Redis 7 | 缓存 / Agent 系统 | ✅ |
+| MinIO | 文件 / 对象存储 | 可选 |
+
+### 1. 配置 .env（Docker 专用）
+
+```bash
+cp .env.example .env
+```
+
+编辑 `.env`，**关键：host 必须用 `host.docker.internal`**（容器内访问宿主机）：
+
+```env
+# MySQL / Redis — 指向宿主机
+DB_HOST=host.docker.internal
+DB_PORT=3306
+DB_USER=root
+DB_PASSWORD=你的MySQL密码
+DB_NAME=mind
+
+REDIS_HOST=host.docker.internal
+REDIS_PORT=6379
+
+# MinIO（如已运行）
+MINIO_ENDPOINT=host.docker.internal:9000
+MINIO_CDN_URL=host.docker.internal:9000
+MINIO_BUCKET_NAME=mind
+MINIO_ACCESS_KEY=你的MinIO账号
+MINIO_SECRET_KEY=你的MinIO密码
+MINIO_SECURE=false
+
+# LLM（Agent 必填）
+DEEPSEEK_API_KEY=sk-你的key
+DEEPSEEK_BASE_URL=https://api.deepseek.com
+
+# 安全
+SECRET_KEY=随便一串随机字符
+```
+
+### 2. Docker Desktop 镜像加速（国内必配）
+
+Docker Desktop → Settings → Docker Engine，添加 mirror：
+
+```json
+{
+  "registry-mirrors": [
+    "https://docker.m.daocloud.io",
+    "https://hub-mirror.c.163.com"
+  ]
+}
+```
+
+点击 **Apply & Restart**。
+
+### 3. 构建并启动
+
+```powershell
+# 首次构建（含 PyTorch，约 3~5 分钟）
+docker compose up -d --build
+
+# 之后修改代码只需
+docker compose up -d --build
+```
+
+### 4. 前端开发（另开终端）
+
+```powershell
+pnpm install
+pnpm dev:web
+```
+
+前端运行在 `http://localhost:3100`，API 代理到 `http://localhost:5001`。
+
+---
+
+### Docker 常用命令
+
+```powershell
+# ── 容器管理 ────────────────────────────────────────
+docker compose ps                     # 查看容器状态
+docker compose down                   # 停止并删除容器
+docker compose restart                # 重启容器
+docker compose down -v                # 停止并清空数据卷（慎用）
+
+# ── 启动 & 重建 ─────────────────────────────────────
+docker compose up -d --build          # 代码改动后重新构建+启动
+docker compose build --no-cache       # 强制无缓存重建
+
+# ── 查看日志 ────────────────────────────────────────
+docker compose logs -f --tail=50      # 实时查看全部服务日志
+docker logs -f mind-app               # 只跟踪 app 日志（Ctrl+C 退出）
+docker logs --tail=200 mind-app       # 最近 200 行
+docker logs --tail=500 mind-app 2>&1  # 最近 500 行（含 stderr）
+docker logs --since 5m mind-app       # 最近 5 分钟的日志
+
+# ── Python 报错排查 ─────────────────────────────────
+docker logs -f mind-app               # 实时跟踪，报错会直接出现在终端
+docker logs mind-app --tail=300 2>&1  # 容器反复重启时，查看上一次崩溃日志
+
+# ── 手动启动（容器崩溃时排查）────────────────────────
+docker run --rm -it --env-file .env mind-app bash   # 用 bash 替代默认 CMD
+# 进入后手动运行，直接在终端看完整回溯：
+python starter.py
+
+# ── 进入容器调试 ────────────────────────────────────
+docker exec -it mind-app bash         # 进入容器 shell
+docker exec mind-app env              # 查看环境变量
+docker exec mind-app python -c "..."  # 在容器内执行一段 Python
+
+# ── 镜像管理 ────────────────────────────────────────
+docker images mind-app                # 查看镜像大小
+docker builder prune                  # 清理构建缓存
+docker system prune -a                # 清理所有无用镜像/容器
+```
+
+### Docker 常见问题
+
+| 问题 | 原因 | 解决 |
+|------|------|------|
+| Python 报错 | 容器内代码异常 | `docker logs -f mind-app` 实时查看回溯 |
+| 容器反复重启 | 应用启动崩溃 | `docker logs --tail=300 mind-app` 查看上一次错误 |
+| MySQL 连接拒绝 (2003) | `.env` 中 `DB_HOST` 不正确 | Docker 内用 `mysql`（compose 服务名）或 `host.docker.internal` |
+| 验证码文字太小 | 容器无 TrueType 字体 | Dockerfile 已装 `fonts-dejavu-core`，代码优先加载 |
+| pip install 超时 | PyPI 网络不通 | Dockerfile 已配阿里云镜像源 |
+| apt-get update 失败 | Debian 源不通 | Dockerfile 已配阿里云镜像源 |
+| 基础镜像拉取失败 | Docker Hub 被墙 | 配 Docker Desktop registry-mirror |
+| 环境变量未生效 | 只 restart 没重建容器 | 执行 `docker compose down && docker compose up -d` |
+
+---
+
+## 构建部署（本地/传统方式）
 
 ### 前端构建
 

@@ -1,0 +1,48 @@
+# ── Git ──
+.git
+.gitignore
+.gitattributes
+
+# ── Python ──
+__pycache__
+*.pyc
+*.pyo
+*.egg-info
+.eggs
+*.egg
+.pytest_cache
+.mypy_cache
+.ruff_cache
+
+# ── Node / 前端 ──
+node_modules
+web/node_modules
+web/dist
+*.tsbuildinfo
+
+# ── 虚拟环境 ──
+venv
+.venv
+env
+.env
+
+# ── IDE / 编辑器 ──
+.idea
+.vscode
+*.swp
+*.swo
+
+# ── 文档 ──
+docs
+*.md
+README.*
+
+# ── 其他 ──
+.DS_Store
+.gitlab-ci.yml
+.github
+.claude
+*.log
+logs
+tmp
+temp

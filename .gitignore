@@ -30,3 +30,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# TTS cache (generated audio files)
+data/tts_cache/
+
+# Superpowers brainstorming sessions
+.superpowers/

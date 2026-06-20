@@ -269,18 +269,20 @@ $primary: #22c55e;
     align-items: center;
   }
   .captcha-img {
-    height: 40px;
-    width: 100px;
+    height: 48px;
+    width: auto;
+    min-width: 130px;
     border-radius: 6px;
     cursor: pointer;
     border: 1px solid #e2e8f0;
+    object-fit: contain;
     &:hover {
       border-color: $primary;
     }
   }
   .captcha-placeholder {
-    height: 40px;
-    width: 100px;
+    height: 48px;
+    width: 130px;
     border-radius: 6px;
     background: #f1f5f9;
     display: flex;

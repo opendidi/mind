@@ -10,7 +10,7 @@
     <!-- Assistant message -->
     <div v-else-if="message.role === 'assistant'" class="msg-assistant">
       <!-- Thinking -->
-      <AgentThinkCard
+      <ThinkCard
         v-if="message.thinking"
         :content="message.thinking"
       />
@@ -48,6 +48,21 @@
           <div v-else class="msg-bubble assistant-bubble" v-html="part.html"></div>
         </template>
       </template>
+
+      <!-- TTS Action Row (speaker button below message) -->
+      <div v-if="showSpeaker" class="msg-actions">
+        <button
+          class="speaker-btn"
+          :class="{ loading: ttsLoading, playing: ttsSpeaking }"
+          :title="speakerTooltip"
+          @click="onSpeakerClick"
+        >
+          <span v-if="ttsLoading" class="spinner"></span>
+          <span v-else-if="ttsSpeaking">⏹</span>
+          <span v-else>🔊</span>
+          <span class="speaker-label">{{ speakerLabel }}</span>
+        </button>
+      </div>
     </div>
 
     <!-- System message -->
@@ -61,7 +76,8 @@
 import { computed } from 'vue';
 import type { ChatMessage, ToolCallRecord } from './AgentStreamHandler';
 import { sanitizeHtml } from '@/utils/sanitize';
-import AgentThinkCard from './AgentThinkCard.vue';
+import { useSpeech } from '@/composables/useSpeech';
+import ThinkCard from '@/components/chat/ThinkCard.vue';
 import AgentToolCard from './AgentToolCard.vue';
 import AgentToolGroupCard from './AgentToolGroupCard.vue';
 import MapCard from './MapCard.vue';
@@ -70,6 +86,42 @@ import RouteCard from './RouteCard.vue';
 const props = defineProps<{
   message: ChatMessage;
 }>();
+
+const { speaking: ttsSpeaking, loading: ttsLoading, speakChatTTS, stop } = useSpeech();
+
+// ── show speaker only for completed assistant messages with content ──────
+
+const showSpeaker = computed(() => {
+  if (props.message.role !== 'assistant') return false;
+  const text = props.message.content;
+  if (!text || text.trim().length < 2) return false;
+  // Don't show if message is still streaming (check for streaming flag)
+  if ((props.message as any).streaming) return false;
+  return true;
+});
+
+const speakerLabel = computed(() => {
+  if (ttsLoading.value) return '生成中...';
+  if (ttsSpeaking.value) return '停止';
+  return '朗读';
+});
+
+const speakerTooltip = computed(() => {
+  if (ttsLoading.value) return 'ChatTTS 正在生成语音...';
+  if (ttsSpeaking.value) return '停止播放';
+  return 'ChatTTS 朗读此消息';
+});
+
+function onSpeakerClick() {
+  if (ttsLoading.value) return; // do nothing while loading
+  if (ttsSpeaking.value) {
+    stop();
+    return;
+  }
+  speakChatTTS(props.message.content);
+}
+
+// ── content parsing ──────────────────────────────────────────────────────
 
 interface ContentPart {
   type: 'text' | 'map' | 'route';
@@ -222,5 +274,67 @@ function renderContent(text: string): string {
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+// ── TTS Speaker Button ───────────────────────────────────────────────────
+
+.msg-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 4px;
+}
+
+.speaker-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 10px;
+  border: 1px solid #e8e8e8;
+  border-radius: 14px;
+  background: #fafafa;
+  color: #888;
+  font-size: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  outline: none;
+
+  &:hover {
+    background: #f0f5ff;
+    border-color: #1677ff;
+    color: #1677ff;
+  }
+
+  &.loading {
+    color: #fa8c16;
+    border-color: #ffd591;
+    background: #fffbe6;
+    cursor: not-allowed;
+  }
+
+  &.playing {
+    color: #1677ff;
+    border-color: #91caff;
+    background: #f0f5ff;
+  }
+
+  .speaker-label {
+    font-size: 11px;
+  }
+}
+
+// tiny css spinner for loading state
+.spinner {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #ffd591;
+  border-top-color: #fa8c16;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 </style>

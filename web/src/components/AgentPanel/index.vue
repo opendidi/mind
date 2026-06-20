@@ -71,8 +71,8 @@ watch(
   }
 );
 
-function handleSend(text: string) {
-  stream.send(text);
+function handleSend(text: string, images?: string[]) {
+  stream.send(text, images);
 }
 
 function handleClose() {

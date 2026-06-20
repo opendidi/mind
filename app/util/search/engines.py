@@ -249,7 +249,7 @@ def search_bing(
             if search_type == "news"
             else "https://www.bing.com/search"
         )
-        params = {"q": keyword, "count": max_results}
+        params = {"q": keyword, "count": max_results, "mkt": "zh-CN", "setLang": "zh-Hans"}
         if safe == "strict":
             params["adlt"] = "strict"
         if timelimit and search_type != "news":
@@ -303,7 +303,7 @@ def search_bing(
         except ImportError:
             pass
 
-        # ── Regex fallback ──
+        # ── Regex fallback (used when bs4 is unavailable) ──
         if not results:
             blocks = re.findall(
                 r'<li[^>]*class="[^"]*b_algo[^"]*"[^>]*>(.*?)</li>',
@@ -311,39 +311,89 @@ def search_bing(
                 re.DOTALL | re.IGNORECASE,
             )
             for block in blocks:
-                href_m = re.search(
-                    r'<a[^>]*href="(https?://[^"]+)"[^>]*>(.*?)</a>',
-                    block,
-                    re.DOTALL | re.IGNORECASE,
+                # Bing HTML structure: each b_algo has multiple <a> tags.
+                # The first one (in <h2>) has "domain + URL" as visible text.
+                # The second one (often after the caption <div>) has the real title.
+                # We extract ALL <a> texts and pick the best one as title.
+                all_links = re.findall(
+                    r'<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>',
+                    block, re.DOTALL | re.IGNORECASE,
                 )
-                if not href_m:
+                if not all_links:
                     continue
-                r_url = href_m.group(1)
-                title = re.sub(r"<[^>]+>", "", href_m.group(2)).strip()
-                snippet_m = re.search(
-                    r"<p[^>]*>(.*?)</p>", block, re.DOTALL | re.IGNORECASE
-                )
+
+                # Decode Bing tracking URL to get real URL
+                real_url = ""
+                for href, _link_text in all_links:
+                    if "bing.com/ck/a" in href or "bing.com/ck/r" in href:
+                        # Try to extract u= parameter (base64-encoded real URL)
+                        u_m = re.search(r'[&?]u=(a1[^&]+)', href)
+                        if u_m:
+                            try:
+                                import base64
+                                decoded = base64.urlsafe_b64decode(
+                                    u_m.group(1) + "=="
+                                ).decode("utf-8", errors="replace")
+                                real_url = decoded
+                                break
+                            except Exception:
+                                pass
+                if not real_url:
+                    # Use first non-Bing href as the URL
+                    for href, _link_text in all_links:
+                        if "bing.com" not in href:
+                            real_url = href
+                            break
+                if not real_url:
+                    continue
+
+                # Pick the best title: strip tags, find the longest text that is
+                # NOT dominated by a URL/domain pattern.
+                candidates = []
+                for _href, raw_text in all_links:
+                    text = re.sub(r"<[^>]+>", "", raw_text).strip()
+                    if not text:
+                        continue
+                    # Skip texts that are mostly a domain + URL concatenation
+                    url_like_ratio = len(re.findall(r'https?://|\.(com|org|net|cn|hk|tw)\b', text))
+                    if url_like_ratio >= 1 and len(text) < 60:
+                        continue
+                    # Strip leading domain prefix (e.g. "wikipedia.org › ...")
+                    cleaned = re.sub(
+                        r'^[\w.-]+\.(com|org|net|cn|hk|tw|jp|kr|io|ai|dev)\s*[›»]\s*',
+                        '', text,
+                    ).strip()
+                    if cleaned and len(cleaned) > 5:
+                        candidates.append(cleaned)
+
+                title = ""
+                if candidates:
+                    # Prefer the longest candidate (most likely the real title)
+                    title = max(candidates, key=len)
+                if not title:
+                    continue
+
+                # Snippet
                 snippet = ""
+                snippet_m = re.search(
+                    r"<p[^>]*>(.*?)</p>", block, re.DOTALL | re.IGNORECASE,
+                )
                 if snippet_m:
                     snippet = re.sub(r"<[^>]+>", "", snippet_m.group(1)).strip()
                 if not snippet:
                     meta_m = re.search(
                         r'<div[^>]*class="[^"]*b_caption[^"]*"[^>]*>(.*?)</div>',
-                        block,
-                        re.DOTALL | re.IGNORECASE,
+                        block, re.DOTALL | re.IGNORECASE,
                     )
                     if meta_m:
                         snippet = re.sub(r"<[^>]+>", "", meta_m.group(1)).strip()
                 date = _extract_bing_date(block)
-                if r_url and title and "bing.com" not in r_url:
-                    results.append(
-                        {
-                            "title": title[:200],
-                            "snippet": snippet[:600],
-                            "url": r_url,
-                            "date": date,
-                        }
-                    )
+                results.append({
+                    "title": title[:200],
+                    "snippet": snippet[:600],
+                    "url": real_url,
+                    "date": date,
+                })
                 if len(results) >= max_results:
                     break
 

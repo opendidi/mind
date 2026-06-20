@@ -1,0 +1,73 @@
+# ==========================================================================
+# mind — Docker Compose 编排
+# Flask 后端 + MySQL + Redis
+# ==========================================================================
+
+services:
+  # ── Flask 后端 (Python 3.12) ─────────────────────────────────────────────
+  app:
+    build: .
+    container_name: mind-app
+    ports:
+      - "5001:5001"
+    env_file:
+      - .env
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+    volumes:
+      - ./data/tts_cache:/app/data/tts_cache
+      # 挂载代码目录 — 改 Python 代码只需 restart，不用 rebuild
+      - ./app:/app/app
+      - ./starter.py:/app/starter.py
+    networks:
+      - mind-net
+
+  # ── MySQL 8.0 ───────────────────────────────────────────────────────────
+  mysql:
+    image: mysql:8.0
+    container_name: mind-mysql
+    ports:
+      - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD:-mind123456}
+      MYSQL_DATABASE: ${DB_NAME:-mind}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./sql:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_PASSWORD:-mind123456}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - mind-net
+
+  # ── Redis 7 ─────────────────────────────────────────────────────────────
+  redis:
+    image: redis:7-alpine
+    container_name: mind-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    networks:
+      - mind-net
+
+volumes:
+  mysql_data:
+  redis_data:
+
+networks:
+  mind-net:
+    driver: bridge

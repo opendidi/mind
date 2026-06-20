@@ -78,6 +78,8 @@ _VALID_SAFE = {"off", "moderate", "strict"}
 _VALID_TIMELIMIT = {"d", "w", "m", "y"}
 _VALID_SEARCH_TYPE = {"web", "news", "image"}
 _VALID_SEARCH_DEPTH = {"basic", "deep"}
+# LLM-chosen aliases → canonical search_type (defense in depth)
+_SEARCH_TYPE_ALIAS_MAP = {"general": "web", "all": "web", "text": "web", "article": "news", "photo": "image"}
 
 # Timeout budget
 _SEARCH_BUDGET_MS = 8000  # 8s hard deadline
@@ -276,6 +278,8 @@ def _validate_web_search(args):
         args["timelimit"] = t
     if "search_type" in args and args.get("search_type") is not None:
         st = str(args["search_type"]).strip().lower()
+        # Normalize common LLM-chosen aliases to valid types
+        st = _SEARCH_TYPE_ALIAS_MAP.get(st, st)
         if st not in _VALID_SEARCH_TYPE:
             return (
                 f"search_type 无效: {st}，支持: {', '.join(sorted(_VALID_SEARCH_TYPE))}"
@@ -466,6 +470,10 @@ def web_search(args):
     timelimit = args.get("timelimit") or None
     search_type = args.get("search_type", "web")
     search_depth = args.get("search_depth", "basic")
+
+    # Normalize common LLM-chosen aliases (defense in depth)
+    search_type = _SEARCH_TYPE_ALIAS_MAP.get(search_type, search_type)
+    args["search_type"] = search_type
 
     if search_type == "image":
         engine = "ddg"

@@ -95,18 +95,28 @@ const onFitView = (fit: boolean, viewPadding: number) => {
   meta2d.fitView(fit, viewPadding);
 };
 
-onMounted(() => {
-  // 读取本地存储
-  let data: any = localStorage.getItem("meta2d");
-  if (data) {
-    data = JSON.parse(data);
-    data.locked = 1;
-    data.rule = false;
-    meta2d.open(data);
-    // 自适应屏幕显示
-    // https://doc.le5le.com/document/119976155
+function loadCanvas() {
+  const data: any = localStorage.getItem("meta2d");
+  if (!data) return;
+  try {
+    const parsed = JSON.parse(data);
+    parsed.locked = 1; // read-only in preview mode
+    parsed.rule = false;
+    meta2d.open(parsed);
     meta2d.fitView(true, 24);
+  } catch { /* ignore */ }
+}
+
+// Listen for Agent-triggered canvas mutations from parent window (chat page)
+function onMutated(e: MessageEvent) {
+  if (e.data?.type === "canvas:mutated") {
+    loadCanvas();
   }
+}
+window.addEventListener("message", onMutated);
+
+onMounted(() => {
+  loadCanvas();
 });
 </script>
 

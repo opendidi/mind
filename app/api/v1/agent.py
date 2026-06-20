@@ -51,11 +51,12 @@ def agent_chat():
     message = data.get("message", "").strip()
     if not message:
         return {"code": 400, "message": "message is required"}, 400
-    if len(message) > 4096:
-        return {"code": 400, "message": f"message too long ({len(message)} > 4096)"}, 400
+    if len(message) > 8192:
+        return {"code": 400, "message": f"message too long ({len(message)} > 8192)"}, 400
 
     user_id = data.get("user_id", request.headers.get("X-User-ID", "anonymous"))
     canvas_context = data.get("canvas_context")
+    images = data.get("images")  # list of base64 data URL strings for multimodal vision
 
     from app.util.agent_observability import AgentObservability
     obs = AgentObservability(user_id=user_id)
@@ -75,6 +76,7 @@ def agent_chat():
                     user_message=message,
                     canvas_context=canvas_context,
                     task_id=task_id,
+                    images=images,
                 ):
                     event_queue.put(event)
                 event_queue.put({"type": "done", "data": {"status": "completed"}})
@@ -134,3 +136,53 @@ def agent_mcp():
             "id": data.get("id"),
             "error": {"code": -32603, "message": "Internal server error"},
         }
+
+
+@agent_api.route("/tts", methods=["POST"])
+def agent_tts():
+    """TTS 语音合成端点。
+
+    POST JSON: {"text": "要朗读的文本"}
+    Response 200: {"audio_url": "/v1/static/tts/abc123.wav"}
+    Response 400: {"error": "text is required"}
+    Response 503: {"error": "TTS model not loaded yet"}
+    Response 500: {"error": "TTS generation failed: ..."}
+    """
+    data = request.get_json(silent=True) or {}
+    text = (data.get("text") or "").strip()
+
+    if not text:
+        return {"error": "text is required"}, 400
+    if len(text) > 8000:
+        return {"error": f"text too long ({len(text)} > 8000)"}, 400
+
+    try:
+        from app.util.agent_tts import AgentTTS
+
+        tts = AgentTTS.instance()
+        audio_path = tts.generate(text)
+        audio_url = tts.url_for(audio_path)
+
+        return {"audio_url": audio_url}
+    except ValueError as e:
+        return {"error": str(e)}, 400
+    except RuntimeError as e:
+        msg = str(e)
+        if "未安装" in msg or "加载失败" in msg or "TTS 功能已禁用" in msg:
+            return {"error": msg}, 503
+        return {"error": msg}, 500
+
+
+@agent_api.route("/tts/audio/<path:filename>", methods=["GET"])
+def agent_tts_audio(filename):
+    """提供 TTS 音频文件访问。"""
+    import os as _os
+    from flask import send_from_directory
+    from app.config import TTS_CACHE_DIR
+
+    # 安全检查：只允许 .wav 文件
+    if not filename.endswith(".wav") or ".." in filename or "/" in filename or "\\" in filename:
+        return {"error": "invalid filename"}, 400
+
+    cache_dir = _os.path.abspath(TTS_CACHE_DIR)
+    return send_from_directory(cache_dir, filename, mimetype="audio/wav")

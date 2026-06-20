@@ -76,26 +76,81 @@ class MinioUtil:
         # 下载到本地
         minio_client.fget_object(bucket_name, object_name, target_path)
 
+  @staticmethod
+  def parse_source_prefix(url: str):
+    """从物料 URL 解析 MinIO 源目录前缀（文件所在目录的 bucket-relative 路径）。
+
+    URL 格式: http(s)://host:port/bucket/timestamp/filename.ext
+    返回: timestamp/   （目录前缀，用于按 prefix 列出该目录下所有对象）
+    对于旧格式 /pano/xxx/yy/ 也做兼容。
+    """
+    try:
+      if not url:
+        return None
+      # 去掉协议和 host:port
+      scheme_split = url.split("://", 1)[1] if "://" in url else url
+      parts = scheme_split.split("/", 1)  # ["host:port", "bucket/timestamp/..."]
+      if len(parts) < 2:
+        return None
+      # 去掉 bucket 名，保留目录部分
+      bucket_and_rest = parts[1]
+      path_parts = bucket_and_rest.split("/", 1)  # ["bucket", "timestamp/file.ext"]
+      if len(path_parts) < 2:
+        return None
+      # 取文件所在目录 (去掉文件名)
+      full_path = path_parts[1]  # "timestamp/file.ext" or "timestamp/sub/file.ext"
+      dirname = '/'.join(full_path.split('/')[:-1])  # "timestamp" or "timestamp/sub"
+      return dirname + '/' if dirname else ''
+    except Exception:
+      return None
+
+  @staticmethod
+  def copy_directory_prefix(source_prefix: str, target_prefix: str) -> bool:
+    """复制 MinIO 中某个前缀下的所有对象到新前缀（保持目录结构）。
+
+    用于全景图等包含多个附属文件（tile/配置）的目录复制。
+    """
+    try:
+      from minio.commonconfig import CopySource
+      objects = list(minio_client.list_objects(bucket_name, prefix=source_prefix, recursive=True))
+      if not objects:
+        logging.warning("copy_directory_prefix: 源前缀无对象: %s", source_prefix)
+        return False
+
+      for obj in objects:
+        # 计算相对路径
+        relative = obj.object_name[len(source_prefix):]  # 去掉源前缀
+        target_object = target_prefix + relative
+        copy_source = CopySource(bucket_name, obj.object_name)
+        minio_client.copy_object(bucket_name, target_object, copy_source)
+
+      logging.info("copy_directory_prefix: 复制了 %d 个对象 %s → %s",
+                   len(objects), source_prefix, target_prefix)
+      return True
+    except Exception as e:
+      logging.warning(f"copy_directory_prefix 失败: {source_prefix} → {target_prefix}: {e}")
+      return False
+
   def find_source_path(file_name):
     try:
-      # 查找文件
       objects = minio_client.list_objects(bucket_name, recursive=True)
-      source_path = None
       for obj in objects:
         if obj.object_name.endswith(file_name):
-          source_path = obj.object_name.replace(f'/{file_name}', '')
-          break
-      return source_path
+          return obj.object_name.replace(f'/{file_name}', '')
+      logging.warning("find_source_path: 未找到匹配对象: %s", file_name)
+      return ''
     except Exception as e:
-      logging.warning(f"Error: {e}")
+      logging.warning(f"find_source_path error: {e}")
       return ''
 
   def copy_directory(file_name):
     try:
       timestamp = int(time.time())
       target_base = f'krpano/{timestamp}/'
-      # 源目录
       source_path = MinioUtil.find_source_path(file_name)
+      if not source_path:
+        logging.warning("copy_directory: find_source_path 返回空, file_name=%s", file_name)
+        return ''
 
       path_parts = source_path.rstrip('/').split('/')
       depth = len(path_parts)

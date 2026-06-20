@@ -78,47 +78,74 @@ def _tool_canvas(args):
         pen_type = args.get("type", "rectangle")
         text = args.get("text", "")
         x, y = args.get("x", 0), args.get("y", 0)
+        w, h = args.get("width", 100), args.get("height", 60)
         label = f"「{text}」" if text else ""
         return {
-            "success": True, "pen_id": pen_id,
-            "data": {**args, "pen_id": pen_id},
-            "message": f"已创建{pen_type}{label}，位置({x}, {y})，ID: {pen_id}",
+            "success": True,
+            "pen_id": pen_id,
+            "data": {"pen_id": pen_id, "type": pen_type, "text": text, "x": x, "y": y, "width": w, "height": h},
+            "message": f"已创建{pen_type}{label}，位置({x}, {y})，大小 {w}x{h}，ID: {pen_id}",
         }
     elif action == "add_line":
+        from_pen = args.get("from_pen", "")
+        to_pen = args.get("to_pen", "")
+        if not from_pen or not to_pen:
+            return {"success": False, "error": "from_pen 和 to_pen 不能为空，请先创建起始和目标节点"}
+        line_type = args.get("line_type", "straight")
         label = f"「{args.get('text')}」" if args.get("text") else ""
         return {
-            "success": True, "data": args,
-            "message": f"已创建从 {args.get('from_pen')} 到 {args.get('to_pen')} 的{args.get('line_type', 'straight')}连线{label}",
+            "success": True,
+            "data": {"from_pen": from_pen, "to_pen": to_pen, "line_type": line_type, "text": args.get("text", "")},
+            "message": f"已创建从 {from_pen} 到 {to_pen} 的{line_type}连线{label}",
         }
     elif action == "update_pen":
-        props_desc = ", ".join(f"{k}={v}" for k, v in args.get("props", {}).items())
-        return {"success": True, "data": args, "message": f"已更新图形 {args.get('pen_id')}：{props_desc}"}
+        pen_id = args.get("pen_id", "")
+        if not pen_id:
+            return {"success": False, "error": "pen_id 不能为空"}
+        props = args.get("props", {})
+        if not props:
+            return {"success": False, "error": "props 不能为空，至少指定一个要修改的属性"}
+        props_desc = ", ".join(f"{k}={v}" for k, v in props.items())
+        return {
+            "success": True,
+            "data": {"pen_id": pen_id, "props": props},
+            "message": f"已更新图形 {pen_id}：{props_desc}",
+        }
     elif action == "delete_pen":
-        count = len(args.get("pen_ids", [])) or (1 if args.get("pen_id") else 0)
-        return {"success": True, "data": args, "message": f"已删除{count}个图形"}
+        pen_ids = args.get("pen_ids", [])
+        if not pen_ids and args.get("pen_id"):
+            pen_ids = [args.get("pen_id")]
+        if not pen_ids:
+            return {"success": False, "error": "pen_id 或 pen_ids 不能为空，请指定要删除的图形ID"}
+        return {
+            "success": True,
+            "data": {"pen_ids": pen_ids},
+            "message": f"已删除 {len(pen_ids)} 个图形：{', '.join(pen_ids)}",
+        }
     elif action == "clear":
         if not args.get("confirm"):
-            return {"success": False, "error": "请确认清空画布操作"}
-        return {"success": True, "data": {}, "message": "画布已清空"}
+            return {"success": False, "error": "清空画布不可逆，请设置 confirm=true 确认"}
+        return {"success": True, "data": {}, "message": "画布已清空，所有图形和连线已删除"}
     elif action == "undo":
-        return {"success": True, "data": {}, "message": "已撤销"}
+        return {"success": True, "data": {}, "message": "已撤销上一步操作"}
     elif action == "redo":
-        return {"success": True, "data": {}, "message": "已重做"}
+        return {"success": True, "data": {}, "message": "已恢复撤销的操作"}
     elif action == "add_diagram":
         diagram = args.get("diagram", {})
         nodes = diagram.get("nodes", [])
         edges = diagram.get("edges", [])
         if not nodes:
             return {"success": False, "error": "diagram.nodes 不能为空"}
-        # Map LLM-assigned logical IDs → backend pen_ids
+        # Generate pen_ids for each node and resolve edge references
         id_map = {}
+        node_summaries = []
         for node in nodes:
             logical_id = node.get("id", "")
             pen_id = _next_pen_id()
             node["pen_id"] = pen_id
             if logical_id:
                 id_map[logical_id] = pen_id
-        # Resolve edge from/to references
+            node_summaries.append(f"{node.get('type', 'rectangle')}({pen_id})")
         for edge in edges:
             from_ref = edge.get("from", "")
             to_ref = edge.get("to", "")
@@ -127,15 +154,15 @@ def _tool_canvas(args):
         return {
             "success": True,
             "data": {"diagram": {"nodes": nodes, "edges": edges}},
-            "message": f"已生成包含 {len(nodes)} 个节点和 {len(edges)} 条连线的图表",
+            "message": f"已生成包含 {len(nodes)} 个节点（{', '.join(node_summaries)}）和 {len(edges)} 条连线的图表",
         }
     elif action == "get_state":
         return {
             "success": True,
-            "data": {"note": "画布状态已在系统提示的「当前画布状态」中提供，请基于该上下文和之前的工具调用结果了解当前画布内容。"},
+            "data": {},
             "message": "画布状态详见系统提示中的「当前画布状态」以及此前的工具调用结果。如两者均为空，则可直接开始创建图形。",
         }
-    return {"success": False, "error": f"未知的 action: {action}"}
+    return {"success": False, "error": f"未知的 action: {action}，支持: add_pen/add_line/add_diagram/update_pen/delete_pen/clear/undo/redo/get_state"}
 
 
 # ══════════════════════════════════════════════════════════════════════════════
@@ -296,7 +323,52 @@ def _tool_layout_align(args):
     }, "required": []}
 )
 def _tool_file_search(args):
-    return {"success": True, "data": {"items": []}, "message": "文件搜索结果（需连接存储）"}
+    """Search the file manager material table for uploaded files."""
+    user_id = args.get("user_id", "")
+    keyword = args.get("keyword", "").strip()
+    file_type = args.get("type") or None
+    limit = max(1, min(int(args.get("limit", 20)), 50))
+
+    try:
+        from app.package.module.material_mysql import MaterialMysqlHandler
+        result = MaterialMysqlHandler.query_list({
+            "current": 1,
+            "page_size": limit,
+            "keyword": keyword or None,
+            "type": file_type,
+            "folder": None,
+            "parent_id": None,
+            "sort_order": "created_at DESC",
+        }, user_id)
+        # query_list returns {"list": [...], "total": N} — not "data"
+        items = result.get("list", []) if isinstance(result, dict) else []
+        if not items:
+            return {
+                "success": True,
+                "data": {"items": [], "total": 0},
+                "message": "文件管理器中暂无匹配文件" if keyword else "文件管理器中没有文件，空空如也 📭",
+            }
+        return {
+            "success": True,
+            "data": {
+                "items": [
+                    {
+                        "name": item.get("name", ""),
+                        "type": item.get("type", ""),
+                        "size": item.get("size", 0),
+                        "extension": item.get("extension", ""),
+                        "url": item.get("url", ""),
+                        "created_at": str(item.get("created_at", "")),
+                    }
+                    for item in items
+                ],
+                "total": len(items),
+            },
+            "message": f"找到 {len(items)} 个文件" + (f"，关键词: {keyword}" if keyword else ""),
+        }
+    except Exception as e:
+        logging.warning("file_search failed: %s", e)
+        return {"success": False, "error": f"文件搜索失败: {e}"}
 
 
 @ToolRegistry.register(
@@ -448,8 +520,13 @@ def _download_from_minio(object_name: str) -> str | None:
 
 def _validate_analyze_image(args):
     url = args.get("image_url", "")
-    if not url or not isinstance(url, str) or not url.strip():
-        return "缺少必填参数: image_url"
+    b64 = args.get("image_base64", "")
+    if not (url or b64):
+        return "缺少参数: 需要 image_url 或 image_base64 之一"
+    if url and not isinstance(url, str):
+        return "image_url 必须是字符串"
+    if b64 and not (isinstance(b64, str) and b64.startswith("data:")):
+        return "image_base64 必须是 data:image/...;base64,... 格式"
     task = args.get("task_type", "")
     if task not in ("describe", "detect", "classify"):
         return f"task_type 无效: {task}，支持 describe/detect/classify"
@@ -458,20 +535,23 @@ def _validate_analyze_image(args):
 
 @ToolRegistry.register(
     "analyze_image",
-    "分析一张图片的内容。可进行场景描述(describe)、物体检测(detect)或智能分类(classify)。",
+    "分析一张图片的内容。可进行场景描述(describe)、物体检测(detect)或智能分类(classify)。"
+    "支持两种输入方式：1) image_url — 图片URL地址；2) image_base64 — base64格式的图片数据。二者选一即可。",
     {"type": "object", "properties": {
-        "image_url": {"type": "string", "description": "图片URL地址"},
+        "image_url": {"type": "string", "description": "图片URL地址（与 image_base64 二选一）"},
+        "image_base64": {"type": "string", "description": "base64格式的图片数据，data:image/...;base64,... 格式（与 image_url 二选一）"},
         "task_type": {
             "type": "string",
             "enum": ["describe", "detect", "classify"],
             "description": "describe=场景描述(含关键词), detect=物体检测, classify=智能分类",
         },
-    }, "required": ["image_url", "task_type"]},
+    }, "required": ["task_type"]},
     validator=_validate_analyze_image,
 )
 def _tool_analyze_image(args):
-    image_url = args["image_url"]
     task_type = args["task_type"]
+    image_base64 = args.get("image_base64", "")
+    image_url = args.get("image_url", "")
 
     if task_type == "classify":
         prompt = VisionHandler.build_classify_prompt([])
@@ -480,7 +560,10 @@ def _tool_analyze_image(args):
     else:
         prompt = VisionHandler.build_describe_prompt()
 
-    ok, result = VisionHandler.analyze_image(image_url, prompt, task_type)
+    if image_base64:
+        ok, result = VisionHandler.analyze_base64(image_base64, prompt, task_type)
+    else:
+        ok, result = VisionHandler.analyze_image(image_url, prompt, task_type)
     return {"success": ok, "data": result, "task_type": task_type}
 
 

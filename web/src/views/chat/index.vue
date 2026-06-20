@@ -98,6 +98,7 @@
                     @quoteMsg="onQuoteMsgId"
                     @delete="onDeleteMsg"
                     @retry="onRetry"
+                    @selectRefs="onSelectRefs"
                   />
                 </div>
               </details>
@@ -119,6 +120,7 @@
               @quoteMsg="onQuoteMsgId"
               @delete="onDeleteMsg"
               @retry="onRetry"
+              @selectRefs="onSelectRefs"
             />
           </template>
 
@@ -237,6 +239,11 @@
     </transition>
 
     <FileManager ref="fileManagerRef" mode="view" />
+    <ReferencePanel
+      :visible="refPanelVisible"
+      :references="refPanelData"
+      @close="onCloseRefPanel"
+    />
   </div>
 </template>
 
@@ -271,6 +278,7 @@ import PlanCard from "@/components/chat/PlanCard.vue";
 import MsgRow from "@/components/chat/MsgRow.vue";
 import WelcomePanel from "@/components/chat/WelcomePanel.vue";
 import FileManager from "@/components/FileManager/index.vue";
+import ReferencePanel from "@/components/chat/ReferencePanel.vue";
 
 const md = new MarkdownIt({
   html: false,
@@ -399,6 +407,10 @@ const {
     if (success && CANVAS_TOOLS.includes(tool)) {
       hasCanvasChanges.value = true;
       showCanvasPreview.value = true;
+      // Notify the preview iframe to reload (canvas was mutated via localStorage)
+      if (previewIframe.value?.contentWindow) {
+        previewIframe.value.contentWindow.postMessage({ type: 'canvas:mutated' }, '*');
+      }
     }
   },
   onDone() {
@@ -479,6 +491,19 @@ function onDeleteMsg(msgId: string) {
   saveCurrentConv();
 }
 
+// ── Reference panel ──
+const refPanelVisible = ref(false);
+const refPanelData = ref<Array<{ title?: string; url: string; snippet?: string; domain?: string }>>([]);
+
+function onSelectRefs(refs: Array<{ title?: string; url: string; snippet?: string; domain?: string }>) {
+  refPanelData.value = refs;
+  refPanelVisible.value = true;
+}
+
+function onCloseRefPanel() {
+  refPanelVisible.value = false;
+}
+
 function onMsgFeedback(_msgId: string, _type: string) {
   // Feedback persistence placeholder
   saveCurrentConv();
@@ -501,11 +526,10 @@ async function onSend(
   const hasAnyAttach = hasImages || hasDocs;
   if ((!text && !hasAnyAttach) || loading.value) return;
 
-  // Build API text with internal markers (for agent tool reference)
+  // Build API text: doc markers are needed for backend file tools,
+  // but image URLs are NOT embedded — they go via the images parameter (vision bridge)
   const parts: string[] = [];
   if (hasDocs) parts.push(docMarkers.join("\n"));
-  if (hasImages)
-    parts.push(imageUrls.map((u, i) => `[图片${i + 1}: ${u}]`).join("\n"));
   if (text) parts.push(text);
   const apiText = parts.join("\n");
 

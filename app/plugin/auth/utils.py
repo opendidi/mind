@@ -60,7 +60,7 @@ def generate_captcha_text(length: int = 4) -> str:
 def generate_captcha_image(text: str) -> str:
     """Generate a captcha image, return base64 JPEG data URL."""
     import base64
-    width, height = 120, 44
+    width, height = 152, 48
     image = Image.new('RGB', (width, height), color=(255, 255, 255))
     draw = ImageDraw.Draw(image)
 
@@ -70,14 +70,24 @@ def generate_captcha_image(text: str) -> str:
             if random.random() < 0.05:
                 draw.point((x, y), fill=(random.randint(0, 200), random.randint(0, 200), random.randint(0, 200)))
 
-    # Draw characters
-    try:
-        font = ImageFont.truetype("arial.ttf", 28)
-    except Exception:
+    # Draw characters — try multiple font paths (Docker 容器通常没有 Arial)
+    font = None
+    _font_paths = [
+        "arial.ttf",
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf",
+        "DejaVuSans.ttf",
+    ]
+    for fp in _font_paths:
+        try:
+            font = ImageFont.truetype(fp, 32)
+            break
+        except Exception:
+            continue
+    if font is None:
         font = ImageFont.load_default()
 
     for i, ch in enumerate(text):
-        x = 10 + i * 26 + random.randint(-3, 3)
+        x = 14 + i * 32 + random.randint(-3, 3)
         y = random.randint(3, 10)
         color = (random.randint(0, 100), random.randint(0, 100), random.randint(0, 100))
         draw.text((x, y), ch, font=font, fill=color)

@@ -41,7 +41,7 @@ export interface ChatMessage {
   thinking?: string
   timestamp?: string
   feedback?: 'liked' | 'disliked'
-  references?: Array<{ title?: string; url: string }>
+  references?: Array<{ title?: string; url: string; snippet?: string; domain?: string }>
 }
 
 export interface ToolCallRecord {
@@ -200,6 +200,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   let _lastUserFiles: ChatFile[] | undefined = undefined
   const pendingToolArgs = new Map<string, Record<string, unknown>>()
   let pendingToolCount = 0
+  let pendingRefs: Array<{ title?: string; url: string; snippet?: string; domain?: string }> | null = null
 
   function addMessage(role: ChatMessage['role'], text: string) {
     messages.value.push({
@@ -212,13 +213,13 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
 
   function addUserMessage(text: string, images?: string[], quote?: QuoteInfo, files?: ChatFile[]) {
     let displayText = text
+    // Strip file upload markers from display text (backend uses them for tool routing)
     if (files) {
       for (const f of files) {
         const marker = `[上传文件: ${f.objectName} (${f.name})]`
         displayText = displayText.replace(marker + '\n', '').replace(marker, '')
       }
     }
-    displayText = displayText.replace(/\[图片\d+:\s*\S+\]\n?/g, '').trim()
     messages.value.push({
       id: `msg-${++msgIdCounter}`,
       role: 'user',
@@ -316,6 +317,16 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         const last = messages.value[messages.value.length - 1]
         if (last && last.role === 'agent' && last.text !== undefined) {
           last.text += text
+          // Merge any pending refs from later tool calls (e.g. 2nd web_search)
+          if (pendingRefs) {
+            const existing = (last.references || []) as any[]
+            const seen = new Set(existing.map((r: any) => r.url))
+            const newRefs = pendingRefs.filter(r => !seen.has(r.url))
+            if (newRefs.length > 0) {
+              last.references = [...existing, ...newRefs]
+            }
+            pendingRefs = null
+          }
         } else {
           const newMsg: ChatMessage = {
             id: `msg-${++msgIdCounter}`,
@@ -326,6 +337,10 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
           if (currentThinking.value.trim()) {
             newMsg.thinking = currentThinking.value.trim()
             currentThinking.value = ''
+          }
+          if (pendingRefs) {
+            newMsg.references = pendingRefs
+            pendingRefs = null
           }
           messages.value.push(newMsg)
         }
@@ -338,6 +353,16 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         const lastMsg = messages.value[messages.value.length - 1]
         if (lastMsg && lastMsg.role === 'agent' && lastMsg.text) {
           lastMsg.text = msgText || lastMsg.text
+          // Merge any pending refs (from later tool calls in the same turn)
+          if (pendingRefs) {
+            const existing = (lastMsg.references || []) as any[]
+            const seen = new Set(existing.map((r: any) => r.url))
+            const newRefs = pendingRefs.filter(r => !seen.has(r.url))
+            if (newRefs.length > 0) {
+              lastMsg.references = [...existing, ...newRefs]
+            }
+            pendingRefs = null
+          }
         } else {
           const newMsg: ChatMessage = {
             id: `msg-${++msgIdCounter}`,
@@ -348,6 +373,10 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
           if (currentThinking.value.trim()) {
             newMsg.thinking = currentThinking.value.trim()
             currentThinking.value = ''
+          }
+          if (pendingRefs) {
+            newMsg.references = pendingRefs
+            pendingRefs = null
           }
           messages.value.push(newMsg)
         }
@@ -439,6 +468,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       case 'error':
         addMessage('error', data.message)
         flushPendingTools()
+        pendingRefs = null
         loading.value = false
         connected.value = false
         currentTool.value = ''
@@ -448,8 +478,39 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         options.onError?.(data.message)
         break
 
+      // ── References (web_search / web_fetch citations) ──
+      // Buffer references — they arrive before the agent message, so we attach
+      // them when the next agent message (token/message) is created.
+      // Multiple web_search calls within one turn → MERGE refs, don't overwrite.
+      case 'references': {
+        const refs = (data.references || data.refs || []) as Array<{ title?: string; url: string; snippet?: string; domain?: string }>
+        if (refs.length > 0) {
+          // Try the last message: if it's an agent msg from THIS turn, merge refs
+          const last = messages.value[messages.value.length - 1]
+          if (last && last.role === 'agent') {
+            const existing = (last.references || []) as any[]
+            // Dedup by URL
+            const seen = new Set(existing.map((r: any) => r.url))
+            const newRefs = refs.filter(r => !seen.has(r.url))
+            if (newRefs.length > 0) {
+              last.references = [...existing, ...newRefs]
+            }
+          } else {
+            // No agent message yet — accumulate in buffer
+            if (pendingRefs) {
+              const seen = new Set(pendingRefs.map(r => r.url))
+              pendingRefs = [...pendingRefs, ...refs.filter(r => !seen.has(r.url))]
+            } else {
+              pendingRefs = refs
+            }
+          }
+        }
+        break
+      }
+
       // ── Done (handled in onComplete) ──
       case 'done':
+        pendingRefs = null
         break
 
       // ── Passthrough ──
@@ -490,11 +551,13 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     plan.value = null
     toolCalls.value = []
     traceId.value = null
+    pendingRefs = null
 
     abortCtrl = agentChat({
       userMessage: apiText,
       user_id: options.userId,
       canvasContext,
+      images: images || undefined,
       onEvent: (event) => handleSSEEvent(event.type, event.data),
       onError: (err) => {
         addMessage('error', err.message)
@@ -519,6 +582,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     thinkingText.value = ''
     pendingToolArgs.clear()
     pendingToolCount = 0
+    pendingRefs = null
   }
 
   function retry() {

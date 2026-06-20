@@ -13,6 +13,7 @@ import pymysql
 import pymysql.cursors
 import os
 import json
+import time
 import uuid
 import app.util.file as PanoFile
 from .connect import ConnectMysqlHandler
@@ -30,11 +31,41 @@ if platform == 'nt':
   logger = setup_logging(log_file= dirname + '\\app\\log\\MaterialMysqlHandler.log')
 
 def extract_path_segment(url, start_segment="/pano/", levels=2):
-  # 分割路径部分
-  path = url.split(start_segment)[1]
-  # 再次分割获取所需部分
-  result = "/".join(path.split("/")[:levels])
-  return result + '/'
+  """Extract a path segment from a material URL.
+
+  Supports both legacy /pano/ paths and current MinIO /mind/ paths.
+  Falls back to extracting the bucket-relative directory prefix when
+  the expected segment delimiter is not found.
+  """
+  # Try the configured segment first
+  parts = url.split(start_segment)
+  if len(parts) >= 2:
+    path = parts[1]
+    result = "/".join(path.split("/")[:levels])
+    return result + '/'
+
+  # Fallback: URL format is http://host/bucket/dir/.../file.ext
+  # Extract the bucket-relative directory prefix
+  # e.g. http://cdn/mind/123456/file.png → mind/123456/
+  try:
+    scheme_split = url.split("://", 1)[1] if "://" in url else url
+    path_parts = scheme_split.split("/")
+    # Skip host:port (index 0), then take bucket + first dir level
+    if len(path_parts) >= 3:
+      bucket = path_parts[1]   # "mind"
+      first_dir = path_parts[2]  # "123456" (timestamp)
+      return f"{bucket}/{first_dir}/"
+    elif len(path_parts) >= 2:
+      return path_parts[1] + '/'
+  except (IndexError, ValueError):
+    pass
+
+  # Last resort: return the dirname portion of the URL path
+  from urllib.parse import urlparse
+  import os
+  parsed = urlparse(url)
+  dirname = os.path.dirname(parsed.path)
+  return (dirname.lstrip('/') + '/') if dirname else ''
 
 class MaterialMysqlHandler:
 
@@ -243,7 +274,6 @@ class MaterialMysqlHandler:
           connect.close()
 
   def update_material(material_data, user_id):
-    id = str(uuid.uuid4()).replace("-", "")
     # 文件列表
     file_list = material_data.get('file_list')
     # 绝对路径
@@ -262,6 +292,8 @@ class MaterialMysqlHandler:
         for file in file_list:
           filename = file.filename
           if file and PanoFile.allowed_file(filename):
+            # 每个文件生成唯一 ID（修复：之前 id 在循环外导致多文件共享同一 UUID）
+            fid = str(uuid.uuid4()).replace("-", "")
             # 把图片存储到临时目录
             file.save(os.path.join(root_path, filename))
 
@@ -284,7 +316,8 @@ class MaterialMysqlHandler:
             # 获取文件后缀并去掉前面的点
             file_extension = os.path.splitext(path)[1][1:]
 
-            name = file_name
+            # 存储完整文件名（含扩展名），供 copy/scissors 等操作通过文件名查找 MinIO 对象
+            name = file_name_with_extension
             url = f'http://{minio_cdn_url}/mind/{oss_path}'
             thumb_path = ''
             size = MinioUtil.get_object_size(oss_path)
@@ -295,10 +328,10 @@ class MaterialMysqlHandler:
             """
 
             # 执行 SQL 语句
-            cursor.execute(sql, (id, name, url, thumb_path, size, extension, '', parent_id, user_id))
+            cursor.execute(sql, (fid, name, url, thumb_path, size, extension, '', parent_id, user_id))
 
-            # 收集成功信息
-            success_info.append(cursor.lastrowid)
+            # 收集成功信息（修复：lastrowid 对 UUID 主键恒为 0，改为返回实际文件信息）
+            success_info.append({"id": fid, "name": name, "url": url, "size": size, "extension": extension})
             # 提交事务
             connect.commit()
 
@@ -414,31 +447,41 @@ class MaterialMysqlHandler:
     try:
       # 根据ID查询文件信息
       info = MaterialMysqlHandler.find_material_by_id(id, user_id)
+      if not info:
+        return False
 
-      # 获取文件名
       file_name = info['name']
       connect = ConnectMysqlHandler.connect_mysql()
-      # 临时路径段
-      before_temp_path = extract_path_segment(info['url'])
 
-      # 开始复制文件
-      after_path = MinioUtil.copy_directory(file_name)
-
-      if after_path:
-        data = {
-          'name': file_name,
-          'url': info['url'].replace(f'{before_temp_path}', after_path),
-          'thumb_path': info['thumb_path'].replace(f'{before_temp_path}', after_path),
-          'size': MinioUtil.get_object_size(after_path + file_name),
-          'extension': os.path.splitext(file_name)[1][1:],
-          'type': 'panorama',
-          'parent_id': folder,
-        }
-        done = MaterialMysqlHandler.install_material(data, user_id)
-        if done:
-          return True
-      else:
+      # 从 URL 直接解析 MinIO 源目录前缀（不再全量扫描 bucket）
+      # URL 格式: http://cdn/mind/timestamp/filename.ext → 源前缀: timestamp/
+      source_prefix = MinioUtil.parse_source_prefix(info['url'])
+      if not source_prefix:
+        logging.warning("copy_file: 无法从 URL 解析源路径前缀: url=%s", info['url'])
         return False
+
+      # 复制源目录下所有对象到新位置（全景图含 tile/配置等附属文件）
+      timestamp = int(time.time())
+      target_prefix = f'krpano/{timestamp}/'
+      logging.info("copy_file: 复制目录 %s → %s (folder=%s)", source_prefix, target_prefix, folder)
+      ok = MinioUtil.copy_directory_prefix(source_prefix, target_prefix)
+      if not ok:
+        logging.warning("copy_file: MinIO 目录复制失败 %s → %s", source_prefix, target_prefix)
+        return False
+
+      # 构建新 URL：将源前缀替换为目标前缀
+      new_url = info['url'].replace(source_prefix, target_prefix, 1)
+      data = {
+        'name': file_name,
+        'url': new_url,
+        'thumb_path': '',
+        'size': MinioUtil.get_object_size(target_prefix + file_name),
+        'extension': os.path.splitext(file_name)[1][1:],
+        'type': 'panorama',
+        'parent_id': folder,
+      }
+      done = MaterialMysqlHandler.install_material(data, user_id)
+      return bool(done)
     except Exception as ex:
       logging.warning(ex)
       return False

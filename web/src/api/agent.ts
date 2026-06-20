@@ -5,7 +5,7 @@
 export interface AgentEvent {
   type: 'token' | 'thinking' | 'tool_call' | 'tool_result' | 'plan'
     | 'step_start' | 'step_end' | 'step_fail' | 'progress'
-    | 'message' | 'trace' | 'error' | 'done';
+    | 'message' | 'trace' | 'error' | 'done' | 'references';
   data: any;
 }
 
@@ -18,6 +18,7 @@ export interface AgentChatOptions {
   userMessage: string;
   user_id?: string;
   canvasContext?: any;
+  images?: string[];
   onEvent?: (event: AgentEvent) => void;
   onError?: (error: Error) => void;
   onComplete?: () => void;
@@ -38,6 +39,7 @@ export function agentChat(options: AgentChatOptions): AbortController {
     message: options.userMessage,
     user_id: options.user_id || 'anonymous',
     canvas_context: options.canvasContext,
+    images: options.images || [],
   });
 
   fetch(`${API_BASE}/agent/chat`, {
@@ -101,4 +103,25 @@ export function agentChat(options: AgentChatOptions): AbortController {
     });
 
   return controller;
+}
+
+/**
+ * Request TTS audio from the backend ChatTTS endpoint.
+ * Returns the audio URL to play.
+ */
+export async function requestTTS(text: string, signal?: AbortSignal): Promise<string> {
+  const resp = await fetch(`${API_BASE}/agent/tts`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text }),
+    signal,
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: `HTTP ${resp.status}` }));
+    throw new Error(err.error || `TTS request failed (${resp.status})`);
+  }
+
+  const data = await resp.json();
+  return data.audio_url as string;
 }

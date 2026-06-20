@@ -177,6 +177,13 @@ class OutputGuard:
     def check_harmful(text: str) -> dict:
         """Check for harmful content in agent response.
 
+        Matching rules:
+        - ASCII/English words: must appear as a standalone token (surrounded by
+          non-alphanumeric chars, CJK chars, or text boundaries). This avoids
+          substring false positives like 'VPN' inside 'freeVPNproxy'.
+        - CJK words: simple substring match (Chinese has no natural word
+          boundaries, so boundary detection is unreliable without NLP).
+
         Returns {"ok": True} or {"ok": False, "reason": ...}.
         """
         if not text:
@@ -184,8 +191,21 @@ class OutputGuard:
 
         lower = text.lower()
         for word in _SENSITIVE_WORDS:
-            if word in lower:
-                return {"ok": False, "reason": "响应包含不适当内容"}
+            if not word:
+                continue
+            if word.isascii():
+                # Match as standalone token: bounded by non-alnum, CJK, or text edge
+                escaped = re.escape(word)
+                pattern = re.compile(
+                    r'(?<![a-zA-Z0-9])' + escaped + r'(?![a-zA-Z0-9])',
+                    re.IGNORECASE,
+                )
+                if pattern.search(text):
+                    return {"ok": False, "reason": "响应包含不适当内容"}
+            else:
+                # CJK — simple substring match
+                if word in lower:
+                    return {"ok": False, "reason": "响应包含不适当内容"}
 
         return {"ok": True}
 

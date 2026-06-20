@@ -50,6 +50,28 @@ const isFullscreen = ref(false);
 let mmInstance: Markmap | null = null;
 let transformer: Transformer | null = null;
 
+// Depth-based color palette — matches markmap repl style
+const DEPTH_COLORS = [
+  "#f97316", // orange   - depth 0 (root)
+  "#eab308", // yellow   - depth 1
+  "#22c55e", // green    - depth 2
+  "#06b6d4", // cyan     - depth 3
+  "#3b82f6", // blue     - depth 4
+  "#8b5cf6", // purple   - depth 5
+  "#ec4899", // pink     - depth 6+
+];
+
+// Walk the node tree and apply depth-based colors
+function colorNodes(node: any, depth: number) {
+  node.state = node.state || {};
+  node.state.color = DEPTH_COLORS[Math.min(depth, DEPTH_COLORS.length - 1)];
+  if (node.children) {
+    for (const child of node.children) {
+      colorNodes(child, depth + 1);
+    }
+  }
+}
+
 function build() {
   if (!svgRef.value) return;
   const md = props.markdown || "";
@@ -63,6 +85,9 @@ function build() {
     const { root } = transformer.transform(md);
     if (!root || !root.children || root.children.length === 0) return;
 
+    // Apply depth-based colors (markmap repl style)
+    colorNodes(root, 0);
+
     if (mmInstance) {
       mmInstance.destroy();
       mmInstance = null;
@@ -73,16 +98,15 @@ function build() {
       {
         autoFit: true,
         duration: 300,
-        initialExpandLevel: 3,
-        maxWidth: 280,
-        nodeMinHeight: 18,
-        paddingX: 16,
-        spacingHorizontal: 60,
-        spacingVertical: 8,
+        initialExpandLevel: 2,
+        maxWidth: 260,
+        nodeMinHeight: 16,
+        paddingX: 12,
+        spacingHorizontal: 70,
+        spacingVertical: 10,
         zoom: true,
         pan: true,
         toggleRecursively: true,
-        color: () => "#e0e7ff",
       },
       root
     );

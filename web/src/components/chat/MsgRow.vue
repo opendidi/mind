@@ -16,7 +16,9 @@
           <template v-if="message.images && message.images.length > 0">
             <div class="msg-images-row">
               <template v-for="(img, ii) in message.images" :key="ii">
-                <a-image :src="img" :width="96" :height="96" class="msg-image-thumb" />
+                <div class="msg-image-thumb" @click="previewImage(img)">
+                  <img :src="img" alt="图片" />
+                </div>
               </template>
             </div>
           </template>
@@ -69,19 +71,18 @@
         @delete="emit('delete', message.id)"
       >
         <div class="msg-content" @contextmenu="onContextMenu">
-          <template v-if="message.thinking">
-            <details class="thinking-details" :open="!message.text">
-              <summary class="thinking-summary">
-                <span class="thinking-label">思考过程</span>
-                <span class="thinking-chevron">▾</span>
-              </summary>
-              <div class="thinking-body">{{ message.thinking }}</div>
-            </details>
-          </template>
+          <ThinkCard
+            v-if="message.thinking"
+            :content="message.thinking"
+            :thinking="!message.text"
+          />
           <div class="msg-bubble assistant">
             <template v-for="(seg, si) in messageSegments" :key="si">
               <template v-if="seg.type === 'text' && seg.content.trim()">
                 <div class="md-body" v-html="renderSegMd(seg.content)" />
+              </template>
+              <template v-else-if="seg.type === 'files'">
+                <FileCard :files="seg.data" />
               </template>
               <template v-else-if="seg.type === 'mindmap'">
                 <MindMapCard :markdown="seg.content" />
@@ -101,12 +102,9 @@
                   :to="seg.data.to"
                 />
               </template>
-              <template v-else-if="seg.type === 'chart'">
-                <ChartCard :option="seg.data.option" :height="seg.data.height" />
-              </template>
             </template>
           </div>
-          <MsgReferenceCard :references="message.references" />
+          <MsgReferenceCard :references="message.references" @selectRefs="(refs) => $emit('selectRefs', refs)" />
           <div class="msg-actions">
             <span class="msg-copy" title="复制" @click="$emit('copy', message.text || '')"><CopyOutlined /></span>
             <span class="msg-quote-btn" title="引用" style="transform: scaleX(-1)" @click="$emit('quote', { text: message.text || '', msgId: message.id, role: 'agent' })">
@@ -167,8 +165,8 @@
         <template v-if="toolCanvasData">
           <CanvasPreview :nodes="toolCanvasData.nodes" :edges="toolCanvasData.edges" />
         </template>
-        <template v-if="toolChartData">
-          <ChartCard :option="toolChartData.option" :height="toolChartData.height" />
+        <template v-if="toolFileData">
+          <FileCard :files="toolFileData" />
         </template>
       </div>
     </div>
@@ -187,6 +185,16 @@
       </div>
     </div>
   </template>
+
+  <!-- Image preview lightbox -->
+  <Teleport to="body">
+    <transition name="lightbox-fade">
+      <div v-if="previewSrc" class="lightbox-overlay" @click="previewSrc = ''">
+        <img :src="previewSrc" class="lightbox-img" @click.stop />
+        <span class="lightbox-close" @click="previewSrc = ''">✕</span>
+      </div>
+    </transition>
+  </Teleport>
 
   <!-- Text selection floating toolbar -->
   <Teleport to="body">
@@ -229,11 +237,12 @@ import {
 } from "@ant-design/icons-vue";
 import type { ChatMessage } from "@/composables/useAgentChat";
 import { useSpeech } from "@/composables/useSpeech";
+import FileCard from "./FileCard.vue";
 import MindMapCard from "./MindMapCard.vue";
 import MapCard from "./MapCard.vue";
 import RouteCard from "./RouteCard.vue";
 import CanvasPreview from "./CanvasPreview.vue";
-import ChartCard from "./ChartCard.vue";
+import ThinkCard from "./ThinkCard.vue";
 import MsgContextMenu from "./MsgContextMenu.vue";
 import MsgReferenceCard from "./MsgReferenceCard.vue";
 
@@ -253,6 +262,7 @@ const emit = defineEmits<{
   quoteMsg: [msgId: string];
   retry: [];
   delete: [msgId: string];
+  selectRefs: [refs: Array<{ title?: string; url: string; snippet?: string; domain?: string }>];
 }>();
 
 const toolExpanded = ref(false);
@@ -299,47 +309,26 @@ const toolCanvasData = computed(() => {
   return null;
 });
 
-const toolChartData = computed(() => {
-  const result = props.message.tool?.result;
+// Detect file_search results in tool output → auto-render as FileCard
+const toolFileData = computed(() => {
+  const tool = props.message.tool;
+  if (!tool || tool.name !== "file_search") return null;
+  const result = tool.result;
   if (!result || typeof result !== "object") return null;
   const r = result as Record<string, unknown>;
-  const t = (r.data || r) as Record<string, unknown>;
-  const rows = t?.rows as unknown[] | undefined;
-  if (!rows || !Array.isArray(rows) || rows.length < 2) return null;
-  try {
-    const headers = (rows[0] as unknown[]).map(String);
-    const dataRows = rows.slice(1, Math.min(rows.length, 51)) as unknown[][];
-    const numericCols: number[] = [];
-    for (let ci = 0; ci < headers.length; ci++) {
-      if (dataRows.some(r => typeof r[ci] === "number" || (!isNaN(Number(r[ci])) && r[ci] !== "" && r[ci] !== null))) {
-        numericCols.push(ci);
-      }
-    }
-    if (!numericCols.length) return null;
-    const labelCol = numericCols[0] === 0 ? (headers.length > 1 ? 1 : 0) : 0;
-    const labels = dataRows.map(r => String(r[labelCol] ?? ""));
-    const series = numericCols.slice(0, 3).map((ci, i) => ({
-      type: (["bar", "line", "line"][i] || "bar") as string,
-      data: dataRows.map(r => Number(r[ci]) || 0),
-      name: headers[ci],
-      itemStyle: i === 0 ? { color: "#4f46e5" } : undefined,
-    }));
-    return {
-      option: {
-        title: { text: (t.sheet_name as string) || "数据预览", left: "center", textStyle: { fontSize: 14 } },
-        tooltip: {},
-        legend: series.length > 1 ? { data: series.map(s => s.name), bottom: 0 } : undefined,
-        grid: series.length > 1 ? { bottom: 35 } : undefined,
-        xAxis: { type: "category", data: labels, axisLabel: { rotate: labels.length > 6 ? 30 : 0 } },
-        yAxis: { type: "value" },
-        series,
-      },
-      height: "320px",
-    };
-  } catch {
-    return null;
-  }
+  const data = (r.data || r) as Record<string, unknown>;
+  const items = data?.items as any[] | undefined;
+  if (!items || !Array.isArray(items) || items.length === 0) return null;
+  return items;
 });
+
+// ── Image preview lightbox ────────────────────────────────
+
+const previewSrc = ref("");
+
+function previewImage(src: string) {
+  previewSrc.value = src;
+}
 
 function onFeedBack(type: string) {
   fbState.value = fbState.value === type ? "" : type;
@@ -348,9 +337,9 @@ function onFeedBack(type: string) {
 
 // ── Message segments (mindmap / map / route detection) ──
 
-const BLOCK_RE = /```(mindmap|map|route|chart)\s*\n([\s\S]*?)```/g;
+const BLOCK_RE = /```(mindmap|map|route|files)\s*\n([\s\S]*?)```/g;
 
-type BlockType = "mindmap" | "map" | "route" | "chart";
+type BlockType = "mindmap" | "map" | "route" | "files";
 
 interface MsgSegment {
   type: "text" | BlockType;
@@ -561,8 +550,11 @@ onBeforeUnmount(() => {
 .msg-images-row {
   display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; margin-bottom: 8px;
   .msg-image-thumb {
+    width: 96px; height: 96px; flex-shrink: 0;
     border-radius: 12px; overflow: hidden;
     border: 2px solid rgba($primary, 0.1); cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    img { width: 100%; height: 100%; object-fit: cover; display: block; }
     &:hover { transform: scale(1.06); border-color: $primary; }
   }
 }
@@ -575,23 +567,6 @@ onBeforeUnmount(() => {
     background: rgba(79, 70, 229, 0.06); border: 1px solid rgba(79, 70, 229, 0.15);
     .file-icon { font-size: 14px; color: $primary; flex-shrink: 0; }
     .file-name { font-size: 12px; color: $text; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  }
-}
-
-.thinking-details {
-  margin-bottom: 8px; border: 1px solid #e2e8f0; border-radius: 10px;
-  background: #fafafa; overflow: hidden;
-  &[open] { border-color: #d4d4d8; }
-  .thinking-summary {
-    display: flex; align-items: center; gap: 6px; padding: 6px 12px;
-    cursor: pointer; user-select: none; font-size: 12px; color: #71717a; list-style: none;
-    &:hover { background: #f4f4f5; }
-    .thinking-chevron { margin-left: auto; font-size: 10px; }
-  }
-  .thinking-body {
-    padding: 8px 12px 10px; font-size: 12px; line-height: 1.6;
-    color: #71717a; white-space: pre-wrap; word-break: break-word;
-    border-top: 1px solid #e4e4e7; max-height: 200px; overflow-y: auto;
   }
 }
 
@@ -665,6 +640,38 @@ onBeforeUnmount(() => {
 }
 .quote-fade-enter-from,
 .quote-fade-leave-to {
+  opacity: 0;
+}
+
+// ── Image preview lightbox ──
+
+.lightbox-overlay {
+  position: fixed; inset: 0; z-index: 2000;
+  background: rgba(0, 0, 0, 0.72);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  .lightbox-img {
+    max-width: 90vw; max-height: 90vh;
+    border-radius: 8px; box-shadow: 0 8px 40px rgba(0,0,0,0.3);
+    cursor: default;
+  }
+  .lightbox-close {
+    position: absolute; top: 16px; right: 20px;
+    width: 36px; height: 36px; border-radius: 50%;
+    background: rgba(255,255,255,0.15); color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px; cursor: pointer;
+    transition: background 0.15s;
+    &:hover { background: rgba(255,255,255,0.25); }
+  }
+}
+
+.lightbox-fade-enter-active,
+.lightbox-fade-leave-active {
+  transition: opacity 0.2s ease;
+}
+.lightbox-fade-enter-from,
+.lightbox-fade-leave-to {
   opacity: 0;
 }
 </style>

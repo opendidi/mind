@@ -52,10 +52,12 @@ fallback2_config = {
 }
 
 # Vision API（图片分析，可选）
+# DeepSeek 已原生支持视觉识别（vision/multimodal），不单独配置时自动复用 DEEPSEEK_API_KEY
+# 如需使用其他视觉模型（如 gpt-4o），设置 VISION_API_KEY / VISION_BASE_URL / VISION_MODEL 即可
 vision_config = {
     "key": os.environ.get("VISION_API_KEY", ""),
     "base_url": os.environ.get("VISION_BASE_URL", ""),
-    "model": os.environ.get("VISION_MODEL", "gpt-4o"),
+    "model": os.environ.get("VISION_MODEL", "deepseek-chat"),
 }
 
 # LLM 统一超时（秒）
@@ -69,3 +71,11 @@ app_url = os.environ.get("APP_URL", "http://localhost:3100")
 
 # 高德地图 Web API Key
 AMAP_KEY = os.environ.get("AMAP_KEY", "")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# TTS (Text-to-Speech) — ChatTTS 配置
+# ══════════════════════════════════════════════════════════════════════════════
+TTS_ENABLED = os.environ.get("TTS_ENABLED", "true").lower() == "true"
+TTS_CACHE_DIR = os.environ.get("TTS_CACHE_DIR", os.path.join(os.path.dirname(__file__), "../../data/tts_cache"))
+TTS_VOICE_SEED = int(os.environ.get("TTS_VOICE_SEED", 42))
+TTS_MAX_TEXT_LENGTH = int(os.environ.get("TTS_MAX_TEXT_LENGTH", 5000))
