@@ -5,8 +5,9 @@
 import 'virtual:windi-base.css';
 import 'virtual:windi-components.css';
 import 'virtual:windi-utilities.css';
-// ant-design-vue CSS 由 unplugin-vue-components 按需注入，移除全量引入
-// import 'ant-design-vue/dist/antd.css';  (tree-shaken)
+// ant-design-vue CSS: 全局样式（保留以覆盖动态创建的组件） + unplugin-vue-components 按需注入
+// 纯 tree-shaking 会导致编辑器等程序化创建的组件丢失样式，保留全局 CSS 作为安全兜底
+import 'ant-design-vue/dist/antd.css';
 import '@/assets/icon/iconfont.css';
 
 import { createApp } from 'vue';
