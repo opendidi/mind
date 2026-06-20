@@ -584,6 +584,51 @@ gunicorn -w 4 -b 0.0.0.0:5001 'app:create_app()'
 
 ---
 
+## 开发指南
+
+### 代码规范
+
+项目已配置 pre-commit hooks，首次使用请安装：
+
+```bash
+pip install pre-commit && pre-commit install
+```
+
+| 工具 | 用途 | 命令 |
+|------|------|------|
+| Ruff | Python Lint & Format | `python -m ruff check app/ && python -m ruff format app/` |
+| Prettier | 前端格式化 | `cd web && pnpm format` |
+| Vue TSC | TypeScript 类型检查 | `cd web && npx vue-tsc --noEmit` |
+
+### 测试
+
+```bash
+# 后端 pytest
+pytest tests/ -v --tb=short
+
+# 前端 vitest
+cd web && npx vitest run
+
+# 全量质量门禁
+bash scripts/run_checks.sh
+```
+
+### 项目架构
+
+```
+app/util/agent/     # Agent 系统核心包 (27 子模块，六层架构)
+app/util/search/    # 搜索引擎 (Bing + fallback)
+web/src/components/shared/  # 共享组件 (MapCard, RouteCard)
+```
+
+详见 [`CLAUDE.md`](CLAUDE.md)。
+
+### Commit 规范
+
+遵循 Conventional Commits：`feat:` / `fix:` / `refactor:` / `perf:` / `docs:` / `chore:`
+
+---
+
 ## 相关资源
 
 - [meta2d.js 开源仓库](https://github.com/le5le-com/meta2d.js)
