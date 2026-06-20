@@ -4,13 +4,13 @@
 from typing import Generator
 
 from app.config import AGENT_DEFAULT_MODEL
-from app.util.agent_executor import AgentExecutor
-from app.util.agent_dag import DAGPlan, DAGNode
-from app.util.agent_dispatcher import AgentDispatcher
-from app.util.agent_guard import InputGuard, OutputGuard
+from app.util.agent.executor import AgentExecutor
+from app.util.agent.dag import DAGPlan, DAGNode
+from app.util.agent.dispatcher import AgentDispatcher
+from app.util.agent.guard import InputGuard, OutputGuard
 import app.util.search  # noqa: F401 — registers web_search tool via ToolRegistry
-from app.util.agent_tools import TOOL_SCHEMAS, _rebuild_schemas
-from app.util.agent_tracer import AgentTracer
+from app.util.agent.tools import TOOL_SCHEMAS, _rebuild_schemas
+from app.util.agent.tracer import AgentTracer
 
 # Rebuild after search module registers additional tools
 _rebuild_schemas()

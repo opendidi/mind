@@ -98,7 +98,7 @@ ROUTER_PROMPT = """你是意图路由专家。分析用户输入，输出路由�
 
 def _llm_route(llm_client, user_message: str, model: str = AGENT_DEFAULT_MODEL) -> dict:
     """LLM-based routing fallback."""
-    from app.util.agent_helpers import extract_json
+    from app.util.agent.helpers import extract_json
 
     try:
         resp = llm_client.chat.completions.create(

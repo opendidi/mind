@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass, field
 
 from app.config import AGENT_DEFAULT_MODEL
-from app.util.agent_helpers import extract_json
+from app.util.agent.helpers import extract_json
 
 MAX_REFLECT_RETRIES = 3
 MAX_LOOP_REPEAT = 3
@@ -102,7 +102,7 @@ class AgentReflexion:
         return any(p in lower for p in self.INFRA_ERROR_PATTERNS)
 
     def _call_reflect_llm(self, prompt: str, timeout: int = 20) -> str | None:
-        from app.util.agent_circuit import circuit_allow
+        from app.util.agent.circuit import circuit_allow
 
         if self._consecutive_llm_failures >= 3:
             logging.warning("Reflexion: %d consecutive LLM failures, skipping", self._consecutive_llm_failures)

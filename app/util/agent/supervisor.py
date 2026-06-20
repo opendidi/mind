@@ -127,7 +127,7 @@ class Supervisor:
         Returns:
             SupervisorPlan or None if decomposition fails.
         """
-        from app.util.agent_helpers import extract_json, repair_json
+        from app.util.agent.helpers import extract_json, repair_json
 
         system = SUPERVISOR_PROMPT.format(agent_list=agent_list)
 

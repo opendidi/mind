@@ -20,7 +20,7 @@ def _safe_json_dumps(obj, **kwargs):
 @agent_api.route("/health", methods=["GET"])
 def agent_health():
     """Agent 健康检查端点 — 各层状态汇总."""
-    from app.util.agent_observability import HealthChecker, MetricsCollector
+    from app.util.agent.observability import HealthChecker, MetricsCollector
     return {
         "code": 200,
         "data": {
@@ -58,7 +58,7 @@ def agent_chat():
     canvas_context = data.get("canvas_context")
     images = data.get("images")  # list of base64 data URL strings for multimodal vision
 
-    from app.util.agent_observability import AgentObservability
+    from app.util.agent.observability import AgentObservability
     obs = AgentObservability(user_id=user_id)
 
     def generate():
@@ -67,7 +67,7 @@ def agent_chat():
 
         def run_agent():
             try:
-                from app.util.agent_core import AgentSession
+                from app.util.agent.core import AgentSession
 
                 session = AgentSession(user_id)
 
@@ -125,7 +125,7 @@ def agent_mcp():
     """
     data = request.get_json(silent=True) or {}
     try:
-        from app.util.agent_mcp import get_mcp_server
+        from app.util.agent.mcp import get_mcp_server
         server = get_mcp_server()
         result = server.handle_request(data)
         return result
@@ -157,7 +157,7 @@ def agent_tts():
         return {"error": f"text too long ({len(text)} > 8000)"}, 400
 
     try:
-        from app.util.agent_tts import AgentTTS
+        from app.util.agent.tts import AgentTTS
 
         tts = AgentTTS.instance()
         audio_path = tts.generate(text)

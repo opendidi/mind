@@ -20,7 +20,7 @@ import time
 from concurrent.futures import FIRST_COMPLETED, TimeoutError as FutureTimeoutError
 from concurrent.futures import wait as cf_wait
 
-from app.util.agent_tools import ToolRegistry, _require
+from app.util.agent.tools import ToolRegistry, _require
 from app.util.executor import get_pool, is_pool_shutdown
 from app.util.search.cache import cache_get, cache_get_stale, cache_set, check_search_rate
 from app.util.search.engines import (
@@ -208,7 +208,7 @@ def _deep_fetch_results(results: list, keyword: str) -> list:
     if not results:
         return results
 
-    from app.util.agent_tools import run_tool_call
+    from app.util.agent.tools import run_tool_call
 
     enriched = []
     for i, r in enumerate(results[: _DEEP_FETCH_LIMIT]):
@@ -347,7 +347,7 @@ def _try_engine(src, keyword, max_results, region, safe, timelimit, search_type)
     All engine calls are wrapped here for unified race-mode dispatch.
     Checks circuit breaker before making external API calls.
     """
-    from app.util.agent_circuit import circuit_allow
+    from app.util.agent.circuit import circuit_allow
 
     if not circuit_allow(service=f"search:{src}"):
         return None, 0, f"搜索引擎 {src} 暂不可用（熔断）"

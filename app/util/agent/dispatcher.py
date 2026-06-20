@@ -9,7 +9,7 @@ from concurrent.futures import TimeoutError as FutureTimeoutError
 
 from app.config import LLM_TIMEOUT, AGENT_DEFAULT_MODEL
 from app.util.agents import get_all_agents
-from app.util.agents.base import AgentBase
+from app.util.agent.agents.base import AgentBase
 from app.util.executor import ManagedPool
 
 _SUB_AGENT_TIMEOUT = 120
@@ -51,7 +51,7 @@ class AgentDispatcher:
 
     def get_supervisor(self, model: str = AGENT_DEFAULT_MODEL) -> "Supervisor":
         """Create a Supervisor pre-configured with this dispatcher's agent list."""
-        from app.util.agent_supervisor import Supervisor
+        from app.util.agent.supervisor import Supervisor
         return Supervisor(model=model)
 
     def get_dispatch_tool_schema(self) -> dict:

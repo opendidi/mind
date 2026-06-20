@@ -50,7 +50,7 @@ def _build_llm_client():
         )
     if len(tiers) == 1:
         return tiers[0]["client"]
-    from app.util.agent_fallback import FallbackLLM
+    from app.util.agent.fallback import FallbackLLM
     return FallbackLLM(tiers)
 
 

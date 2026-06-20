@@ -12,9 +12,9 @@ from types import SimpleNamespace
 from typing import Generator
 
 from app.config import AGENT_DEFAULT_MODEL
-from app.util.agent_executor import BaseExecutor
-from app.util.agent_helpers import loop_key as _loop_key
-from app.util.agent_pheromone import SharedContext
+from app.util.agent.executor import BaseExecutor
+from app.util.agent.helpers import loop_key as _loop_key
+from app.util.agent.pheromone import SharedContext
 from app.util.executor import ExecutorTimeout, ManagedPool
 import atexit as _atexit
 
@@ -128,7 +128,7 @@ class DAGExecutor(BaseExecutor):
         self._replan_used = False
         self._reflection_count = 0
         self._dag_start_ts = 0.0
-        from app.util.agent_reflexion import AgentReflexion
+        from app.util.agent.reflexion import AgentReflexion
         self.reflexion = AgentReflexion(llm_client, model)
 
     @property
@@ -558,7 +558,7 @@ class DAGExecutor(BaseExecutor):
 
     def _execute_replan(self, state: ExecutionState) -> Generator:
         self._replan_used = True
-        from app.util.agent_adaptive import replan_node
+        from app.util.agent.adaptive import replan_node
 
         failed_ids = list(state.failed)
         failed_nid = failed_ids[0]
@@ -641,13 +641,13 @@ class DAGExecutor(BaseExecutor):
 
     def _record_plan_feedback(self, state: ExecutionState, all_done: bool):
         try:
-            from app.util.agent_plan_eval import PlanMemory, evaluate_plan
+            from app.util.agent.plan_eval import PlanMemory, evaluate_plan
             completed_desc = [state.node_map[nid].desc for nid in state.completed]
             failed_desc = [state.node_map[nid].desc for nid in state.failed]
             duration_ms = (time.time() - self._dag_start_ts) * 1000 if self._dag_start_ts else 0
             domains = []
             try:
-                from app.util.agent_intent import classify_domain
+                from app.util.agent.intent import classify_domain
                 domains = classify_domain(state.plan.goal)
                 if domains == ["general"]:
                     domains = []

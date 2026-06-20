@@ -5,7 +5,7 @@ import json
 import pytest
 from unittest.mock import patch, MagicMock
 
-from app.util.agent_tools import (
+from app.util.agent.tools import (
     run_tool_call,
     _require,
     _next_pen_id,
@@ -44,7 +44,7 @@ class TestCanvasTools:
     """Canvas drawing tool functions."""
 
     def test_canvas_draw_valid(self):
-        with patch('app.util.agent_tools._rebuild_schemas') as mock_schema:
+        with patch('app.util.agent.tools._rebuild_schemas') as mock_schema:
             mock_schema.return_value = None
             result = run_tool_call(
                 'canvas_draw_pen',
@@ -57,7 +57,7 @@ class TestCanvasTools:
             assert data is not None
 
     def test_canvas_clear(self):
-        with patch('app.util.agent_tools._rebuild_schemas'):
+        with patch('app.util.agent.tools._rebuild_schemas'):
             result = run_tool_call(
                 'canvas_clear',
                 {},

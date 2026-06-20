@@ -1,8 +1,8 @@
 # -*- coding: UTF-8 -*-
 """BlueprintAgent — 蓝图管理子 Agent。"""
 
-from app.util.agents.base import AgentBase
-from app.util.agent_tools import TOOL_SCHEMAS
+from app.util.agent.agents.base import AgentBase
+from app.util.agent.tools import TOOL_SCHEMAS
 
 BLUEPRINT_TOOLS = [
     "blueprint_list", "blueprint_load", "blueprint_save",

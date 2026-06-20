@@ -4,7 +4,7 @@
 import pytest
 from unittest.mock import patch
 
-from app.util.agent_guard import (
+from app.util.agent.guard import (
     InputGuard,
     ToolGuard,
     OutputGuard,

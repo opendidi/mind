@@ -9,7 +9,7 @@ import time
 from collections import defaultdict
 
 from app.config import LLM_TIMEOUT, AGENT_DEFAULT_MODEL
-from app.util.agent_helpers import (
+from app.util.agent.helpers import (
     estimate_tokens_from_messages as _estimate_tokens,
     truncate_tool_result as _truncate_result,
     loop_key as _loop_key,
@@ -212,7 +212,7 @@ class AgentBase:
                         })
                     messages.append({"role": "assistant", "content": "", "tool_calls": tool_msgs})
 
-                    from app.util.agent_tools import run_tool_call
+                    from app.util.agent.tools import run_tool_call
 
                     for idx, acc in sorted_calls:
                         tool_name = acc["name"]
@@ -323,7 +323,7 @@ class AgentBase:
                     }
                 )
 
-                from app.util.agent_tools import run_tool_call
+                from app.util.agent.tools import run_tool_call
 
                 for tc in msg.tool_calls:
                     tool_name = tc.function.name

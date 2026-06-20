@@ -5,11 +5,11 @@ Each skill is a standalone string that gets injected into the system prompt
 only when the user's intent matches that domain.
 """
 
-from app.util.agent_skills.canvas_skill import CANVAS_SKILL
-from app.util.agent_skills.blueprint_skill import BLUEPRINT_SKILL
-from app.util.agent_skills.file_skill import FILE_SKILL
-from app.util.agent_skills.mindmap_skill import MINDMAP_SKILL
-from app.util.agent_skills.code_skill import CODE_SKILL
+from app.util.agent.skills.canvas_skill import CANVAS_SKILL
+from app.util.agent.skills.blueprint_skill import BLUEPRINT_SKILL
+from app.util.agent.skills.file_skill import FILE_SKILL
+from app.util.agent.skills.mindmap_skill import MINDMAP_SKILL
+from app.util.agent.skills.code_skill import CODE_SKILL
 
 __all__ = [
     "CANVAS_SKILL", "BLUEPRINT_SKILL", "FILE_SKILL",

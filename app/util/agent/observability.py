@@ -167,7 +167,7 @@ class HealthChecker:
     def _check_executor() -> dict:
         status = "ok"
         try:
-            from app.util.agent_tools import ToolRegistry
+            from app.util.agent.tools import ToolRegistry
             tools = ToolRegistry.list_tools()
             enabled = sum(1 for _, e in tools if e)
             if enabled == 0:
@@ -179,7 +179,7 @@ class HealthChecker:
     @staticmethod
     def _check_tools() -> dict:
         try:
-            from app.util.agent_tools import ToolRegistry
+            from app.util.agent.tools import ToolRegistry
             tools = ToolRegistry.list_tools()
             enabled = [n for n, e in tools if e]
             disabled = [n for n, e in tools if not e]

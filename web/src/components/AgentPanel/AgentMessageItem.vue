@@ -80,8 +80,8 @@ import { useSpeech } from '@/composables/useSpeech';
 import ThinkCard from '@/components/chat/ThinkCard.vue';
 import AgentToolCard from './AgentToolCard.vue';
 import AgentToolGroupCard from './AgentToolGroupCard.vue';
-import MapCard from './MapCard.vue';
-import RouteCard from './RouteCard.vue';
+import MapCard from '@/components/shared/MapCard.vue';
+import RouteCard from '@/components/shared/RouteCard.vue';
 
 const props = defineProps<{
   message: ChatMessage;

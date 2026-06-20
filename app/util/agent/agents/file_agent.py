@@ -1,8 +1,8 @@
 # -*- coding: UTF-8 -*-
 """FileAgent — 文件/素材检索子 Agent。"""
 
-from app.util.agents.base import AgentBase
-from app.util.agent_tools import TOOL_SCHEMAS
+from app.util.agent.agents.base import AgentBase
+from app.util.agent.tools import TOOL_SCHEMAS
 
 FILE_TOOLS = ["file_search", "extract_excel"]
 

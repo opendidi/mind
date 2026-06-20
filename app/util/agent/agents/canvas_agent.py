@@ -1,8 +1,8 @@
 # -*- coding: UTF-8 -*-
 """CanvasAgent — 画布图形编辑子 Agent。"""
 
-from app.util.agents.base import AgentBase
-from app.util.agent_tools import TOOL_SCHEMAS
+from app.util.agent.agents.base import AgentBase
+from app.util.agent.tools import TOOL_SCHEMAS
 
 CANVAS_TOOLS = [
     "canvas",

@@ -179,7 +179,7 @@ def unified_intent_and_plan(
     """
     import json as _json
 
-    from app.util.agent_helpers import extract_json as _extract_json, repair_json as _repair_json
+    from app.util.agent.helpers import extract_json as _extract_json, repair_json as _repair_json
 
     # Build messages for single LLM call with optional feedback injection
     system_prompt = _build_planner_prompt(plan_feedback_hints)
@@ -275,7 +275,7 @@ def unified_intent_and_plan(
                 n["depends_on"] = [d for d in deps if d in node_ids]
 
             # Cycle check
-            from app.util.agent_dag import _has_cycle
+            from app.util.agent.dag import _has_cycle
             temp_nodes = [
                 type("TmpNode", (), {
                     "id": n["id"],

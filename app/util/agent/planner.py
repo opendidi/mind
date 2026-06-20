@@ -66,7 +66,7 @@ def generate_plan(llm_client, user_message: str, route_result: dict,
     Returns:
         {"mode": "simple"|"dag", "goal"?: str, "nodes"?: list, "risk"?: str}
     """
-    from app.util.agent_helpers import extract_json, repair_json
+    from app.util.agent.helpers import extract_json, repair_json
 
     # Simple routes don't need planning
     if route_result.get("route") in ("chat", "search"):
@@ -141,7 +141,7 @@ def generate_plan(llm_client, user_message: str, route_result: dict,
             n["depends_on"] = [d for d in n.get("depends_on", []) if d in node_ids]
 
         # Cycle check
-        from app.util.agent_dag import _has_cycle
+        from app.util.agent.dag import _has_cycle
         temp_nodes = [
             type("TmpNode", (), {"id": n["id"], "depends_on": set(n["depends_on"])})()
             for n in nodes

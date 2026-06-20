@@ -19,11 +19,11 @@ import time
 from datetime import datetime
 
 from app.config import AGENT_DEFAULT_MODEL
-from app.util.agent_engine import AgentEngine
-from app.util.agent_intent import classify_domain, unified_intent_and_plan
-from app.util.agent_skills import get_skills_for_intent
+from app.util.agent.engine import AgentEngine
+from app.util.agent.intent import classify_domain, unified_intent_and_plan
+from app.util.agent.skills import get_skills_for_intent
 from app.util.llm_client import get_llm_client
-from app.util.agent_helpers import estimate_tokens_from_str as _estimate_tokens
+from app.util.agent.helpers import estimate_tokens_from_str as _estimate_tokens
 
 MAX_HISTORY_TOKENS = 8000
 MAX_HISTORY_COMPACT = 4000
@@ -365,7 +365,7 @@ class AgentSession:
         """
 
         # ── Input Guard (boundary defense) ──
-        from app.util.agent_guard import InputGuard
+        from app.util.agent.guard import InputGuard
         guard_result = InputGuard.check(user_message)
         if not guard_result["ok"]:
             yield {"type": "error", "data": {"message": guard_result.get("reason", "输入被安全策略拦截")}}
@@ -375,7 +375,7 @@ class AgentSession:
         # ── Restore cross-session memory (messages + prompt) ──
         session_memory_prompt = ""
         try:
-            from app.util.agent_session_memory import SessionMemory
+            from app.util.agent.session_memory import SessionMemory
             restored = SessionMemory.restore(self.user_id)
             session_memory_prompt = restored.get("prompt", "")
             restored_msgs = restored.get("messages", [])
@@ -389,7 +389,7 @@ class AgentSession:
         # ── Plan-Feedback 闭环 ──
         plan_feedback_hints = ""
         try:
-            from app.util.agent_plan_eval import PlanMemory
+            from app.util.agent.plan_eval import PlanMemory
             tentative_domains = classify_domain(user_message)
             plan_feedback_hints = PlanMemory.get_hints_for_domains(tentative_domains)
             failure_hints = PlanMemory.get_failure_summary(limit=2)
@@ -450,7 +450,7 @@ class AgentSession:
         elif kind == "tool_call":
             return {"type": "tool_call", "data": {"tool": event[1], "args": event[2]}}
         elif kind == "tool_result":
-            from app.util.agent_helpers import sanitize_for_json
+            from app.util.agent.helpers import sanitize_for_json
             try:
                 safe_result = sanitize_for_json(event[3])
             except Exception:
@@ -597,7 +597,7 @@ class AgentSession:
     def _persist_session(self):
         """Persist session memory for cross-session continuity."""
         try:
-            from app.util.agent_session_memory import SessionMemory
+            from app.util.agent.session_memory import SessionMemory
             import uuid
             session_id = str(uuid.uuid4())[:8]
             summary = self._compact_summary if self._compact_summary else ""

@@ -43,7 +43,7 @@ class SessionMemory:
 
         # 2. Recall semantic memory from MemoryManager (new)
         try:
-            from app.util.agent_memory import MemoryManager
+            from app.util.agent.memory import MemoryManager
             mgr = MemoryManager()
             ctx = mgr.recall(user_id)
             if ctx and ctx.prompt:
@@ -127,7 +127,7 @@ class SessionMemory:
 
         # 2. Store semantic memory via MemoryManager (new)
         try:
-            from app.util.agent_memory import MemoryManager
+            from app.util.agent.memory import MemoryManager
             mgr = MemoryManager()
             mgr.remember(user_id, session_id, messages, summary)
         except Exception:

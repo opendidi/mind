@@ -10,9 +10,9 @@ from types import SimpleNamespace
 from typing import Generator
 
 from app.config import LLM_TIMEOUT, AGENT_DEFAULT_MODEL
-from app.util.agent_guard import InputGuard, ToolGuard, OutputGuard
-from app.util.agent_helpers import truncate_tool_result as _truncate_tool_result, loop_key as _loop_key
-from app.util.agent_pheromone import extract_discoveries
+from app.util.agent.guard import InputGuard, ToolGuard, OutputGuard
+from app.util.agent.helpers import truncate_tool_result as _truncate_tool_result, loop_key as _loop_key
+from app.util.agent.pheromone import extract_discoveries
 
 MAX_LOOP_REPEAT = 3
 MAX_REFLECT_RETRIES = 3
@@ -82,7 +82,7 @@ class BaseExecutor:
 
     def _call_llm(self, messages=None):
         from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
-        from app.util.agent_circuit import circuit_allow, circuit_record
+        from app.util.agent.circuit import circuit_allow, circuit_record
 
         msgs = messages if messages is not None else self.messages
         if not circuit_allow(service=self.model):
@@ -125,7 +125,7 @@ class BaseExecutor:
 
     def _call_llm_stream(self) -> Generator:
         from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
-        from app.util.agent_circuit import circuit_allow, circuit_record
+        from app.util.agent.circuit import circuit_allow, circuit_record
 
         if not circuit_allow(service=self.model):
             yield ("error", "AI 服务不可用（熔断）")
@@ -195,7 +195,7 @@ class BaseExecutor:
 
     def _call_llm_stream_with_msgs(self, messages: list) -> Generator:
         from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
-        from app.util.agent_circuit import circuit_allow, circuit_record
+        from app.util.agent.circuit import circuit_allow, circuit_record
 
         if not circuit_allow(service=self.model):
             yield ("error", "AI 服务不可用（熔断）")
@@ -276,7 +276,7 @@ class BaseExecutor:
             if not gr.get("ok", True):
                 return {"success": False, "error": gr.get("reason", "工具调用被安全策略拦截")}
 
-        from app.util.agent_tools import run_tool_call
+        from app.util.agent.tools import run_tool_call
 
         result, _ = run_tool_call(tc_name, tool_args, self.tool_context,
                                   self.dispatcher, self.llm, self.model, self.tracer,
@@ -313,7 +313,7 @@ class BaseExecutor:
         if event_queue is not None:
             event_queue.put(("tool_call", tc_name, tool_args, node_id))
 
-        from app.util.agent_tools import run_tool_call
+        from app.util.agent.tools import run_tool_call
 
         pheromone = ""
         if self.shared_context is not None:
@@ -417,7 +417,7 @@ class AgentExecutor:
         ctx["_session_id"] = self._session_id
 
         # Lazy import to avoid circular dependency (agent_dag imports BaseExecutor from here)
-        from app.util.agent_dag import DAGExecutor
+        from app.util.agent.dag import DAGExecutor
         self._dag = DAGExecutor(
             llm_client, tools_schemas, messages,
             tool_context=ctx, user_id=user_id, model=model,

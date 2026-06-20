@@ -6,7 +6,7 @@ import logging
 import random
 import time
 
-from app.util.agent_helpers import extract_json, repair_json
+from app.util.agent.helpers import extract_json, repair_json
 from app.config import AGENT_DEFAULT_MODEL
 
 ADAPTIVE_PROMPT = """你是任务重规划专家。一个 DAG 执行节点失败了，请分析原因并生成替代步骤。
