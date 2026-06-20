@@ -51,7 +51,7 @@ class MinioUtil:
       # 返回对象的大小
       return stat.size
     except S3Error as e:
-      print(f"Error occurred: {e}")
+      logging.error(f"MinIO stat_object error: {e}")
       return None
 
   def download_minio_folder(minio_paths, root):

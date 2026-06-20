@@ -67,7 +67,7 @@ class BlueprintMysqlHandler:
           'page_size': int(page_size),
         }
     except Exception as e:
-      print(f"发生错误：{e}")
+      logging.error(f"Blueprint MySQL query_list 错误：{e}")
     finally:
       if connect:
           connect.close()
@@ -93,7 +93,7 @@ class BlueprintMysqlHandler:
           result['pens'] = json.loads(result['pens'])
         return result
     except Exception as e:
-      print(f"发生错误：{e}")
+      logging.error(f"Blueprint MySQL find 错误：{e}")
     finally:
       if connect:
           connect.close()
@@ -126,7 +126,7 @@ class BlueprintMysqlHandler:
           return False, "数据增加失败"
         return True, id
     except Exception as e:
-      print(f"发生错误：{e}")
+      logging.error(f"Blueprint MySQL add 错误：{e}")
       return False, str(e)
     finally:
       if connect:

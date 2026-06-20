@@ -8,6 +8,7 @@ LastEditTime: 2024-10-08 21:12:59
 '''
 # -*- coding: UTF-8 -*-
 
+import logging
 from .connect import ConnectMysqlHandler
 
 class CategoriesMysqlHandler:
@@ -33,7 +34,7 @@ class CategoriesMysqlHandler:
         result = cursor.fetchall()
         return result
     except Exception as e:
-      print("发生错误：", e)
+      logging.error(f"Categories MySQL query_list 错误：{e}")
     finally:
       if connect:
           connect.close()

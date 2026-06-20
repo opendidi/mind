@@ -154,22 +154,22 @@ class EvalRunner:
         }
 
     def print_report(self):
-        """Print a human-readable evaluation report to stdout."""
+        """Log a human-readable evaluation report."""
         r = self.report()
-        print(f"\n{'='*50}")
-        print(f"  Agent Eval Report")
-        print(f"{'='*50}")
-        print(f"  Total:  {r['total']}")
-        print(f"  Passed: {r['passed']}")
-        print(f"  Failed: {r['failed']}")
-        print(f"  Rate:   {r['pass_rate']:.1%}")
-        print(f"  Avg:    {r['avg_score']:.2f}")
-        print(f"{'─'*50}")
+        logging.info(f"\n{'='*50}")
+        logging.info(f"  Agent Eval Report")
+        logging.info(f"{'='*50}")
+        logging.info(f"  Total:  {r['total']}")
+        logging.info(f"  Passed: {r['passed']}")
+        logging.info(f"  Failed: {r['failed']}")
+        logging.info(f"  Rate:   {r['pass_rate']:.1%}")
+        logging.info(f"  Avg:    {r['avg_score']:.2f}")
+        logging.info(f"{'─'*50}")
         if r["by_category"]:
-            print(f"  By Category:")
+            logging.info(f"  By Category:")
             for cat, stats in sorted(r["by_category"].items()):
-                print(f"    {cat:12s}: {stats['passed']}/{stats['total']} ({stats['rate']:.0%})")
-        print(f"{'='*50}\n")
+                logging.info(f"    {cat:12s}: {stats['passed']}/{stats['total']} ({stats['rate']:.0%})")
+        logging.info(f"{'='*50}\n")
 
     # ── Scoring ────────────────────────────────────────────────────────
 

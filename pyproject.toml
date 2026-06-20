@@ -1,0 +1,46 @@
+[project]
+name = "mind"
+version = "1.0.0"
+description = "Mind - AI Agent System with Canvas"
+requires-python = ">=3.10"
+
+[tool.ruff]
+line-length = 120
+target-version = "py310"
+exclude = ["node_modules", ".git", "__pycache__", "web"]
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "I",      # isort
+    "W",      # pycodestyle warnings
+    "B",      # flake8-bugbear
+    "C4",     # flake8-comprehensions
+    "SIM",    # flake8-simplify
+]
+ignore = [
+    "E501",   # line too long (handled by formatter)
+    "B008",   # do not perform function calls in argument defaults
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["app"]
+
+[tool.ruff.format]
+quote-style = "single"
+indent-style = "space"
+skip-magic-trailing-comma = false
+
+[tool.black]
+line-length = 120
+target-version = ["py310"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+timeout = 30
+markers = [
+    "unit: fast unit tests (no external dependencies)",
+    "slow: integration tests requiring external services",
+]
+addopts = "-v --tb=short --strict-markers"

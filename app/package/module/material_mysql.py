@@ -147,8 +147,7 @@ class MaterialMysqlHandler:
           'page_size': int(page_size),
         }
     except Exception as e:
-      # 发生错误时打印错误信息
-      print(f"发生错误：{e}")
+      logging.error(f"Material MySQL query_list 错误：{e}")
     finally:
       # 关闭数据库连接
       if connect:

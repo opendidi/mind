@@ -5,7 +5,9 @@
   "scripts": {
     "start": "vite --open",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "lint": "vue-tsc --noEmit && prettier --check \"src/**/*.{vue,ts,json,css,scss}\"",
+    "format": "prettier --write \"src/**/*.{vue,ts,json,css,scss}\""
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",
