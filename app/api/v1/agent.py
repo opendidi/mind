@@ -83,7 +83,7 @@ def agent_chat():
             except Exception:
                 logging.exception("Agent chat error: %s", task_id)
                 obs.trace("session_error", status="error")
-                event_queue.put({"type": "error", "data": {"message": "处理请求时发生内部错误"}})
+                event_queue.put({"type": "error", "data": {"message": "处理请求时发生内部错误", "error_code": "INTERNAL_ERROR"}})
                 event_queue.put({"type": "done", "data": {"status": "error"}})
 
         thread = threading.Thread(target=run_agent, daemon=True)
@@ -99,7 +99,7 @@ def agent_chat():
                     break
             except queue.Empty:
                 obs.trace("session_timeout", status="error")
-                yield f"data: {_safe_json_dumps({'type': 'error', 'data': {'message': '请求超时'}})}\n\n"
+                yield f"data: {_safe_json_dumps({'type': 'error', 'data': {'message': '请求超时', 'error_code': 'AGENT_TIMEOUT'}})}\n\n"
                 yield f"data: {_safe_json_dumps({'type': 'done', 'data': {'status': 'timeout'}})}\n\n"
                 break
 

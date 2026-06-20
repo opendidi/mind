@@ -5,7 +5,8 @@
 export interface AgentEvent {
   type: 'token' | 'thinking' | 'tool_call' | 'tool_result' | 'plan'
     | 'step_start' | 'step_end' | 'step_fail' | 'progress'
-    | 'message' | 'trace' | 'error' | 'done' | 'references';
+    | 'message' | 'trace' | 'error' | 'done' | 'references'
+    | 'sub_agent_start' | 'sub_agent_token' | 'sub_agent_end';
   data: any;
 }
 

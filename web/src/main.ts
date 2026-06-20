@@ -9,6 +9,7 @@ import 'virtual:windi-utilities.css';
 // 纯 tree-shaking 会导致编辑器等程序化创建的组件丢失样式，保留全局 CSS 作为安全兜底
 import 'ant-design-vue/dist/antd.css';
 import '@/assets/icon/iconfont.css';
+import '@/assets/styles/theme.css';
 
 import { createApp } from 'vue';
 import App from './App.vue';

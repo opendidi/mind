@@ -2,7 +2,7 @@
 <template>
   <!-- User message -->
   <template v-if="message.role === 'user'">
-    <div class="msg-row user" :class="{ selectable: selectable }">
+    <div  :data-msg-id="message.id" class="msg-row user" :class="{ selectable: selectable }">
       <template v-if="selectable">
         <a-checkbox class="msg-check" :checked="selected" @change="$emit('toggleSelect', message.id)" />
       </template>
@@ -39,8 +39,17 @@
               </div>
             </div>
           </template>
-          <div class="msg-bubble user">{{ message.text }}</div>
-          <div class="msg-actions">
+          <div v-if="isEditing" class="msg-edit-row">
+            <textarea
+              v-model="editText"
+              class="msg-edit-input"
+              @keydown="onEditKeydown"
+              @blur="cancelEdit"
+            />
+            <span class="msg-edit-hint">Enter 保存 · Esc 取消</span>
+          </div>
+          <div v-else class="msg-bubble user" @dblclick="startEdit" :title="selectable ? '' : '双击编辑'">{{ message.text }}</div>
+          <div v-if="!isEditing" class="msg-actions">
             <span class="msg-copy" title="复制" @click="$emit('copy', message.text || '')"><CopyOutlined /></span>
             <span class="msg-quote-btn" title="引用" @click="$emit('quote', { text: message.text || '', msgId: message.id, role: 'user' })">
               <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
@@ -58,7 +67,7 @@
 
   <!-- AI reply -->
   <template v-else-if="message.role === 'agent'">
-    <div class="msg-row assistant" :class="{ selectable: selectable }">
+    <div  :data-msg-id="message.id" class="msg-row assistant" :class="{ selectable: selectable }">
       <template v-if="selectable">
         <a-checkbox class="msg-check" :checked="selected" @change="$emit('toggleSelect', message.id)" />
       </template>
@@ -133,7 +142,7 @@
 
   <!-- Tool call -->
   <template v-else-if="message.role === 'tool' && message.tool">
-    <div class="msg-row tool-row" :class="{ selectable: selectable }">
+    <div  :data-msg-id="message.id" class="msg-row tool-row" :class="{ selectable: selectable }">
       <template v-if="selectable">
         <a-checkbox class="msg-check" :checked="selected" @change="$emit('toggleSelect', message.id)" />
       </template>
@@ -174,7 +183,7 @@
 
   <!-- Error -->
   <template v-else-if="message.role === 'error'">
-    <div class="msg-row assistant" :class="{ selectable: selectable }">
+    <div  :data-msg-id="message.id" class="msg-row assistant" :class="{ selectable: selectable }">
       <template v-if="selectable">
         <a-checkbox class="msg-check" :checked="selected" @change="$emit('toggleSelect', message.id)" />
       </template>
@@ -262,11 +271,50 @@ const emit = defineEmits<{
   quoteMsg: [msgId: string];
   retry: [];
   delete: [msgId: string];
+  edit: [msgId: string, newText: string];
   selectRefs: [refs: Array<{ title?: string; url: string; snippet?: string; domain?: string }>];
 }>();
 
 const toolExpanded = ref(false);
 const fbState = ref(props.message.feedback || "");
+
+// ── Message editing ──────────────────────────────────────────
+const isEditing = ref(false);
+const editText = ref('');
+let editTextareaRef: HTMLTextAreaElement | null = null;
+
+function startEdit() {
+  if (props.message.role !== 'user') return;
+  editText.value = props.message.text || '';
+  isEditing.value = true;
+  // Focus after Vue renders the textarea
+  requestAnimationFrame(() => {
+    editTextareaRef?.focus();
+    editTextareaRef?.select();
+  });
+}
+
+function confirmEdit() {
+  const newText = editText.value.trim();
+  if (newText && newText !== props.message.text) {
+    emit('edit', props.message.id, newText);
+  }
+  cancelEdit();
+}
+
+function cancelEdit() {
+  isEditing.value = false;
+  editText.value = '';
+}
+
+function onEditKeydown(e: KeyboardEvent) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    confirmEdit();
+  } else if (e.key === 'Escape') {
+    cancelEdit();
+  }
+}
 
 const fbClass = computed(() => ({
   liked: fbState.value === "liked",
@@ -673,5 +721,34 @@ onBeforeUnmount(() => {
 .lightbox-fade-enter-from,
 .lightbox-fade-leave-to {
   opacity: 0;
+}
+
+// ── Message editing ──────────────────────────────────────
+.msg-edit-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  max-width: 420px;
+}
+.msg-edit-input {
+  width: 100%;
+  min-height: 48px;
+  padding: 8px 12px;
+  border: 2px solid $primary;
+  border-radius: 10px;
+  font-size: 14px;
+  font-family: inherit;
+  line-height: 1.5;
+  resize: vertical;
+  outline: none;
+  background: var(--color-surface, #fff);
+  color: var(--color-text, #1e293b);
+  &:focus { border-color: darken($primary, 8%); }
+}
+.msg-edit-hint {
+  font-size: 11px;
+  color: $text-muted;
+  padding-left: 4px;
 }
 </style>

@@ -1,0 +1,48 @@
+/* Light & Dark theme CSS variables */
+:root {
+  --color-primary: #4f46e5;
+  --color-primary-soft: #e0e7ff;
+  --color-bg: #f8fafc;
+  --color-surface: #ffffff;
+  --color-surface-hover: #f1f5f9;
+  --color-border: #e2e8f0;
+  --color-text: #1e293b;
+  --color-text-secondary: #64748b;
+  --color-text-muted: #94a3b8;
+  --color-scrollbar-thumb: #d1d5db;
+  --color-scrollbar-thumb-hover: #9ca3af;
+  --color-danger-soft: #fef2f2;
+  --color-danger-border: #fecaca;
+  --color-warning-soft: #fef3c7;
+  --color-success: #10b981;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --shadow-md: 0 2px 12px rgba(0, 0, 0, 0.08);
+}
+
+/* Dark theme overrides */
+[data-theme='dark'] {
+  --color-primary: #818cf8;
+  --color-primary-soft: #312e81;
+  --color-bg: #0f172a;
+  --color-surface: #1e293b;
+  --color-surface-hover: #334155;
+  --color-border: #334155;
+  --color-text: #f1f5f9;
+  --color-text-secondary: #94a3b8;
+  --color-text-muted: #64748b;
+  --color-scrollbar-thumb: #475569;
+  --color-scrollbar-thumb-hover: #64748b;
+  --color-danger-soft: #450a0a;
+  --color-danger-border: #7f1d1d;
+  --color-warning-soft: #451a03;
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 2px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Transition for smooth theme switching */
+html {
+  transition: color-scheme 0.3s;
+}
+html[data-theme='dark'] {
+  color-scheme: dark;
+}

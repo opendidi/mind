@@ -2,21 +2,7 @@
 <template>
   <div class="ds-chat-page">
     <!-- Sidebar -->
-    <ChatSidebar
-      :conversations="conversations"
-      :activeConvId="activeConvId"
-      :collapsed="sidebarCollapsed"
-      :messagesCount="messages.length"
-      :hasMore="hasMoreConversations"
-      @update:collapsed="sidebarCollapsed = $event"
-      @new-chat="onNewChat"
-      @select="onSwitchConv"
-      @delete="onDeleteConv"
-      @clear="onClearData"
-      @togglePin="onTogglePin"
-      @loadMore="onLoadMoreConversations"
-      @export="onExportConv"
-    />
+    <ChatSidebar :conversations="conversations" :activeConvId="activeConvId" :collapsed="sidebarCollapsed" :messagesCount="messages.length" :hasMore="hasMoreConversations" @update:collapsed="sidebarCollapsed = $event" @new-chat="onNewChat" @select="onSwitchConv" @delete="onDeleteConv" @clear="onClearData" @togglePin="onTogglePin" @loadMore="onLoadMoreConversations" @export="onExportConv" />
 
     <!-- Main chat area -->
     <main class="chat-main">
@@ -37,25 +23,42 @@
           </span>
         </div>
         <div class="header-right">
-          <span v-if="loading || switchingConv" class="header-status working">
+          <span v-if="streamDisconnected" class="header-status disconnected" @click="onRetry" title="点击重连">
+            <span class="status-dot" /> 连接断开
+          </span>
+          <span v-else-if="loading || switchingConv" class="header-status working">
             <span class="status-dot" /> 处理中
           </span>
           <span v-else-if="messages.length > 0" class="header-status idle">
             <span class="status-dot" /> 就绪
           </span>
-          <a-tooltip title="新建对话">
-            <a-button class="header-icon-btn" size="small" type="text" @click="onNewChat">
-              <PlusOutlined />
-            </a-button>
-          </a-tooltip>
-          <a-tooltip title="文件管理">
-            <a-button class="header-icon-btn" size="small" type="text" @click="openFileManager">
-              <FolderOpenOutlined />
-            </a-button>
-          </a-tooltip>
+          <a-button class="header-icon-btn" size="small" type="text" @click="onNewChat" title="新建对话">
+            <PlusOutlined />
+          </a-button>
+          <a-button class="header-icon-btn" size="small" type="text" @click="openFileManager" title="文件管理">
+            <FolderOpenOutlined />
+          </a-button>
+          <a-button class="header-icon-btn" size="small" type="text" @click="toggleTheme" :title="isDark ? '浅色模式' : '深色模式'">
+            {{ isDark ? '☀️' : '🌙' }}
+          </a-button>
           <span class="user-avatar">{{ userName.charAt(0) || "U" }}</span>
         </div>
       </header>
+
+      <!-- Message search bar (Ctrl+K) -->
+      <div v-if="searchVisible" class="search-bar">
+        <input
+          ref="searchInputRef"
+          v-model="searchQuery"
+          class="search-input"
+          placeholder="搜索消息… Enter 跳转 · Esc 关闭"
+          @keydown="onSearchKeydown"
+        />
+        <span v-if="searchQuery" class="search-count">
+          {{ searchMatchIdx >= 0 ? `${searchMatchIdx + 1}/${searchMatches.length}` : '无结果' }}
+        </span>
+        <a-button size="small" type="text" @click="searchVisible = false">✕</a-button>
+      </div>
 
       <!-- Messages area -->
       <div ref="msgListRef" class="msg-area" @scroll="onMsgAreaScroll">
@@ -69,10 +72,7 @@
 
         <!-- Messages -->
         <div class="msg-inner">
-          <template
-            v-for="item in groupedMessages"
-            :key="Array.isArray(item) ? 'tg-' + item[0].id : item.id"
-          >
+          <template v-for="item in groupedMessages" :key="Array.isArray(item) ? 'tg-' + item[0].id : item.id">
             <!-- Tool group (2+ consecutive tool calls) -->
             <template v-if="Array.isArray(item) && item.length > 1">
               <details class="tool-group-details">
@@ -83,45 +83,13 @@
                   <span class="tool-group-chevron">▾</span>
                 </summary>
                 <div class="tool-group-body">
-                  <MsgRow
-                    v-for="m in item"
-                    :key="m.id"
-                    :message="m"
-                    :renderMd="renderMd"
-                    :selectable="selectMode"
-                    :selected="selectedIds.has(m.id)"
-                    @copy="copyText"
-                    @toggleSelect="onToggleSelect"
-                    @startSelect="onStartSelect"
-                    @feedback="onMsgFeedback"
-                    @quote="onQuoteMsg"
-                    @quoteMsg="onQuoteMsgId"
-                    @delete="onDeleteMsg"
-                    @retry="onRetry"
-                    @selectRefs="onSelectRefs"
-                  />
+                  <MsgRow v-for="m in item" :key="m.id" :message="m" :renderMd="renderMd" :selectable="selectMode" :selected="selectedIds.has(m.id)" @copy="copyText" @toggleSelect="onToggleSelect" @startSelect="onStartSelect" @feedback="onMsgFeedback" @quote="onQuoteMsg" @quoteMsg="onQuoteMsgId" @delete="onDeleteMsg" @retry="onRetry" @edit="onMsgEdit" @selectRefs="onSelectRefs" />
                 </div>
               </details>
             </template>
             <!-- Single message (or single tool) -->
-            <MsgRow
-              v-else
-              :message="Array.isArray(item) ? item[0] : item"
-              :renderMd="renderMd"
-              :selectable="selectMode"
-              :selected="
-                selectedIds.has(Array.isArray(item) ? item[0].id : item.id)
-              "
-              @copy="copyText"
-              @toggleSelect="onToggleSelect"
-              @startSelect="onStartSelect"
-              @feedback="onMsgFeedback"
-              @quote="onQuoteMsg"
-              @quoteMsg="onQuoteMsgId"
-              @delete="onDeleteMsg"
-              @retry="onRetry"
-              @selectRefs="onSelectRefs"
-            />
+            <MsgRow v-else :message="Array.isArray(item) ? item[0] : item" :renderMd="renderMd" :selectable="selectMode" :selected="selectedIds.has(Array.isArray(item) ? item[0].id : item.id)
+              " @copy="copyText" @toggleSelect="onToggleSelect" @startSelect="onStartSelect" @feedback="onMsgFeedback" @quote="onQuoteMsg" @quoteMsg="onQuoteMsgId" @delete="onDeleteMsg" @retry="onRetry" @edit="onMsgEdit" @selectRefs="onSelectRefs" />
           </template>
 
           <!-- Loading animation -->
@@ -163,45 +131,21 @@
               selectedIds.size > 0 ? `已选 ${selectedIds.size} 条` : "选择消息"
             }}
           </span>
-          <a-button
-            size="small"
-            type="text"
-            class="select-all-btn"
-            @click="onSelectAll"
-          >
+          <a-button size="small" type="text" class="select-all-btn" @click="onSelectAll">
             <CheckSquareOutlined />
           </a-button>
           <div class="select-spacer" />
-          <a-button
-            size="small"
-            type="text"
-            class="select-cancel-btn"
-            @click="onCancelSelect"
-          >
+          <a-button size="small" type="text" class="select-cancel-btn" @click="onCancelSelect">
             <CloseOutlined />
           </a-button>
-          <a-button
-            size="small"
-            class="select-del-btn"
-            @click="onBatchDelete"
-            :disabled="selectedIds.size === 0"
-          >
+          <a-button size="small" class="select-del-btn" @click="onBatchDelete" :disabled="selectedIds.size === 0">
             <DeleteOutlined />
           </a-button>
         </div>
       </template>
 
       <!-- Input area -->
-      <ChatInput
-        :loading="loading || switchingConv"
-        :modelList="modelList"
-        :modelIdx="activeModelIdx"
-        :quotedText="quotedText"
-        @update:modelIdx="activeModelIdx = $event"
-        @send="onSend"
-        @abort="onAbort"
-        @removeQuote="quotedText = null"
-      />
+      <ChatInput :loading="loading || switchingConv" :modelList="modelList" :modelIdx="activeModelIdx" :quotedText="quotedText" @update:modelIdx="activeModelIdx = $event" @send="onSend" @abort="onAbort" @removeQuote="quotedText = null" />
     </main>
 
     <!-- Canvas preview panel (shown when agent modified canvas) -->
@@ -217,33 +161,19 @@
           </a-button>
         </div>
       </div>
-      <iframe
-        ref="previewIframe"
-        class="preview-iframe"
-        :src="previewUrl"
-        @load="onPreviewLoaded"
-      />
+      <iframe ref="previewIframe" class="preview-iframe" :src="previewUrl" @load="onPreviewLoaded" />
     </aside>
 
     <!-- Canvas preview toggle (when hidden but changes exist) -->
     <transition name="fab-fade">
-      <div
-        v-if="!showCanvasPreview && hasCanvasChanges"
-        class="canvas-preview-fab"
-        @click="showCanvasPreview = true"
-        title="查看画布修改"
-      >
+      <div v-if="!showCanvasPreview && hasCanvasChanges" class="canvas-preview-fab" @click="showCanvasPreview = true" title="查看画布修改">
         <span class="fab-badge" />
         <span class="fab-label">画布</span>
       </div>
     </transition>
 
     <FileManager ref="fileManagerRef" mode="view" />
-    <ReferencePanel
-      :visible="refPanelVisible"
-      :references="refPanelData"
-      @close="onCloseRefPanel"
-    />
+    <ReferencePanel :visible="refPanelVisible" :references="refPanelData" @close="onCloseRefPanel" />
   </div>
 </template>
 
@@ -271,6 +201,7 @@ import {
 import { useConversations } from "@/composables/useConversations";
 import { useMessageSelect } from "@/composables/useMessageSelect";
 import { useScrollToBottom } from "@/composables/useScrollToBottom";
+import { useTheme } from "@/composables/useTheme";
 import { executeCanvasTool } from "@/utils/canvasBridge";
 import ChatSidebar from "@/components/chat/ChatSidebar.vue";
 import ChatInput from "@/components/chat/ChatInput.vue";
@@ -291,11 +222,77 @@ const renderMd = (text: string) => md.render(text);
 const router = useRouter();
 const route = useRoute();
 const userName = computed(() => "用户");
+const { isDark, toggleTheme } = useTheme();
 
 // UI state
 const sidebarCollapsed = ref(false);
 const quotedText = ref<QuoteInfo | null>(null);
 const fileManagerRef = ref<InstanceType<typeof FileManager>>();
+
+// ── Message search ───────────────────────────────────────
+const searchVisible = ref(false);
+const searchQuery = ref('');
+const searchInputRef = ref<HTMLInputElement>();
+const searchMatchIdx = ref(-1);
+
+const searchMatches = computed(() => {
+  if (!searchQuery.value.trim()) return [];
+  const q = searchQuery.value.toLowerCase();
+  const results: Array<{ msgId: string; role: string; text: string; startIdx: number }> = [];
+  for (const m of messages.value) {
+    if (!m.text) continue;
+    const idx = m.text.toLowerCase().indexOf(q);
+    if (idx >= 0) {
+      results.push({ msgId: m.id, role: m.role, text: m.text, startIdx: idx });
+    }
+  }
+  return results;
+});
+
+function openSearch() {
+  searchVisible.value = true;
+  searchQuery.value = '';
+  searchMatchIdx.value = -1;
+  requestAnimationFrame(() => searchInputRef.value?.focus());
+}
+
+function onSearchKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') { searchVisible.value = false; return; }
+  if (e.key === 'Enter') {
+    e.preventDefault();
+    if (searchMatches.value.length > 0) {
+      searchMatchIdx.value = (searchMatchIdx.value + 1) % searchMatches.value.length;
+      const match = searchMatches.value[searchMatchIdx.value];
+      const el = document.querySelector(`[data-msg-id="${match.msgId}"]`);
+      el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+  }
+}
+
+// ── Keyboard shortcuts ───────────────────────────────────
+function onPageKeydown(e: KeyboardEvent) {
+  // Don't capture when typing in inputs
+  const tag = (e.target as HTMLElement).tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA' || (e.target as HTMLElement).isContentEditable) return;
+  const mod = e.ctrlKey || e.metaKey;
+
+  if (mod && e.key === 'n') { e.preventDefault(); onNewChat(); return; }
+  if (mod && e.key === 'k') { e.preventDefault(); openSearch(); return; }
+  if (e.key === 'Escape') {
+    if (selectMode.value) onCancelSelect();
+    if (refPanelVisible.value) onCloseRefPanel();
+    if (searchVisible.value) searchVisible.value = false;
+    return;
+  }
+  if (mod && e.key === 'ArrowUp') {
+    e.preventDefault();
+    const lastUser = [...messages.value].reverse().find(m => m.role === 'user');
+    if (lastUser) {
+      const el = document.querySelector(`[data-msg-id="${lastUser.id}"]`);
+      if (el) (el as HTMLElement).dispatchEvent(new MouseEvent('dblclick'));
+    }
+  }
+}
 
 function openFileManager() {
   fileManagerRef.value!.visible = true;
@@ -396,10 +393,12 @@ const {
   currentTool,
   thinkingText,
   plan,
+  streamDisconnected,
   send: agentSend,
   abort: agentAbort,
   retry: agentRetry,
   clear: agentClear,
+  flushStreamSave,
 } = useAgentChat({
   userId: useUserStore().userInfo?.id || undefined,
   onToolResult(tool, args, success, result) {
@@ -416,6 +415,9 @@ const {
   onDone() {
     saveCurrentConv();
   },
+  onStreamTick() {
+    silentSave();
+  },
 });
 
 // Scroll management
@@ -430,6 +432,7 @@ const {
   switchingConv,
   activeConvTitle,
   saveCurrentConv,
+  silentSave,
   onNewChat,
   onSwitchConv,
   onDeleteConv,
@@ -489,6 +492,14 @@ function onQuoteMsgId(msgId: string) {
 function onDeleteMsg(msgId: string) {
   messages.value = messages.value.filter((m) => m.id !== msgId);
   saveCurrentConv();
+}
+
+function onMsgEdit(msgId: string, newText: string) {
+  const msg = messages.value.find((m) => m.id === msgId);
+  if (msg && msg.role === 'user') {
+    msg.text = newText;
+    saveCurrentConv();
+  }
 }
 
 // ── Reference panel ──
@@ -555,9 +566,13 @@ onMounted(() => {
   loadConversationList();
   const saved = localStorage.getItem("chat-model-idx");
   if (saved) activeModelIdx.value = Number(saved);
+  document.addEventListener('keydown', onPageKeydown);
 });
 
 onBeforeUnmount(() => {
+  document.removeEventListener('keydown', onPageKeydown);
+  flushStreamSave();
+  if (messages.value.length > 0) silentSave();
   agentAbort();
 });
 </script>
@@ -568,23 +583,23 @@ onBeforeUnmount(() => {
 .icon-ds {
   display: block;
   background: linear-gradient(135deg, #818cf8, #c084fc);
-  clip-path: polygon(
-    50% 0%,
-    62% 38%,
-    100% 50%,
-    62% 62%,
-    50% 100%,
-    38% 62%,
-    0% 50%,
-    38% 38%
-  );
+  clip-path: polygon(50% 0%,
+      62% 38%,
+      100% 50%,
+      62% 62%,
+      50% 100%,
+      38% 62%,
+      0% 50%,
+      38% 38%);
   animation: sparkle-pulse 2.4s ease-in-out infinite;
   width: 28px;
   height: 28px;
+
   &.ds-big {
     width: 56px;
     height: 56px;
   }
+
   &.ds-small {
     width: 18px;
     height: 18px;
@@ -593,11 +608,13 @@ onBeforeUnmount(() => {
 }
 
 @keyframes sparkle-pulse {
+
   0%,
   100% {
     opacity: 0.7;
     transform: scale(0.95);
   }
+
   50% {
     opacity: 1;
     transform: scale(1.05);
@@ -608,7 +625,7 @@ onBeforeUnmount(() => {
   display: flex;
   height: 100vh;
   width: 100vw;
-  background: $bg;
+  background: var(--color-bg, $bg);
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, "PingFang SC", "Microsoft YaHei", sans-serif;
   overflow: hidden;
@@ -620,7 +637,7 @@ onBeforeUnmount(() => {
   flex-direction: column;
   min-width: 0;
   height: 100vh;
-  background: $surface;
+  background: var(--color-surface, $surface);
 }
 
 .chat-header {
@@ -628,8 +645,8 @@ onBeforeUnmount(() => {
   align-items: center;
   justify-content: space-between;
   padding: 0 16px;
-  border-bottom: 1px solid $border;
-  background: $surface;
+  border-bottom: 1px solid var(--color-border, $border);
+  background: var(--color-surface, $surface);
   flex-shrink: 0;
   height: 48px;
   gap: 12px;
@@ -641,26 +658,30 @@ onBeforeUnmount(() => {
     min-width: 0;
     flex: 1;
   }
+
   .header-title {
     font-size: 14px;
     font-weight: 600;
-    color: $text;
+    color: var(--color-text, $text);
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+
   .header-divider {
     width: 1px;
     height: 20px;
     background: #e2e8f0;
     flex-shrink: 0;
   }
+
   .header-right {
     display: flex;
     align-items: center;
     gap: 4px;
     flex-shrink: 0;
   }
+
   .header-icon-btn {
     width: 32px;
     height: 32px;
@@ -674,11 +695,13 @@ onBeforeUnmount(() => {
     cursor: pointer;
     font-size: 15px;
     transition: all 0.15s;
+
     &:hover {
       background: #f1f5f9;
       color: #374151;
     }
   }
+
   .header-status {
     display: flex;
     align-items: center;
@@ -688,25 +711,42 @@ onBeforeUnmount(() => {
     padding: 2px 10px;
     border-radius: 12px;
     margin-right: 6px;
+
+    &.disconnected {
+      color: #dc2626;
+      background: #fef2f2;
+      cursor: pointer;
+      &:hover { background: #fee2e2; }
+    }
+
     &.working {
       color: #b45309;
       background: #fef3c7;
     }
+
     &.idle {
       color: #64748b;
       background: #f1f5f9;
     }
+
     .status-dot {
       width: 6px;
       height: 6px;
       border-radius: 50%;
       background: #94a3b8;
     }
+
+    &.disconnected .status-dot {
+      background: #ef4444;
+      animation: status-blink 0.8s ease-in-out infinite;
+    }
+
     &.working .status-dot {
       background: #f59e0b;
       animation: status-blink 1.2s ease-in-out infinite;
     }
   }
+
   .user-avatar {
     width: 28px;
     height: 28px;
@@ -724,8 +764,41 @@ onBeforeUnmount(() => {
 }
 
 @keyframes status-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.3; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.3;
+  }
+}
+
+// ── Search bar ────────────────────────────────────────────
+.search-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  background: var(--color-surface, $surface);
+  border-bottom: 1px solid var(--color-border, $border);
+  flex-shrink: 0;
+  .search-input {
+    flex: 1;
+    border: none;
+    outline: none;
+    font-size: 13px;
+    padding: 4px 0;
+    background: transparent;
+    color: var(--color-text, $text);
+    &::placeholder { color: $text-muted; }
+  }
+  .search-count {
+    font-size: 12px;
+    color: $text-muted;
+    white-space: nowrap;
+  }
 }
 
 .msg-area {
@@ -734,6 +807,7 @@ onBeforeUnmount(() => {
   scrollbar-gutter: stable;
   padding: 20px 0;
   position: relative;
+
   .msg-inner {
     max-width: $msg-max-width;
     margin: 0 auto;
@@ -745,6 +819,9 @@ onBeforeUnmount(() => {
   display: flex;
   gap: 12px;
   margin-bottom: 20px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 70px;
+
   .msg-avatar {
     width: 32px;
     height: 32px;
@@ -755,14 +832,17 @@ onBeforeUnmount(() => {
     font-size: 13px;
     font-weight: 700;
     flex-shrink: 0;
+
     &.ai {
       background: linear-gradient(135deg, $primary, #7c3aed);
       color: #fff;
+
       :deep(.ds-small) {
         filter: brightness(0) invert(1);
       }
     }
   }
+
   .msg-content {
     max-width: 75%;
     min-width: 0;
@@ -776,15 +856,18 @@ onBeforeUnmount(() => {
   max-width: $msg-max-width;
   margin: 0 auto;
   padding: 0 24px 10px;
+
   .select-count {
     font-size: 13px;
-    color: $text-secondary;
+    color: var(--color-text-secondary, $text-secondary);
     font-weight: 500;
     min-width: 60px;
   }
+
   .select-spacer {
     flex: 1;
   }
+
   .select-all-btn,
   .select-cancel-btn {
     width: 32px;
@@ -794,13 +877,15 @@ onBeforeUnmount(() => {
     align-items: center;
     justify-content: center;
     padding: 0;
-    color: $text-muted;
+    color: var(--color-text-muted, $text-muted);
     transition: all 0.15s;
+
     &:hover {
-      color: $text-secondary;
+      color: var(--color-text-secondary, $text-secondary);
       background: #f1f5f9;
     }
   }
+
   .select-del-btn {
     width: 32px;
     height: 32px;
@@ -809,14 +894,16 @@ onBeforeUnmount(() => {
     align-items: center;
     justify-content: center;
     padding: 0;
-    color: $text-muted;
+    color: var(--color-text-muted, $text-muted);
     background: transparent;
     border: none;
     transition: all 0.15s;
+
     &:hover:not(:disabled) {
       color: #dc2626;
       background: #fef2f2;
     }
+
     &:disabled {
       color: #d1d5db;
       cursor: not-allowed;
@@ -829,10 +916,12 @@ onBeforeUnmount(() => {
 }
 
 @keyframes avatar-glow {
+
   0%,
   100% {
     box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.4);
   }
+
   50% {
     box-shadow: 0 0 0 8px rgba(129, 140, 248, 0);
   }
@@ -847,25 +936,30 @@ onBeforeUnmount(() => {
   display: inline-flex;
   align-items: center;
   gap: 10px;
+
   .think-text {
     font-size: 13px;
     color: #64748b;
     font-weight: 500;
   }
+
   .think-dots {
     display: inline-flex;
     align-items: center;
     gap: 4px;
   }
+
   .dot {
     width: 6px;
     height: 6px;
     border-radius: 50%;
     background: #94a3b8;
     animation: dot-pulse 1.4s infinite both;
+
     &:nth-child(2) {
       animation-delay: 0.2s;
     }
+
     &:nth-child(3) {
       animation-delay: 0.4s;
     }
@@ -873,12 +967,14 @@ onBeforeUnmount(() => {
 }
 
 @keyframes dot-pulse {
+
   0%,
   80%,
   100% {
     transform: scale(0.5);
     opacity: 0.3;
   }
+
   40% {
     transform: scale(1);
     opacity: 1;
@@ -892,8 +988,8 @@ onBeforeUnmount(() => {
   width: 36px;
   height: 36px;
   border-radius: 50%;
-  background: $surface;
-  border: 1px solid $border;
+  background: var(--color-surface, $surface);
+  border: 1px solid var(--color-border, $border);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -901,13 +997,15 @@ onBeforeUnmount(() => {
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   transition: transform 0.15s, box-shadow 0.15s;
   z-index: 10;
+
   &:hover {
     transform: scale(1.1);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   }
+
   .fab-icon {
     font-size: 16px;
-    color: $text-secondary;
+    color: var(--color-text-secondary, $text-secondary);
     line-height: 1;
   }
 }
@@ -916,6 +1014,7 @@ onBeforeUnmount(() => {
 .fab-fade-leave-active {
   transition: opacity 0.2s, transform 0.2s;
 }
+
 .fab-fade-enter-from,
 .fab-fade-leave-to {
   opacity: 0;
@@ -925,17 +1024,21 @@ onBeforeUnmount(() => {
 .msg-area::-webkit-scrollbar {
   width: 5px;
 }
+
 .msg-area::-webkit-scrollbar-track {
   background: transparent;
 }
+
 .msg-area::-webkit-scrollbar-thumb {
   background: transparent;
   border-radius: 3px;
   transition: background 0.3s;
 }
+
 .msg-area:hover::-webkit-scrollbar-thumb {
   background: #d1d5db;
 }
+
 .msg-area::-webkit-scrollbar-thumb:hover {
   background: #9ca3af;
 }
@@ -947,6 +1050,8 @@ onBeforeUnmount(() => {
   background: #fafafa;
   overflow: hidden;
   margin-bottom: 16px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 80px;
 
   &[open] {
     border-color: #d4d4d8;
@@ -980,6 +1085,7 @@ onBeforeUnmount(() => {
     :deep(.msg-row) {
       margin-bottom: 8px;
     }
+
     :deep(.msg-row:last-child) {
       margin-bottom: 4px;
     }
@@ -992,25 +1098,29 @@ onBeforeUnmount(() => {
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  border-left: 1px solid $border;
+  border-left: 1px solid var(--color-border, $border);
   background: #fafafa;
+
   .preview-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
     padding: 8px 12px;
-    border-bottom: 1px solid $border;
+    border-bottom: 1px solid var(--color-border, $border);
+
     .preview-title {
       font-size: 13px;
       font-weight: 600;
-      color: $text;
+      color: var(--color-text, $text);
     }
+
     .preview-actions {
       display: flex;
       gap: 4px;
       align-items: center;
     }
   }
+
   .preview-iframe {
     flex: 1;
     border: none;
@@ -1026,17 +1136,19 @@ onBeforeUnmount(() => {
   align-items: center;
   gap: 6px;
   padding: 8px 14px;
-  background: $surface;
-  border: 1px solid $border;
+  background: var(--color-surface, $surface);
+  border: 1px solid var(--color-border, $border);
   border-radius: 20px;
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   z-index: 20;
   transition: transform 0.15s, box-shadow 0.15s;
+
   &:hover {
     transform: scale(1.05);
     box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
   }
+
   .fab-badge {
     width: 8px;
     height: 8px;
@@ -1044,16 +1156,24 @@ onBeforeUnmount(() => {
     background: #f59e0b;
     animation: badge-pulse 2s infinite;
   }
+
   .fab-label {
     font-size: 12px;
     font-weight: 500;
-    color: $text-secondary;
+    color: var(--color-text-secondary, $text-secondary);
   }
 }
 
 @keyframes badge-pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.4;
+  }
 }
 </style>
 

@@ -4,11 +4,13 @@
 import json
 import logging
 import queue
-import random
-import time
 from collections import defaultdict
 
 from app.config import LLM_TIMEOUT, AGENT_DEFAULT_MODEL
+from app.util.agent.llm_stream import (
+    should_retry_llm, llm_retry_sleep,
+    parse_stream_chunks, stream_llm_chat,
+)
 from app.util.agent.helpers import (
     estimate_tokens_from_messages as _estimate_tokens,
     truncate_tool_result as _truncate_result,
@@ -35,25 +37,8 @@ class AgentBase:
     MAX_LOOP_REPEAT = 3  # max consecutive calls to same tool with same args
     MAX_LLM_RETRIES = 3
 
-    @staticmethod
-    def _should_retry_llm(error: Exception, attempt: int) -> bool:
-        if attempt >= 2:
-            return False
-        from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
-        if isinstance(error, (RateLimitError, APITimeoutError, APIConnectionError)):
-            return True
-        if isinstance(error, APIError):
-            status = getattr(error, "http_status", None) or getattr(error, "status_code", None) or 500
-            return status >= 500
-        return True
-
-    @staticmethod
-    def _llm_retry_sleep(attempt: int, is_rate_limit: bool = False):
-        base = 2 ** attempt
-        if is_rate_limit:
-            time.sleep(base + random.uniform(0, 1))
-        else:
-            time.sleep(base * random.uniform(0.75, 1.25))
+    _should_retry_llm = staticmethod(should_retry_llm)
+    _llm_retry_sleep = staticmethod(llm_retry_sleep)
 
     def run(
         self,
@@ -139,126 +124,78 @@ class AgentBase:
                 )
 
             if _use_stream:
-                # ── Streaming path with retry: collect tokens + tool calls ──
-                from openai import RateLimitError as _RateLimitError
-                tool_calls_acc = {}
+                # ── Streaming path using shared stream handler ──
                 full_text = ""
-                finish_reason = None
+                has_tool_calls = False
                 stream_error = None
 
-                for attempt in range(self.MAX_LLM_RETRIES):
-                    tool_calls_acc = {}
-                    full_text = ""
-                    finish_reason = None
-                    stream_error = None
-
-                    if tracer and attempt == 0:
-                        llm_sid = tracer.start_span(
-                            "llm_call",
-                            input={"agent": self.name, "iteration": tool_calls_made + 1},
-                        )
-                    try:
-                        response = llm_client.chat.completions.create(
-                            model=model, messages=messages,
-                            tools=all_tools if all_tools else None,
-                            tool_choice="auto" if all_tools else None,
-                            stream=True, timeout=90,
-                        )
-                        for chunk in response:
-                            if not chunk.choices:
-                                continue
-                            delta = chunk.choices[0].delta
-                            finish_reason = chunk.choices[0].finish_reason
-                            if delta.content:
-                                full_text += delta.content
-                                event_queue.put(("token", delta.content))
-                            if delta.tool_calls:
-                                for tc_delta in delta.tool_calls:
-                                    idx = tc_delta.index
-                                    if idx not in tool_calls_acc:
-                                        tool_calls_acc[idx] = {"id": "", "name": "", "arguments": ""}
-                                    acc = tool_calls_acc[idx]
-                                    if tc_delta.id:
-                                        acc["id"] = tc_delta.id
-                                    if tc_delta.function:
-                                        if tc_delta.function.name:
-                                            acc["name"] = tc_delta.function.name
-                                        if tc_delta.function.arguments:
-                                            acc["arguments"] += tc_delta.function.arguments
-                            if finish_reason:
-                                break
-                        if tracer:
-                            tracer.end_span(llm_sid, "ok")
-                        break  # success — exit retry loop
-                    except Exception as ex:
-                        stream_error = str(ex)
-                        logging.warning("Sub-agent %s LLM stream attempt %d: %s", self.name, attempt + 1, ex)
-                        if not self._should_retry_llm(ex, attempt):
-                            break
-                        self._llm_retry_sleep(attempt, isinstance(ex, _RateLimitError))
-
-                if stream_error and not finish_reason:
-                    if tracer and llm_sid:
-                        tracer.end_span(llm_sid, "error", {"error": stream_error})
-                    return _finish(False, f"AI service error: {stream_error}")
-
-                if finish_reason == "tool_calls" and tool_calls_acc:
-                    sorted_calls = sorted(tool_calls_acc.items(), key=lambda x: x[0])
-                    tool_msgs = []
-                    for idx, acc in sorted_calls:
-                        tool_msgs.append({
-                            "id": acc["id"], "type": "function",
-                            "function": {"name": acc["name"], "arguments": acc["arguments"]},
-                        })
-                    messages.append({"role": "assistant", "content": "", "tool_calls": tool_msgs})
-
-                    from app.util.agent.tools import run_tool_call
-
-                    for idx, acc in sorted_calls:
-                        tool_name = acc["name"]
+                for event in stream_llm_chat(
+                    llm_client, model=model, messages=messages,
+                    tools=all_tools if all_tools else None,
+                    circuit_service=f"{self.name}:{model}", tracer=tracer,
+                ):
+                    kind = event[0]
+                    if kind == "token":
+                        full_text += event[1]
+                        event_queue.put(("token", event[1]))
+                    elif kind == "tool_call":
+                        has_tool_calls = True
+                        name, tc_id, args_str = event[1], event[2], event[3]
                         try:
-                            tool_args = json.loads(acc["arguments"])
+                            tool_args = json.loads(args_str)
                         except json.JSONDecodeError:
                             tool_args = {}
 
-                        lk = _loop_key(tool_name, tool_args)
+                        lk = _loop_key(name, tool_args)
                         loop_counter[lk] += 1
                         if loop_counter[lk] > self.MAX_LOOP_REPEAT:
-                            return _finish(False, f"操作 {tool_name} 重复多次，已停止")
+                            return _finish(False, f"操作 {name} 重复多次，已停止")
 
-                        event_queue.put(("tool_call", tool_name, tool_args))
+                        event_queue.put(("tool_call", name, tool_args))
+
+                        from app.util.agent.tools import run_tool_call
 
                         if tracer:
-                            tool_sid = tracer.start_span(f"tool:{tool_name}", input=tool_args)
-                        t0 = time.time()
+                            tool_sid = tracer.start_span(f"tool:{name}", input=tool_args)
+                        import time as _time
+                        t0 = _time.time()
                         result, _ = run_tool_call(
-                            tool_name, tool_args, tool_context,
+                            name, tool_args, tool_context,
                             dispatcher=dispatcher, llm_client=llm_client,
                             model=model, tracer=tracer, event_queue=event_queue,
                         )
                         result = _truncate_result(result)
-                        duration_ms = (time.time() - t0) * 1000
+                        duration_ms = (_time.time() - t0) * 1000
                         if tracer:
                             tracer.end_span(
                                 tool_sid, "ok" if result.get("success") else "error",
                                 {"duration_ms": int(duration_ms)},
                             )
                         tool_calls_made += 1
+                        event_queue.put(("tool_result", name, result.get("success", False), result))
 
-                        event_queue.put(("tool_result", tool_name, result.get("success", False), result))
-
-                        logging.info(
-                            "Sub-agent %s tool %s: success=%s, %.0fms",
-                            self.name, tool_name, result.get("success"), duration_ms,
-                        )
                         messages.append({
-                            "role": "tool", "tool_call_id": acc["id"],
+                            "role": "assistant", "content": "",
+                            "tool_calls": [{
+                                "id": tc_id, "type": "function",
+                                "function": {"name": name, "arguments": args_str},
+                            }],
+                        })
+                        messages.append({
+                            "role": "tool", "tool_call_id": tc_id,
                             "content": json.dumps(result, ensure_ascii=False),
                         })
-                    continue
 
-                content = full_text or ""
-                return _finish(True, content)
+                    elif kind == "error":
+                        stream_error = event[1]
+
+                if stream_error and not has_tool_calls and not full_text:
+                    return _finish(False, f"AI service error: {stream_error}")
+
+                if has_tool_calls:
+                    continue  # loop back for next ReAct iteration
+
+                return _finish(True, full_text)
 
             # ── Non-streaming path with retry ──
             from openai import RateLimitError as _RateLimitError

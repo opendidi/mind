@@ -33,6 +33,8 @@ export interface UseConversationsReturn {
   switchingConv: Ref<boolean>
   activeConvTitle: ComputedRef<string>
   saveCurrentConv: () => Promise<string | null>
+  /** Save without route changes or error toasts — for auto-save during streaming */
+  silentSave: () => Promise<void>
   onNewChat: () => void
   onSwitchConv: (id: string) => Promise<void>
   onDeleteConv: (id: string) => Promise<void>
@@ -110,6 +112,34 @@ export function useConversations(options: UseConversationsOptions): UseConversat
     else conversations.value.unshift(conv)
 
     return id
+  }
+
+  // Silent save — no route manipulation, no error toast. Used for auto-save during streaming.
+  async function silentSave() {
+    const msgs = [...messages.value]
+    if (msgs.length === 0) return
+    const firstUser = msgs.find((m) => m.role === 'user')
+    const title = firstUser?.text?.slice(0, 30) || '新对话'
+    const id = activeConvId.value || crypto.randomUUID()
+
+    try {
+      await apiChatSave({ id, title, messages: msgs })
+    } catch {
+      // Silently ignore — don't distract user during streaming
+      return
+    }
+
+    if (!activeConvId.value) {
+      activeConvId.value = id
+      if (!route.params.id) router.replace({ name: 'chat', params: { id } })
+    }
+
+    const existing = conversations.value.find((c) => c.id === id)
+    const present = existing?.pinned || false
+    const conv: Conversation = { id, title, time: new Date().toLocaleString(), messages: msgs, pinned: present }
+    const idx = conversations.value.findIndex((c) => c.id === id)
+    if (idx >= 0) conversations.value[idx] = conv
+    else conversations.value.unshift(conv)
   }
 
   async function loadConversationList(reset = true) {
@@ -291,6 +321,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
     switchingConv,
     activeConvTitle,
     saveCurrentConv,
+    silentSave,
     onNewChat,
     onSwitchConv,
     onDeleteConv,

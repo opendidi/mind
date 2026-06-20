@@ -3,8 +3,6 @@
 
 import json
 import logging
-import random
-import time
 from collections import defaultdict
 from types import SimpleNamespace
 from typing import Generator
@@ -13,6 +11,10 @@ from app.config import LLM_TIMEOUT, AGENT_DEFAULT_MODEL
 from app.util.agent.guard import InputGuard, ToolGuard, OutputGuard
 from app.util.agent.helpers import truncate_tool_result as _truncate_tool_result, loop_key as _loop_key
 from app.util.agent.pheromone import extract_discoveries
+from app.util.agent.llm_stream import (
+    should_retry_llm, llm_retry_sleep,
+    parse_stream_chunks, stream_llm_chat,
+)
 
 MAX_LOOP_REPEAT = 3
 MAX_REFLECT_RETRIES = 3
@@ -62,23 +64,9 @@ class BaseExecutor:
 
     # ── LLM Calling ──────────────────────────────────────────────────────
 
-    @staticmethod
-    def _should_retry_llm(error: Exception, attempt: int) -> bool:
-        if attempt >= 2:
-            return False
-        from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
-        if isinstance(error, (RateLimitError, APITimeoutError, APIConnectionError)):
-            return True
-        if isinstance(error, APIError):
-            status = getattr(error, "http_status", None) or getattr(error, "status_code", None) or 500
-            return status >= 500
-        return True
-
-    @staticmethod
-    def _llm_retry_sleep(attempt: int, is_rate_limit: bool = False):
-        base = 2 ** attempt
-        sleep_s = base + random.uniform(0, 1) if is_rate_limit else base * random.uniform(0.75, 1.25)
-        time.sleep(sleep_s)
+    # Delegated to shared llm_stream module for consistency across callers
+    _should_retry_llm = staticmethod(should_retry_llm)
+    _llm_retry_sleep = staticmethod(llm_retry_sleep)
 
     def _call_llm(self, messages=None):
         from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
@@ -124,144 +112,27 @@ class BaseExecutor:
         return None
 
     def _call_llm_stream(self) -> Generator:
-        from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
-        from app.util.agent.circuit import circuit_allow, circuit_record
-
-        if not circuit_allow(service=self.model):
-            yield ("error", "AI 服务不可用（熔断）")
-            return
-
-        for attempt in range(3):
-            try:
-                response = self.llm.chat.completions.create(
-                    model=self.model, messages=self.messages, tools=self.tools,
-                    tool_choice="auto", stream=True, timeout=90,
-                )
-                tool_calls_acc = {}
-                full_text = ""
-                finish_reason = None
-
-                for chunk in response:
-                    if not chunk.choices:
-                        continue
-                    delta = chunk.choices[0].delta
-                    finish_reason = chunk.choices[0].finish_reason
-                    if delta.content:
-                        full_text += delta.content
-                        yield ("token", delta.content)
-                    if delta.tool_calls:
-                        for tc_delta in delta.tool_calls:
-                            idx = tc_delta.index
-                            if idx not in tool_calls_acc:
-                                tool_calls_acc[idx] = {"id": "", "name": "", "arguments": ""}
-                            acc = tool_calls_acc[idx]
-                            if tc_delta.id:
-                                acc["id"] = tc_delta.id
-                            if tc_delta.function:
-                                if tc_delta.function.name:
-                                    acc["name"] = tc_delta.function.name
-                                if tc_delta.function.arguments:
-                                    acc["arguments"] += tc_delta.function.arguments
-                    if finish_reason:
-                        break
-
-                circuit_record(True, service=self.model)
-
-                if finish_reason == "tool_calls" and tool_calls_acc:
-                    for idx in sorted(tool_calls_acc.keys()):
-                        acc = tool_calls_acc[idx]
-                        yield ("llm_tool_call", acc["name"], acc["id"], acc["arguments"])
-                    return
-
-                yield ("text_complete", full_text)
-                return
-
-            except (RateLimitError, APITimeoutError, APIConnectionError, APIError) as ex:
-                if isinstance(ex, APIError):
-                    status = getattr(ex, "http_status", None) or getattr(ex, "status_code", None) or 500
-                    if status < 500:
-                        circuit_record(False, service=self.model)
-                        yield ("error", f"API 错误: {ex}")
-                        return
-                if self._should_retry_llm(ex, attempt):
-                    self._llm_retry_sleep(attempt, isinstance(ex, RateLimitError))
-            except Exception as ex:
-                logging.exception("BaseExecutor: unexpected LLM streaming error: %s", ex)
-                if self._should_retry_llm(ex, attempt):
-                    self._llm_retry_sleep(attempt)
-
-        circuit_record(False, service=self.model)
-        yield ("error", "LLM 流式调用失败")
+        """Streaming LLM call using self.messages. Delegates to shared handler."""
+        yield from self._call_llm_stream_with_msgs(self.messages)
 
     def _call_llm_stream_with_msgs(self, messages: list) -> Generator:
-        from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
-        from app.util.agent.circuit import circuit_allow, circuit_record
-
-        if not circuit_allow(service=self.model):
-            yield ("error", "AI 服务不可用（熔断）")
-            return
-
-        for attempt in range(3):
-            try:
-                response = self.llm.chat.completions.create(
-                    model=self.model, messages=messages, tools=self.tools,
-                    tool_choice="auto", stream=True, timeout=90,
-                )
-                tool_calls_acc = {}
-                full_text = ""
-                finish_reason = None
-
-                for chunk in response:
-                    if not chunk.choices:
-                        continue
-                    delta = chunk.choices[0].delta
-                    finish_reason = chunk.choices[0].finish_reason
-                    if delta.content:
-                        full_text += delta.content
-                        yield ("token", delta.content)
-                    if delta.tool_calls:
-                        for tc_delta in delta.tool_calls:
-                            idx = tc_delta.index
-                            if idx not in tool_calls_acc:
-                                tool_calls_acc[idx] = {"id": "", "name": "", "arguments": ""}
-                            acc = tool_calls_acc[idx]
-                            if tc_delta.id:
-                                acc["id"] = tc_delta.id
-                            if tc_delta.function:
-                                if tc_delta.function.name:
-                                    acc["name"] = tc_delta.function.name
-                                if tc_delta.function.arguments:
-                                    acc["arguments"] += tc_delta.function.arguments
-                    if finish_reason:
-                        break
-
-                circuit_record(True, service=self.model)
-
-                if finish_reason == "tool_calls" and tool_calls_acc:
-                    for idx in sorted(tool_calls_acc.keys()):
-                        acc = tool_calls_acc[idx]
-                        yield ("llm_tool_call", acc["name"], acc["id"], acc["arguments"])
-                    return
-
-                yield ("text_complete", full_text)
-                return
-
-            except (RateLimitError, APITimeoutError, APIConnectionError, APIError) as ex:
-                if isinstance(ex, APIError):
-                    status = getattr(ex, "http_status", None) or getattr(ex, "status_code", None) or 500
-                    if status < 500:
-                        circuit_record(False, service=self.model)
-                        yield ("error", f"API 错误: {ex}")
-                        return
-                if self._should_retry_llm(ex, attempt):
-                    self._llm_retry_sleep(attempt, isinstance(ex, RateLimitError))
-            except Exception as ex:
-                logging.exception("BaseExecutor: unexpected LLM streaming error: %s", ex)
-                if self._should_retry_llm(ex, attempt):
-                    self._llm_retry_sleep(attempt)
-
-        circuit_record(False, service=self.model)
-        yield ("error", "LLM 流式调用失败")
+        """Streaming LLM call with custom messages. Uses shared stream handler."""
+        # Adapt shared stream events to legacy event format for compatibility
+        for event in stream_llm_chat(
+            self.llm, model=self.model, messages=messages,
+            tools=self.tools, circuit_service=self.model, tracer=self.tracer,
+        ):
+            kind = event[0]
+            if kind == "token":
+                yield ("token", event[1])
+            elif kind == "tool_call":
+                # stream_llm_chat: ("tool_call", name, id, args)
+                # legacy format:  ("llm_tool_call", name, id, args)
+                yield ("llm_tool_call", event[1], event[2], event[3])
+            elif kind == "finish":
+                yield ("text_complete", event[2])
+            elif kind == "error":
+                yield ("error", event[1])
 
     # ── Tool Execution ───────────────────────────────────────────────────
 
