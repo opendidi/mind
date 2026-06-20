@@ -10,8 +10,19 @@ LastEditTime: 2025-08-15 10:18:27
 
 import logging
 import pymysql
+from dbutils.pooled_db import PooledDB
 from app.config import db_config
+
+_pool = PooledDB(
+    creator=pymysql,
+    maxconnections=10,
+    mincached=2,
+    maxcached=5,
+    blocking=True,
+    ping=1,
+    **db_config,
+)
 
 class ConnectMysqlHandler:
   def connect_mysql():
-    return pymysql.connect(**db_config)
+    return _pool.connection()
