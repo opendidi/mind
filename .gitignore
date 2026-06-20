@@ -31,6 +31,9 @@ dist-ssr
 *.sln
 *.sw?
 
+# Auto-generated type declarations (unplugin-vue-components)
+web/src/components.d.ts
+
 # TTS cache (generated audio files)
 data/tts_cache/
 
