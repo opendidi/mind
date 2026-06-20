@@ -17,6 +17,17 @@ READ_TOOLS = {
     "file_search",
 }
 
+# Deterministic tools — same input always yields same output (cache longer)
+DETERMINISTIC_TOOLS = {
+    "file_search",
+    "web_fetch",
+    "geocode",
+    "regeocode",
+    "analyze_image",
+}
+
+DETERMINISTIC_CACHE_TTL = 300  # 5 minutes for deterministic lookups
+
 WRITE_INVALIDATION_MAP = {
     "canvas": ["canvas"],
     "blueprint_save": ["blueprint_list", "blueprint_search"],
@@ -80,3 +91,38 @@ def cache_invalidate(tool_name: str, tool_args: dict = None):
             r.expire(version_key, CACHE_TTL * 2)
     except Exception:
         logging.warning("Cache invalidate failed: %s", tool_name, exc_info=True)
+
+
+# ── Deterministic Tool Cache (5-min TTL for idempotent lookups) ──────────
+
+def deterministic_cache_get(tool_name: str, tool_args: dict) -> dict | None:
+    """Get cached result for deterministic tools (same args → same output)."""
+    if tool_name not in DETERMINISTIC_TOOLS:
+        return None
+    try:
+        r = _get_cache_redis()
+        key = f"agent:detcache:{tool_name}:{hashlib.md5(json.dumps(tool_args, sort_keys=True, ensure_ascii=False).encode()).hexdigest()}"
+        data = r.get(key)
+        if data:
+            parsed = json.loads(data)
+            parsed.setdefault("meta", {})["cached"] = True
+            logging.debug("DetCache HIT: %s", tool_name)
+            return parsed
+    except Exception:
+        logging.warning("Deterministic cache get failed: %s", tool_name)
+    return None
+
+
+def deterministic_cache_set(tool_name: str, tool_args: dict, result: dict | str):
+    """Cache result for deterministic tools."""
+    if tool_name not in DETERMINISTIC_TOOLS:
+        return
+    try:
+        r = _get_cache_redis()
+        key = f"agent:detcache:{tool_name}:{hashlib.md5(json.dumps(tool_args, sort_keys=True, ensure_ascii=False).encode()).hexdigest()}"
+        if isinstance(result, str):
+            result = {"value": result}
+        r.setex(key, DETERMINISTIC_CACHE_TTL, json.dumps(result, ensure_ascii=False))
+        logging.debug("DetCache SET: %s (TTL=%ds)", tool_name, DETERMINISTIC_CACHE_TTL)
+    except Exception:
+        logging.warning("Deterministic cache set failed: %s", tool_name)

@@ -5,7 +5,8 @@
 import 'virtual:windi-base.css';
 import 'virtual:windi-components.css';
 import 'virtual:windi-utilities.css';
-import 'ant-design-vue/dist/antd.css';
+// ant-design-vue CSS 由 unplugin-vue-components 按需注入，移除全量引入
+// import 'ant-design-vue/dist/antd.css';  (tree-shaken)
 import '@/assets/icon/iconfont.css';
 
 import { createApp } from 'vue';

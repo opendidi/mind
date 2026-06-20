@@ -228,8 +228,73 @@ class AgentObservability:
     def metric(self, name: str, value: int = 1, **labels):
         MetricsCollector.record(name, value, labels if labels else None)
 
+    # ── Token Budget Tracking ──────────────────────────────────────────
+
+    _session_tokens_in = 0
+    _session_tokens_out = 0
+    TOKEN_BUDGET_WARN = 4000  # warn when single LLM call exceeds this
+    TOKEN_BUDGET_DAILY_LIMIT = 500_000  # daily soft cap per user
+
+    def track_llm_call(self, model: str, tokens_in: int, tokens_out: int,
+                       duration_ms: float = 0.0, status: str = "ok",
+                       attempt: int = 1):
+        """Record an LLM call with token tracking and budget warnings."""
+        self.trace(
+            "llm_call", model=model,
+            tokens_in=tokens_in, tokens_out=tokens_out,
+            duration_ms=duration_ms, status=status, attempt=attempt,
+        )
+        self.metric("llm_tokens_in", tokens_in)
+        self.metric("llm_tokens_out", tokens_out)
+
+        AgentObservability._session_tokens_in += tokens_in
+        AgentObservability._session_tokens_out += tokens_out
+
+        # Warn on large single calls
+        if tokens_in > self.TOKEN_BUDGET_WARN:
+            logging.warning(
+                "LLM call exceeded %d input tokens: %d tokens (model=%s)",
+                self.TOKEN_BUDGET_WARN, tokens_in, model,
+            )
+        if tokens_out > self.TOKEN_BUDGET_WARN:
+            logging.warning(
+                "LLM call generated %d output tokens (model=%s)",
+                tokens_out, model,
+            )
+
+        # Track daily usage via Redis
+        try:
+            from app.util.redis_utils import get_redis
+            r = get_redis(db=3)
+            today = time.strftime("%Y-%m-%d")
+            daily_key = f"agent:tokens:{self.user_id}:{today}"
+            daily_total = r.incrby(daily_key, tokens_in + tokens_out)
+            r.expire(daily_key, 86400 * 2)  # 2-day TTL
+            if daily_total > self.TOKEN_BUDGET_DAILY_LIMIT:
+                logging.warning(
+                    "User %s exceeded daily token budget: %d/%d",
+                    self.user_id, daily_total, self.TOKEN_BUDGET_DAILY_LIMIT,
+                )
+        except Exception:
+            pass
+
+    @classmethod
+    def session_tokens(cls) -> dict:
+        """Get current session token totals."""
+        return {
+            "tokens_in": cls._session_tokens_in,
+            "tokens_out": cls._session_tokens_out,
+            "total": cls._session_tokens_in + cls._session_tokens_out,
+        }
+
     def flush(self):
         total_ms = round((time.time() - self._start_ts) * 1000, 1)
         self.metric("request", 1, route="total")
         self.metric("request_duration_ms", total_ms)
-        return {"trace_id": self.trace_id, "events": len(self._events), "total_ms": total_ms}
+        tk = self.session_tokens()
+        return {
+            "trace_id": self.trace_id,
+            "events": len(self._events),
+            "total_ms": total_ms,
+            "tokens": tk,
+        }

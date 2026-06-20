@@ -17,6 +17,8 @@
 import { defineConfig, UserConfig, ConfigEnv, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
 import windiCSS from 'vite-plugin-windicss';
+import Components from 'unplugin-vue-components/vite';
+import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers';
 import { OUTPUT_DIR } from './build/constant';
 import * as path from 'path';
 import { createProxy } from './build/vite/proxy';
@@ -40,7 +42,19 @@ export default ({ command, mode }: ConfigEnv): UserConfig => {
     // 参考：https://www.jianshu.com/p/4973bd983e96
     base: env.VITE_APP_BASE_URL,
     root,
-    plugins: [vue(), windiCSS()],
+    plugins: [
+      vue(),
+      windiCSS(),
+      Components({
+        resolvers: [
+          AntDesignVueResolver({
+            importStyle: 'less',
+            resolveIcons: true,
+          }),
+        ],
+        dts: 'src/components.d.ts',
+      }),
+    ],
     server: {
       // Listening on all local IPs
       host: true,
