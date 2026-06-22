@@ -70,7 +70,7 @@ function getMeta2d(): any {
 function pushUndoState(meta2d: any): void {
   try {
     if (typeof meta2d.addHistory === 'function') {
-      meta2d.addHistory(JSON.parse(JSON.stringify(meta2d.data())))
+      meta2d.addHistory(structuredClone(meta2d.data()))
     }
   } catch { /* ignore */ }
 }
