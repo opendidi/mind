@@ -82,6 +82,8 @@ def circuit_record(success: bool, status_code: int = 0, service: str = "default"
             r.expire(_fail_key(service), _CIRCUIT_COOLDOWN_SECS * 2)
             if count >= _CIRCUIT_FAIL_THRESHOLD:
                 r.setex(_open_key(service), _CIRCUIT_COOLDOWN_SECS, str(time.time()))
-                logging.warning("Circuit OPEN [%s]: %d consecutive failures, cooldown %ds", service, count, _CIRCUIT_COOLDOWN_SECS)
+                logging.warning(
+                    "Circuit OPEN [%s]: %d consecutive failures, cooldown %ds", service, count, _CIRCUIT_COOLDOWN_SECS
+                )
     except Exception:
         logging.warning("Circuit record Redis failed [%s], memory state updated", service)

@@ -13,8 +13,8 @@ from collections import defaultdict
 from dataclasses import dataclass, field
 from typing import Optional
 
-
 # ── Structured Trace Logger ─────────────────────────────────────────────
+
 
 @dataclass
 class TraceEvent:
@@ -46,9 +46,9 @@ class TraceLogger:
         TraceLogger._logger.info(event.to_json())
 
     @staticmethod
-    def from_tracer(tracer, span_name: str, model: str = "",
-                    tokens_in: int = 0, tokens_out: int = 0,
-                    attempt: int = 1, **meta) -> TraceEvent:
+    def from_tracer(
+        tracer, span_name: str, model: str = "", tokens_in: int = 0, tokens_out: int = 0, attempt: int = 1, **meta
+    ) -> TraceEvent:
         """Build TraceEvent from an AgentTracer instance."""
         return TraceEvent(
             trace_id=tracer.trace_id if tracer else "",
@@ -118,6 +118,7 @@ class MetricsCollector:
         """Persist counter to Redis if available."""
         try:
             from app.util.redis_utils import get_redis
+
             r = get_redis(db=5)
             if r:
                 key = f"agent:metrics:{metric}"
@@ -128,6 +129,7 @@ class MetricsCollector:
 
 
 # ── Health Checker ──────────────────────────────────────────────────────
+
 
 class HealthChecker:
     """Check health of each layer in the Agent pipeline."""
@@ -151,6 +153,7 @@ class HealthChecker:
     def _check_memory() -> dict:
         try:
             from app.util.redis_utils import get_redis
+
             r = get_redis(db=5)
             if r:
                 r.ping()
@@ -168,6 +171,7 @@ class HealthChecker:
         status = "ok"
         try:
             from app.util.agent.tools import ToolRegistry
+
             tools = ToolRegistry.list_tools()
             enabled = sum(1 for _, e in tools if e)
             if enabled == 0:
@@ -180,6 +184,7 @@ class HealthChecker:
     def _check_tools() -> dict:
         try:
             from app.util.agent.tools import ToolRegistry
+
             tools = ToolRegistry.list_tools()
             enabled = [n for n, e in tools if e]
             disabled = [n for n, e in tools if not e]
@@ -209,18 +214,34 @@ class AgentObservability:
 
     def __init__(self, user_id: str = "", trace_id: str = ""):
         import uuid
+
         self.trace_id = trace_id or str(uuid.uuid4())[:12]
         self.user_id = user_id
         self._events: list[TraceEvent] = []
         self._start_ts = time.time()
 
-    def trace(self, span_name: str, model: str = "", tokens_in: int = 0,
-              tokens_out: int = 0, duration_ms: float = 0.0, status: str = "ok",
-              attempt: int = 1, **meta):
+    def trace(
+        self,
+        span_name: str,
+        model: str = "",
+        tokens_in: int = 0,
+        tokens_out: int = 0,
+        duration_ms: float = 0.0,
+        status: str = "ok",
+        attempt: int = 1,
+        **meta,
+    ):
         event = TraceEvent(
-            trace_id=self.trace_id, span_name=span_name, user_id=self.user_id,
-            model=model, tokens_in=tokens_in, tokens_out=tokens_out,
-            duration_ms=duration_ms, status=status, attempt=attempt, metadata=meta,
+            trace_id=self.trace_id,
+            span_name=span_name,
+            user_id=self.user_id,
+            model=model,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+            duration_ms=duration_ms,
+            status=status,
+            attempt=attempt,
+            metadata=meta,
         )
         self._events.append(event)
         TraceLogger.emit(event)
@@ -235,14 +256,24 @@ class AgentObservability:
     TOKEN_BUDGET_WARN = 4000  # warn when single LLM call exceeds this
     TOKEN_BUDGET_DAILY_LIMIT = 500_000  # daily soft cap per user
 
-    def track_llm_call(self, model: str, tokens_in: int, tokens_out: int,
-                       duration_ms: float = 0.0, status: str = "ok",
-                       attempt: int = 1):
+    def track_llm_call(
+        self,
+        model: str,
+        tokens_in: int,
+        tokens_out: int,
+        duration_ms: float = 0.0,
+        status: str = "ok",
+        attempt: int = 1,
+    ):
         """Record an LLM call with token tracking and budget warnings."""
         self.trace(
-            "llm_call", model=model,
-            tokens_in=tokens_in, tokens_out=tokens_out,
-            duration_ms=duration_ms, status=status, attempt=attempt,
+            "llm_call",
+            model=model,
+            tokens_in=tokens_in,
+            tokens_out=tokens_out,
+            duration_ms=duration_ms,
+            status=status,
+            attempt=attempt,
         )
         self.metric("llm_tokens_in", tokens_in)
         self.metric("llm_tokens_out", tokens_out)
@@ -254,17 +285,21 @@ class AgentObservability:
         if tokens_in > self.TOKEN_BUDGET_WARN:
             logging.warning(
                 "LLM call exceeded %d input tokens: %d tokens (model=%s)",
-                self.TOKEN_BUDGET_WARN, tokens_in, model,
+                self.TOKEN_BUDGET_WARN,
+                tokens_in,
+                model,
             )
         if tokens_out > self.TOKEN_BUDGET_WARN:
             logging.warning(
                 "LLM call generated %d output tokens (model=%s)",
-                tokens_out, model,
+                tokens_out,
+                model,
             )
 
         # Track daily usage via Redis
         try:
             from app.util.redis_utils import get_redis
+
             r = get_redis(db=3)
             today = time.strftime("%Y-%m-%d")
             daily_key = f"agent:tokens:{self.user_id}:{today}"
@@ -273,7 +308,9 @@ class AgentObservability:
             if daily_total > self.TOKEN_BUDGET_DAILY_LIMIT:
                 logging.warning(
                     "User %s exceeded daily token budget: %d/%d",
-                    self.user_id, daily_total, self.TOKEN_BUDGET_DAILY_LIMIT,
+                    self.user_id,
+                    daily_total,
+                    self.TOKEN_BUDGET_DAILY_LIMIT,
                 )
         except Exception:
             pass

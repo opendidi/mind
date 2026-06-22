@@ -602,12 +602,12 @@ onBeforeUnmount(() => {
     display: inline-flex; align-items: center; gap: 4px; margin-top: 6px;
     padding: 2px 10px; font-size: 12px; color: #dc2626; cursor: pointer;
     border-radius: 6px; background: #fef2f2; border: 1px solid #fecaca;
-    transition: all 0.15s; opacity: 0;
+    transition: all 0.15s;
     &:hover { background: #fee2e2; border-color: #fca5a5; }
   }
 
   &:hover .msg-copy, &:hover .msg-speak, &:hover .msg-feedback, &:hover .msg-select-trigger,
-  &:hover .msg-quote-btn, &:hover .msg-retry { opacity: 1; }
+  &:hover .msg-quote-btn { opacity: 1; }
 }
 
 .msg-quote-block {

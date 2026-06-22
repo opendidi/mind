@@ -11,9 +11,9 @@ from html.parser import HTMLParser
 
 import requests
 
+from app.package.module.blueprint_mysql import BlueprintMysqlHandler
 from app.util.tool_registry import ToolRegistry
 from app.util.vision import VisionHandler
-from app.package.module.blueprint_mysql import BlueprintMysqlHandler
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Canvas Tools — unified single tool with action parameter
@@ -32,44 +32,85 @@ def _next_pen_id():
     "canvas",
     "画布操作。action: add_pen(创建图形), add_line(连线), add_diagram(批量生成图表), "
     "update_pen(修改), delete_pen(删除), clear(清空), undo(撤销), redo(重做), get_state(查看状态)",
-    {"type": "object", "properties": {
-        "action": {"type": "string", "enum": [
-            "add_pen", "add_line", "add_diagram",
-            "update_pen", "delete_pen",
-            "clear", "undo", "redo", "get_state",
-        ], "description": "操作类型。add_diagram用于批量创建完整图表(流程图/架构图/思维导图)"},
-        # add_pen params
-        "type": {"type": "string", "description": "[add_pen/add_diagram.nodes]图形类型:rectangle/circle/triangle/diamond/pentagon/star/text/image"},
-        "text": {"type": "string", "description": "[add_pen/add_line/update_pen]文字"},
-        "x": {"type": "number", "description": "[add_pen]X坐标(画布中心为原点)", "default": 0},
-        "y": {"type": "number", "description": "[add_pen]Y坐标(画布中心为原点)", "default": 0},
-        "width": {"type": "number", "description": "[add_pen]宽度(像素)", "default": 100},
-        "height": {"type": "number", "description": "[add_pen]高度(像素)", "default": 60},
-        "background": {"type": "string", "description": "[add_pen]背景颜色(#RRGGBB)"},
-        "color": {"type": "string", "description": "[add_pen/add_line]颜色(#RRGGBB)"},
-        "fontSize": {"type": "number", "description": "[add_pen]文字大小(px)"},
-        "borderWidth": {"type": "number", "description": "[add_pen]边框宽度(px)"},
-        "borderColor": {"type": "string", "description": "[add_pen]边框颜色(#RRGGBB)"},
-        # add_line params
-        "from_pen": {"type": "string", "description": "[add_line/add_diagram.edges]起始节点ID"},
-        "to_pen": {"type": "string", "description": "[add_line/add_diagram.edges]目标节点ID"},
-        "line_type": {"type": "string", "enum": ["straight", "curve", "polyline", "mind"], "description": "[add_line]连线类型", "default": "straight"},
-        "arrow": {"type": "string", "enum": ["start", "end", "both", "none"], "description": "[add_line]箭头方向", "default": "end"},
-        "lineWidth": {"type": "number", "description": "[add_line]连线宽度(px)"},
-        # add_diagram params
-        "diagram": {"type": "object", "description": "[add_diagram]图表定义,含nodes数组和edges数组",
-            "properties": {
-                "nodes": {"type": "array", "items": {"type": "object"}, "description": "节点列表,每个节点有id/type/text/x/y/width/height"},
-                "edges": {"type": "array", "items": {"type": "object"}, "description": "连线列表,每条线有from/to/text/line_type/arrow"},
+    {
+        "type": "object",
+        "properties": {
+            "action": {
+                "type": "string",
+                "enum": [
+                    "add_pen",
+                    "add_line",
+                    "add_diagram",
+                    "update_pen",
+                    "delete_pen",
+                    "clear",
+                    "undo",
+                    "redo",
+                    "get_state",
+                ],
+                "description": "操作类型。add_diagram用于批量创建完整图表(流程图/架构图/思维导图)",
             },
+            # add_pen params
+            "type": {
+                "type": "string",
+                "description": "[add_pen/add_diagram.nodes]图形类型:rectangle/circle/triangle/diamond/pentagon/star/text/image",
+            },
+            "text": {"type": "string", "description": "[add_pen/add_line/update_pen]文字"},
+            "x": {"type": "number", "description": "[add_pen]X坐标(画布中心为原点)", "default": 0},
+            "y": {"type": "number", "description": "[add_pen]Y坐标(画布中心为原点)", "default": 0},
+            "width": {"type": "number", "description": "[add_pen]宽度(像素)", "default": 100},
+            "height": {"type": "number", "description": "[add_pen]高度(像素)", "default": 60},
+            "background": {"type": "string", "description": "[add_pen]背景颜色(#RRGGBB)"},
+            "color": {"type": "string", "description": "[add_pen/add_line]颜色(#RRGGBB)"},
+            "fontSize": {"type": "number", "description": "[add_pen]文字大小(px)"},
+            "borderWidth": {"type": "number", "description": "[add_pen]边框宽度(px)"},
+            "borderColor": {"type": "string", "description": "[add_pen]边框颜色(#RRGGBB)"},
+            # add_line params
+            "from_pen": {"type": "string", "description": "[add_line/add_diagram.edges]起始节点ID"},
+            "to_pen": {"type": "string", "description": "[add_line/add_diagram.edges]目标节点ID"},
+            "line_type": {
+                "type": "string",
+                "enum": ["straight", "curve", "polyline", "mind"],
+                "description": "[add_line]连线类型",
+                "default": "straight",
+            },
+            "arrow": {
+                "type": "string",
+                "enum": ["start", "end", "both", "none"],
+                "description": "[add_line]箭头方向",
+                "default": "end",
+            },
+            "lineWidth": {"type": "number", "description": "[add_line]连线宽度(px)"},
+            # add_diagram params
+            "diagram": {
+                "type": "object",
+                "description": "[add_diagram]图表定义,含nodes数组和edges数组",
+                "properties": {
+                    "nodes": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                        "description": "节点列表,每个节点有id/type/text/x/y/width/height",
+                    },
+                    "edges": {
+                        "type": "array",
+                        "items": {"type": "object"},
+                        "description": "连线列表,每条线有from/to/text/line_type/arrow",
+                    },
+                },
+            },
+            # update_pen / delete_pen params
+            "pen_id": {"type": "string", "description": "[update_pen/delete_pen]图形ID"},
+            "pen_ids": {
+                "type": "array",
+                "items": {"type": "string"},
+                "description": "[delete_pen]批量删除的图形ID列表",
+            },
+            "props": {"type": "object", "description": '[update_pen]要修改的属性键值对,如{"x":100,"text":"新文字"}'},
+            # clear param
+            "confirm": {"type": "boolean", "description": "[clear]确认清空画布"},
         },
-        # update_pen / delete_pen params
-        "pen_id": {"type": "string", "description": "[update_pen/delete_pen]图形ID"},
-        "pen_ids": {"type": "array", "items": {"type": "string"}, "description": "[delete_pen]批量删除的图形ID列表"},
-        "props": {"type": "object", "description": "[update_pen]要修改的属性键值对,如{\"x\":100,\"text\":\"新文字\"}"},
-        # clear param
-        "confirm": {"type": "boolean", "description": "[clear]确认清空画布"},
-    }, "required": ["action"]}
+        "required": ["action"],
+    },
 )
 def _tool_canvas(args):
     action = args.get("action", "")
@@ -162,32 +203,57 @@ def _tool_canvas(args):
             "message": "查看系统提示中的 canvas_context 获取完整画布状态",
             "tool_hint": "use canvas_context in system prompt for current canvas state",
         }
-    return {"success": False, "error": f"未知的 action: {action}，支持: add_pen/add_line/add_diagram/update_pen/delete_pen/clear/undo/redo/get_state"}
+    return {
+        "success": False,
+        "error": f"未知的 action: {action}，支持: add_pen/add_line/add_diagram/update_pen/delete_pen/clear/undo/redo/get_state",
+    }
+
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Layout Tools
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 @ToolRegistry.register(
     "layout_auto_arrange",
     "对画布上选中的图形进行自动排版布局。",
-    {"type": "object", "properties": {
-        "direction": {"type": "string", "enum": ["horizontal", "vertical", "grid"], "description": "排列方向", "default": "vertical"},
-        "spacing": {"type": "number", "description": "间距(px)", "default": 40},
-        "columns": {"type": "integer", "description": "网格列数(grid模式)", "default": 3},
-    }, "required": []}
+    {
+        "type": "object",
+        "properties": {
+            "direction": {
+                "type": "string",
+                "enum": ["horizontal", "vertical", "grid"],
+                "description": "排列方向",
+                "default": "vertical",
+            },
+            "spacing": {"type": "number", "description": "间距(px)", "default": 40},
+            "columns": {"type": "integer", "description": "网格列数(grid模式)", "default": 3},
+        },
+        "required": [],
+    },
 )
 def _tool_layout_auto_arrange(args):
-    return {"success": True, "data": args, "message": f"已按{args.get('direction', 'vertical')}方向自动排列，间距{args.get('spacing', 40)}px"}
+    return {
+        "success": True,
+        "data": args,
+        "message": f"已按{args.get('direction', 'vertical')}方向自动排列，间距{args.get('spacing', 40)}px",
+    }
 
 
 @ToolRegistry.register(
     "layout_align",
     "将选中的多个图形对齐。",
-    {"type": "object", "properties": {
-        "align": {"type": "string", "enum": ["left", "center", "right", "top", "middle", "bottom"], "description": "对齐方式"},
-    }, "required": ["align"]}
+    {
+        "type": "object",
+        "properties": {
+            "align": {
+                "type": "string",
+                "enum": ["left", "center", "right", "top", "middle", "bottom"],
+                "description": "对齐方式",
+            },
+        },
+        "required": ["align"],
+    },
 )
 def _tool_layout_align(args):
     return {"success": True, "data": args, "message": f"已按{args.get('align')}对齐"}
-

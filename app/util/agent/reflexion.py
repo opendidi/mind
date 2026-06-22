@@ -6,9 +6,8 @@ import logging
 from dataclasses import dataclass, field
 
 from app.config import AGENT_DEFAULT_MODEL
+from app.util.agent.constants import MAX_LOOP_REPEAT, MAX_REFLECT_RETRIES
 from app.util.agent.helpers import extract_json
-
-from app.util.agent.constants import MAX_REFLECT_RETRIES, MAX_LOOP_REPEAT
 
 REFLECT_PROMPT = """你是故障诊断专家。一个工具执行失败了，分析原因并提出恢复方案。
 
@@ -86,8 +85,16 @@ class ReflexionResult:
 
 class AgentReflexion:
     INFRA_ERROR_PATTERNS = (
-        "connection", "timeout", "rate limit", "server error", "503",
-        "502", "500", "unavailable", "circuit breaker", "AI service error",
+        "connection",
+        "timeout",
+        "rate limit",
+        "server error",
+        "503",
+        "502",
+        "500",
+        "unavailable",
+        "circuit breaker",
+        "AI service error",
         "服务暂不可用",
     )
 
@@ -116,8 +123,11 @@ class AgentReflexion:
         try:
             resp = retry_llm_call(
                 lambda: self.llm.chat.completions.create(
-                    model=self.model, messages=[{"role": "user", "content": prompt}],
-                    temperature=0.1, max_tokens=512, timeout=timeout,
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0.1,
+                    max_tokens=512,
+                    timeout=timeout,
                 ),
                 max_retries=3,
             )
@@ -128,18 +138,32 @@ class AgentReflexion:
             logging.warning("Reflexion LLM call failed (x%d)", self._consecutive_llm_failures, exc_info=True)
             return None
 
-    def analyze_failure(self, tool_name: str, tool_args: dict, error_result: dict,
-                        goal: str, step_desc: str, completed_steps: list[str],
-                        remaining_steps: list[str]) -> dict:
+    def analyze_failure(
+        self,
+        tool_name: str,
+        tool_args: dict,
+        error_result: dict,
+        goal: str,
+        step_desc: str,
+        completed_steps: list[str],
+        remaining_steps: list[str],
+    ) -> dict:
         error_msg = str(error_result)
         if self._is_infra_error(error_msg):
             logging.info("Reflexion: infra error detected, escalating: %s", error_msg[:80])
-            return {"cause": "AI 服务或网络异常", "recovery": "escalate", "adjusted_args": None,
-                    "suggestion": "请稍后重试或检查网络连接"}
+            return {
+                "cause": "AI 服务或网络异常",
+                "recovery": "escalate",
+                "adjusted_args": None,
+                "suggestion": "请稍后重试或检查网络连接",
+            }
 
         prompt = REFLECT_PROMPT.format(
-            goal=goal, step_desc=step_desc, tool_name=tool_name,
-            tool_args=json.dumps(tool_args, ensure_ascii=False), error_msg=error_msg,
+            goal=goal,
+            step_desc=step_desc,
+            tool_name=tool_name,
+            tool_args=json.dumps(tool_args, ensure_ascii=False),
+            error_msg=error_msg,
             completed_steps=json.dumps(completed_steps, ensure_ascii=False),
             remaining_steps=json.dumps(remaining_steps, ensure_ascii=False),
         )
@@ -151,8 +175,12 @@ class AgentReflexion:
                     return json.loads(text)
                 except json.JSONDecodeError:
                     pass
-        return {"cause": "分析失败", "recovery": "escalate", "adjusted_args": None,
-                "suggestion": "工具执行失败，请尝试换一种方式描述需求"}
+        return {
+            "cause": "分析失败",
+            "recovery": "escalate",
+            "adjusted_args": None,
+            "suggestion": "工具执行失败，请尝试换一种方式描述需求",
+        }
 
     def validate_result(self, tool_name: str, tool_args: dict, result: dict) -> dict:
         if not result.get("success"):
@@ -161,7 +189,9 @@ class AgentReflexion:
         if result.get("data") is not None and result.get("data") != [] and result.get("data") != {}:
             return {"valid": True, "issue": "", "suggestion": ""}
         raw = self._call_reflect_llm(
-            RESULT_VALIDATE_PROMPT.format(tool_name=tool_name, tool_args=json.dumps(tool_args, ensure_ascii=False), result_text=result_text),
+            RESULT_VALIDATE_PROMPT.format(
+                tool_name=tool_name, tool_args=json.dumps(tool_args, ensure_ascii=False), result_text=result_text
+            ),
             timeout=10,
         )
         if raw:
@@ -205,8 +235,11 @@ class AgentReflexion:
         try:
             resp = retry_llm_call(
                 lambda: self.llm.chat.completions.create(
-                    model=self.model, messages=[{"role": "user", "content": prompt}],
-                    temperature=0, max_tokens=256, timeout=10,
+                    model=self.model,
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0,
+                    max_tokens=256,
+                    timeout=10,
                 ),
                 max_retries=2,
             )
@@ -219,8 +252,11 @@ class AgentReflexion:
 
         n_completed = len(completed_results)
         n_total = n_completed + len(failed_results)
-        return {"overall_success": n_completed / max(n_total, 1) > 0.5,
-                "summary": f"完成 {n_completed}/{n_total} 个步骤", "missing": failed_results}
+        return {
+            "overall_success": n_completed / max(n_total, 1) > 0.5,
+            "summary": f"完成 {n_completed}/{n_total} 个步骤",
+            "missing": failed_results,
+        }
 
     @staticmethod
     def _extract_json(text: str) -> str:

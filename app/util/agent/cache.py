@@ -5,9 +5,8 @@ import hashlib
 import json
 import logging
 
+from app.util.agent.constants import CACHE_DB, CACHE_TTL
 from app.util.redis_utils import get_redis
-
-from app.util.agent.constants import CACHE_TTL, CACHE_DB
 
 READ_TOOLS = {
     "canvas",
@@ -93,6 +92,7 @@ def cache_invalidate(tool_name: str, tool_args: dict = None):
 
 
 # ── Deterministic Tool Cache (5-min TTL for idempotent lookups) ──────────
+
 
 def deterministic_cache_get(tool_name: str, tool_args: dict) -> dict | None:
     """Get cached result for deterministic tools (same args → same output)."""

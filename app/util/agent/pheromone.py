@@ -12,7 +12,12 @@ from collections import OrderedDict
 
 # 需要从工具结果中自动提取的关键字段（mind 项目通用）
 _EXTRACTABLE_KEYS = {
-    "pen_id", "blueprint_id", "file_id", "name", "type", "text",
+    "pen_id",
+    "blueprint_id",
+    "file_id",
+    "name",
+    "type",
+    "text",
 }
 
 # 工具名 → 结果中值得提取的子字段
@@ -38,6 +43,7 @@ class SharedContext:
     def deposit(self, key: str, value, source_node: str = "", source_tool: str = ""):
         """存入一条发现。若 key 已存在则跳过（先到先得）。"""
         import logging
+
         if key in self._facts:
             return
         if len(self._facts) >= self._max:
@@ -58,6 +64,7 @@ class SharedContext:
         if not self._facts:
             return ""
         import re
+
         lines = ["## 已知信息（前面步骤已发现，可直接使用，无需重复查询）"]
         total = 0
         for key, entry in self._facts.items():

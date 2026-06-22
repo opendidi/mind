@@ -7,14 +7,14 @@ import threading
 import time
 from concurrent.futures import TimeoutError as FutureTimeoutError
 
-from app.config import LLM_TIMEOUT, AGENT_DEFAULT_MODEL
+from app.config import AGENT_DEFAULT_MODEL, LLM_TIMEOUT
 from app.util.agent.agents import get_all_agents
 from app.util.agent.agents.base import AgentBase
-from app.util.executor import ManagedPool
-
-from app.util.agent.constants import SUB_AGENT_TIMEOUT as _SUB_AGENT_TIMEOUT
 from app.util.agent.constants import MAX_CONCURRENT_DISPATCH as _MAX_CONCURRENT_DISPATCH
 from app.util.agent.constants import PEER_QUERY_TIMEOUT as _PEER_QUERY_TIMEOUT
+from app.util.agent.constants import SUB_AGENT_TIMEOUT as _SUB_AGENT_TIMEOUT
+from app.util.executor import ManagedPool
+
 _dispatch_semaphore = threading.BoundedSemaphore(_MAX_CONCURRENT_DISPATCH)
 _dispatch_pool = ManagedPool(max_workers=_MAX_CONCURRENT_DISPATCH, prefix="subagent-")
 
@@ -45,9 +45,7 @@ class AgentDispatcher:
 
     def build_agent_list(self) -> str:
         """Build a formatted agent list string for Supervisor prompt injection."""
-        return "\n".join(
-            f"- {name}: {ag.description}" for name, ag in self._agents.items()
-        )
+        return "\n".join(f"- {name}: {ag.description}" for name, ag in self._agents.items())
 
     def get_dispatch_tool_schema(self) -> dict:
         if not self._agents:
@@ -61,7 +59,11 @@ class AgentDispatcher:
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "agent_name": {"type": "string", "enum": list(self._agents.keys()), "description": "要调用的子 Agent 名称"},
+                        "agent_name": {
+                            "type": "string",
+                            "enum": list(self._agents.keys()),
+                            "description": "要调用的子 Agent 名称",
+                        },
                         "task": {"type": "string", "description": "给子 Agent 的详细任务描述，包含所有必要上下文"},
                     },
                     "required": ["agent_name", "task"],
@@ -81,7 +83,11 @@ class AgentDispatcher:
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        "agent_name": {"type": "string", "enum": list(self._agents.keys()), "description": "要询问的 Agent 名称"},
+                        "agent_name": {
+                            "type": "string",
+                            "enum": list(self._agents.keys()),
+                            "description": "要询问的 Agent 名称",
+                        },
                         "question": {"type": "string", "description": "具体问题，包含必要的上下文信息"},
                     },
                     "required": ["agent_name", "question"],
@@ -89,8 +95,15 @@ class AgentDispatcher:
             },
         }
 
-    def handle_peer_query(self, llm_client, agent_name: str, question: str,
-                          tool_context: dict, model: str = AGENT_DEFAULT_MODEL, tracer=None) -> dict:
+    def handle_peer_query(
+        self,
+        llm_client,
+        agent_name: str,
+        question: str,
+        tool_context: dict,
+        model: str = AGENT_DEFAULT_MODEL,
+        tracer=None,
+    ) -> dict:
         agent = self._agents.get(agent_name)
         if not agent:
             return {"success": False, "result": f"未知 Agent: {agent_name}，可用: {', '.join(self._agents.keys())}"}
@@ -102,17 +115,28 @@ class AgentDispatcher:
         pheromone = tool_context.get("_pheromone", "")
         if pheromone:
             messages.append({"role": "system", "content": f"当前上下文已知信息:\n{pheromone}"})
-        messages.append({"role": "user", "content": f"同事 Agent 询问：{question}\n\n请简洁回答（不要调用工具，仅基于你的专业知识回答）。"})
+        messages.append(
+            {
+                "role": "user",
+                "content": f"同事 Agent 询问：{question}\n\n请简洁回答（不要调用工具，仅基于你的专业知识回答）。",
+            }
+        )
 
         from app.util.agent.retry import retry_llm_call
 
         psid = None
         if tracer:
-            psid = tracer.start_span(f"peer_query:{agent_name}", input={"question": question[:200], "from": caller_name})
+            psid = tracer.start_span(
+                f"peer_query:{agent_name}", input={"question": question[:200], "from": caller_name}
+            )
         try:
             resp = retry_llm_call(
                 lambda: llm_client.chat.completions.create(
-                    model=model, messages=messages, temperature=0, max_tokens=512, timeout=_PEER_QUERY_TIMEOUT,
+                    model=model,
+                    messages=messages,
+                    temperature=0,
+                    max_tokens=512,
+                    timeout=_PEER_QUERY_TIMEOUT,
                 ),
                 max_retries=3,
             )
@@ -126,9 +150,17 @@ class AgentDispatcher:
                 tracer.end_span(psid, "error", {"error": str(ex)[:100]})
             return {"success": False, "result": f"向 {agent_name} 查询失败（重试后仍失败）"}
 
-    def dispatch(self, llm_client, agent_name: str, task: str, tool_context: dict,
-                 model: str = AGENT_DEFAULT_MODEL, tracer=None, event_queue=None,
-                 stream: bool = False) -> dict:
+    def dispatch(
+        self,
+        llm_client,
+        agent_name: str,
+        task: str,
+        tool_context: dict,
+        model: str = AGENT_DEFAULT_MODEL,
+        tracer=None,
+        event_queue=None,
+        stream: bool = False,
+    ) -> dict:
         agent = self._agents.get(agent_name)
         if not agent:
             return {"success": False, "result": f"未知 Agent: {agent_name}", "tool_calls_made": 0}
@@ -142,14 +174,28 @@ class AgentDispatcher:
         future = None
         try:
             logging.info("AgentDispatcher dispatching to %s: %s", agent_name, task[:100])
-            future = _dispatch_pool.get().submit(agent.run, llm_client, task, ctx, model, tracer=tracer, dispatcher=self, event_queue=event_queue, stream=stream)
+            future = _dispatch_pool.get().submit(
+                agent.run,
+                llm_client,
+                task,
+                ctx,
+                model,
+                tracer=tracer,
+                dispatcher=self,
+                event_queue=event_queue,
+                stream=stream,
+            )
             return future.result(timeout=_SUB_AGENT_TIMEOUT)
         except FutureTimeoutError:
             logging.warning("Sub-agent %s timed out after %ds", agent_name, _SUB_AGENT_TIMEOUT)
             cancel_event.set()
             if future:
                 future.cancel()
-            return {"success": False, "result": f"子 Agent {agent_name} 执行超时（{_SUB_AGENT_TIMEOUT}秒）", "tool_calls_made": 0}
+            return {
+                "success": False,
+                "result": f"子 Agent {agent_name} 执行超时（{_SUB_AGENT_TIMEOUT}秒）",
+                "tool_calls_made": 0,
+            }
         except Exception as ex:
             logging.exception("Sub-agent %s dispatch error", agent_name)
             cancel_event.set()

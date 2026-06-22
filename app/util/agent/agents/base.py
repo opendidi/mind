@@ -6,19 +6,15 @@ import logging
 import queue
 from collections import defaultdict
 
-from app.config import LLM_TIMEOUT, AGENT_DEFAULT_MODEL
-from app.util.agent.llm_stream import (
-    parse_stream_chunks, stream_llm_chat,
-)
-from app.util.agent.helpers import (
-    estimate_tokens_from_messages as _estimate_tokens,
-    truncate_tool_result as _truncate_result,
-    loop_key as _loop_key,
-)
+from app.config import AGENT_DEFAULT_MODEL, LLM_TIMEOUT
+from app.util.agent.helpers import estimate_tokens_from_messages as _estimate_tokens
+from app.util.agent.helpers import loop_key as _loop_key
+from app.util.agent.helpers import truncate_tool_result as _truncate_result
+from app.util.agent.llm_stream import parse_stream_chunks, stream_llm_chat
 
 # ── Context budget ────────────────────────────────────────────────────────
-MAX_MSG_TOKENS_ESTIMATE = 8000   # soft cap on estimated message tokens
-KEEP_LAST_N_ROUNDS = 3           # keep last N tool-interaction rounds on trim
+MAX_MSG_TOKENS_ESTIMATE = 8000  # soft cap on estimated message tokens
+KEEP_LAST_N_ROUNDS = 3  # keep last N tool-interaction rounds on trim
 
 
 class AgentBase:
@@ -62,9 +58,7 @@ class AgentBase:
         cancel_event = tool_context.get("_cancel_event")
 
         if tracer:
-            sub_sid = tracer.start_span(
-                f"sub_agent:{self.name}", input={"task": task[:200]}
-            )
+            sub_sid = tracer.start_span(f"sub_agent:{self.name}", input={"task": task[:200]})
 
         # Mark caller identity so peer queries can prevent self-query
         tool_context["_caller_agent"] = self.name
@@ -90,9 +84,7 @@ class AgentBase:
 
         def _finish(success, result):
             if tracer:
-                tracer.end_span(
-                    sub_sid, "ok" if success else "error", {"result": result[:200]}
-                )
+                tracer.end_span(sub_sid, "ok" if success else "error", {"result": result[:200]})
             return {
                 "success": success,
                 "result": result,
@@ -114,7 +106,9 @@ class AgentBase:
                 messages = self._trim_context(messages, KEEP_LAST_N_ROUNDS)
                 logging.info(
                     "Sub-agent %s trimmed context: est=%d → %d tokens",
-                    self.name, est, _estimate_tokens(messages),
+                    self.name,
+                    est,
+                    _estimate_tokens(messages),
                 )
 
             if _use_stream:
@@ -124,9 +118,12 @@ class AgentBase:
                 stream_error = None
 
                 for event in stream_llm_chat(
-                    llm_client, model=model, messages=messages,
+                    llm_client,
+                    model=model,
+                    messages=messages,
                     tools=all_tools if all_tools else None,
-                    circuit_service=f"{self.name}:{model}", tracer=tracer,
+                    circuit_service=f"{self.name}:{model}",
+                    tracer=tracer,
                 ):
                     kind = event[0]
                     if kind == "token":
@@ -152,33 +149,49 @@ class AgentBase:
                         if tracer:
                             tool_sid = tracer.start_span(f"tool:{name}", input=tool_args)
                         import time as _time
+
                         t0 = _time.time()
                         result, _ = run_tool_call(
-                            name, tool_args, tool_context,
-                            dispatcher=dispatcher, llm_client=llm_client,
-                            model=model, tracer=tracer, event_queue=event_queue,
+                            name,
+                            tool_args,
+                            tool_context,
+                            dispatcher=dispatcher,
+                            llm_client=llm_client,
+                            model=model,
+                            tracer=tracer,
+                            event_queue=event_queue,
                         )
                         result = _truncate_result(result)
                         duration_ms = (_time.time() - t0) * 1000
                         if tracer:
                             tracer.end_span(
-                                tool_sid, "ok" if result.get("success") else "error",
+                                tool_sid,
+                                "ok" if result.get("success") else "error",
                                 {"duration_ms": int(duration_ms)},
                             )
                         tool_calls_made += 1
                         event_queue.put(("tool_result", name, result.get("success", False), result))
 
-                        messages.append({
-                            "role": "assistant", "content": "",
-                            "tool_calls": [{
-                                "id": tc_id, "type": "function",
-                                "function": {"name": name, "arguments": args_str},
-                            }],
-                        })
-                        messages.append({
-                            "role": "tool", "tool_call_id": tc_id,
-                            "content": json.dumps(result, ensure_ascii=False),
-                        })
+                        messages.append(
+                            {
+                                "role": "assistant",
+                                "content": "",
+                                "tool_calls": [
+                                    {
+                                        "id": tc_id,
+                                        "type": "function",
+                                        "function": {"name": name, "arguments": args_str},
+                                    }
+                                ],
+                            }
+                        )
+                        messages.append(
+                            {
+                                "role": "tool",
+                                "tool_call_id": tc_id,
+                                "content": json.dumps(result, ensure_ascii=False),
+                            }
+                        )
 
                     elif kind == "error":
                         stream_error = event[1]
@@ -193,6 +206,7 @@ class AgentBase:
 
             # ── Non-streaming path with retry ──
             from app.util.agent.retry import retry_llm_call
+
             llm_sid = None
             if tracer:
                 llm_sid = tracer.start_span(
@@ -259,20 +273,18 @@ class AgentBase:
                     lk = _loop_key(tool_name, tool_args)
                     loop_counter[lk] += 1
                     if loop_counter[lk] > self.MAX_LOOP_REPEAT:
-                        return _finish(
-                            False, f"操作 {tool_name} 重复多次，已停止"
-                        )
+                        return _finish(False, f"操作 {tool_name} 重复多次，已停止")
 
                     if event_queue is not None:
                         event_queue.put(("tool_call", tool_name, tool_args))
 
                     if tracer:
-                        tool_sid = tracer.start_span(
-                            f"tool:{tool_name}", input=tool_args
-                        )
+                        tool_sid = tracer.start_span(f"tool:{tool_name}", input=tool_args)
                     t0 = time.time()
                     result, _ = run_tool_call(
-                        tool_name, tool_args, tool_context,
+                        tool_name,
+                        tool_args,
+                        tool_context,
                         dispatcher=dispatcher,
                         llm_client=llm_client,
                         model=model,
@@ -340,9 +352,7 @@ class AgentBase:
                     break
 
         # Ensure we still have the first user message
-        first_user = next(
-            (m for m in conv_msgs if m["role"] == "user"), None
-        )
+        first_user = next((m for m in conv_msgs if m["role"] == "user"), None)
         if first_user and first_user not in kept:
             kept.insert(0, first_user)
 

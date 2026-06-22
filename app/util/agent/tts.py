@@ -67,9 +67,7 @@ class AgentTTS:
                 logger.info("AgentTTS: 模型加载完成")
             except ImportError as e:
                 logger.error("AgentTTS: ChatTTS / torch 未安装 — %s", e)
-                raise RuntimeError(
-                    "ChatTTS 未安装，请运行: pip install ChatTTS torch"
-                ) from e
+                raise RuntimeError("ChatTTS 未安装，请运行: pip install ChatTTS torch") from e
             except Exception as e:
                 logger.exception("AgentTTS: 模型加载失败")
                 raise RuntimeError(f"ChatTTS 加载失败: {e}") from e
@@ -199,6 +197,7 @@ class AgentTTS:
 
 
 # ── 清理过期缓存 ──────────────────────────────────────────────────────────────
+
 
 def cleanup_tts_cache(max_files: int = 500) -> int:
     """清理 TTS 缓存目录，保留最近的 max_files 个文件。返回删除数量。"""

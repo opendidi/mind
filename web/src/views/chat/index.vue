@@ -565,6 +565,7 @@ function onAbort() {
   agentAbort();
 }
 function onRetry() {
+  console.log('[chat] onRetry triggered');
   agentRetry();
 }
 

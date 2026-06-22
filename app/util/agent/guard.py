@@ -8,8 +8,8 @@ import re
 import threading
 import time
 
-
 # ── Sensitive Word Loader ───────────────────────────────────────────────
+
 
 def _load_word_list(filename: str) -> set:
     """Load a word list from file, one word per line, skip empty/comments."""
@@ -40,11 +40,14 @@ if not _SENSITIVE_WORDS:
 # ── PII Patterns ────────────────────────────────────────────────────────
 
 _PII_PATTERNS = [
-    (re.compile(r'1[3-9]\d{9}'), r'手机号***'),          # Chinese mobile
-    (re.compile(r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b'), r'***@***.***'),  # Email
-    (re.compile(r'\b\d{6}(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dXx]\b'), r'身份证号***'),  # Chinese ID
-    (re.compile(r'\b\d{3}-\d{4}-\d{4}\b'), r'电话***'),   # Phone format
-    (re.compile(r'\b\d{15,19}\b'), r'银行卡号***'),        # Credit card length
+    (re.compile(r"1[3-9]\d{9}"), r"手机号***"),  # Chinese mobile
+    (re.compile(r"\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b"), r"***@***.***"),  # Email
+    (
+        re.compile(r"\b\d{6}(?:19|20)\d{2}(?:0[1-9]|1[0-2])(?:0[1-9]|[12]\d|3[01])\d{3}[\dXx]\b"),
+        r"身份证号***",
+    ),  # Chinese ID
+    (re.compile(r"\b\d{3}-\d{4}-\d{4}\b"), r"电话***"),  # Phone format
+    (re.compile(r"\b\d{15,19}\b"), r"银行卡号***"),  # Credit card length
 ]
 
 
@@ -55,12 +58,12 @@ from app.util.agent.constants import MAX_INPUT_LENGTH
 
 # Simple injection patterns to reject immediately
 _INJECTION_PATTERNS = [
-    re.compile(r'<script[^>]*>', re.IGNORECASE),
-    re.compile(r'javascript\s*:', re.IGNORECASE),
+    re.compile(r"<script[^>]*>", re.IGNORECASE),
+    re.compile(r"javascript\s*:", re.IGNORECASE),
     re.compile(r'on\w+\s*=\s*"[^"]*"', re.IGNORECASE),
-    re.compile(r'SELECT\s+.*\s+FROM\s+', re.IGNORECASE),
-    re.compile(r'DROP\s+TABLE', re.IGNORECASE),
-    re.compile(r'UNION\s+SELECT', re.IGNORECASE),
+    re.compile(r"SELECT\s+.*\s+FROM\s+", re.IGNORECASE),
+    re.compile(r"DROP\s+TABLE", re.IGNORECASE),
+    re.compile(r"UNION\s+SELECT", re.IGNORECASE),
 ]
 
 
@@ -94,11 +97,12 @@ class InputGuard:
     def sanitize(text: str) -> str:
         """Strip HTML tags and null bytes. Returns cleaned text."""
         text = text.replace("\x00", "")
-        text = re.sub(r'<[^>]*>', '', text)
+        text = re.sub(r"<[^>]*>", "", text)
         return text.strip()
 
 
 # ── Tool Guard ──────────────────────────────────────────────────────────
+
 
 class ToolGuard:
     """Validate tool calls and enforce safety limits."""
@@ -112,8 +116,7 @@ class ToolGuard:
     from app.util.agent.constants import MAX_CALLS_PER_TOOL
 
     @classmethod
-    def check_tool_call(cls, tool_name: str, tool_args: dict,
-                        session_id: str = "") -> dict:
+    def check_tool_call(cls, tool_name: str, tool_args: dict, session_id: str = "") -> dict:
         """Check a tool call before execution.
 
         Returns {"ok": True} or {"ok": False, "reason": str, "confirm_required": bool}.
@@ -131,8 +134,7 @@ class ToolGuard:
             }
 
         # Parameter safety: prevent path traversal in file tools
-        if tool_name in ("file_search", "read_text", "parse_json",
-                          "extract_excel", "analyze_doc"):
+        if tool_name in ("file_search", "read_text", "parse_json", "extract_excel", "analyze_doc"):
             for param in ("object_name", "path", "keyword"):
                 val = tool_args.get(param, "")
                 if isinstance(val, str) and (".." in val or val.startswith("/")):
@@ -143,10 +145,7 @@ class ToolGuard:
                     }
 
         # Destructive operations require confirmation
-        destructive = any(
-            tool_name.startswith(t) or tool_name == t
-            for t in cls.DESTRUCTIVE_TOOLS
-        )
+        destructive = any(tool_name.startswith(t) or tool_name == t for t in cls.DESTRUCTIVE_TOOLS)
         if destructive:
             return {"ok": True, "confirm_required": True}
 
@@ -162,6 +161,7 @@ class ToolGuard:
 
 
 # ── Output Guard ────────────────────────────────────────────────────────
+
 
 class OutputGuard:
     """Sanitize agent output before sending to user."""
@@ -197,7 +197,7 @@ class OutputGuard:
                 # Match as standalone token: bounded by non-alnum, CJK, or text edge
                 escaped = re.escape(word)
                 pattern = re.compile(
-                    r'(?<![a-zA-Z0-9])' + escaped + r'(?![a-zA-Z0-9])',
+                    r"(?<![a-zA-Z0-9])" + escaped + r"(?![a-zA-Z0-9])",
                     re.IGNORECASE,
                 )
                 if pattern.search(text):
@@ -214,7 +214,7 @@ class OutputGuard:
         """Check if a ```map or ```route code block has valid JSON."""
         if block_type not in ("map", "route"):
             return True
-        pattern = rf'```{block_type}\s*\n(.*?)\n```'
+        pattern = rf"```{block_type}\s*\n(.*?)\n```"
         for m in re.finditer(pattern, text, re.DOTALL | re.IGNORECASE):
             try:
                 data = json.loads(m.group(1))

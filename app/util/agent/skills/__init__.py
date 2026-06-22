@@ -5,15 +5,19 @@ Each skill is a standalone string that gets injected into the system prompt
 only when the user's intent matches that domain.
 """
 
-from app.util.agent.skills.canvas_skill import CANVAS_SKILL
 from app.util.agent.skills.blueprint_skill import BLUEPRINT_SKILL
+from app.util.agent.skills.canvas_skill import CANVAS_SKILL
+from app.util.agent.skills.code_skill import CODE_SKILL
 from app.util.agent.skills.file_skill import FILE_SKILL
 from app.util.agent.skills.mindmap_skill import MINDMAP_SKILL
-from app.util.agent.skills.code_skill import CODE_SKILL
 
 __all__ = [
-    "CANVAS_SKILL", "BLUEPRINT_SKILL", "FILE_SKILL",
-    "MINDMAP_SKILL", "CODE_SKILL", "get_skills_for_intent",
+    "CANVAS_SKILL",
+    "BLUEPRINT_SKILL",
+    "FILE_SKILL",
+    "MINDMAP_SKILL",
+    "CODE_SKILL",
+    "get_skills_for_intent",
 ]
 
 # Tier 1: Keyword-based domain matching (core skills)

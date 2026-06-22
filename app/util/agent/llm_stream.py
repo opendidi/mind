@@ -9,14 +9,15 @@ import random
 import time
 from typing import Any, Generator
 
-
 # ── Retry / Backoff ──────────────────────────────────────────────────────
+
 
 def should_retry_llm(error: Exception, attempt: int) -> bool:
     """Check if an LLM call error is retryable."""
     if attempt >= 2:
         return False
     from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
+
     if isinstance(error, (RateLimitError, APITimeoutError, APIConnectionError)):
         return True
     if isinstance(error, APIError):
@@ -27,7 +28,7 @@ def should_retry_llm(error: Exception, attempt: int) -> bool:
 
 def llm_retry_sleep(attempt: int, is_rate_limit: bool = False):
     """Exponential backoff with jitter."""
-    base = 2 ** attempt
+    base = 2**attempt
     sleep_s = base + random.uniform(0, 1) if is_rate_limit else base * random.uniform(0.75, 1.25)
     time.sleep(sleep_s)
 
@@ -93,6 +94,7 @@ def parse_stream_chunks(
 
 # ── Unified streaming LLM call ──────────────────────────────────────────
 
+
 def stream_llm_chat(
     llm_client,
     *,
@@ -152,4 +154,5 @@ def stream_llm_chat(
         circuit_record(False, service=service)
         if tracer:
             tracer.end_span(llm_span_id, "error", {"error": str(ex)[:100]})
-        yield ("error", "LLM 流式调用失败（已重试 3 次）")
+        msg = str(ex)
+        yield ("error", f"LLM 流式调用失败: {msg[:200]}")

@@ -1,11 +1,12 @@
-'''
+"""
 Descripttion:
 version: 1.0.0
 Author: htang
 Date: 2025-07-09 14:19:33
 LastEditors: htang
 LastEditTime: 2025-08-15 10:17:31
-'''
+"""
+
 # -*- coding: UTF-8 -*-
 
 import os
@@ -18,12 +19,12 @@ load_dotenv()  # 从 .env 文件加载环境变量
 
 # 数据库连接参数
 db_config = {
-  'host': os.environ.get('DB_HOST', 'localhost'),
-  'user': os.environ.get('DB_USER', 'root'),
-  'passwd': os.environ.get('DB_PASSWORD', ''),
-  'port': int(os.environ.get('DB_PORT', 3306)),
-  'db': os.environ.get('DB_NAME', 'mind'),
-  'cursorclass': pymysql.cursors.DictCursor
+    "host": os.environ.get("DB_HOST", "localhost"),
+    "user": os.environ.get("DB_USER", "root"),
+    "passwd": os.environ.get("DB_PASSWORD", ""),
+    "port": int(os.environ.get("DB_PORT", 3306)),
+    "db": os.environ.get("DB_NAME", "mind"),
+    "cursorclass": pymysql.cursors.DictCursor,
 }
 
 # Redis 配置（Agent 系统需要）

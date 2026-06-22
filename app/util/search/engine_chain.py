@@ -16,8 +16,12 @@
 
 import logging
 import re
+
+# ── Race-mode pool singleton ───────────────────────────────────────────
+import threading as _threading
 import time
-from concurrent.futures import FIRST_COMPLETED, TimeoutError as FutureTimeoutError
+from concurrent.futures import FIRST_COMPLETED
+from concurrent.futures import TimeoutError as FutureTimeoutError
 from concurrent.futures import wait as cf_wait
 
 from app.util.agent.tools import ToolRegistry, _require
@@ -35,20 +39,8 @@ from app.util.search.engines import (
     search_searxng,
     try_ddgs_search,
 )
-from app.util.search.monitor import (
-    check_engine_alert,
-    is_engine_degraded,
-    record_search_attempt,
-)
-from app.util.search.ranking import (
-    _dedup_results,
-    _inject_year,
-    _score_results,
-    format_search_results,
-)
-
-# ── Race-mode pool singleton ───────────────────────────────────────────
-import threading as _threading
+from app.util.search.monitor import check_engine_alert, is_engine_degraded, record_search_attempt
+from app.util.search.ranking import _dedup_results, _inject_year, _score_results, format_search_results
 
 _race_pool = [None]  # list-wrapped for auto-reset on shutdown
 _race_pool_lock = _threading.Lock()
@@ -70,8 +62,18 @@ def _get_race_pool():
 # ── Verification constants ────────────────────────────────────────────
 
 _VALID_REGIONS = {
-    "cn", "us", "jp", "kr", "uk", "de", "fr",
-    "wt-wt", "us-en", "cn-zh", "jp-jp", "kr-kr",
+    "cn",
+    "us",
+    "jp",
+    "kr",
+    "uk",
+    "de",
+    "fr",
+    "wt-wt",
+    "us-en",
+    "cn-zh",
+    "jp-jp",
+    "kr-kr",
 }
 _VALID_ENGINES = {"auto", "ddg", "bing", "baidu", "exa", "searxng"}
 _VALID_SAFE = {"off", "moderate", "strict"}
@@ -122,20 +124,20 @@ def _detect_domain(keyword: str) -> tuple[str | None, str | None]:
     Uses dual matching: \\b-based patterns for ASCII, substring matching for CJK.
     """
     lower = keyword.lower()
-    has_cjk = bool(re.search(r'[一-鿿]', keyword))
+    has_cjk = bool(re.search(r"[一-鿿]", keyword))
 
     for domain, patterns in _DOMAIN_PATTERNS.items():
         for pat in patterns:
             matched = False
             if has_cjk:
                 # Strip \\b for CJK — word boundaries don't work with Chinese chars
-                cjk_pat = pat.replace('\\b', '')
+                cjk_pat = pat.replace("\\b", "")
                 matched = bool(re.search(cjk_pat, lower))
             else:
                 try:
                     matched = bool(re.search(pat, lower))
                 except re.error:
-                    matched = bool(re.search(pat.replace('\\b', ''), lower))
+                    matched = bool(re.search(pat.replace("\\b", ""), lower))
             if matched:
                 route = _DOMAIN_ROUTES.get(domain)
                 if route:
@@ -158,18 +160,31 @@ def _degrade_keyword(keyword: str) -> str | None:
         # Chinese: remove common filler/phrase prefixes and punctuation
         # Only remove clear filler prefix phrases (not individual chars)
         filler_prefixes = [
-            "帮我搜索一下", "帮我搜索", "帮我查找一下", "帮我查找",
-            "帮我搜一下", "帮我搜", "帮我查一下", "帮我查",
-            "帮我找一下", "帮我找", "帮我", "搜索一下", "搜索",
-            "查找一下", "查找", "查一下", "搜一下",
+            "帮我搜索一下",
+            "帮我搜索",
+            "帮我查找一下",
+            "帮我查找",
+            "帮我搜一下",
+            "帮我搜",
+            "帮我查一下",
+            "帮我查",
+            "帮我找一下",
+            "帮我找",
+            "帮我",
+            "搜索一下",
+            "搜索",
+            "查找一下",
+            "查找",
+            "查一下",
+            "搜一下",
         ]
         cleaned = keyword
         for prefix in sorted(filler_prefixes, key=len, reverse=True):
             if cleaned.startswith(prefix):
-                cleaned = cleaned[len(prefix):]
+                cleaned = cleaned[len(prefix) :]
                 break
         # Remove punctuation-only chars
-        cleaned = re.sub(r'[，。！？、；：""''（）【】《》]', '', cleaned).strip()
+        cleaned = re.sub(r'[，。！？、；：""' "（）【】《》]", "", cleaned).strip()
         if not cleaned or cleaned == keyword:
             return None
         if len(cleaned) < 2:
@@ -177,17 +192,99 @@ def _degrade_keyword(keyword: str) -> str | None:
         return cleaned
     else:
         # English: drop stop words, keep first 5 content words
-        en_stop = {"the", "a", "an", "is", "are", "was", "were", "be", "been", "being",
-                   "have", "has", "had", "do", "does", "did", "will", "would", "could",
-                   "should", "may", "might", "can", "shall", "to", "of", "in", "for",
-                   "on", "with", "at", "by", "from", "as", "into", "through", "during",
-                   "and", "or", "but", "not", "no", "nor", "so", "yet", "both", "either",
-                   "neither", "each", "every", "all", "any", "few", "more", "most",
-                   "other", "some", "such", "only", "own", "same", "than", "too", "very",
-                   "just", "about", "over", "also", "then", "now", "here", "there",
-                   "find", "search", "look", "what", "why", "how", "who", "when", "where",
-                   "please", "help", "list", "show", "tell", "give", "get", "want", "need"}
-        words = [w for w in re.split(r'\s+', keyword) if w.lower() not in en_stop]
+        en_stop = {
+            "the",
+            "a",
+            "an",
+            "is",
+            "are",
+            "was",
+            "were",
+            "be",
+            "been",
+            "being",
+            "have",
+            "has",
+            "had",
+            "do",
+            "does",
+            "did",
+            "will",
+            "would",
+            "could",
+            "should",
+            "may",
+            "might",
+            "can",
+            "shall",
+            "to",
+            "of",
+            "in",
+            "for",
+            "on",
+            "with",
+            "at",
+            "by",
+            "from",
+            "as",
+            "into",
+            "through",
+            "during",
+            "and",
+            "or",
+            "but",
+            "not",
+            "no",
+            "nor",
+            "so",
+            "yet",
+            "both",
+            "either",
+            "neither",
+            "each",
+            "every",
+            "all",
+            "any",
+            "few",
+            "more",
+            "most",
+            "other",
+            "some",
+            "such",
+            "only",
+            "own",
+            "same",
+            "than",
+            "too",
+            "very",
+            "just",
+            "about",
+            "over",
+            "also",
+            "then",
+            "now",
+            "here",
+            "there",
+            "find",
+            "search",
+            "look",
+            "what",
+            "why",
+            "how",
+            "who",
+            "when",
+            "where",
+            "please",
+            "help",
+            "list",
+            "show",
+            "tell",
+            "give",
+            "get",
+            "want",
+            "need",
+        }
+        words = [w for w in re.split(r"\s+", keyword) if w.lower() not in en_stop]
         if not words:
             return None
         shortened = " ".join(words[:5])
@@ -211,23 +308,19 @@ def _deep_fetch_results(results: list, keyword: str) -> list:
     from app.util.agent.tools import run_tool_call
 
     enriched = []
-    for i, r in enumerate(results[: _DEEP_FETCH_LIMIT]):
+    for i, r in enumerate(results[:_DEEP_FETCH_LIMIT]):
         url = r.get("url", "")
         if not url:
             enriched.append(r)
             continue
         try:
-            fetch_result, _ = run_tool_call(
-                "web_fetch", {"url": url}, {}, None, None, None, None
-            )
+            fetch_result, _ = run_tool_call("web_fetch", {"url": url}, {}, None, None, None, None)
             if fetch_result.get("success"):
                 content = fetch_result.get("data", {}).get("content", "")
                 if content:
                     r = dict(r)
                     r["full_text"] = content[:4000]
-                    r["snippet"] = (
-                        r.get("snippet", "") + f"\n\n[全文摘要]\n{content[:1000]}"
-                    )
+                    r["snippet"] = r.get("snippet", "") + f"\n\n[全文摘要]\n{content[:1000]}"
         except Exception:
             logging.debug("Deep fetch failed for: %s", url, exc_info=True)
         enriched.append(r)
@@ -281,9 +374,7 @@ def _validate_web_search(args):
         # Normalize common LLM-chosen aliases to valid types
         st = _SEARCH_TYPE_ALIAS_MAP.get(st, st)
         if st not in _VALID_SEARCH_TYPE:
-            return (
-                f"search_type 无效: {st}，支持: {', '.join(sorted(_VALID_SEARCH_TYPE))}"
-            )
+            return f"search_type 无效: {st}，支持: {', '.join(sorted(_VALID_SEARCH_TYPE))}"
         args["search_type"] = st
     else:
         args["search_type"] = "web"
@@ -312,15 +403,20 @@ def _engine_chain(engine: str, search_type: str):
     yielded = 0
     if engine == "auto":
         if _exa_configured() and not is_engine_degraded("exa"):
-            yield "exa"; yielded += 1
+            yield "exa"
+            yielded += 1
         if _searxng_configured() and not is_engine_degraded("searxng"):
-            yield "searxng"; yielded += 1
+            yield "searxng"
+            yielded += 1
         if not is_engine_degraded("bing"):
-            yield "bing"; yielded += 1
+            yield "bing"
+            yielded += 1
         if not is_engine_degraded("ddg"):
-            yield "ddg"; yielded += 1
+            yield "ddg"
+            yielded += 1
         if not is_engine_degraded("baidu"):
-            yield "baidu"; yielded += 1
+            yield "baidu"
+            yielded += 1
         # Last resort: if all engines are degraded, still try DDGS (no API key needed)
         if yielded == 0:
             logging.warning("All search engines degraded — falling back to DDGS as last resort")
@@ -352,9 +448,7 @@ def _try_engine(src, keyword, max_results, region, safe, timelimit, search_type)
     if not circuit_allow(service=f"search:{src}"):
         return None, 0, f"搜索引擎 {src} 暂不可用（熔断）"
     if src == "exa":
-        raw, err = search_exa(
-            keyword, max_results, search_type=search_type, timelimit=timelimit
-        )
+        raw, err = search_exa(keyword, max_results, search_type=search_type, timelimit=timelimit)
         return raw, 0, err
     elif src == "searxng":
         raw, err = search_searxng(keyword, max_results, search_type=search_type)
@@ -512,8 +606,16 @@ def web_search(args):
     # ── Engine chain execution ──────────────────────────────────────
     # Try with domain-routed keyword first
     payload = _run_engine_chain(
-        routed_keyword, max_results, engine, region, safe, timelimit,
-        search_type, t_start, deadline, cache_key,
+        routed_keyword,
+        max_results,
+        engine,
+        region,
+        safe,
+        timelimit,
+        search_type,
+        t_start,
+        deadline,
+        cache_key,
     )
     if payload is not None:
         if search_depth == "deep" and search_type == "web":
@@ -535,8 +637,16 @@ def web_search(args):
             degraded_keyword = f"{degraded} {site_query}"
         deadline2 = time.time() + (_SEARCH_BUDGET_MS / 2000.0)  # half budget
         payload = _run_engine_chain(
-            degraded_keyword, max_results, engine, region, safe, timelimit,
-            search_type, t_start, deadline2, cache_key,
+            degraded_keyword,
+            max_results,
+            engine,
+            region,
+            safe,
+            timelimit,
+            search_type,
+            t_start,
+            deadline2,
+            cache_key,
         )
         if payload is not None:
             payload["meta"]["degraded_keyword"] = True
@@ -596,13 +706,31 @@ def _run_engine_chain(
 
     if engine == "auto" and len(engine_tags) > 1:
         return _race_mode(
-            engine_tags, keyword, max_results, region, safe, timelimit,
-            search_type, t_start, deadline, cache_key, attempted_sources,
+            engine_tags,
+            keyword,
+            max_results,
+            region,
+            safe,
+            timelimit,
+            search_type,
+            t_start,
+            deadline,
+            cache_key,
+            attempted_sources,
         )
     else:
         return _sequential_mode(
-            engine_tags, keyword, max_results, region, safe, timelimit,
-            search_type, t_start, deadline, cache_key, attempted_sources,
+            engine_tags,
+            keyword,
+            max_results,
+            region,
+            safe,
+            timelimit,
+            search_type,
+            t_start,
+            deadline,
+            cache_key,
+            attempted_sources,
         )
 
 
@@ -633,7 +761,13 @@ def _race_mode(
             break
         f = pool.submit(
             _try_engine,
-            src, keyword, max_results, region, safe, timelimit, search_type,
+            src,
+            keyword,
+            max_results,
+            region,
+            safe,
+            timelimit,
+            search_type,
         )
         futures[f] = src
 
@@ -757,14 +891,24 @@ def _sequential_mode(
             break
         attempted_sources.append(src)
         raw, eng_total, _ = _try_engine(
-            src, keyword, max_results, region, safe, timelimit, search_type,
+            src,
+            keyword,
+            max_results,
+            region,
+            safe,
+            timelimit,
+            search_type,
         )
         record_search_attempt(src, bool(raw))
 
         if raw:
             payload = format_search_results(
-                raw, keyword, src, t_start,
-                search_type=search_type, total=eng_total,
+                raw,
+                keyword,
+                src,
+                t_start,
+                search_type=search_type,
+                total=eng_total,
             )
             cache_set(cache_key, max_results, payload)
             return payload

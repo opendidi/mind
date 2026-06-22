@@ -3,8 +3,9 @@
 
 import json
 import logging
-from app.util.agent.helpers import extract_json, repair_json
+
 from app.config import AGENT_DEFAULT_MODEL
+from app.util.agent.helpers import extract_json, repair_json
 
 ADAPTIVE_PROMPT = """你是任务重规划专家。一个 DAG 执行节点失败了，请分析原因并生成替代步骤。
 
@@ -130,8 +131,7 @@ def replan_node(
             logging.info("Adaptive re-plan: LLM returned empty replacements for node %s", failed_node_id)
             return None
 
-        logging.info("Adaptive re-plan: generated %d replacement steps for node %s",
-                     len(replacements), failed_node_id)
+        logging.info("Adaptive re-plan: generated %d replacement steps for node %s", len(replacements), failed_node_id)
         return replacements
 
     except Exception:

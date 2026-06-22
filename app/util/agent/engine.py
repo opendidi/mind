@@ -3,12 +3,12 @@
 
 from typing import Generator
 
-from app.config import AGENT_DEFAULT_MODEL
-from app.util.agent.executor import AgentExecutor
-from app.util.agent.dag import DAGPlan, DAGNode
-from app.util.agent.dispatcher import AgentDispatcher
-from app.util.agent.guard import InputGuard, OutputGuard
 import app.util.search  # noqa: F401 — registers web_search tool via ToolRegistry
+from app.config import AGENT_DEFAULT_MODEL
+from app.util.agent.dag import DAGNode, DAGPlan
+from app.util.agent.dispatcher import AgentDispatcher
+from app.util.agent.executor import AgentExecutor
+from app.util.agent.guard import InputGuard, OutputGuard
 from app.util.agent.tools import TOOL_SCHEMAS, _rebuild_schemas
 from app.util.agent.tracer import AgentTracer
 
@@ -93,11 +93,19 @@ class AgentEngine:
 
             # Create guarded executor
             executor = AgentExecutor(
-                self.llm, full_tools, messages,
-                tool_context=tool_ctx, user_id=self.user_id, model=self.model,
-                confirm_handler=confirm_handler, dispatcher=self.dispatcher,
-                tracer=tracer, stream=stream, redis_client=redis_client,
-                task_id=task_id, session_id=session_id,
+                self.llm,
+                full_tools,
+                messages,
+                tool_context=tool_ctx,
+                user_id=self.user_id,
+                model=self.model,
+                confirm_handler=confirm_handler,
+                dispatcher=self.dispatcher,
+                tracer=tracer,
+                stream=stream,
+                redis_client=redis_client,
+                task_id=task_id,
+                session_id=session_id,
             )
 
             if precomputed_plan:
@@ -106,7 +114,8 @@ class AgentEngine:
                 if plan_mode == "dag":
                     nodes = [
                         DAGNode(
-                            id=n["id"], desc=n["desc"],
+                            id=n["id"],
+                            desc=n["desc"],
                             tool_hint=n.get("tool_hint"),
                             agent_name=n.get("agent_name"),
                             confirm=n.get("confirm", False),

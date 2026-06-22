@@ -2,11 +2,14 @@
 """
 Chat MySQL handler — DB operations for conversation persistence
 """
-import logging
+
 import json
+import logging
 import uuid
-import pymysql
 from datetime import datetime
+
+import pymysql
+
 from .connect import ConnectMysqlHandler
 
 
@@ -52,7 +55,11 @@ class ChatMysqlHandler:
                 )
                 row = cursor.fetchone()
                 if row:
-                    row['messages'] = json.loads(row['messages']) if isinstance(row.get('messages'), str) else (row.get('messages') or [])
+                    row["messages"] = (
+                        json.loads(row["messages"])
+                        if isinstance(row.get("messages"), str)
+                        else (row.get("messages") or [])
+                    )
                 return row
         except Exception as ex:
             logging.warning(f"查询对话失败: {ex}")
@@ -64,10 +71,10 @@ class ChatMysqlHandler:
     @staticmethod
     def save_conversation(user_id: str, data: dict) -> tuple:
         """Insert or update a conversation. Returns (success: bool, message: str)."""
-        conv_id = data.get('id') or str(uuid.uuid4()).replace('-', '')
-        title = data.get('title', '新对话')
-        messages = json.dumps(data.get('messages', []), ensure_ascii=False)
-        pinned = 1 if data.get('pinned') else 0
+        conv_id = data.get("id") or str(uuid.uuid4()).replace("-", "")
+        title = data.get("title", "新对话")
+        messages = json.dumps(data.get("messages", []), ensure_ascii=False)
+        pinned = 1 if data.get("pinned") else 0
 
         connect = None
         try:
@@ -135,10 +142,10 @@ class ChatMysqlHandler:
                 if not row:
                     return False
 
-                msgs = json.loads(row['messages']) if isinstance(row['messages'], str) else (row.get('messages') or [])
+                msgs = json.loads(row["messages"]) if isinstance(row["messages"], str) else (row.get("messages") or [])
                 for m in msgs:
-                    if m.get('id') == msg_id:
-                        m['feedback'] = feedback
+                    if m.get("id") == msg_id:
+                        m["feedback"] = feedback
                         break
 
                 with connect.cursor() as update_cursor:

@@ -6,7 +6,8 @@ from app.util.agent.tools import TOOL_SCHEMAS
 
 CANVAS_TOOLS = [
     "canvas",
-    "layout_auto_arrange", "layout_align",
+    "layout_auto_arrange",
+    "layout_align",
 ]
 
 
@@ -49,5 +50,4 @@ class CanvasAgent(AgentBase):
 
     @property
     def tools(self):
-        return [s for s in TOOL_SCHEMAS
-                if s.get("function", {}).get("name") in CANVAS_TOOLS]
+        return [s for s in TOOL_SCHEMAS if s.get("function", {}).get("name") in CANVAS_TOOLS]

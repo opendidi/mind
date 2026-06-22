@@ -69,16 +69,17 @@ class EvalRunner:
 
             cases_data = data if isinstance(data, list) else [data]
             for c in cases_data:
-                self.cases.append(EvalCase(
-                    id=c.get("id", f"{fname}:{len(self.cases)}"),
-                    category=c.get("category", "general"),
-                    input=c.get("input", ""),
-                    expected=c.get("expected", {}),
-                    tags=c.get("tags", []),
-                ))
+                self.cases.append(
+                    EvalCase(
+                        id=c.get("id", f"{fname}:{len(self.cases)}"),
+                        category=c.get("category", "general"),
+                        input=c.get("input", ""),
+                        expected=c.get("expected", {}),
+                        tags=c.get("tags", []),
+                    )
+                )
 
-        logging.info("EvalRunner: loaded %d cases from %d files", len(self.cases),
-                      len(os.listdir(self.case_dir)))
+        logging.info("EvalRunner: loaded %d cases from %d files", len(self.cases), len(os.listdir(self.case_dir)))
         return len(self.cases)
 
     def run(self, agent_fn: Callable, *, verbose: bool = False) -> list[EvalResult]:
@@ -104,7 +105,8 @@ class EvalRunner:
             duration = (time.time() - t0) * 1000
             score, details = self._score(case, output)
             result = EvalResult(
-                case_id=case.id, category=case.category,
+                case_id=case.id,
+                category=case.category,
                 passed=score >= 0.5,
                 score=score,
                 details=details,
@@ -126,8 +128,7 @@ class EvalRunner:
              "by_category": {cat: {"total": N, "passed": N, "rate": f}}, "avg_score": float}
         """
         if not self.results:
-            return {"total": 0, "passed": 0, "failed": 0, "pass_rate": 0.0,
-                    "by_category": {}, "avg_score": 0.0}
+            return {"total": 0, "passed": 0, "failed": 0, "pass_rate": 0.0, "by_category": {}, "avg_score": 0.0}
 
         total = len(self.results)
         passed = sum(1 for r in self.results if r.passed)
@@ -147,7 +148,9 @@ class EvalRunner:
         avg_score = sum(r.score for r in self.results) / max(total, 1)
 
         return {
-            "total": total, "passed": passed, "failed": failed,
+            "total": total,
+            "passed": passed,
+            "failed": failed,
             "pass_rate": round(passed / max(total, 1), 3),
             "by_category": by_cat,
             "avg_score": round(avg_score, 3),
@@ -218,8 +221,9 @@ class EvalRunner:
 
         # 5. Tool names
         if "tool_names" in expected:
-            actual_names = [tc.get("name", tc.get("function", {}).get("name", ""))
-                           for tc in output.get("tool_calls", [])]
+            actual_names = [
+                tc.get("name", tc.get("function", {}).get("name", "")) for tc in output.get("tool_calls", [])
+            ]
             for tname in expected["tool_names"]:
                 ok = tname in actual_names
                 checks.append(1.0 if ok else 0.0)

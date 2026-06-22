@@ -11,13 +11,14 @@ from html.parser import HTMLParser
 
 import requests
 
+from app.package.module.blueprint_mysql import BlueprintMysqlHandler
 from app.util.tool_registry import ToolRegistry
 from app.util.vision import VisionHandler
-from app.package.module.blueprint_mysql import BlueprintMysqlHandler
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Search & Web Tools
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 def _require(args: dict, *keys: str) -> str | None:
     for k in keys:
@@ -58,12 +59,17 @@ class _TextExtractor(HTMLParser):
 # web_search tool is now in app.util.search.engine_chain (auto-registered on import)
 # web_fetch tool kept below
 
+
 @ToolRegistry.register(
     "web_fetch",
     "抓取指定URL的网页内容并提取正文。适用于用户提供链接要求分析、总结或提取页面信息时使用。",
-    {"type": "object", "properties": {
-        "url": {"type": "string", "description": "要抓取的网页链接（完整URL，如 https://example.com/article）"},
-    }, "required": ["url"]},
+    {
+        "type": "object",
+        "properties": {
+            "url": {"type": "string", "description": "要抓取的网页链接（完整URL，如 https://example.com/article）"},
+        },
+        "required": ["url"],
+    },
 )
 def _tool_web_fetch(args):
     url = args.get("url", "").strip()
@@ -96,9 +102,7 @@ def _tool_web_fetch(args):
         resp.encoding = resp.apparent_encoding or "utf-8"
         html_text = resp.text
 
-        title_match = re.search(
-            r"<title[^>]*>(.*?)</title>", html_text, re.IGNORECASE | re.DOTALL
-        )
+        title_match = re.search(r"<title[^>]*>(.*?)</title>", html_text, re.IGNORECASE | re.DOTALL)
         title = title_match.group(1).strip() if title_match else ""
 
         extractor = _TextExtractor()
@@ -127,6 +131,7 @@ def _tool_web_fetch(args):
         logging.warning("web_fetch 失败: %s", e)
         return {"success": False, "error": f"抓取失败: {str(e)[:150]}"}
 
+
 def _validate_analyze_image(args):
     url = args.get("image_url", "")
     b64 = args.get("image_base64", "")
@@ -134,19 +139,27 @@ def _validate_analyze_image(args):
         return "缺少参数: 需要 image_url 或 image_base64 之一"
     return None
 
+
 @ToolRegistry.register(
     "analyze_image",
     "分析一张图片的内容。可进行场景描述(describe)、物体检测(detect)或智能分类(classify)。"
     "支持两种输入方式：1) image_url — 图片URL地址；2) image_base64 — base64格式的图片数据。二者选一即可。",
-    {"type": "object", "properties": {
-        "image_url": {"type": "string", "description": "图片URL地址（与 image_base64 二选一）"},
-        "image_base64": {"type": "string", "description": "base64格式的图片数据，data:image/...;base64,... 格式（与 image_url 二选一）"},
-        "task_type": {
-            "type": "string",
-            "enum": ["describe", "detect", "classify"],
-            "description": "describe=场景描述(含关键词), detect=物体检测, classify=智能分类",
+    {
+        "type": "object",
+        "properties": {
+            "image_url": {"type": "string", "description": "图片URL地址（与 image_base64 二选一）"},
+            "image_base64": {
+                "type": "string",
+                "description": "base64格式的图片数据，data:image/...;base64,... 格式（与 image_url 二选一）",
+            },
+            "task_type": {
+                "type": "string",
+                "enum": ["describe", "detect", "classify"],
+                "description": "describe=场景描述(含关键词), detect=物体检测, classify=智能分类",
+            },
         },
-    }, "required": ["task_type"]},
+        "required": ["task_type"],
+    },
     validator=_validate_analyze_image,
 )
 def _tool_analyze_image(args):
@@ -175,5 +188,3 @@ def _validate_analyze_doc(args):
     if not obj.lower().endswith(".docx"):
         return f"不支持的文件格式，仅支持 .docx: {obj}"
     return None
-
-

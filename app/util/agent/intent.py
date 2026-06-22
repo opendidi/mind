@@ -4,6 +4,7 @@ Adapted for mind: canvas/blueprint/file/mindmap/code domains."""
 
 import json
 import logging
+
 from app.config import AGENT_DEFAULT_MODEL
 
 # ═══════════════════════════════════════════════════════════
@@ -11,23 +12,88 @@ from app.config import AGENT_DEFAULT_MODEL
 # ═══════════════════════════════════════════════════════════
 
 _WRITE_KEYWORDS = [
-    "创建", "新建", "添加", "增加", "加入", "加上",
-    "删除", "移除", "去掉", "清空", "删掉",
-    "修改", "更改", "更新", "编辑", "调整", "改成",
-    "复制", "拷贝", "生成", "制作", "设置", "配置",
-    "帮我加", "帮我做", "帮我创建", "帮我弄", "帮我搞",
-    "加一个", "加个", "建一个", "做一个", "弄一个",
-    "画", "画一个", "绘制", "画出", "添加节点", "添加连线",
-    "保存", "导出", "加载", "打开",
+    "创建",
+    "新建",
+    "添加",
+    "增加",
+    "加入",
+    "加上",
+    "删除",
+    "移除",
+    "去掉",
+    "清空",
+    "删掉",
+    "修改",
+    "更改",
+    "更新",
+    "编辑",
+    "调整",
+    "改成",
+    "复制",
+    "拷贝",
+    "生成",
+    "制作",
+    "设置",
+    "配置",
+    "帮我加",
+    "帮我做",
+    "帮我创建",
+    "帮我弄",
+    "帮我搞",
+    "加一个",
+    "加个",
+    "建一个",
+    "做一个",
+    "弄一个",
+    "画",
+    "画一个",
+    "绘制",
+    "画出",
+    "添加节点",
+    "添加连线",
+    "保存",
+    "导出",
+    "加载",
+    "打开",
 ]
 
 _TOOL_KEYWORDS = _WRITE_KEYWORDS + [
-    "查看", "列出", "搜索", "分析", "显示", "展示",
-    "list", "show", "get", "search", "find", "view",
-    "look", "describe", "analyze", "check", "read", "fetch",
-    "create", "delete", "update", "modify", "remove", "add",
-    "画布", "图形", "节点", "蓝图", "文件", "素材",
-    "布局", "排列", "对齐", "导出", "保存", "加载",
+    "查看",
+    "列出",
+    "搜索",
+    "分析",
+    "显示",
+    "展示",
+    "list",
+    "show",
+    "get",
+    "search",
+    "find",
+    "view",
+    "look",
+    "describe",
+    "analyze",
+    "check",
+    "read",
+    "fetch",
+    "create",
+    "delete",
+    "update",
+    "modify",
+    "remove",
+    "add",
+    "画布",
+    "图形",
+    "节点",
+    "蓝图",
+    "文件",
+    "素材",
+    "布局",
+    "排列",
+    "对齐",
+    "导出",
+    "保存",
+    "加载",
 ]
 
 
@@ -35,31 +101,105 @@ _TOOL_KEYWORDS = _WRITE_KEYWORDS + [
 
 _DOMAIN_KEYWORDS = {
     "canvas": [
-        "图形", "画布", "节点", "连线", "箭头", "创建", "添加", "删除",
-        "修改", "编辑", "绘制", "画", "流程图", "架构图", "思维导图",
-        "布局", "对齐", "矩形", "圆形", "三角形", "菱形", "文本",
-        "pen", "canvas", "形状", "线", "曲线", "折线",
-        "排列", "移动", "调整", "大小", "颜色", "背景",
-        "画一个", "画个", "加一个", "加个",
+        "图形",
+        "画布",
+        "节点",
+        "连线",
+        "箭头",
+        "创建",
+        "添加",
+        "删除",
+        "修改",
+        "编辑",
+        "绘制",
+        "画",
+        "流程图",
+        "架构图",
+        "思维导图",
+        "布局",
+        "对齐",
+        "矩形",
+        "圆形",
+        "三角形",
+        "菱形",
+        "文本",
+        "pen",
+        "canvas",
+        "形状",
+        "线",
+        "曲线",
+        "折线",
+        "排列",
+        "移动",
+        "调整",
+        "大小",
+        "颜色",
+        "背景",
+        "画一个",
+        "画个",
+        "加一个",
+        "加个",
     ],
     "blueprint": [
-        "蓝图", "保存", "加载", "打开", "导出", "下载",
-        "PNG", "SVG", "JSON", "blueprint", "另存为",
-        "保存为", "导出为", "下载为",
+        "蓝图",
+        "保存",
+        "加载",
+        "打开",
+        "导出",
+        "下载",
+        "PNG",
+        "SVG",
+        "JSON",
+        "blueprint",
+        "另存为",
+        "保存为",
+        "导出为",
+        "下载为",
     ],
     "file": [
-        "文件", "素材", "图片", "上传", "文件夹", "目录",
-        "文件管理", "资源", "图库", "素材库",
-        "excel", "xls", "xlsx", "表格", "数据", "图表", "chart",
-        "分析数据", "数据分析", "统计", "报表", "csv",
+        "文件",
+        "素材",
+        "图片",
+        "上传",
+        "文件夹",
+        "目录",
+        "文件管理",
+        "资源",
+        "图库",
+        "素材库",
+        "excel",
+        "xls",
+        "xlsx",
+        "表格",
+        "数据",
+        "图表",
+        "chart",
+        "分析数据",
+        "数据分析",
+        "统计",
+        "报表",
+        "csv",
     ],
     "mindmap": [
-        "思维导图", "脑图", "导图", "mindmap", "mind map",
-        "大纲", "分支", "子主题",
+        "思维导图",
+        "脑图",
+        "导图",
+        "mindmap",
+        "mind map",
+        "大纲",
+        "分支",
+        "子主题",
     ],
     "code": [
-        "代码", "脚本", "JS", "JSON", "编辑器", "Monaco",
-        "生成代码", "写代码", "JavaScript",
+        "代码",
+        "脚本",
+        "JS",
+        "JSON",
+        "编辑器",
+        "Monaco",
+        "生成代码",
+        "写代码",
+        "JavaScript",
     ],
 }
 
@@ -177,7 +317,8 @@ def unified_intent_and_plan(
     """
     import json as _json
 
-    from app.util.agent.helpers import extract_json as _extract_json, repair_json as _repair_json
+    from app.util.agent.helpers import extract_json as _extract_json
+    from app.util.agent.helpers import repair_json as _repair_json
     from app.util.agent.retry import retry_llm_call
 
     # Build messages for single LLM call with optional feedback injection
@@ -190,6 +331,7 @@ def unified_intent_and_plan(
     try:
         # Check deterministic cache first (same prompt + history + message → same plan)
         from app.util.agent.cache import llm_cache_get, llm_cache_set
+
         cache_inputs = {"system": system_prompt, "history": history[-6:] if history else [], "message": user_message}
         cached = llm_cache_get("unified_intent", cache_inputs)
         if cached:
@@ -252,15 +394,17 @@ def unified_intent_and_plan(
             for n in plan_data.get("nodes", []):
                 nid = n.get("id", f"s{len(nodes)}")
                 node_ids.add(nid)
-                nodes.append({
-                    "id": nid,
-                    "desc": n.get("desc", ""),
-                    "tool_hint": n.get("tool_hint"),
-                    "agent_name": n.get("agent_name"),
-                    "confirm": n.get("confirm", False),
-                    "depends_on": n.get("depends_on") or [],
-                    "parallel_group": n.get("parallel_group"),
-                })
+                nodes.append(
+                    {
+                        "id": nid,
+                        "desc": n.get("desc", ""),
+                        "tool_hint": n.get("tool_hint"),
+                        "agent_name": n.get("agent_name"),
+                        "confirm": n.get("confirm", False),
+                        "depends_on": n.get("depends_on") or [],
+                        "parallel_group": n.get("parallel_group"),
+                    }
+                )
 
             # Validate deps（兼容 LLM 可能返回 null/None 的情况）
             for n in nodes:
@@ -269,11 +413,16 @@ def unified_intent_and_plan(
 
             # Cycle check
             from app.util.agent.dag import _has_cycle
+
             temp_nodes = [
-                type("TmpNode", (), {
-                    "id": n["id"],
-                    "depends_on": set(n["depends_on"]),
-                })()
+                type(
+                    "TmpNode",
+                    (),
+                    {
+                        "id": n["id"],
+                        "depends_on": set(n["depends_on"]),
+                    },
+                )()
                 for n in nodes
             ]
             if _has_cycle(temp_nodes):

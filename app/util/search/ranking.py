@@ -103,11 +103,7 @@ def _score_results(results: list, keyword: str) -> list:
 
     df = {}
     for kw in keywords:
-        df[kw] = sum(
-            1
-            for r in results
-            if kw in (r.get("title", "") + " " + r.get("snippet", "")).lower()
-        )
+        df[kw] = sum(1 for r in results if kw in (r.get("title", "") + " " + r.get("snippet", "")).lower())
 
     avg_title_len = max(sum(len(r.get("title", "")) for r in results) / N, 1)
     avg_snippet_len = max(sum(len(r.get("snippet", "")) for r in results) / N, 1)
@@ -128,20 +124,10 @@ def _score_results(results: list, keyword: str) -> list:
             idf = max(0.0, math.log((N - df[kw] + 0.5) / (df[kw] + 0.5) + 1))
 
             tf_t = title_lower.count(kw)
-            score += (
-                idf
-                * (
-                    (tf_t * (k1 + 1))
-                    / (tf_t + k1 * (1 - b + b * title_len / avg_title_len))
-                )
-                * 3.0
-            )
+            score += idf * ((tf_t * (k1 + 1)) / (tf_t + k1 * (1 - b + b * title_len / avg_title_len))) * 3.0
 
             tf_s = snippet_lower.count(kw)
-            score += idf * (
-                (tf_s * (k1 + 1))
-                / (tf_s + k1 * (1 - b + b * snippet_len / avg_snippet_len))
-            )
+            score += idf * ((tf_s * (k1 + 1)) / (tf_s + k1 * (1 - b + b * snippet_len / avg_snippet_len)))
 
         if r.get("date"):
             score += 0.5

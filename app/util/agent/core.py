@@ -19,13 +19,12 @@ import time
 from datetime import datetime
 
 from app.config import AGENT_DEFAULT_MODEL
+from app.util.agent.constants import MAX_HISTORY_COMPACT, MAX_HISTORY_TOKENS
 from app.util.agent.engine import AgentEngine
+from app.util.agent.helpers import estimate_tokens_from_str as _estimate_tokens
 from app.util.agent.intent import classify_domain, unified_intent_and_plan
 from app.util.agent.skills import get_skills_for_intent
 from app.util.llm_client import get_llm_client
-from app.util.agent.constants import MAX_HISTORY_TOKENS, MAX_HISTORY_COMPACT
-from app.util.agent.helpers import estimate_tokens_from_str as _estimate_tokens
-
 
 # ── Base Prompt ───────────────────────────────────────────────────────────
 
@@ -210,6 +209,7 @@ class AgentSession:
         try:
             cache_inputs = {"prompt": COMPACT_PROMPT, "text": compact_text[:3000]}
             from app.util.agent.cache import llm_cache_get, llm_cache_set
+
             cached = llm_cache_get("compact_history", cache_inputs)
             if cached:
                 summary = cached
@@ -217,7 +217,9 @@ class AgentSession:
                 resp = llm_client.chat.completions.create(
                     model=model,
                     messages=[{"role": "user", "content": COMPACT_PROMPT + compact_text[:3000]}],
-                    temperature=0.1, max_tokens=400, timeout=15,
+                    temperature=0.1,
+                    max_tokens=400,
+                    timeout=15,
                 )
                 summary = resp.choices[0].message.content or ""
                 if summary.strip():
@@ -234,8 +236,12 @@ class AgentSession:
                 else:
                     self._compact_summary = summary.strip()
                 self.history = recent_msgs
-                logging.info("Context compacted: %d msgs → summary (%d chars), kept %d recent",
-                             len(old_msgs), len(self._compact_summary), len(recent_msgs))
+                logging.info(
+                    "Context compacted: %d msgs → summary (%d chars), kept %d recent",
+                    len(old_msgs),
+                    len(self._compact_summary),
+                    len(recent_msgs),
+                )
         except Exception:
             logging.warning("Compaction LLM call failed, falling back to truncation", exc_info=True)
             self.history = recent_msgs
@@ -267,9 +273,15 @@ class AgentSession:
         logging.info("Agent 历史截断：%d → %d 条", len(self.history), len(self.history) - trimmed_at)
         self.history = self.history[trimmed_at:]
 
-    def _build_system_prompt(self, user_message: str, canvas_context: dict = None,
-                             memory_prompt: str = "", unified_result: dict = None,
-                             session_memory: str = "", skill_context: dict = None) -> str:
+    def _build_system_prompt(
+        self,
+        user_message: str,
+        canvas_context: dict = None,
+        memory_prompt: str = "",
+        unified_result: dict = None,
+        session_memory: str = "",
+        skill_context: dict = None,
+    ) -> str:
         """Build a single merged system prompt."""
         now = datetime.now()
         time_hint = (
@@ -308,10 +320,17 @@ class AgentSession:
 
         return "\n\n".join(sections)
 
-    def _prepare_messages(self, user_message: str, canvas_context: dict = None,
-                          memory_prompt: str = "", llm_client=None,
-                          unified_result: dict = None, session_memory: str = "",
-                          skill_context: dict = None, images: list = None) -> list:
+    def _prepare_messages(
+        self,
+        user_message: str,
+        canvas_context: dict = None,
+        memory_prompt: str = "",
+        llm_client=None,
+        unified_result: dict = None,
+        session_memory: str = "",
+        skill_context: dict = None,
+        images: list = None,
+    ) -> list:
         """Build the full message list for LLM.
 
         When images are provided, the latest user message is built as a
@@ -319,8 +338,12 @@ class AgentSession:
         OpenAI's vision / DeepSeek multimodal API.
         """
         system_content = self._build_system_prompt(
-            user_message, canvas_context, memory_prompt, unified_result,
-            session_memory=session_memory, skill_context=skill_context,
+            user_message,
+            canvas_context,
+            memory_prompt,
+            unified_result,
+            session_memory=session_memory,
+            skill_context=skill_context,
         )
         messages = [{"role": "system", "content": system_content}]
 
@@ -359,10 +382,17 @@ class AgentSession:
             self._engine_inst = AgentEngine(get_llm_client(), self.user_id, AGENT_DEFAULT_MODEL)
         return self._engine_inst
 
-    def chat_v3(self, user_message: str, canvas_context: dict = None,
-                confirm_handler=None, model: str = AGENT_DEFAULT_MODEL,
-                redis_client=None, task_id: str = "", stream: bool = False,
-                images: list = None):
+    def chat_v3(
+        self,
+        user_message: str,
+        canvas_context: dict = None,
+        confirm_handler=None,
+        model: str = AGENT_DEFAULT_MODEL,
+        redis_client=None,
+        task_id: str = "",
+        stream: bool = False,
+        images: list = None,
+    ):
         """V3 unified agent chat — single LLM call for intent+plan, then execute.
 
         Args:
@@ -372,6 +402,7 @@ class AgentSession:
 
         # ── Input Guard (boundary defense) ──
         from app.util.agent.guard import InputGuard
+
         guard_result = InputGuard.check(user_message)
         if not guard_result["ok"]:
             yield {"type": "error", "data": {"message": guard_result.get("reason", "输入被安全策略拦截")}}
@@ -382,6 +413,7 @@ class AgentSession:
         session_memory_prompt = ""
         try:
             from app.util.agent.memory import MemoryManager as _MemMgr
+
             _mem = _MemMgr(self._engine.llm)
             restored = _mem.restore_session(self.user_id)
             session_memory_prompt = restored.get("memory_prompt", "")
@@ -397,33 +429,47 @@ class AgentSession:
         plan_feedback_hints = ""
         try:
             from app.util.agent.plan_eval import PlanMemory
+
             tentative_domains = classify_domain(user_message)
             plan_feedback_hints = PlanMemory.get_hints_for_domains(tentative_domains)
             failure_hints = PlanMemory.get_failure_summary(limit=2)
             if failure_hints:
-                plan_feedback_hints = plan_feedback_hints + "\n\n" + failure_hints if plan_feedback_hints else failure_hints
+                plan_feedback_hints = (
+                    plan_feedback_hints + "\n\n" + failure_hints if plan_feedback_hints else failure_hints
+                )
         except Exception:
             logging.debug("Plan feedback retrieval skipped", exc_info=True)
 
         # ── Unified LLM call: intent + domains + plan ──
         unified_result = unified_intent_and_plan(
-            self._engine.llm, user_message, self.history[-6:], model,
+            self._engine.llm,
+            user_message,
+            self.history[-6:],
+            model,
             plan_feedback_hints=plan_feedback_hints,
         )
 
         skill_context = {"has_failures": False}
 
         messages = self._prepare_messages(
-            user_message, canvas_context=canvas_context, llm_client=self._engine.llm,
-            unified_result=unified_result, session_memory=session_memory_prompt,
-            skill_context=skill_context, images=images,
+            user_message,
+            canvas_context=canvas_context,
+            llm_client=self._engine.llm,
+            unified_result=unified_result,
+            session_memory=session_memory_prompt,
+            skill_context=skill_context,
+            images=images,
         )
 
         # Delegate to engine
         for event in self._engine.chat(
-            user_message=user_message, messages=messages, memory_prompt="",
-            confirm_handler=confirm_handler, redis_client=redis_client,
-            task_id=task_id, stream=stream,
+            user_message=user_message,
+            messages=messages,
+            memory_prompt="",
+            confirm_handler=confirm_handler,
+            redis_client=redis_client,
+            task_id=task_id,
+            stream=stream,
             precomputed_plan=unified_result.get("plan"),
         ):
             if event[0] == "llm_response":
@@ -458,6 +504,7 @@ class AgentSession:
             return {"type": "tool_call", "data": {"tool": event[1], "args": event[2]}}
         elif kind == "tool_result":
             from app.util.agent.helpers import sanitize_for_json
+
             try:
                 safe_result = sanitize_for_json(event[3])
             except Exception:
@@ -489,28 +536,30 @@ class AgentSession:
     def _extract_domain(url: str) -> str:
         """Extract domain from a URL."""
         import re
-        m = re.match(r'https?://([^/]+)', url)
-        return m.group(1).replace('www.', '') if m else ''
+
+        m = re.match(r"https?://([^/]+)", url)
+        return m.group(1).replace("www.", "") if m else ""
 
     @staticmethod
     def _clean_title(title: str, url: str) -> str:
         """Clean a search result title: strip domain prefixes, fix garbled text."""
         import re
+
         title = (title or "").strip()
         if not title:
             return AgentSession._extract_domain(url) if url else ""
         # Bing concatenation: "domain.comhttps://actual-url" — extract domain for title
-        m = re.match(r'^([\w.-]+\.\w{2,6})https?://', title)
+        m = re.match(r"^([\w.-]+\.\w{2,6})https?://", title)
         if m:
             domain = m.group(1)
             # Use domain as fallback title
-            title = re.sub(r'^[\w.-]+\.\w{2,6}https?://\S+', domain, title).strip()
+            title = re.sub(r"^[\w.-]+\.\w{2,6}https?://\S+", domain, title).strip()
         # Remove leading domain + breadcrumb arrow (e.g. "wikipedia.org › ")
-        title = re.sub(r'^[\w.-]+\.\w{2,6}\s*[›»>]\s*', '', title).strip()
+        title = re.sub(r"^[\w.-]+\.\w{2,6}\s*[›»>]\s*", "", title).strip()
         # Strip pure URL prefixes
-        title = re.sub(r'^https?://\S+\s*', '', title).strip()
+        title = re.sub(r"^https?://\S+\s*", "", title).strip()
         # Filter out garbled chars: replace U+FFFD, C1 controls, lone surrogates
-        title = re.sub(r'[�\x80-\x9f\ud800-\udfff]', '', title).strip()
+        title = re.sub(r"[�\x80-\x9f\ud800-\udfff]", "", title).strip()
         if not title:
             domain = AgentSession._extract_domain(url)
             return domain if domain else url[:80]
@@ -524,6 +573,7 @@ class AgentSession:
         no references can be extracted.
         """
         import re
+
         if not success or not isinstance(result, dict):
             return None
         data = result.get("data") or result
@@ -542,7 +592,7 @@ class AgentSession:
                 # Bing tracking URLs: extract real URL from "domain+URL" text pattern
                 if "bing.com/ck/" in url:
                     raw_title = r.get("title", "")
-                    m = re.match(r'^[\w.-]+\.\w{2,6}(https?://\S+)', raw_title)
+                    m = re.match(r"^[\w.-]+\.\w{2,6}(https?://\S+)", raw_title)
                     if m:
                         url = m.group(1)
                         # Title becomes just the domain
@@ -551,12 +601,14 @@ class AgentSession:
                         title = AgentSession._clean_title(raw_title, url)
                 else:
                     title = AgentSession._clean_title(r.get("title", ""), url)
-                refs.append({
-                    "title": title,
-                    "url": url,
-                    "snippet": (r.get("snippet", "") or "")[:300],
-                    "domain": r.get("domain", "") or AgentSession._extract_domain(url),
-                })
+                refs.append(
+                    {
+                        "title": title,
+                        "url": url,
+                        "snippet": (r.get("snippet", "") or "")[:300],
+                        "domain": r.get("domain", "") or AgentSession._extract_domain(url),
+                    }
+                )
                 if len(refs) >= 10:
                     break
             return refs if refs else None
@@ -565,12 +617,14 @@ class AgentSession:
             url = data.get("url", "")
             if not url:
                 return None
-            return [{
-                "title": AgentSession._clean_title(data.get("title", ""), url),
-                "url": url,
-                "snippet": (data.get("content", "") or "")[:300],
-                "domain": AgentSession._extract_domain(url),
-            }]
+            return [
+                {
+                    "title": AgentSession._clean_title(data.get("title", ""), url),
+                    "url": url,
+                    "snippet": (data.get("content", "") or "")[:300],
+                    "domain": AgentSession._extract_domain(url),
+                }
+            ]
 
         return None
 
@@ -579,14 +633,18 @@ class AgentSession:
         """Preprocess images through vision model → text description (vision bridge)."""
         try:
             from app.util.vision import VisionHandler
-            prompt = json.dumps({
-                "task": "describe",
-                "instructions": (
-                    "请详细描述这张图片的内容。如果是图表/架构图/流程图，请描述其中的结构、节点、连接关系和文字标注。"
-                    "如果是截图/照片，请描述场景、物体、文字和关键细节。"
-                    "输出纯文本中文描述，不要用 JSON 格式。"
-                ),
-            }, ensure_ascii=False)
+
+            prompt = json.dumps(
+                {
+                    "task": "describe",
+                    "instructions": (
+                        "请详细描述这张图片的内容。如果是图表/架构图/流程图，请描述其中的结构、节点、连接关系和文字标注。"
+                        "如果是截图/照片，请描述场景、物体、文字和关键细节。"
+                        "输出纯文本中文描述，不要用 JSON 格式。"
+                    ),
+                },
+                ensure_ascii=False,
+            )
             ok, result = VisionHandler.analyze_images(images, prompt, task_type="describe")
             if ok:
                 if isinstance(result, dict):
@@ -604,8 +662,10 @@ class AgentSession:
     def _persist_session(self):
         """Persist session memory for cross-session continuity."""
         try:
-            from app.util.agent.memory import MemoryManager as _MemMgr
             import uuid
+
+            from app.util.agent.memory import MemoryManager as _MemMgr
+
             session_id = str(uuid.uuid4())[:8]
             summary = self._compact_summary if self._compact_summary else ""
             _mem = _MemMgr(self._engine.llm)

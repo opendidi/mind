@@ -44,6 +44,7 @@ class MCPToolAdapter:
 
     def execute(self, args: dict, context: dict = None) -> dict:
         from app.util.tool_registry import ToolRegistry
+
         try:
             return ToolRegistry.execute(self.name, args, context)
         except Exception as e:
@@ -61,12 +62,15 @@ class MCPServer:
     def register_from_registry(self, tool_registry=None):
         if tool_registry is None:
             from app.util.tool_registry import ToolRegistry
+
             tool_registry = ToolRegistry
         for name, tool_info in tool_registry._tools.items():
             schema = tool_registry.get_schema(name)
             if schema is None:
                 continue
-            adapter = MCPToolAdapter(name=name, schema=schema, handler=tool_info["func"], validator=tool_info.get("validator"))
+            adapter = MCPToolAdapter(
+                name=name, schema=schema, handler=tool_info["func"], validator=tool_info.get("validator")
+            )
             self._tools[name] = adapter
         logging.info("MCPServer loaded %d tools from ToolRegistry", len(self._tools))
 

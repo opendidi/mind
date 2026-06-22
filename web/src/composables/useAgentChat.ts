@@ -627,19 +627,43 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   }
 
   function retry() {
-    if (!_lastUserText && !_lastUserImages?.length && !_lastUserFiles?.length) return
     abort()
     const msgs = messages.value
+    // Find the error message and the user message that triggered it
     let cutIdx = -1
     for (let i = msgs.length - 1; i >= 0; i--) {
       if (msgs[i].role === 'error') { cutIdx = i; break }
     }
-    if (cutIdx >= 0) {
-      if (cutIdx > 0 && msgs[cutIdx - 1].role === 'user') cutIdx--
-      messages.value = msgs.slice(0, cutIdx)
+    if (cutIdx < 0) {
+      console.warn('[retry] no error message found')
+      return
     }
+    let retryText = ''
+    let retryImages: string[] | undefined
+    let retryFiles: ChatFile[] | undefined
+    // Walk backward from the error to find the triggering user message
+    for (let i = cutIdx - 1; i >= 0; i--) {
+      if (msgs[i].role === 'user') {
+        retryText = msgs[i].text || ''
+        retryImages = msgs[i].images
+        retryFiles = msgs[i].files
+        cutIdx = i
+        break
+      }
+    }
+    // Fall back to in-memory state if no user message found before the error
+    if (!retryText) {
+      retryText = _lastUserText
+      retryImages = _lastUserImages
+      retryFiles = _lastUserFiles
+    }
+    if (!retryText && !retryImages?.length && !retryFiles?.length) {
+      console.warn('[retry] no user message to retry')
+      return
+    }
+    messages.value = msgs.slice(0, cutIdx)
     streamDisconnected.value = false
-    send(_lastUserText, _lastUserImages, undefined, undefined, _lastUserFiles)
+    send(retryText, retryImages, undefined, undefined, retryFiles)
   }
 
   function clear() {

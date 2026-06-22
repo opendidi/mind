@@ -11,22 +11,27 @@ from html.parser import HTMLParser
 
 import requests
 
+from app.package.module.blueprint_mysql import BlueprintMysqlHandler
 from app.util.tool_registry import ToolRegistry
 from app.util.vision import VisionHandler
-from app.package.module.blueprint_mysql import BlueprintMysqlHandler
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Auxiliary Tools
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 @ToolRegistry.register(
     "file_search",
     "搜索文件管理器中的素材/文件。",
-    {"type": "object", "properties": {
-        "keyword": {"type": "string", "description": "文件名关键词"},
-        "type": {"type": "string", "description": "文件类型筛选: image/svg/document"},
-        "limit": {"type": "integer", "description": "返回数量", "default": 20},
-    }, "required": []}
+    {
+        "type": "object",
+        "properties": {
+            "keyword": {"type": "string", "description": "文件名关键词"},
+            "type": {"type": "string", "description": "文件类型筛选: image/svg/document"},
+            "limit": {"type": "integer", "description": "返回数量", "default": 20},
+        },
+        "required": [],
+    },
 )
 def _tool_file_search(args):
     """Search the file manager material table for uploaded files."""
@@ -37,15 +42,19 @@ def _tool_file_search(args):
 
     try:
         from app.package.module.material_mysql import MaterialMysqlHandler
-        result = MaterialMysqlHandler.query_list({
-            "current": 1,
-            "page_size": limit,
-            "keyword": keyword or None,
-            "type": file_type,
-            "folder": None,
-            "parent_id": None,
-            "sort_order": "created_at DESC",
-        }, user_id)
+
+        result = MaterialMysqlHandler.query_list(
+            {
+                "current": 1,
+                "page_size": limit,
+                "keyword": keyword or None,
+                "type": file_type,
+                "folder": None,
+                "parent_id": None,
+                "sort_order": "created_at DESC",
+            },
+            user_id,
+        )
         # query_list returns {"list": [...], "total": N} — not "data"
         items = result.get("list", []) if isinstance(result, dict) else []
         if not items:
@@ -55,13 +64,15 @@ def _tool_file_search(args):
         logging.warning(f"file_search 查询失败：{e}")
         return {"success": False, "message": f"搜索失败：{e}"}
 
+
 # ══════════════════════════════════════════════════════════════════════════════
 # File Analysis Tools
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def _download_from_minio(object_name: str) -> str | None:
     """Download a file from MinIO to a temp path. Returns the local path or None."""
-    from app.plugin.minio.app.controller import minio_client, bucket_name
+    from app.plugin.minio.app.controller import bucket_name, minio_client
 
     _, ext = os.path.splitext(object_name)
     fd, tmp_path = tempfile.mkstemp(suffix=ext)
@@ -96,15 +107,22 @@ def _validate_analyze_image(args):
     "analyze_image",
     "分析一张图片的内容。可进行场景描述(describe)、物体检测(detect)或智能分类(classify)。"
     "支持两种输入方式：1) image_url — 图片URL地址；2) image_base64 — base64格式的图片数据。二者选一即可。",
-    {"type": "object", "properties": {
-        "image_url": {"type": "string", "description": "图片URL地址（与 image_base64 二选一）"},
-        "image_base64": {"type": "string", "description": "base64格式的图片数据，data:image/...;base64,... 格式（与 image_url 二选一）"},
-        "task_type": {
-            "type": "string",
-            "enum": ["describe", "detect", "classify"],
-            "description": "describe=场景描述(含关键词), detect=物体检测, classify=智能分类",
+    {
+        "type": "object",
+        "properties": {
+            "image_url": {"type": "string", "description": "图片URL地址（与 image_base64 二选一）"},
+            "image_base64": {
+                "type": "string",
+                "description": "base64格式的图片数据，data:image/...;base64,... 格式（与 image_url 二选一）",
+            },
+            "task_type": {
+                "type": "string",
+                "enum": ["describe", "detect", "classify"],
+                "description": "describe=场景描述(含关键词), detect=物体检测, classify=智能分类",
+            },
         },
-    }, "required": ["task_type"]},
+        "required": ["task_type"],
+    },
     validator=_validate_analyze_image,
 )
 def _tool_analyze_image(args):
@@ -138,11 +156,18 @@ def _validate_analyze_doc(args):
 @ToolRegistry.register(
     "analyze_doc",
     "解析 Word 文档 (.docx)，提取段落文本、标题和表格内容。支持分页读取长文档。",
-    {"type": "object", "properties": {
-        "object_name": {"type": "string", "description": "MinIO 中的文档对象路径 (object_name)，由文件上传接口返回"},
-        "paragraph_offset": {"type": "integer", "description": "段落起始偏移量（默认 0，用于分页读取长文档）"},
-        "paragraph_limit": {"type": "integer", "description": "最多返回的段落数（默认 200，最大 500）"},
-    }, "required": ["object_name"]},
+    {
+        "type": "object",
+        "properties": {
+            "object_name": {
+                "type": "string",
+                "description": "MinIO 中的文档对象路径 (object_name)，由文件上传接口返回",
+            },
+            "paragraph_offset": {"type": "integer", "description": "段落起始偏移量（默认 0，用于分页读取长文档）"},
+            "paragraph_limit": {"type": "integer", "description": "最多返回的段落数（默认 200，最大 500）"},
+        },
+        "required": ["object_name"],
+    },
     validator=_validate_analyze_doc,
 )
 def _tool_analyze_doc(args):
@@ -217,12 +242,19 @@ def _validate_extract_excel(args):
 @ToolRegistry.register(
     "extract_excel",
     "解析 Excel 文档 (.xlsx/.xls)，读取工作表数据。支持分页读取大表格。",
-    {"type": "object", "properties": {
-        "object_name": {"type": "string", "description": "MinIO 中的 Excel 对象路径 (object_name)，由文件上传接口返回"},
-        "sheet_name": {"type": "string", "description": "要读取的工作表名称（可选，不传则读取第一个工作表）"},
-        "row_offset": {"type": "integer", "description": "行起始偏移量（默认 0，用于分页读取大表格）"},
-        "max_rows": {"type": "integer", "description": "最多读取的行数（默认 500，最大 2000）"},
-    }, "required": ["object_name"]},
+    {
+        "type": "object",
+        "properties": {
+            "object_name": {
+                "type": "string",
+                "description": "MinIO 中的 Excel 对象路径 (object_name)，由文件上传接口返回",
+            },
+            "sheet_name": {"type": "string", "description": "要读取的工作表名称（可选，不传则读取第一个工作表）"},
+            "row_offset": {"type": "integer", "description": "行起始偏移量（默认 0，用于分页读取大表格）"},
+            "max_rows": {"type": "integer", "description": "最多读取的行数（默认 500，最大 2000）"},
+        },
+        "required": ["object_name"],
+    },
     validator=_validate_extract_excel,
 )
 def _tool_extract_excel(args):
@@ -258,7 +290,9 @@ def _tool_extract_excel(args):
             for ri in range(min(total_rows, row_offset + max_rows)):
                 if ri < row_offset:
                     continue
-                data.append([str(ws.cell_value(ri, ci)) if ws.cell_value(ri, ci) != "" else "" for ci in range(ws.ncols)])
+                data.append(
+                    [str(ws.cell_value(ri, ci)) if ws.cell_value(ri, ci) != "" else "" for ci in range(ws.ncols)]
+                )
         else:
             from openpyxl import load_workbook
 
@@ -325,11 +359,15 @@ def _validate_read_text(args):
 @ToolRegistry.register(
     "read_text",
     "读取纯文本/Markdown 文件 (.txt/.md)，支持分页读取长文本。",
-    {"type": "object", "properties": {
-        "object_name": {"type": "string", "description": "MinIO 中的文本文件 object_name，由文件上传接口返回"},
-        "char_offset": {"type": "integer", "description": "字符起始偏移量（默认 0，用于分页读取长文本）"},
-        "char_limit": {"type": "integer", "description": "最多返回的字符数（默认 30000，最大 80000）"},
-    }, "required": ["object_name"]},
+    {
+        "type": "object",
+        "properties": {
+            "object_name": {"type": "string", "description": "MinIO 中的文本文件 object_name，由文件上传接口返回"},
+            "char_offset": {"type": "integer", "description": "字符起始偏移量（默认 0，用于分页读取长文本）"},
+            "char_limit": {"type": "integer", "description": "最多返回的字符数（默认 30000，最大 80000）"},
+        },
+        "required": ["object_name"],
+    },
     validator=_validate_read_text,
 )
 def _tool_read_text(args):
@@ -391,15 +429,22 @@ def _validate_parse_json(args):
 @ToolRegistry.register(
     "parse_json",
     "解析 JSON 文件 (.json)，返回结构化数据摘要。支持数组/对象分页、路径导航、大值截断。",
-    {"type": "object", "properties": {
-        "object_name": {"type": "string", "description": "MinIO 中的 JSON 文件 object_name，由文件上传接口返回"},
-        "query_path": {"type": "string", "description": "可选的路径（如 'data.users'、'items[0].name'），用于提取深层字段"},
-        "array_offset": {"type": "integer", "description": "数组元素起始索引（默认 0）"},
-        "array_limit": {"type": "integer", "description": "数组最多返回元素数（默认 200，最大 2000）"},
-        "key_offset": {"type": "integer", "description": "对象键起始偏移量（默认 0）"},
-        "key_limit": {"type": "integer", "description": "对象最多返回键数（默认 50，最大 200）"},
-        "max_list_items": {"type": "integer", "description": "嵌套列表最多返回项数（默认 100，最大 2000）"},
-    }, "required": ["object_name"]},
+    {
+        "type": "object",
+        "properties": {
+            "object_name": {"type": "string", "description": "MinIO 中的 JSON 文件 object_name，由文件上传接口返回"},
+            "query_path": {
+                "type": "string",
+                "description": "可选的路径（如 'data.users'、'items[0].name'），用于提取深层字段",
+            },
+            "array_offset": {"type": "integer", "description": "数组元素起始索引（默认 0）"},
+            "array_limit": {"type": "integer", "description": "数组最多返回元素数（默认 200，最大 2000）"},
+            "key_offset": {"type": "integer", "description": "对象键起始偏移量（默认 0）"},
+            "key_limit": {"type": "integer", "description": "对象最多返回键数（默认 50，最大 200）"},
+            "max_list_items": {"type": "integer", "description": "嵌套列表最多返回项数（默认 100，最大 2000）"},
+        },
+        "required": ["object_name"],
+    },
     validator=_validate_parse_json,
 )
 def _tool_parse_json(args):
@@ -442,10 +487,11 @@ def _tool_parse_json(args):
             if total == 0:
                 return {}
             if total <= MAX_DICT_SAMPLE:
-                return {k: _summarize(v, depth + 1, f"{field_path}.{k}" if field_path else k)
-                        for k, v in val.items()}
-            head = {k: _summarize(v, depth + 1, f"{field_path}.{k}" if field_path else k)
-                    for k, v in list(val.items())[:MAX_DICT_SAMPLE]}
+                return {k: _summarize(v, depth + 1, f"{field_path}.{k}" if field_path else k) for k, v in val.items()}
+            head = {
+                k: _summarize(v, depth + 1, f"{field_path}.{k}" if field_path else k)
+                for k, v in list(val.items())[:MAX_DICT_SAMPLE]
+            }
             return {"__dict_head": head, "__total_keys": total}
         return str(val)[:500]
 
@@ -537,4 +583,3 @@ def _tool_parse_json(args):
                 "value": _summarize(target),
             },
         }
-

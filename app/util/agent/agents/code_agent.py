@@ -28,5 +28,4 @@ class CodeAgent(AgentBase):
 
     @property
     def tools(self):
-        return [s for s in TOOL_SCHEMAS
-                if s.get("function", {}).get("name") in CODE_TOOLS]
+        return [s for s in TOOL_SCHEMAS if s.get("function", {}).get("name") in CODE_TOOLS]

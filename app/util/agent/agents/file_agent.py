@@ -36,5 +36,4 @@ class FileAgent(AgentBase):
 
     @property
     def tools(self):
-        return [s for s in TOOL_SCHEMAS
-                if s.get("function", {}).get("name") in FILE_TOOLS]
+        return [s for s in TOOL_SCHEMAS if s.get("function", {}).get("name") in FILE_TOOLS]

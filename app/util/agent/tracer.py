@@ -19,10 +19,7 @@ def _enforce_trace_dir_limit(log_dir: str):
     """Remove oldest trace files if directory exceeds _TRACE_MAX_DIR_SIZE."""
     if not os.path.exists(log_dir):
         return
-    files = sorted(
-        glob.glob(os.path.join(log_dir, "trace_*.json")),
-        key=os.path.getmtime
-    )
+    files = sorted(glob.glob(os.path.join(log_dir, "trace_*.json")), key=os.path.getmtime)
     total = sum(os.path.getsize(f) for f in files)
     while total > _TRACE_MAX_DIR_SIZE and len(files) > 1:
         oldest = files.pop(0)
@@ -45,17 +42,22 @@ class Span:
 
     def to_dict(self) -> dict:
         return {
-            "span_id": self.span_id, "parent_id": self.parent_id, "name": self.name,
-            "start_ts": self.start_ts, "end_ts": self.end_ts,
+            "span_id": self.span_id,
+            "parent_id": self.parent_id,
+            "name": self.name,
+            "start_ts": self.start_ts,
+            "end_ts": self.end_ts,
             "duration_ms": (round((self.end_ts - self.start_ts) * 1000, 1) if self.end_ts else None),
-            "status": self.status, "metadata": self.metadata,
-            "input_summary": _summarize(self.input), "output_summary": _summarize(self.output),
+            "status": self.status,
+            "metadata": self.metadata,
+            "input_summary": _summarize(self.input),
+            "output_summary": _summarize(self.output),
         }
 
 
 def _summarize(d: dict, max_len: int = 200) -> str:
     s = json.dumps(d, ensure_ascii=False)
-    return s if len(s) <= max_len else s[:max_len - 3] + "..."
+    return s if len(s) <= max_len else s[: max_len - 3] + "..."
 
 
 class AgentTracer:
@@ -78,7 +80,13 @@ class AgentTracer:
                 self._tls.stack = []
                 stack = self._tls.stack
             effective_parent = parent_id if parent_id is not None else (stack[-1] if stack else None)
-            span = Span(span_id=str(uuid.uuid4())[:8], parent_id=effective_parent, name=name, metadata=metadata, input=input or {})
+            span = Span(
+                span_id=str(uuid.uuid4())[:8],
+                parent_id=effective_parent,
+                name=name,
+                metadata=metadata,
+                input=input or {},
+            )
             self.spans.append(span)
             stack.append(span.span_id)
             return span.span_id
@@ -107,11 +115,13 @@ class AgentTracer:
 
     def to_dict(self) -> dict:
         return {
-            "trace_id": self.trace_id, "user_id": self.user_id,
+            "trace_id": self.trace_id,
+            "user_id": self.user_id,
             "spans": [s.to_dict() for s in self.spans],
             "total_duration_ms": (
                 round((self.spans[-1].end_ts - self.spans[0].start_ts) * 1000, 1)
-                if self.spans and self.spans[0].start_ts and self.spans[-1].end_ts else None
+                if self.spans and self.spans[0].start_ts and self.spans[-1].end_ts
+                else None
             ),
         }
 

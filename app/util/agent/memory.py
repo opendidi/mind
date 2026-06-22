@@ -6,11 +6,11 @@ import logging
 import time
 
 from app.config import AGENT_DEFAULT_MODEL
+from app.util.agent.constants import LONG_TERM_TTL, SHORT_TERM_TTL
 
-from app.util.agent.constants import SHORT_TERM_TTL, LONG_TERM_TTL
 MAX_SHORT_SUMMARY_CHARS = 600
-MAX_LONG_ENTRIES = 50        # max long-term entries per user
-MAX_RECALL_ITEMS = 5         # max items returned per recall
+MAX_LONG_ENTRIES = 50  # max long-term entries per user
+MAX_RECALL_ITEMS = 5  # max items returned per recall
 MEMORY_PROMPT_HEADER = "## 历史记忆"
 
 
@@ -37,6 +37,7 @@ class MemoryManager:
         """Get Redis client for the given DB number."""
         try:
             from app.util.redis_utils import get_redis
+
             return get_redis(db=db)
         except Exception:
             return None
@@ -55,8 +56,7 @@ class MemoryManager:
 
     # ── Public API ───────────────────────────────────────────────────────
 
-    def remember(self, user_id: str, session_id: str, messages: list,
-                 summary: str = "") -> dict:
+    def remember(self, user_id: str, session_id: str, messages: list, summary: str = "") -> dict:
         """Persist session memory after a conversation completes.
 
         Short-term: stores LLM summary + recent highlights in Redis (TTL 1h).
@@ -86,8 +86,7 @@ class MemoryManager:
 
         # Store short-term
         try:
-            r.setex(self._short_key(user_id), SHORT_TERM_TTL,
-                    json.dumps(short_data, ensure_ascii=False))
+            r.setex(self._short_key(user_id), SHORT_TERM_TTL, json.dumps(short_data, ensure_ascii=False))
         except Exception:
             logging.debug("MemoryManager: short-term store failed for %s", user_id)
 
@@ -99,8 +98,7 @@ class MemoryManager:
 
         return short_data
 
-    def recall(self, user_id: str, query: str = "",
-               limit: int = MAX_RECALL_ITEMS) -> "MemoryContext":
+    def recall(self, user_id: str, query: str = "", limit: int = MAX_RECALL_ITEMS) -> "MemoryContext":
         """Recall memories for a user across short-term and long-term stores.
 
         Args:
@@ -122,13 +120,15 @@ class MemoryManager:
             raw = r.get(self._short_key(user_id))
             if raw:
                 data = json.loads(raw)
-                items.append({
-                    "source": "short_term",
-                    "summary": data.get("summary", ""),
-                    "topics": data.get("topics", []),
-                    "session_id": data.get("session_id", ""),
-                    "freshness": "recent",
-                })
+                items.append(
+                    {
+                        "source": "short_term",
+                        "summary": data.get("summary", ""),
+                        "topics": data.get("topics", []),
+                        "session_id": data.get("session_id", ""),
+                        "freshness": "recent",
+                    }
+                )
         except Exception:
             logging.debug("MemoryManager: short-term recall failed for %s", user_id)
 
@@ -168,8 +168,7 @@ class MemoryManager:
             except Exception:
                 pass
 
-    def update_short_term(self, user_id: str, summary: str = "",
-                          topics: list = None):
+    def update_short_term(self, user_id: str, summary: str = "", topics: list = None):
         """Update just the short-term memory without a full persist cycle."""
         r = self._get_redis(db=5)
         if not r:
@@ -222,7 +221,9 @@ class MemoryManager:
                     {"role": "system", "content": system},
                     {"role": "user", "content": dialog[:3000]},
                 ],
-                temperature=0.1, max_tokens=200, timeout=15,
+                temperature=0.1,
+                max_tokens=200,
+                timeout=15,
             )
             return (resp.choices[0].message.content or "").strip()
         except Exception:
@@ -246,19 +247,17 @@ class MemoryManager:
     def _extract_topics(messages: list) -> list:
         """Extract topic keywords from messages (rule-based, zero token cost)."""
         import re
+
         topics = set()
         keyword_map = {
-            "画布": ["canvas", "画布", "图形", "节点", "矩形", "圆形", "连线",
-                    "流程图", "架构图", "思维导图", "布局"],
+            "画布": ["canvas", "画布", "图形", "节点", "矩形", "圆形", "连线", "流程图", "架构图", "思维导图", "布局"],
             "蓝图": ["blueprint", "蓝图", "保存", "加载", "导出", "导入"],
             "搜索": ["web_search", "搜索", "新闻", "查询"],
             "文件": ["file", "文件", "上传", "下载", "文档", "excel", "docx"],
             "代码": ["code", "代码", "JS", "javascript", "生成"],
             "地图": ["map", "地图", "路线", "地点", "导航", "geocode"],
         }
-        text = " ".join(
-            (str(m.get("content", "")) or "") for m in messages[-20:]
-        ).lower()
+        text = " ".join((str(m.get("content", "")) or "") for m in messages[-20:]).lower()
 
         for topic, keywords in keyword_map.items():
             for kw in keywords:
@@ -269,8 +268,7 @@ class MemoryManager:
 
     # ── Internal: long-term storage ──────────────────────────────────────
 
-    def _store_long_term(self, r, user_id: str, session_id: str,
-                         short_data: dict):
+    def _store_long_term(self, r, user_id: str, session_id: str, short_data: dict):
         """Store a session entry in the long-term memory index."""
         index_key = self._long_index_key(user_id)
         entry_key = self._long_entry_key(user_id, session_id)
@@ -296,8 +294,7 @@ class MemoryManager:
                 r.delete(self._long_entry_key(user_id, sid))
             r.zremrangebyrank(index_key, 0, to_remove - 1)
 
-    def _search_long_term(self, r, user_id: str, query: str = "",
-                          limit: int = MAX_RECALL_ITEMS) -> list:
+    def _search_long_term(self, r, user_id: str, query: str = "", limit: int = MAX_RECALL_ITEMS) -> list:
         """Search long-term memory for relevant past sessions.
 
         Tries FT.SEARCH (vector) first; falls back to topic/keyword matching.
@@ -318,20 +315,21 @@ class MemoryManager:
                 # Simple relevance: topic overlap with query
                 relevance = self._compute_relevance(data, query)
                 if relevance > 0 or not query:
-                    items.append({
-                        "source": "long_term",
-                        "summary": data.get("summary", ""),
-                        "topics": data.get("topics", []),
-                        "session_id": sid,
-                        "freshness": "older",
-                        "relevance": relevance,
-                    })
+                    items.append(
+                        {
+                            "source": "long_term",
+                            "summary": data.get("summary", ""),
+                            "topics": data.get("topics", []),
+                            "session_id": sid,
+                            "freshness": "older",
+                            "relevance": relevance,
+                        }
+                    )
             except json.JSONDecodeError:
                 continue
 
         # Sort by relevance (highest first), then recency
-        items.sort(key=lambda x: (x.get("relevance", 0), x.get("session_id", "")),
-                   reverse=True)
+        items.sort(key=lambda x: (x.get("relevance", 0), x.get("session_id", "")), reverse=True)
         return items[:limit]
 
     def restore_session(self, user_id: str) -> dict:
@@ -355,8 +353,7 @@ class MemoryManager:
             logging.debug(f"Memory restore_session failed for user={user_id}")
             return {}
 
-    def persist_session(self, user_id: str, session_id: str, messages: list,
-                        summary: str = ""):
+    def persist_session(self, user_id: str, session_id: str, messages: list, summary: str = ""):
         """Persist session messages and update long-term memory."""
         try:
             r = self._get_redis()
@@ -367,8 +364,7 @@ class MemoryManager:
                 "messages": messages[-20:],
                 "summary": summary,
             }
-            r.setex(key, SHORT_TERM_TTL,
-                    json.dumps(payload, ensure_ascii=False, default=str))
+            r.setex(key, SHORT_TERM_TTL, json.dumps(payload, ensure_ascii=False, default=str))
             self.remember(user_id, session_id, messages, summary)
         except Exception:
             logging.debug(f"Memory persist_session failed for user={user_id}")
@@ -397,9 +393,7 @@ class MemoryManager:
         score = 0.0
         topics = entry.get("topics", [])
         for topic in topics:
-            if topic.lower() in query_lower or any(
-                w in query_lower for w in topic.lower().split()
-            ):
+            if topic.lower() in query_lower or any(w in query_lower for w in topic.lower().split()):
                 score += 1.0
         summary = entry.get("summary", "").lower()
         if summary:

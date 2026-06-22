@@ -12,50 +12,51 @@ agent_eval/ → agent/eval/, agents/ → agent/agents/
 
 import warnings
 
+from .adaptive import replan_node
+
+# ── Sub-agents ────────────────────────────────────────────────────────────
+from .agents import AgentBase, BlueprintAgent, CanvasAgent, CodeAgent, FileAgent
+
+# ── Circuit / Fallback / Adaptive / Reflexion ─────────────────────────────
+from .circuit import circuit_allow, circuit_record
+
 # ── Core ──────────────────────────────────────────────────────────────────
 from .core import AgentSession
+from .dispatcher import AgentDispatcher
 
 # ── Engine ────────────────────────────────────────────────────────────────
 from .engine import AgentEngine
+from .executor import AgentExecutor
 
 # ── Guard ─────────────────────────────────────────────────────────────────
 from .guard import InputGuard, OutputGuard, ToolGuard
 
 # ── Helpers ───────────────────────────────────────────────────────────────
 from .helpers import (
+    estimate_tokens_from_str,
     extract_json,
+    loop_key,
     repair_json,
     sanitize_for_json,
-    estimate_tokens_from_str,
     truncate_tool_result,
-    loop_key,
 )
-
-# ── Tools ─────────────────────────────────────────────────────────────────
-from .tools import run_tool_call, TOOL_SCHEMAS, _rebuild_schemas
 
 # ── Intent / Executor ─────────────────────────────────────────────────────
 from .intent import classify_domain, unified_intent_and_plan
-from .executor import AgentExecutor
-from .dispatcher import AgentDispatcher
 
 # ── Memory ────────────────────────────────────────────────────────────────
 from .memory import MemoryManager
-from .plan_eval import PlanMemory, evaluate_plan
 
 # ── Observability & Trace ─────────────────────────────────────────────────
 from .observability import AgentObservability, HealthChecker, MetricsCollector
-from .tracer import AgentTracer
+from .plan_eval import PlanMemory, evaluate_plan
 
 # ── Skills ────────────────────────────────────────────────────────────────
 from .skills import get_skills_for_intent
 
-# ── Sub-agents ────────────────────────────────────────────────────────────
-from .agents import AgentBase, CanvasAgent, BlueprintAgent, FileAgent, CodeAgent
-
-# ── Circuit / Fallback / Adaptive / Reflexion ─────────────────────────────
-from .circuit import circuit_allow, circuit_record
-from .adaptive import replan_node
+# ── Tools ─────────────────────────────────────────────────────────────────
+from .tools import TOOL_SCHEMAS, _rebuild_schemas, run_tool_call
+from .tracer import AgentTracer
 
 try:
     from .fallback import AgentFallback
@@ -68,7 +69,7 @@ except ImportError:
     AgentReflexion = None  # type: ignore[assignment]
 
 # ── DAG ───────────────────────────────────────────────────────────────────
-from .dag import DAGPlan, DAGNode, DAGExecutor
+from .dag import DAGExecutor, DAGNode, DAGPlan
 
 # ── Cache / MCP / Pheromone ───────────────────────────────────────────────
 try:
@@ -81,16 +82,15 @@ try:
 except ImportError:
     get_mcp_server = None  # type: ignore[assignment]
 
+# ── Eval ───────────────────────────────────────────────────────────────────
+from .evaluator import AgentEvaluator
 from .pheromone import SharedContext, extract_discoveries
 
 # ── TTS ───────────────────────────────────────────────────────────────────
 from .tts import AgentTTS
 
-# ── Eval ───────────────────────────────────────────────────────────────────
-from .evaluator import AgentEvaluator
-
-
 # ── Backward-compatible re-export warnings ────────────────────────────────
+
 
 def __getattr__(name):
     """Legacy import support: maps old flat module names to new sub-modules.
@@ -98,31 +98,31 @@ def __getattr__(name):
     Example: agent.from app.util.agent_core import AgentSession' still works.
     """
     _LEGACY_MAP = {
-        'agent_core': 'core',
-        'agent_engine': 'engine',
-        'agent_guard': 'guard',
-        'agent_helpers': 'helpers',
-        'agent_tools': 'tools',
-        'agent_intent': 'intent',
-        'agent_executor': 'executor',
-        'agent_dispatcher': 'dispatcher',
-        'agent_memory': 'memory',
-        'agent_session_memory': 'session_memory',
-        'agent_plan_eval': 'plan_eval',
-        'agent_observability': 'observability',
-        'agent_tracer': 'tracer',
-        'agent_skills': 'skills',
-        'agents': 'agents',
-        'agent_circuit': 'circuit',
-        'agent_fallback': 'fallback',
-        'agent_adaptive': 'adaptive',
-        'agent_reflexion': 'reflexion',
-        'agent_dag': 'dag',
-        'agent_cache': 'cache',
-        'agent_mcp': 'mcp',
-        'agent_pheromone': 'pheromone',
-        'agent_tts': 'tts',
-        'agent_evaluator': 'evaluator',
+        "agent_core": "core",
+        "agent_engine": "engine",
+        "agent_guard": "guard",
+        "agent_helpers": "helpers",
+        "agent_tools": "tools",
+        "agent_intent": "intent",
+        "agent_executor": "executor",
+        "agent_dispatcher": "dispatcher",
+        "agent_memory": "memory",
+        "agent_session_memory": "session_memory",
+        "agent_plan_eval": "plan_eval",
+        "agent_observability": "observability",
+        "agent_tracer": "tracer",
+        "agent_skills": "skills",
+        "agents": "agents",
+        "agent_circuit": "circuit",
+        "agent_fallback": "fallback",
+        "agent_adaptive": "adaptive",
+        "agent_reflexion": "reflexion",
+        "agent_dag": "dag",
+        "agent_cache": "cache",
+        "agent_mcp": "mcp",
+        "agent_pheromone": "pheromone",
+        "agent_tts": "tts",
+        "agent_evaluator": "evaluator",
     }
     if name in _LEGACY_MAP:
         warnings.warn(
@@ -131,5 +131,6 @@ def __getattr__(name):
             stacklevel=2,
         )
         import importlib
-        return importlib.import_module(f'.{_LEGACY_MAP[name]}', __name__)
+
+        return importlib.import_module(f".{_LEGACY_MAP[name]}", __name__)
     raise AttributeError(f"module 'app.util.agent' has no attribute '{name}'")

@@ -7,8 +7,8 @@ import threading
 import time
 from typing import Callable
 
-from app.util.executor import run_with_timeout as _exec_run_with_timeout
 from app.util.executor import ExecutorTimeout
+from app.util.executor import run_with_timeout as _exec_run_with_timeout
 
 TOOL_TIMEOUT = 60  # default tool execution timeout (seconds)
 
@@ -32,9 +32,9 @@ class ToolRegistry:
     _lock: threading.RLock = threading.RLock()  # guards concurrent access to _tools
 
     @classmethod
-    def register(cls, name: str, description: str, parameters: dict,
-                 validator: Callable = None):
+    def register(cls, name: str, description: str, parameters: dict, validator: Callable = None):
         """Decorator: register a tool function."""
+
         def wrapper(func):
             with cls._lock:
                 cls._tools[name] = {
@@ -47,6 +47,7 @@ class ToolRegistry:
                 }
                 logging.info("ToolRegistry registered: %s", name)
             return func
+
         return wrapper
 
     @classmethod
@@ -130,7 +131,8 @@ class ToolRegistry:
                         "parameters": t["parameters"],
                     },
                 }
-                for t in cls._tools.values() if t["enabled"]
+                for t in cls._tools.values()
+                if t["enabled"]
             ]
 
     @classmethod

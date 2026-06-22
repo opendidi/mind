@@ -16,6 +16,7 @@ from dataclasses import dataclass, field
 @dataclass
 class PlanFeedback:
     """Post-execution plan quality feedback."""
+
     goal: str = ""
     domains: list = field(default_factory=list)
     steps_total: int = 0
@@ -34,37 +35,53 @@ class PlanFeedback:
         if self.steps_failed > 0:
             lines.append(f"[!] 最近一次类似任务中，{self.steps_failed}/{self.steps_total} 个步骤失败。")
         if self.reflections_triggered > 0:
-            lines.append(f"[!] 该任务触发了 {self.reflections_triggered} 次自省重试，说明初始计划可能需要更精确的工具选择或步骤拆分。")
+            lines.append(
+                f"[!] 该任务触发了 {self.reflections_triggered} 次自省重试，说明初始计划可能需要更精确的工具选择或步骤拆分。"
+            )
         for issue in self.issues:
             lines.append(f"[FIX] {issue}")
         if self.score < 0.5:
             lines.append("[!!] 该计划执行质量较差（评分<0.5），请重新思考步骤设计和依赖关系。")
         if lines:
             lines.insert(0, "## 历史教训（请参考以下反馈改进本次计划）")
-            lines.append("建议：优先使用更精确的 tool_hint，避免依赖需要多次重试的操作，确保 depends_on 正确反映步骤间的数据依赖。")
+            lines.append(
+                "建议：优先使用更精确的 tool_hint，避免依赖需要多次重试的操作，确保 depends_on 正确反映步骤间的数据依赖。"
+            )
         return "\n".join(lines) if len(lines) > 1 else ""
 
     def to_dict(self) -> dict:
         return {
-            "goal": self.goal, "domains": self.domains,
-            "steps_total": self.steps_total, "steps_succeeded": self.steps_succeeded,
-            "steps_failed": self.steps_failed, "reflections_triggered": self.reflections_triggered,
-            "total_duration_ms": self.total_duration_ms, "issues": self.issues,
-            "score": self.score, "timestamp": self.timestamp,
+            "goal": self.goal,
+            "domains": self.domains,
+            "steps_total": self.steps_total,
+            "steps_succeeded": self.steps_succeeded,
+            "steps_failed": self.steps_failed,
+            "reflections_triggered": self.reflections_triggered,
+            "total_duration_ms": self.total_duration_ms,
+            "issues": self.issues,
+            "score": self.score,
+            "timestamp": self.timestamp,
         }
 
     @classmethod
     def from_dict(cls, d: dict) -> "PlanFeedback":
         return cls(
-            goal=d.get("goal", ""), domains=d.get("domains", []),
-            steps_total=d.get("steps_total", 0), steps_succeeded=d.get("steps_succeeded", 0),
-            steps_failed=d.get("steps_failed", 0), reflections_triggered=d.get("reflections_triggered", 0),
-            total_duration_ms=d.get("total_duration_ms", 0.0), issues=d.get("issues", []),
-            score=d.get("score", 0.0), timestamp=d.get("timestamp", time.time()),
+            goal=d.get("goal", ""),
+            domains=d.get("domains", []),
+            steps_total=d.get("steps_total", 0),
+            steps_succeeded=d.get("steps_succeeded", 0),
+            steps_failed=d.get("steps_failed", 0),
+            reflections_triggered=d.get("reflections_triggered", 0),
+            total_duration_ms=d.get("total_duration_ms", 0.0),
+            issues=d.get("issues", []),
+            score=d.get("score", 0.0),
+            timestamp=d.get("timestamp", time.time()),
         )
 
 
-def _detect_issues(goal: str, completed: list[str], failed: list[str], reflections: int, duration_ms: float) -> list[str]:
+def _detect_issues(
+    goal: str, completed: list[str], failed: list[str], reflections: int, duration_ms: float
+) -> list[str]:
     issues: list[str] = []
     if failed and completed:
         issues.append("部分步骤失败但前序步骤成功 — 检查步骤间是否存在隐式数据依赖")
@@ -79,8 +96,9 @@ def _detect_issues(goal: str, completed: list[str], failed: list[str], reflectio
     return issues
 
 
-def evaluate_plan(goal: str, domains: list[str], completed: list[str], failed: list[str],
-                  reflections: int, duration_ms: float) -> PlanFeedback:
+def evaluate_plan(
+    goal: str, domains: list[str], completed: list[str], failed: list[str], reflections: int, duration_ms: float
+) -> PlanFeedback:
     total = len(completed) + len(failed)
     if total == 0:
         return PlanFeedback(goal=goal, domains=domains, score=1.0)
@@ -94,9 +112,15 @@ def evaluate_plan(goal: str, domains: list[str], completed: list[str], failed: l
     score = round(min(1.0, max(0.0, score)), 3)
     issues = _detect_issues(goal, completed, failed, reflections, duration_ms)
     return PlanFeedback(
-        goal=goal, domains=domains, steps_total=total, steps_succeeded=succeeded,
-        steps_failed=len(failed), reflections_triggered=reflections,
-        total_duration_ms=duration_ms, issues=issues, score=score,
+        goal=goal,
+        domains=domains,
+        steps_total=total,
+        steps_succeeded=succeeded,
+        steps_failed=len(failed),
+        reflections_triggered=reflections,
+        total_duration_ms=duration_ms,
+        issues=issues,
+        score=score,
     )
 
 
@@ -114,6 +138,7 @@ _mem_recent: list[PlanFeedback] = []
 def _get_plan_memory_redis():
     try:
         from app.util.redis_utils import get_redis
+
         return get_redis(db=_PLAN_MEMORY_REDIS_DB)
     except Exception:
         return None
@@ -230,8 +255,7 @@ class PlanMemory:
             for fb in _mem_recent:
                 if fb.steps_failed > 0:
                     failures.append(
-                        f"目标「{fb.goal[:60]}」: {fb.steps_failed}/{fb.steps_total} 步骤失败，"
-                        f"评分 {fb.score:.2f}"
+                        f"目标「{fb.goal[:60]}」: {fb.steps_failed}/{fb.steps_total} 步骤失败，" f"评分 {fb.score:.2f}"
                     )
 
         if not failures:

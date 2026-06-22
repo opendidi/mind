@@ -33,16 +33,20 @@ def _build_llm_client():
     """Build primary LLM client with optional fallback tiers from env config."""
     tiers = []
     if deepseek_config["key"]:
-        tiers.append({
-            "client": _build_client(deepseek_config["key"], deepseek_config["base_url"]),
-            "model": "deepseek-chat",
-        })
+        tiers.append(
+            {
+                "client": _build_client(deepseek_config["key"], deepseek_config["base_url"]),
+                "model": "deepseek-chat",
+            }
+        )
     for fb_cfg in [fallback1_config, fallback2_config]:
         if fb_cfg["key"] and fb_cfg["model"]:
-            tiers.append({
-                "client": _build_client(fb_cfg["key"], fb_cfg["base_url"]),
-                "model": fb_cfg["model"],
-            })
+            tiers.append(
+                {
+                    "client": _build_client(fb_cfg["key"], fb_cfg["base_url"]),
+                    "model": fb_cfg["model"],
+                }
+            )
     if not tiers:
         raise RuntimeError(
             "未配置任何 LLM API Key。请在 .env 中设置 DEEPSEEK_API_KEY，"
@@ -51,6 +55,7 @@ def _build_llm_client():
     if len(tiers) == 1:
         return tiers[0]["client"]
     from app.util.agent.fallback import FallbackLLM
+
     return FallbackLLM(tiers)
 
 

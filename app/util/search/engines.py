@@ -32,7 +32,6 @@ def _get_ddgs():
     return _ddgs_inst
 
 
-
 # ── 超时配置 ─────────────────────────────────────────────────────────
 
 _SEARCH_DDGS_TIMEOUT = 8
@@ -177,8 +176,7 @@ def _ddg_api_search(keyword, max_results) -> dict | None:
         if abstract and abstract_url:
             results.append(
                 {
-                    "title": data.get("AbstractSource", "")
-                    or data.get("Heading", keyword),
+                    "title": data.get("AbstractSource", "") or data.get("Heading", keyword),
                     "snippet": abstract[:600],
                     "url": abstract_url,
                     "date": "",
@@ -191,9 +189,7 @@ def _ddg_api_search(keyword, max_results) -> dict | None:
             if text and url:
                 title = re.sub(r"\s*-.*$", "", text)[:200]
                 snippet = re.sub(r"<[^>]+>", "", text)[:600]
-                results.append(
-                    {"title": title, "snippet": snippet, "url": url, "date": ""}
-                )
+                results.append({"title": title, "snippet": snippet, "url": url, "date": ""})
             if len(results) >= max_results:
                 break
 
@@ -240,15 +236,9 @@ def _extract_bing_total(html: str) -> int:
     return 0
 
 
-def search_bing(
-    keyword, max_results, safe="moderate", timelimit=None, search_type="web"
-) -> tuple:
+def search_bing(keyword, max_results, safe="moderate", timelimit=None, search_type="web") -> tuple:
     try:
-        url = (
-            "https://www.bing.com/news/search"
-            if search_type == "news"
-            else "https://www.bing.com/search"
-        )
+        url = "https://www.bing.com/news/search" if search_type == "news" else "https://www.bing.com/search"
         params = {"q": keyword, "count": max_results, "mkt": "zh-CN", "setLang": "zh-Hans"}
         if safe == "strict":
             params["adlt"] = "strict"
@@ -295,9 +285,7 @@ def search_bing(
                 if date_span:
                     date = date_span.get_text(strip=True)
 
-                results.append(
-                    {"title": title, "snippet": snippet, "url": r_url, "date": date}
-                )
+                results.append({"title": title, "snippet": snippet, "url": r_url, "date": date})
                 if len(results) >= max_results:
                     break
         except ImportError:
@@ -317,7 +305,8 @@ def search_bing(
                 # We extract ALL <a> texts and pick the best one as title.
                 all_links = re.findall(
                     r'<a[^>]*href="([^"]*)"[^>]*>(.*?)</a>',
-                    block, re.DOTALL | re.IGNORECASE,
+                    block,
+                    re.DOTALL | re.IGNORECASE,
                 )
                 if not all_links:
                     continue
@@ -327,13 +316,14 @@ def search_bing(
                 for href, _link_text in all_links:
                     if "bing.com/ck/a" in href or "bing.com/ck/r" in href:
                         # Try to extract u= parameter (base64-encoded real URL)
-                        u_m = re.search(r'[&?]u=(a1[^&]+)', href)
+                        u_m = re.search(r"[&?]u=(a1[^&]+)", href)
                         if u_m:
                             try:
                                 import base64
-                                decoded = base64.urlsafe_b64decode(
-                                    u_m.group(1) + "=="
-                                ).decode("utf-8", errors="replace")
+
+                                decoded = base64.urlsafe_b64decode(u_m.group(1) + "==").decode(
+                                    "utf-8", errors="replace"
+                                )
                                 real_url = decoded
                                 break
                             except Exception:
@@ -355,13 +345,14 @@ def search_bing(
                     if not text:
                         continue
                     # Skip texts that are mostly a domain + URL concatenation
-                    url_like_ratio = len(re.findall(r'https?://|\.(com|org|net|cn|hk|tw)\b', text))
+                    url_like_ratio = len(re.findall(r"https?://|\.(com|org|net|cn|hk|tw)\b", text))
                     if url_like_ratio >= 1 and len(text) < 60:
                         continue
                     # Strip leading domain prefix (e.g. "wikipedia.org › ...")
                     cleaned = re.sub(
-                        r'^[\w.-]+\.(com|org|net|cn|hk|tw|jp|kr|io|ai|dev)\s*[›»]\s*',
-                        '', text,
+                        r"^[\w.-]+\.(com|org|net|cn|hk|tw|jp|kr|io|ai|dev)\s*[›»]\s*",
+                        "",
+                        text,
                     ).strip()
                     if cleaned and len(cleaned) > 5:
                         candidates.append(cleaned)
@@ -376,24 +367,29 @@ def search_bing(
                 # Snippet
                 snippet = ""
                 snippet_m = re.search(
-                    r"<p[^>]*>(.*?)</p>", block, re.DOTALL | re.IGNORECASE,
+                    r"<p[^>]*>(.*?)</p>",
+                    block,
+                    re.DOTALL | re.IGNORECASE,
                 )
                 if snippet_m:
                     snippet = re.sub(r"<[^>]+>", "", snippet_m.group(1)).strip()
                 if not snippet:
                     meta_m = re.search(
                         r'<div[^>]*class="[^"]*b_caption[^"]*"[^>]*>(.*?)</div>',
-                        block, re.DOTALL | re.IGNORECASE,
+                        block,
+                        re.DOTALL | re.IGNORECASE,
                     )
                     if meta_m:
                         snippet = re.sub(r"<[^>]+>", "", meta_m.group(1)).strip()
                 date = _extract_bing_date(block)
-                results.append({
-                    "title": title[:200],
-                    "snippet": snippet[:600],
-                    "url": real_url,
-                    "date": date,
-                })
+                results.append(
+                    {
+                        "title": title[:200],
+                        "snippet": snippet[:600],
+                        "url": real_url,
+                        "date": date,
+                    }
+                )
                 if len(results) >= max_results:
                     break
 
@@ -516,7 +512,7 @@ def _decode_baidu_url(encrypted_url: str) -> str:
     import urllib.parse
 
     # Try to extract `url=` param from the query string regardless of hostname
-    m = re.search(r'[?&]url=([^&]+)', encrypted_url)
+    m = re.search(r"[?&]url=([^&]+)", encrypted_url)
     if m:
         return urllib.parse.unquote(m.group(1))
 
@@ -570,6 +566,7 @@ def _search_baidu_mobile(keyword: str, max_results: int) -> tuple:
     # URL is inside a <a> that has data-url attribute (or a /link?... redirect)
     try:
         from bs4 import BeautifulSoup
+
         soup = BeautifulSoup(html, "lxml")
 
         for container in soup.select("div.result, div[class*=result]"):
@@ -593,9 +590,8 @@ def _search_baidu_mobile(keyword: str, max_results: int) -> tuple:
                 continue
 
             # ── Title ──
-            title_tag = (
-                container.select_one("a.c-title, a[class*=title], h3, .c-title-text")
-                or container.select_one("a")
+            title_tag = container.select_one("a.c-title, a[class*=title], h3, .c-title-text") or container.select_one(
+                "a"
             )
             title = title_tag.get_text(strip=True)[:200] if title_tag else ""
             if not title:
@@ -612,18 +608,18 @@ def _search_baidu_mobile(keyword: str, max_results: int) -> tuple:
 
             # ── Date ──
             date = ""
-            date_tag = container.select_one(
-                "span.c-color-gray, span[class*=time], span[class*=date]"
-            )
+            date_tag = container.select_one("span.c-color-gray, span[class*=time], span[class*=date]")
             if date_tag:
                 date = date_tag.get_text(strip=True)
 
-            results.append({
-                "title": title,
-                "snippet": snippet,
-                "url": r_url,
-                "date": date,
-            })
+            results.append(
+                {
+                    "title": title,
+                    "snippet": snippet,
+                    "url": r_url,
+                    "date": date,
+                }
+            )
             if len(results) >= max_results:
                 break
     except ImportError:
@@ -696,10 +692,14 @@ def _search_baidu_pc(keyword: str, max_results: int) -> tuple:
                 # Snippet — try known classes first, then longest text span
                 snippet = ""
                 for cls in [
-                    "span.c-abstract", "div.c-abstract",
-                    "span.c-span-last", "div.c-span-last",
-                    "span.content-right_8Zs38", "div.content-right_8Zs38",
-                    "span[class*=abstract]", "div[class*=summary]",
+                    "span.c-abstract",
+                    "div.c-abstract",
+                    "span.c-span-last",
+                    "div.c-span-last",
+                    "span.content-right_8Zs38",
+                    "div.content-right_8Zs38",
+                    "span[class*=abstract]",
+                    "div[class*=summary]",
                 ]:
                     snip_tag = container.select_one(cls)
                     if snip_tag:
@@ -716,20 +716,21 @@ def _search_baidu_pc(keyword: str, max_results: int) -> tuple:
                 # Date
                 date = ""
                 date_tag = container.select_one(
-                    "span.c-color-gray2, span.c-color-gray, "
-                    "span[class*=time], span[class*=date]"
+                    "span.c-color-gray2, span.c-color-gray, " "span[class*=time], span[class*=date]"
                 )
                 if date_tag:
                     date = date_tag.get_text(strip=True)
                 else:
                     date = _extract_baidu_date(str(container))
 
-                results.append({
-                    "title": title,
-                    "snippet": snippet,
-                    "url": r_url,
-                    "date": date,
-                })
+                results.append(
+                    {
+                        "title": title,
+                        "snippet": snippet,
+                        "url": r_url,
+                        "date": date,
+                    }
+                )
                 if len(results) >= max_results:
                     break
             if results:
@@ -747,8 +748,7 @@ def _search_baidu_pc(keyword: str, max_results: int) -> tuple:
         )
         if not blocks:
             blocks = re.findall(
-                r'<div[^>]*class="[^"]*c-container[^"]*"[^>]*>(.*?)'
-                r'(?=<div[^>]*class="[^"]*c-container[^"]*"|$)',
+                r'<div[^>]*class="[^"]*c-container[^"]*"[^>]*>(.*?)' r'(?=<div[^>]*class="[^"]*c-container[^"]*"|$)',
                 html,
                 re.DOTALL | re.IGNORECASE,
             )
@@ -756,7 +756,8 @@ def _search_baidu_pc(keyword: str, max_results: int) -> tuple:
         for block in blocks:
             href_m = re.search(
                 r'<a[^>]*href="([^"]+)"[^>]*>(.*?)</a>',
-                block, re.DOTALL | re.IGNORECASE,
+                block,
+                re.DOTALL | re.IGNORECASE,
             )
             if not href_m:
                 continue
@@ -768,12 +769,16 @@ def _search_baidu_pc(keyword: str, max_results: int) -> tuple:
 
             snippet = ""
             for cls in [
-                r"c-abstract", r'content-right_[^"]*', r"c-span-last",
-                r'c-summary', r'abstract',
+                r"c-abstract",
+                r'content-right_[^"]*',
+                r"c-span-last",
+                r"c-summary",
+                r"abstract",
             ]:
                 snip_m = re.search(
                     rf'<(?:span|div)[^>]*class="[^"]*{cls}[^"]*"[^>]*>(.*?)</(?:span|div)>',
-                    block, re.DOTALL | re.IGNORECASE,
+                    block,
+                    re.DOTALL | re.IGNORECASE,
                 )
                 if snip_m:
                     snippet = re.sub(r"<[^>]+>", "", snip_m.group(1)).strip()
@@ -782,7 +787,8 @@ def _search_baidu_pc(keyword: str, max_results: int) -> tuple:
             if not snippet:
                 spans = re.findall(
                     r"<(?:span|div)[^>]*>(.*?)</(?:span|div)>",
-                    block, re.DOTALL | re.IGNORECASE,
+                    block,
+                    re.DOTALL | re.IGNORECASE,
                 )
                 for s in spans:
                     clean = re.sub(r"<[^>]+>", "", s).strip()
@@ -790,12 +796,14 @@ def _search_baidu_pc(keyword: str, max_results: int) -> tuple:
                         snippet = clean[:600]
                         break
             date = _extract_baidu_date(block)
-            results.append({
-                "title": title[:200],
-                "snippet": snippet[:600],
-                "url": r_url,
-                "date": date,
-            })
+            results.append(
+                {
+                    "title": title[:200],
+                    "snippet": snippet[:600],
+                    "url": r_url,
+                    "date": date,
+                }
+            )
             if len(results) >= max_results:
                 break
 
@@ -871,11 +879,7 @@ def search_exa(keyword, max_results, search_type="web", timelimit=None) -> tuple
         results = []
         for r in data.get("results", []):
             highlights = r.get("highlights", []) or []
-            snippet = (
-                " ... ".join(highlights)
-                if highlights
-                else (r.get("text", "") or "")[:600]
-            )
+            snippet = " ... ".join(highlights) if highlights else (r.get("text", "") or "")[:600]
             results.append(
                 {
                     "title": (r.get("title") or "").strip()[:200],
@@ -898,11 +902,7 @@ def search_exa(keyword, max_results, search_type="web", timelimit=None) -> tuple
         return None, "Exa 搜索超时 (15s)"
     except requests.exceptions.HTTPError as e:
         logging.warning("Exa HTTP 错误: %s", e)
-        return None, (
-            f"Exa HTTP {e.response.status_code}"
-            if e.response is not None
-            else str(e)[:80]
-        )
+        return None, (f"Exa HTTP {e.response.status_code}" if e.response is not None else str(e)[:80])
     except Exception as e:
         logging.warning("Exa 搜索失败: %s", e)
         return None, str(e)[:80]
@@ -965,13 +965,15 @@ def search_searxng(keyword, max_results, search_type="web") -> tuple:
             url = r.get("url", "")
             if not url or not url.startswith("http"):
                 continue
-            results.append({
-                "title": (r.get("title") or "").strip()[:200],
-                "snippet": (r.get("content") or r.get("snippet", "") or "")[:600],
-                "url": url,
-                "date": (r.get("publishedDate") or r.get("engines", [""])[0] or ""),
-                "domain": _extract_domain(url),
-            })
+            results.append(
+                {
+                    "title": (r.get("title") or "").strip()[:200],
+                    "snippet": (r.get("content") or r.get("snippet", "") or "")[:600],
+                    "url": url,
+                    "date": (r.get("publishedDate") or r.get("engines", [""])[0] or ""),
+                    "domain": _extract_domain(url),
+                }
+            )
 
         if not results:
             return None, "SearXNG 未返回结果"

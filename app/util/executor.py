@@ -4,13 +4,15 @@
 Simplified for mind project (no eventlet dependency).
 """
 
-import time
 import threading as _threading
-from concurrent.futures import ThreadPoolExecutor, TimeoutError as FutureTimeoutError
+import time
+from concurrent.futures import ThreadPoolExecutor
+from concurrent.futures import TimeoutError as FutureTimeoutError
 
 
 class ExecutorTimeout(Exception):
     """Raised when a task exceeds its time limit."""
+
     pass
 
 
@@ -25,6 +27,7 @@ def is_pool_shutdown(pool) -> bool:
 
 
 # ── Managed Pool (auto-reset singleton) ─────────────────────────────────────
+
 
 class ManagedPool:
     """Lazy-init executor pool with auto-reset on shutdown."""

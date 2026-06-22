@@ -2,6 +2,7 @@
 """DAG Executor — topological sort, parallel execution with ReAct loop.
 Adapted from pypano for mind project."""
 
+import atexit as _atexit
 import json
 import logging
 import queue
@@ -16,7 +17,6 @@ from app.util.agent.executor import BaseExecutor
 from app.util.agent.helpers import loop_key as _loop_key
 from app.util.agent.pheromone import SharedContext
 from app.util.executor import ExecutorTimeout, ManagedPool
-import atexit as _atexit
 
 _dag_pool = ManagedPool(max_workers=8, prefix="dag-")
 
@@ -30,6 +30,7 @@ def _shutdown_dag_pool():
 
 
 # ── Data Structures ────────────────────────────────────────────────────────
+
 
 @dataclass
 class DAGNode:
@@ -101,24 +102,44 @@ def _has_cycle(nodes) -> bool:
 
 # ── Constants ──────────────────────────────────────────────────────────────
 
-from app.util.agent.constants import MAX_REFLECT_RETRIES, MAX_LOOP_REPEAT, MAX_DAG_TOTAL_SECONDS, MAX_NODE_SECONDS
-
+from app.util.agent.constants import MAX_DAG_TOTAL_SECONDS, MAX_LOOP_REPEAT, MAX_NODE_SECONDS, MAX_REFLECT_RETRIES
 
 # ── MODELS ──────────────────────────────────────────────────────────────────
+
 
 class DAGExecutor(BaseExecutor):
     """Executes a DAGPlan using topological sort + parallel ThreadPoolExecutor."""
 
-    def __init__(self, llm_client, tools_schemas: list, messages: list,
-                 hooks: list = None, tool_context: dict = None, user_id: str = "",
-                 model: str = AGENT_DEFAULT_MODEL, confirm_handler=None, dispatcher=None,
-                 tracer=None, stream: bool = False, redis_client=None, task_id: str = ""):
+    def __init__(
+        self,
+        llm_client,
+        tools_schemas: list,
+        messages: list,
+        hooks: list = None,
+        tool_context: dict = None,
+        user_id: str = "",
+        model: str = AGENT_DEFAULT_MODEL,
+        confirm_handler=None,
+        dispatcher=None,
+        tracer=None,
+        stream: bool = False,
+        redis_client=None,
+        task_id: str = "",
+    ):
         super().__init__(
-            llm_client, tools_schemas, messages,
-            tool_context=tool_context, user_id=user_id, model=model,
-            confirm_handler=confirm_handler, dispatcher=dispatcher,
-            tracer=tracer, stream=stream, redis_client=redis_client,
-            task_id=task_id, session_id=(task_id or user_id),
+            llm_client,
+            tools_schemas,
+            messages,
+            tool_context=tool_context,
+            user_id=user_id,
+            model=model,
+            confirm_handler=confirm_handler,
+            dispatcher=dispatcher,
+            tracer=tracer,
+            stream=stream,
+            redis_client=redis_client,
+            task_id=task_id,
+            session_id=(task_id or user_id),
         )
         self.hooks = hooks or []
         self.shared_context = SharedContext()
@@ -126,6 +147,7 @@ class DAGExecutor(BaseExecutor):
         self._reflection_count = 0
         self._dag_start_ts = 0.0
         from app.util.agent.reflexion import AgentReflexion
+
         self.reflexion = AgentReflexion(llm_client, model)
 
     @property
@@ -140,19 +162,35 @@ class DAGExecutor(BaseExecutor):
         state = ExecutionState.from_plan(plan)
         self._replan_used = False
 
-        yield ("plan", {
-            "goal": plan.goal,
-            "nodes": [{"id": n.id, "desc": n.desc, "depends_on": n.depends_on,
-                        "parallel_group": n.parallel_group, "confirm": n.confirm} for n in plan.nodes],
-            "risk": plan.risk, "mode": "dag",
-        })
+        yield (
+            "plan",
+            {
+                "goal": plan.goal,
+                "nodes": [
+                    {
+                        "id": n.id,
+                        "desc": n.desc,
+                        "depends_on": n.depends_on,
+                        "parallel_group": n.parallel_group,
+                        "confirm": n.confirm,
+                    }
+                    for n in plan.nodes
+                ],
+                "risk": plan.risk,
+                "mode": "dag",
+            },
+        )
 
         # Phase 1: Confirmation check
         destructive = [n for n in plan.nodes if n.confirm]
         if destructive and self.confirm_handler:
-            approved = self.confirm_handler("destructive_ops", {
-                "steps": [{"id": n.id, "desc": n.desc} for n in destructive], "goal": plan.goal,
-            })
+            approved = self.confirm_handler(
+                "destructive_ops",
+                {
+                    "steps": [{"id": n.id, "desc": n.desc} for n in destructive],
+                    "goal": plan.goal,
+                },
+            )
             if not approved:
                 yield ("error", "用户取消了操作")
                 yield ("done", {"status": "cancelled", "reason": "用户取消"})
@@ -267,19 +305,28 @@ class DAGExecutor(BaseExecutor):
                 else:
                     state.failed.add(node.id)
                     state.results[node.id] = StepResult(step_id=node.id, success=False, output=result)
-                    yield ("step_fail", {"step_id": node.id, "desc": node.desc,
-                                         "error": result.get("error", "未知错误"),
-                                         "reflection": result.get("reflection")})
+                    yield (
+                        "step_fail",
+                        {
+                            "step_id": node.id,
+                            "desc": node.desc,
+                            "error": result.get("error", "未知错误"),
+                            "reflection": result.get("reflection"),
+                        },
+                    )
 
-    def _execute_single_node(self, node: DAGNode, state: ExecutionState,
-                             messages: list = None, event_queue: queue.Queue = None) -> tuple:
+    def _execute_single_node(
+        self, node: DAGNode, state: ExecutionState, messages: list = None, event_queue: queue.Queue = None
+    ) -> tuple:
         msgs = messages if messages is not None else self.messages
 
         if self.tracer:
             step_sid = self.tracer.start_span(f"step:{node.id}", input={"desc": node.desc, "tool_hint": node.tool_hint})
 
         ctx_hint = self.shared_context.sniff()
-        instruction = f"{ctx_hint}现在执行计划步骤: {node.desc}\n请仅执行这一步需要的工具调用，完成后简要用文字描述结果。"
+        instruction = (
+            f"{ctx_hint}现在执行计划步骤: {node.desc}\n请仅执行这一步需要的工具调用，完成后简要用文字描述结果。"
+        )
         msgs.append({"role": "user", "content": instruction})
 
         loop_counter = defaultdict(int)
@@ -337,23 +384,28 @@ class DAGExecutor(BaseExecutor):
                         if loop_counter[lk] > MAX_LOOP_REPEAT:
                             return _finish_step(False, {"error": f"操作 {tc_name} 重复多次仍失败"})
 
-                        result = self._run_dag_tool(tc_name, tool_args, tc_id, msgs,
-                                                    event_queue, node.id)
+                        result = self._run_dag_tool(tc_name, tool_args, tc_id, msgs, event_queue, node.id)
                         if not result.get("success"):
                             reflection = self._reflect(node, tc_name, tool_args, result, state)
                             if reflection.get("recovery") == "retry" and retries < MAX_REFLECT_RETRIES:
                                 retries += 1
                                 adjusted = reflection.get("adjusted_args") or {}
-                                msgs.append({"role": "user", "content": (
-                                    f"上一步失败了。原因: {reflection.get('cause', '未知')}\n"
-                                    f"建议: {reflection.get('suggestion', '请重试')}\n"
-                                    f"调整参数: {json.dumps(adjusted, ensure_ascii=False) if adjusted else '自行判断'}"
-                                )})
+                                msgs.append(
+                                    {
+                                        "role": "user",
+                                        "content": (
+                                            f"上一步失败了。原因: {reflection.get('cause', '未知')}\n"
+                                            f"建议: {reflection.get('suggestion', '请重试')}\n"
+                                            f"调整参数: {json.dumps(adjusted, ensure_ascii=False) if adjusted else '自行判断'}"
+                                        ),
+                                    }
+                                )
                                 tool_retry = True
                                 break
                             else:
-                                return _finish_step(False, {"error": result.get("error", "未知错误"),
-                                                            "reflection": reflection})
+                                return _finish_step(
+                                    False, {"error": result.get("error", "未知错误"), "reflection": reflection}
+                                )
 
                     if tool_retry:
                         break
@@ -440,9 +492,16 @@ class DAGExecutor(BaseExecutor):
                 self.messages.append(self._format_stream_tool_msg(tool_calls_received))
                 tool_calls = tool_calls_received
             else:
-                response = self._call_llm()
+                try:
+                    response = self._call_llm()
+                except Exception as e:
+                    msg = str(e)
+                    if not msg or len(msg) < 5:
+                        msg = repr(e)
+                    yield ("error", f"AI 服务不可用: {msg[:200]}")
+                    return
                 if response is None:
-                    yield ("error", "AI 服务不可用")
+                    yield ("error", "AI 服务不可用（熔断保护中，请稍后再试）")
                     return
                 if not response.choices:
                     yield ("error", "AI 返回异常")
@@ -471,27 +530,39 @@ class DAGExecutor(BaseExecutor):
 
             consecutive_tool_calls += len(tool_calls)
             if consecutive_tool_calls >= 5:
-                self.messages.append({"role": "user", "content": "已完成足够多的工具调用，请直接根据已有结果给出最终文字回复，不要再调用工具。"})
+                self.messages.append(
+                    {
+                        "role": "user",
+                        "content": "已完成足够多的工具调用，请直接根据已有结果给出最终文字回复，不要再调用工具。",
+                    }
+                )
                 consecutive_tool_calls = 0
             continue
 
         if accumulated_text.strip():
-            llm_response = SimpleNamespace(message=SimpleNamespace(content=accumulated_text.strip()), finish_reason="stop")
+            llm_response = SimpleNamespace(
+                message=SimpleNamespace(content=accumulated_text.strip()), finish_reason="stop"
+            )
             yield ("llm_response", llm_response, self._tool_call_count)
         else:
             yield ("error", "推理步数已达上限")
 
     # ── DAG Execution ────────────────────────────────────────────────────
 
-    def _reflect(self, node: DAGNode, tool_name: str, tool_args: dict,
-                 error_result: dict, state: ExecutionState) -> dict:
+    def _reflect(
+        self, node: DAGNode, tool_name: str, tool_args: dict, error_result: dict, state: ExecutionState
+    ) -> dict:
         self._reflection_count += 1
         completed = [state.node_map[nid].desc for nid in state.completed]
         remaining = [state.node_map[nid].desc for nid in state.pending]
         return self.reflexion.analyze_failure(
-            tool_name=tool_name, tool_args=tool_args, error_result=error_result,
-            goal=state.plan.goal, step_desc=node.desc,
-            completed_steps=completed, remaining_steps=remaining,
+            tool_name=tool_name,
+            tool_args=tool_args,
+            error_result=error_result,
+            goal=state.plan.goal,
+            step_desc=node.desc,
+            completed_steps=completed,
+            remaining_steps=remaining,
         )
 
     def _handle_failures(self, state: ExecutionState) -> Generator:
@@ -507,8 +578,10 @@ class DAGExecutor(BaseExecutor):
                     state.failed.add(other_nid)
                     cascaded.append((other_nid, other.desc, nid))
         if cascaded:
-            yield ("cascade", {"root": cascaded[0][2],
-                               "skipped": [{"id": nid, "desc": desc} for nid, desc, _ in cascaded]})
+            yield (
+                "cascade",
+                {"root": cascaded[0][2], "skipped": [{"id": nid, "desc": desc} for nid, desc, _ in cascaded]},
+            )
 
     def _should_replan(self, state: ExecutionState) -> bool:
         if self._replan_used:
@@ -553,10 +626,15 @@ class DAGExecutor(BaseExecutor):
         yield ("progress", f"步骤 {failed_nid} 失败，正在尝试重新规划...")
 
         replacement = replan_node(
-            llm_client=self.llm, model=self.model, plan_goal=state.plan.goal,
-            failed_node_id=failed_nid, failed_step_desc=failed_node.desc,
-            tool_hint=failed_node.tool_hint or "无", error_msg=error_msg,
-            completed_steps=completed_steps, remaining_steps=remaining_steps,
+            llm_client=self.llm,
+            model=self.model,
+            plan_goal=state.plan.goal,
+            failed_node_id=failed_nid,
+            failed_step_desc=failed_node.desc,
+            tool_hint=failed_node.tool_hint or "无",
+            error_msg=error_msg,
+            completed_steps=completed_steps,
+            remaining_steps=remaining_steps,
             shared_context_sniff=self.shared_context.sniff(),
         )
 
@@ -565,9 +643,15 @@ class DAGExecutor(BaseExecutor):
             return
 
         for rn in replacement:
-            new_node = DAGNode(id=rn["id"], desc=rn["desc"], tool_hint=rn.get("tool_hint"),
-                               agent_name=rn.get("agent_name"), confirm=rn.get("confirm", False),
-                               depends_on=rn.get("depends_on", []), parallel_group=rn.get("parallel_group"))
+            new_node = DAGNode(
+                id=rn["id"],
+                desc=rn["desc"],
+                tool_hint=rn.get("tool_hint"),
+                agent_name=rn.get("agent_name"),
+                confirm=rn.get("confirm", False),
+                depends_on=rn.get("depends_on", []),
+                parallel_group=rn.get("parallel_group"),
+            )
             state.node_map[new_node.id] = new_node
             state.pending.add(new_node.id)
 
@@ -599,29 +683,46 @@ class DAGExecutor(BaseExecutor):
                 summary += f"\n\n未完成要点: {', '.join(verification['missing'])}"
             yield ("llm_response", SimpleNamespace(message=SimpleNamespace(content=summary)), 0)
 
-        yield ("done", {"status": "completed" if all_done else "partial",
-                        "completed": len(state.completed), "total": len(state.node_map)})
+        yield (
+            "done",
+            {
+                "status": "completed" if all_done else "partial",
+                "completed": len(state.completed),
+                "total": len(state.node_map),
+            },
+        )
 
     def _record_plan_feedback(self, state: ExecutionState, all_done: bool):
         try:
             from app.util.agent.plan_eval import PlanMemory, evaluate_plan
+
             completed_desc = [state.node_map[nid].desc for nid in state.completed]
             failed_desc = [state.node_map[nid].desc for nid in state.failed]
             duration_ms = (time.time() - self._dag_start_ts) * 1000 if self._dag_start_ts else 0
             domains = []
             try:
                 from app.util.agent.intent import classify_domain
+
                 domains = classify_domain(state.plan.goal)
                 if domains == ["general"]:
                     domains = []
             except Exception:
                 pass
-            feedback = evaluate_plan(goal=state.plan.goal, domains=domains,
-                                     completed=completed_desc, failed=failed_desc,
-                                     reflections=self._reflection_count, duration_ms=duration_ms)
+            feedback = evaluate_plan(
+                goal=state.plan.goal,
+                domains=domains,
+                completed=completed_desc,
+                failed=failed_desc,
+                reflections=self._reflection_count,
+                duration_ms=duration_ms,
+            )
             PlanMemory.record(feedback)
-            logging.info("Plan-Feedback recorded: score=%.2f, %d/%d steps succeeded, %d reflections",
-                         feedback.score, len(state.completed), len(state.node_map), self._reflection_count)
+            logging.info(
+                "Plan-Feedback recorded: score=%.2f, %d/%d steps succeeded, %d reflections",
+                feedback.score,
+                len(state.completed),
+                len(state.node_map),
+                self._reflection_count,
+            )
         except Exception:
             logging.debug("Plan-Feedback recording skipped (non-critical)", exc_info=True)
-

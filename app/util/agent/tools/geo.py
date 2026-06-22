@@ -11,15 +11,14 @@ from html.parser import HTMLParser
 
 import requests
 
+from app.config import AMAP_KEY
+from app.package.module.blueprint_mysql import BlueprintMysqlHandler
 from app.util.tool_registry import ToolRegistry
 from app.util.vision import VisionHandler
-from app.package.module.blueprint_mysql import BlueprintMysqlHandler
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Map / Geo Tools — geocode, regeocode
 # ══════════════════════════════════════════════════════════════════════════════
-
-from app.config import AMAP_KEY
 
 
 def _validate_geocode(args):
@@ -69,12 +68,16 @@ def _tool_geocode(args):
         for g in geocodes[:5]:
             loc = g.get("location", "")
             lng, lat = (loc.split(",") + ["0", "0"])[:2]
-            results.append({
-                "lng": float(lng), "lat": float(lat),
-                "address": g.get("formatted_address", address),
-                "city": g.get("city", ""), "district": g.get("district", ""),
-                "level": g.get("level", ""),
-            })
+            results.append(
+                {
+                    "lng": float(lng),
+                    "lat": float(lat),
+                    "address": g.get("formatted_address", address),
+                    "city": g.get("city", ""),
+                    "district": g.get("district", ""),
+                    "level": g.get("level", ""),
+                }
+            )
         return {"success": True, "data": {"total": len(results), "locations": results}}
 
     except requests.RequestException as e:
@@ -135,11 +138,8 @@ def _tool_regeocode(args):
                 "district": addr.get("district", ""),
                 "township": addr.get("township", ""),
                 "road": addr.get("streetNumber", {}).get("street", ""),
-                "pois": [{"name": p.get("name"), "type": p.get("type")}
-                         for p in (regeocode.get("pois") or [])[:5]],
+                "pois": [{"name": p.get("name"), "type": p.get("type")} for p in (regeocode.get("pois") or [])[:5]],
             },
         }
     except requests.RequestException as e:
         return {"success": False, "error": f"逆地理编码请求失败: {str(e)}"}
-
-

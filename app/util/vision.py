@@ -3,12 +3,15 @@
 Vision API handler — analyze images using OpenAI-compatible vision models.
 DeepSeek 已原生支持视觉识别，默认复用 DEEPSEEK_API_KEY，无需额外配置。
 """
+
 import base64
 import json
 import logging
+
 import requests
 from openai import OpenAI
-from app.config import LLM_TIMEOUT, vision_config, deepseek_config
+
+from app.config import LLM_TIMEOUT, deepseek_config, vision_config
 
 # ── Vision client 初始化 ──────────────────────────────────────────────────
 # 优先使用 vision_config，未单独配置时自动回退使用 deepseek_config
@@ -112,13 +115,15 @@ class VisionHandler:
     @staticmethod
     def _call_vision(img_src, prompt, task_type):
         """Core vision API call with a single image."""
-        messages = [{
-            "role": "user",
-            "content": [
-                {"type": "text", "text": prompt},
-                {"type": "image_url", "image_url": {"url": img_src}},
-            ],
-        }]
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": img_src}},
+                ],
+            }
+        ]
 
         try:
             response = _vision_client.chat.completions.create(
@@ -148,29 +153,38 @@ class VisionHandler:
 
     @staticmethod
     def build_describe_prompt():
-        return json.dumps({
-            "task": "describe",
-            "instructions": "描述这张图片的内容、主要物体、场景类型和关键词。",
-            "output_format": '{"scene_type":"","description":"","keywords":[]}',
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "task": "describe",
+                "instructions": "描述这张图片的内容、主要物体、场景类型和关键词。",
+                "output_format": '{"scene_type":"","description":"","keywords":[]}',
+            },
+            ensure_ascii=False,
+        )
 
     @staticmethod
     def build_classify_prompt(categories):
         cat_names = [c.get("name", "") for c in categories] if categories else []
-        return json.dumps({
-            "task": "classify",
-            "categories": cat_names,
-            "instructions": "将图片分类到最匹配的类别。",
-            "output_format": '{"category":"","confidence":0.0}',
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "task": "classify",
+                "categories": cat_names,
+                "instructions": "将图片分类到最匹配的类别。",
+                "output_format": '{"category":"","confidence":0.0}',
+            },
+            ensure_ascii=False,
+        )
 
     @staticmethod
     def build_detect_prompt():
-        return json.dumps({
-            "task": "detect",
-            "instructions": "检测图片中的物体，给出物体名称、位置描述和建议标注区域。",
-            "output_format": '{"objects":[{"name":"","position":"","suggestion":""}]}',
-        }, ensure_ascii=False)
+        return json.dumps(
+            {
+                "task": "detect",
+                "instructions": "检测图片中的物体，给出物体名称、位置描述和建议标注区域。",
+                "output_format": '{"objects":[{"name":"","position":"","suggestion":""}]}',
+            },
+            ensure_ascii=False,
+        )
 
     # ── Parsers ──────────────────────────────────────────────────────────
 

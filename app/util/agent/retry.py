@@ -1,7 +1,9 @@
 """Unified LLM retry wrapper."""
+
 import logging
 import time
-from openai import RateLimitError, APITimeoutError, APIConnectionError, APIError
+
+from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
 
 _RETRYABLE = (RateLimitError, APITimeoutError, APIConnectionError)
 
@@ -24,18 +26,14 @@ def retry_llm_call(fn, *args, max_retries: int = 3, **kwargs):
         except _RETRYABLE as e:
             last_exc = e
             if attempt < max_retries - 1:
-                delay = 2 ** attempt
-                logging.warning(
-                    f"LLM retry {attempt + 1}/{max_retries}: {e.__class__.__name__}, sleeping {delay}s"
-                )
+                delay = 2**attempt
+                logging.warning(f"LLM retry {attempt + 1}/{max_retries}: {e.__class__.__name__}, sleeping {delay}s")
                 time.sleep(delay)
         except APIError as e:
             last_exc = e
             if getattr(e, "status_code", 0) >= 500 and attempt < max_retries - 1:
-                delay = 2 ** attempt
-                logging.warning(
-                    f"LLM server error retry {attempt + 1}/{max_retries}: HTTP {e.status_code}"
-                )
+                delay = 2**attempt
+                logging.warning(f"LLM server error retry {attempt + 1}/{max_retries}: HTTP {e.status_code}")
                 time.sleep(delay)
             else:
                 raise

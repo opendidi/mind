@@ -5,8 +5,11 @@ from app.util.agent.agents.base import AgentBase
 from app.util.agent.tools import TOOL_SCHEMAS
 
 BLUEPRINT_TOOLS = [
-    "blueprint_list", "blueprint_load", "blueprint_save",
-    "blueprint_search", "blueprint_export",
+    "blueprint_list",
+    "blueprint_load",
+    "blueprint_save",
+    "blueprint_search",
+    "blueprint_export",
 ]
 
 
@@ -37,5 +40,4 @@ class BlueprintAgent(AgentBase):
 
     @property
     def tools(self):
-        return [s for s in TOOL_SCHEMAS
-                if s.get("function", {}).get("name") in BLUEPRINT_TOOLS]
+        return [s for s in TOOL_SCHEMAS if s.get("function", {}).get("name") in BLUEPRINT_TOOLS]

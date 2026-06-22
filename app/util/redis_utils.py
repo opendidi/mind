@@ -38,6 +38,7 @@ def get_redis(db: int = 0, max_connections: int = 30):
         redis.Redis 实例，或 None（当 Redis 不可用时）。
     """
     import logging
+
     pool = _pools.get(db)
     if pool is None:
         with _get_lock():

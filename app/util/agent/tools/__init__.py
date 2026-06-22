@@ -8,15 +8,15 @@ from the previous monolithic tools.py, so existing importers work unchanged.
 
 import logging
 
-# Import all sub-modules to trigger @ToolRegistry.register decorators
-from . import canvas       # noqa: F401  — canvas + layout tools
-from . import blueprint    # noqa: F401  — blueprint CRUD
-from . import file_ops     # noqa: F401  — file search + document analysis
-from . import web          # noqa: F401  — web_fetch + analyze_image
-from . import geo          # noqa: F401  — geocode + regeocode
-from . import code         # noqa: F401  — code_generate
-
 from app.util.tool_registry import ToolRegistry
+
+# Import all sub-modules to trigger @ToolRegistry.register decorators
+from . import blueprint  # noqa: F401  — blueprint CRUD
+from . import canvas  # noqa: F401  — canvas + layout tools
+from . import code  # noqa: F401  — code_generate
+from . import file_ops  # noqa: F401  — file search + document analysis
+from . import geo  # noqa: F401  — geocode + regeocode
+from . import web  # noqa: F401  — web_fetch + analyze_image
 
 # Re-export _require for backward compat (used by engine_chain.py)
 from .web import _require  # noqa: F401
@@ -33,9 +33,17 @@ def _rebuild_schemas():
 _rebuild_schemas()
 
 
-def run_tool_call(tool_name, tool_args, tool_context, dispatcher=None,
-                  llm_client=None, model=None, tracer=None, pheromone_sniff="",
-                  event_queue=None):
+def run_tool_call(
+    tool_name,
+    tool_args,
+    tool_context,
+    dispatcher=None,
+    llm_client=None,
+    model=None,
+    tracer=None,
+    pheromone_sniff="",
+    event_queue=None,
+):
     """Execute a tool by name, dispatching sub-agents when needed.
 
     Returns (result_dict, cached_bool).
@@ -51,6 +59,7 @@ def run_tool_call(tool_name, tool_args, tool_context, dispatcher=None,
             relay_queue = event_queue
             if event_queue is not None:
                 import queue as _queue
+
                 relay_queue = _queue.Queue()
 
                 worker_ready = _threading.Event()
@@ -76,9 +85,15 @@ def run_tool_call(tool_name, tool_args, tool_context, dispatcher=None,
                                 json.dumps(safe_result)
                             except (TypeError, ValueError):
                                 safe_result = str(safe_result)
-                            event_queue.put({"type": "tool_result", "data": {"tool": evt[1], "success": evt[2], "result": safe_result}})
+                            event_queue.put(
+                                {
+                                    "type": "tool_result",
+                                    "data": {"tool": evt[1], "success": evt[2], "result": safe_result},
+                                }
+                            )
 
                 import threading as _threading
+
                 relay_thread = _threading.Thread(target=_relay_worker, daemon=True)
                 relay_thread.start()
                 worker_ready.wait(timeout=5)  # ensure worker is ready before dispatch
@@ -87,12 +102,22 @@ def run_tool_call(tool_name, tool_args, tool_context, dispatcher=None,
             if event_queue is not None:
                 event_queue.put({"type": "sub_agent_start", "data": {"agent": agent_name, "task": task[:200]}})
 
-            result = dispatcher.dispatch(llm_client, agent_name, task, ctx, model=model, tracer=tracer,
-                                        event_queue=relay_queue, stream=(event_queue is not None))
+            result = dispatcher.dispatch(
+                llm_client,
+                agent_name,
+                task,
+                ctx,
+                model=model,
+                tracer=tracer,
+                event_queue=relay_queue,
+                stream=(event_queue is not None),
+            )
 
             # Signal sub-agent end + stop relay
             if event_queue is not None:
-                event_queue.put({"type": "sub_agent_end", "data": {"agent": agent_name, "success": result.get("success", False)}})
+                event_queue.put(
+                    {"type": "sub_agent_end", "data": {"agent": agent_name, "success": result.get("success", False)}}
+                )
                 relay_queue.put(None)  # sentinel to stop relay thread
                 relay_thread.join(timeout=2)
 

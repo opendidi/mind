@@ -21,6 +21,7 @@ def _safe_json_dumps(obj, **kwargs):
 def agent_health():
     """Agent 健康检查端点 — 各层状态汇总."""
     from app.util.agent.observability import HealthChecker, MetricsCollector
+
     return {
         "code": 200,
         "data": {
@@ -59,6 +60,7 @@ def agent_chat():
     images = data.get("images")  # list of base64 data URL strings for multimodal vision
 
     from app.util.agent.observability import AgentObservability
+
     obs = AgentObservability(user_id=user_id)
 
     def generate():
@@ -83,7 +85,9 @@ def agent_chat():
             except Exception:
                 logging.exception("Agent chat error: %s", task_id)
                 obs.trace("session_error", status="error")
-                event_queue.put({"type": "error", "data": {"message": "处理请求时发生内部错误", "error_code": "INTERNAL_ERROR"}})
+                event_queue.put(
+                    {"type": "error", "data": {"message": "处理请求时发生内部错误", "error_code": "INTERNAL_ERROR"}}
+                )
                 event_queue.put({"type": "done", "data": {"status": "error"}})
 
         thread = threading.Thread(target=run_agent, daemon=True)
@@ -126,6 +130,7 @@ def agent_mcp():
     data = request.get_json(silent=True) or {}
     try:
         from app.util.agent.mcp import get_mcp_server
+
         server = get_mcp_server()
         result = server.handle_request(data)
         return result
@@ -177,7 +182,9 @@ def agent_tts():
 def agent_tts_audio(filename):
     """提供 TTS 音频文件访问。"""
     import os as _os
+
     from flask import send_from_directory
+
     from app.config import TTS_CACHE_DIR
 
     # 安全检查：只允许 .wav 文件

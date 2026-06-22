@@ -2,15 +2,18 @@
 """
 Chat API — conversation CRUD + document upload
 """
+
+import logging
 import os
+import tempfile
 import time
 import uuid as _uuid
-import tempfile
-import logging
-from flask import Blueprint, request, jsonify, g
+
+from flask import Blueprint, g, jsonify, request
+
 from app.package.module.chat_mysql import ChatMysqlHandler
-from app.util.decorators import token_required
 from app.plugin.minio.app.controller import MinioUtil
+from app.util.decorators import token_required
 
 chat_api = Blueprint("chat_api", __name__)
 
@@ -83,18 +86,22 @@ def upload_file():
 
     ext = os.path.splitext(file.filename)[1].lower()
     if ext not in (".docx", ".xlsx", ".xls", ".txt", ".json", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"):
-        return jsonify(
-            {"code": 400, "message": "仅支持 .docx / .xlsx / .xls / .txt / .json / .png / .jpg / .gif / .webp / .svg 格式"}
-        ), 400
+        return (
+            jsonify(
+                {
+                    "code": 400,
+                    "message": "仅支持 .docx / .xlsx / .xls / .txt / .json / .png / .jpg / .gif / .webp / .svg 格式",
+                }
+            ),
+            400,
+        )
 
     MAX_SIZE = 10 * 1024 * 1024
     file.seek(0, os.SEEK_END)
     size = file.tell()
     file.seek(0)
     if size > MAX_SIZE:
-        return jsonify(
-            {"code": 400, "message": f"文件过大，请控制在 10MB 以内"}
-        ), 400
+        return jsonify({"code": 400, "message": f"文件过大，请控制在 10MB 以内"}), 400
 
     date_str = time.strftime("%Y%m%d")
     uid = str(_uuid.uuid4()).replace("-", "")
@@ -107,16 +114,18 @@ def upload_file():
         url = MinioUtil.upload_pano_file(tmp_path, object_name)
         if not url:
             return jsonify({"code": 500, "message": "MinIO 上传失败"}), 500
-        return jsonify({
-            "code": 200,
-            "data": {
-                "object_name": object_name,
-                "url": url,
-                "filename": file.filename,
-                "size": size,
-            },
-            "message": "ok",
-        })
+        return jsonify(
+            {
+                "code": 200,
+                "data": {
+                    "object_name": object_name,
+                    "url": url,
+                    "filename": file.filename,
+                    "size": size,
+                },
+                "message": "ok",
+            }
+        )
     except Exception:
         logging.exception("文档上传失败")
         return jsonify({"code": 500, "message": "上传失败"}), 500
