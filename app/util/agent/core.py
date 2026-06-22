@@ -208,12 +208,20 @@ class AgentSession:
             return
 
         try:
-            resp = llm_client.chat.completions.create(
-                model=model,
-                messages=[{"role": "user", "content": COMPACT_PROMPT + compact_text[:3000]}],
-                temperature=0.1, max_tokens=400, timeout=15,
-            )
-            summary = resp.choices[0].message.content or ""
+            cache_inputs = {"prompt": COMPACT_PROMPT, "text": compact_text[:3000]}
+            from app.util.agent.cache import llm_cache_get, llm_cache_set
+            cached = llm_cache_get("compact_history", cache_inputs)
+            if cached:
+                summary = cached
+            else:
+                resp = llm_client.chat.completions.create(
+                    model=model,
+                    messages=[{"role": "user", "content": COMPACT_PROMPT + compact_text[:3000]}],
+                    temperature=0.1, max_tokens=400, timeout=15,
+                )
+                summary = resp.choices[0].message.content or ""
+                if summary.strip():
+                    llm_cache_set("compact_history", cache_inputs, summary.strip())
             if summary.strip():
                 prev = self._compact_summary
                 if prev:

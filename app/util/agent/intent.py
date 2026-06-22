@@ -188,21 +188,30 @@ def unified_intent_and_plan(
     msgs.append({"role": "user", "content": user_message})
 
     try:
-        resp = retry_llm_call(
-            lambda: llm_client.chat.completions.create(
-                model=model,
-                messages=msgs,
-                temperature=0.1,
-                max_tokens=1024,
-                timeout=30,
-            ),
-            max_retries=3,
-        )
+        # Check deterministic cache first (same prompt + history + message → same plan)
+        from app.util.agent.cache import llm_cache_get, llm_cache_set
+        cache_inputs = {"system": system_prompt, "history": history[-6:] if history else [], "message": user_message}
+        cached = llm_cache_get("unified_intent", cache_inputs)
+        if cached:
+            raw = cached
+        else:
+            resp = retry_llm_call(
+                lambda: llm_client.chat.completions.create(
+                    model=model,
+                    messages=msgs,
+                    temperature=0.1,
+                    max_tokens=1024,
+                    timeout=30,
+                ),
+                max_retries=3,
+            )
+            raw = resp.choices[0].message.content or ""
+            if raw.strip():
+                llm_cache_set("unified_intent", cache_inputs, raw)
     except Exception:
         logging.warning("unified_intent: LLM call failed after retries, falling back to keyword")
         return _keyword_fallback(user_message)
     try:
-        raw = resp.choices[0].message.content or ""
         text = _extract_json(raw)
         if not text:
             logging.warning("unified_intent: no JSON in response")

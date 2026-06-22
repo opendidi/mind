@@ -125,3 +125,35 @@ def deterministic_cache_set(tool_name: str, tool_args: dict, result: dict | str)
         logging.debug("DetCache SET: %s (TTL=%ds)", tool_name, DETERMINISTIC_CACHE_TTL)
     except Exception:
         logging.warning("Deterministic cache set failed: %s", tool_name)
+
+
+# ── LLM Response Cache (300s TTL for deterministic LLM calls) ──────────
+
+LLM_CACHE_TTL = 300  # 5 minutes
+
+
+def llm_cache_get(func_name: str, inputs: dict) -> str | None:
+    """Get cached LLM response for deterministic calls (e.g. compaction, intent)."""
+    try:
+        r = _get_cache_redis()
+        inp_str = json.dumps(inputs, sort_keys=True, ensure_ascii=False)
+        key = f"agent:llmcache:{func_name}:{hashlib.md5(inp_str.encode()).hexdigest()}"
+        data = r.get(key)
+        if data:
+            logging.debug("LLMCache HIT: %s", func_name)
+            return data.decode("utf-8") if isinstance(data, bytes) else data
+    except Exception:
+        logging.warning("LLM cache get failed: %s", func_name)
+    return None
+
+
+def llm_cache_set(func_name: str, inputs: dict, response: str, ttl: int = LLM_CACHE_TTL):
+    """Cache LLM response for deterministic calls."""
+    try:
+        r = _get_cache_redis()
+        inp_str = json.dumps(inputs, sort_keys=True, ensure_ascii=False)
+        key = f"agent:llmcache:{func_name}:{hashlib.md5(inp_str.encode()).hexdigest()}"
+        r.setex(key, ttl, response)
+        logging.debug("LLMCache SET: %s (TTL=%ds)", func_name, ttl)
+    except Exception:
+        logging.warning("LLM cache set failed: %s", func_name)
