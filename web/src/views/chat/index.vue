@@ -203,6 +203,7 @@ import { useMessageSelect } from "@/composables/useMessageSelect";
 import { useScrollToBottom } from "@/composables/useScrollToBottom";
 import { useTheme } from "@/composables/useTheme";
 import { executeCanvasTool } from "@/utils/canvasBridge";
+import { apiBlueprintModify } from "@/api/blueprint";
 import ChatSidebar from "@/components/chat/ChatSidebar.vue";
 import ChatInput from "@/components/chat/ChatInput.vue";
 import PlanCard from "@/components/chat/PlanCard.vue";
@@ -412,6 +413,27 @@ const {
       // Notify the preview iframe to reload (canvas was mutated via localStorage)
       if (previewIframe.value?.contentWindow) {
         previewIframe.value.contentWindow.postMessage({ type: 'canvas:mutated' }, '*');
+      }
+    }
+    // When Agent saves a blueprint, inject the actual canvas data from localStorage
+    // (the backend doesn't have access to the frontend's Meta2D state)
+    if (success && tool === 'blueprint_save') {
+      const blueprintId = (result as any)?.data?.id;
+      if (blueprintId) {
+        const raw = localStorage.getItem('meta2d');
+        if (raw) {
+          try {
+            const canvasData = JSON.parse(raw);
+            // Save the full pens array (nodes) plus lines from localStorage
+            // The blueprint's pens column stores the complete Meta2D pen array
+            const pens = JSON.stringify(canvasData.pens || []);
+            apiBlueprintModify({ id: blueprintId, pens }).catch((e) => {
+              console.warn('[blueprint_save] failed to sync canvas data:', e);
+            });
+          } catch (e) {
+            console.warn('[blueprint_save] failed to parse localStorage meta2d:', e);
+          }
+        }
       }
     }
   },

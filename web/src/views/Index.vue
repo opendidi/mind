@@ -111,7 +111,35 @@ function save() {
 async function onInit() {
   const id = route.query.id;
   if (id) {
-    const data = await apiBlueprintFind({ id: route.query.id });
+    try {
+      const res = await apiBlueprintFind({ id: route.query.id });
+      const blueprint = res?.data;
+      if (blueprint?.pens?.length > 0) {
+        meta2d.open({
+          pens: blueprint.pens || [],
+          name: blueprint.name || "",
+          color: blueprint.color || "",
+          penBackground: blueprint.penBackground || "",
+          background: blueprint.background || "",
+          bkImage: blueprint.bkImage || "",
+          grid: blueprint.grid || "0",
+          gridColor: blueprint.gridColor || "",
+          gridSize: blueprint.gridSize || "",
+          gridRotate: blueprint.gridRotate || "",
+          rule: blueprint.rule || "0",
+          ruleColor: blueprint.ruleColor || "",
+          initJs: blueprint.initJs || "",
+          https: blueprint.https || [],
+          thumbnail: blueprint.thumbnail || "",
+          locked: 0,
+        });
+        meta2d.store.data.fromArrow = "";
+        meta2d.store.data.toArrow = "triangleSolid";
+        meta2d.fitView(true, 24);
+      }
+    } catch {
+      // ignore — use empty canvas
+    }
   }
   // 参考: https://doc.le5le.com/document/138387361#%E6%80%BB%E7%BB%93
   // 缩放画布

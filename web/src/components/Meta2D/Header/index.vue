@@ -731,16 +731,17 @@ const onScaleWindow = () => {
   meta2d.fitView();
 };
 
-function onView() {
+async function onView() {
   // 先停止动画，避免数据波动
   meta2d.stopAnimate();
-  onSave(true);
+  const savedId = await onSave(true);
+  if (!savedId) return;
   // 跳转到预览页面
   router.push({
     path: "/preview",
     query: {
       r: Date.now() + "",
-      id: data.value._id,
+      id: savedId,
     },
   });
 }
@@ -749,17 +750,17 @@ function onOpenAgentPanel() {
   emit("openAgentPanel");
 }
 
-function onSave(flag: boolean) {
-  const data: any = meta2d.data();
-  if (!data.pens.length) {
+function onSave(flag: boolean): Promise<string | false> | boolean {
+  const canvasData: any = meta2d.data();
+  if (!canvasData.pens.length) {
     message.error("无法保存，画布可能没有画笔/画布大小超出浏览器最大限制");
     return false;
   }
-  localStorage.setItem("meta2d", JSON.stringify(data));
+  localStorage.setItem("meta2d", JSON.stringify(canvasData));
   commonStore.setTopology(meta2d);
   if (flag) {
     // 全量序列化（Meta2D 确保前向兼容）
-    const params: any = { ...data };
+    const params: any = { ...canvasData };
 
     // 确保 API 期望的字符串字段正确序列化
     if (typeof params.https !== "string") params.https = JSON.stringify(params.https) || "";
@@ -769,21 +770,26 @@ function onSave(flag: boolean) {
     params.thumbnail = "";
 
     if (!route.query["id"]) {
-      apiBlueprintAdd(params).then((res) => {
+      return apiBlueprintAdd(params).then((res) => {
         commonStore.setIsSave("1");
         message.success("保存成功");
         UrlParamsManager.setParams({ id: res.id });
-        data["id"] = res.id;
+        canvasData["id"] = res.id;
         // 异步更新缩略图
         generateThumbnail((thumbnailUrl) => {
           if (thumbnailUrl) {
             apiBlueprintModify({ id: res.id, thumbnail: thumbnailUrl });
           }
         });
+        return res.id as string;
+      }).catch((err) => {
+        message.error("保存失败，请重试");
+        console.error("[onSave] add blueprint failed:", err);
+        return false;
       });
     } else {
       params.id = route.query["id"];
-      apiBlueprintModify(params).then((res) => {
+      return apiBlueprintModify(params).then(() => {
         commonStore.setIsSave("1");
         message.success("保存成功");
         // 异步更新缩略图
@@ -792,9 +798,15 @@ function onSave(flag: boolean) {
             apiBlueprintModify({ id: params.id, thumbnail: thumbnailUrl });
           }
         });
+        return params.id as string;
+      }).catch((err) => {
+        message.error("保存失败，请重试");
+        console.error("[onSave] modify blueprint failed:", err);
+        return false;
       });
     }
   }
+  return true;
 }
 
 function generateThumbnail(callback: (url: string) => void) {
