@@ -60,7 +60,7 @@
             </template>
           </div>
           <div class="upload-item w-full pl-2 pr-2">
-            <FileUpload ref="fileUpload" @oks="uploadSuccessDone" />
+            <FileUpload ref="fileUploadRef" @oks="uploadSuccessDone" />
           </div>
         </div>
         <div class="file-container p-2" id="file-container">
@@ -253,8 +253,8 @@
         </div>
       </div>
     </a-spin>
-    <FilePreview ref="filePreview" />
-    <Rename ref="rename" @success="init()" />
+    <FilePreview ref="filePreviewRef" />
+    <Rename ref="renameRef" @success="init()" />
   </a-modal>
 </template>
 
@@ -262,7 +262,6 @@
 import {
   ref,
   createVNode,
-  getCurrentInstance,
   watch,
   nextTick,
   computed,
@@ -287,7 +286,10 @@ import {
   HomeOutlined,
   SearchOutlined,
 } from "@ant-design/icons-vue";
-const { proxy }: any = getCurrentInstance();
+
+const fileUploadRef = ref(null);
+const filePreviewRef = ref(null);
+const renameRef = ref(null);
 
 const props = defineProps({
   mode: {
@@ -362,8 +364,8 @@ interface HistoryEntry {
   selectedKeys: (string | number)[];
   selectedRowKeys: (string | number)[];
 }
-let historyStack = ref<HistoryEntry[]>([]);
-let historyIndex = ref(-1);
+const historyStack = ref<HistoryEntry[]>([]);
+const historyIndex = ref(-1);
 let isNavigating = false;
 
 function pushHistory() {
@@ -466,8 +468,8 @@ function selectDirData(e, { node }) {
   selectedRowKeys.value = [];
   const parentId = e.length !== 0 ? a : "";
   queryParam.value.parent_id = parentId;
-  if (proxy.$refs.fileUpload) {
-    Object.assign(proxy.$refs.fileUpload.data, { parent_id: parentId });
+  if (fileUploadRef.value) {
+    Object.assign(fileUploadRef.value.data, { parent_id: parentId });
   }
   init();
 }
@@ -641,7 +643,7 @@ const onOperateFileOrDir = (params: any) => {
           const img = new Image();
           img.onload = () => {
             img.onload = null;
-            proxy.$refs.filePreview?.openPreview({
+            filePreviewRef.value?.openPreview({
               url: params.url,
               width: img.width,
               height: img.height,
@@ -655,7 +657,7 @@ const onOperateFileOrDir = (params: any) => {
         fetch(params.url)
           .then((res) => res.text())
           .then((text) => {
-            proxy.$refs.filePreview.openTextPreview({
+            filePreviewRef.value.openTextPreview({
               content: text,
               type: "markdown",
               title: params.name,
@@ -683,7 +685,7 @@ const onOperateFileOrDir = (params: any) => {
         fetch(params.url)
           .then((res) => res.text())
           .then((text) => {
-            proxy.$refs.filePreview.openTextPreview({
+            filePreviewRef.value.openTextPreview({
               content: text,
               type: params.extension,
               title: params.name,
@@ -696,7 +698,7 @@ const onOperateFileOrDir = (params: any) => {
         fetch(params.url)
           .then((res) => res.text())
           .then((text) => {
-            proxy.$refs.filePreview.openTextPreview({
+            filePreviewRef.value.openTextPreview({
               content: text,
               type: "text",
               title: params.name,
@@ -793,8 +795,8 @@ watch(
 watch(
   () => queryParam.value.parent_id,
   (parent_id) => {
-    if (parent_id && proxy.$refs.fileUpload) {
-      Object.assign(proxy.$refs.fileUpload.data, {
+    if (parent_id && fileUploadRef.value) {
+      Object.assign(fileUploadRef.value.data, {
         parent_id,
       });
     }
@@ -812,9 +814,9 @@ const onSort = () => {
 const onModifyRename = () => {
   const item = dataSource.value[actionIndex.value];
   if (!item) return;
-  proxy.$refs.rename.visible = true;
+  renameRef.value.visible = true;
   nextTick(() => {
-    proxy.$refs.rename.init({ id: item.id, name: item.name });
+    renameRef.value.init({ id: item.id, name: item.name });
   });
 };
 

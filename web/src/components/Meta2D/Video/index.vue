@@ -80,7 +80,7 @@
 </template>
 
 <script>
-import { ref, watch, defineComponent, getCurrentInstance, nextTick } from "vue";
+import { ref, watch, defineComponent } from "vue";
 import {
   CaretRightOutlined,
   PauseOutlined,
@@ -93,11 +93,10 @@ export default defineComponent({
     CloseOutlined,
   },
   setup(props, { emit }) {
-    let { proxy } = getCurrentInstance();
 
-    let animateKey = 1;
+    const animateKey = 1;
 
-    let model = ref({
+    const model = ref({
       // 音频
       audio: "",
       // 视频地址

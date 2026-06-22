@@ -118,13 +118,13 @@ import { useCommonStore } from "@/store/modules/common";
 export default defineComponent({
   components: { Icon },
   setup(props, { emit }) {
-    let pens = ref([]);
+    const pens = ref([]);
 
-    let tags = ref(1);
+    const tags = ref(1);
 
-    let model = ref({});
+    const model = ref({});
 
-    let alignmentKey = ref([1, 2, 3]);
+    const alignmentKey = ref([1, 2, 3]);
 
     const init = (data) => {
       pens.value = data;

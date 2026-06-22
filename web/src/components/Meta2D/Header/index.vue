@@ -370,8 +370,8 @@
         <span>源代码</span>
       </a>
     </div>
-    <ShareModal ref="shareModal" />
-    <FileManager ref="fileManager" :mode="'multiple'" />
+    <ShareModal ref="shareModalRef" />
+    <FileManager ref="fileManagerRef" :mode="'multiple'" />
   </div>
 </template>
 
@@ -381,11 +381,10 @@ import {
   onUnmounted,
   reactive,
   ref,
-  getCurrentInstance,
   watch,
   nextTick,
 } from "vue";
-import { useRouter } from "vue-router";
+import { useRouter, useRoute } from "vue-router";
 import { Pen, PenType, deepClone } from "@meta2d/core";
 import FileSaver from "file-saver";
 import { message } from "ant-design-vue";
@@ -396,28 +395,30 @@ import { apiChatUploadFile } from "@/api/chat";
 import FileManager from "@/components/FileManager/index.vue";
 import { UrlParamsManager } from "@/utils/urlParamsManager";
 
-let { proxy } = getCurrentInstance();
-
 const emit = defineEmits(["openAgentPanel"]);
 
 const router = useRouter();
+const route = useRoute();
 
-let data = ref({});
+const fileManagerRef = ref(null);
+const shareModalRef = ref(null);
 
-let isOnDrawLine = ref(false);
+const data = ref({});
 
-let dot = ref(false);
+const isOnDrawLine = ref(false);
 
-let isDrawingPencil = ref<boolean>(false);
+const dot = ref(false);
+
+const isDrawingPencil = ref<boolean>(false);
 
 // 连线时，自动选中节点锚点
-let isAutoAnchor = ref<boolean>(false);
+const isAutoAnchor = ref<boolean>(false);
 
 // 禁止显示锚点
-let isDisableAnchor = ref<boolean>(false);
+const isDisableAnchor = ref<boolean>(false);
 
 // 是否开启放大镜
-let isShowMagnifier = ref<boolean>(false);
+const isShowMagnifier = ref<boolean>(false);
 
 const visibleMap = ref<boolean>(false);
 
@@ -767,7 +768,7 @@ function onSave(flag: boolean) {
     // 先保存（不含缩略图），保存成功后再异步生成缩略图
     params.thumbnail = "";
 
-    if (!proxy.$route.query["id"]) {
+    if (!route.query["id"]) {
       apiBlueprintAdd(params).then((res) => {
         commonStore.setIsSave("1");
         message.success("保存成功");
@@ -781,7 +782,7 @@ function onSave(flag: boolean) {
         });
       });
     } else {
-      params.id = proxy.$route.query["id"];
+      params.id = route.query["id"];
       apiBlueprintModify(params).then((res) => {
         commonStore.setIsSave("1");
         message.success("保存成功");
@@ -928,7 +929,7 @@ function onShowMagnifier() {
  * 打开素材库
  */
 function openFileManager() {
-  let fileManager = proxy.$refs.fileManager;
+  const fileManager = fileManagerRef.value;
   fileManager.visible = true;
   nextTick(() => {
     fileManager.initMaterialFolder().then((res) => {
@@ -943,7 +944,7 @@ function openFileManager() {
  * 分享
  */
 function onSearch() {
-  proxy.$refs.shareModal.visible = true;
+  shareModalRef.value.visible = true;
 }
 
 onMounted(() => {

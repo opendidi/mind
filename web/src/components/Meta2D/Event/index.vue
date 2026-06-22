@@ -226,7 +226,7 @@
         </template>
       </a-collapse>
     </a-form>
-    <EditContainer ref="editContainer" @oks="getEditTextValue" />
+    <EditContainer ref="editContainerRef" @oks="getEditTextValue" />
   </div>
 </template>
 
@@ -235,7 +235,6 @@ import {
   ref,
   watch,
   createVNode,
-  getCurrentInstance,
   nextTick,
   defineComponent,
 } from "vue";
@@ -261,21 +260,21 @@ export default defineComponent({
   setup(props, { emit }) {
     const { selections } = useSelection();
 
-    let { proxy } = getCurrentInstance();
+    const editContainerRef = ref(null);
     // 事件列表
-    let model = ref([]);
+    const model = ref([]);
 
-    let index = ref(0);
+    const index = ref(0);
 
     //事件类型
-    let funs = ref(EVENT_ACTION_TYPE);
+    const funs = ref(EVENT_ACTION_TYPE);
 
     // 事件行为
-    let eventActionList = ref(EVENT_ACTION_LIST);
+    const eventActionList = ref(EVENT_ACTION_LIST);
 
-    let activeKey = ref([]);
+    const activeKey = ref([]);
 
-    let keysValue = ref([]);
+    const keysValue = ref([]);
 
     function onAddEvent() {
       model.value.push({
@@ -427,9 +426,9 @@ export default defineComponent({
      */
     function openEditContainer(i) {
       index.value = i;
-      proxy.$refs.editContainer.visible = true;
+      editContainerRef.value.visible = true;
       nextTick(() => {
-        proxy.$refs.editContainer.init(model.value[i].value, "JavaScript", "");
+        editContainerRef.value.init(model.value[i].value, "JavaScript", "");
       });
     }
 
@@ -438,9 +437,9 @@ export default defineComponent({
      */
     function onEditorEventFunc(data, i) {
       index.value = i;
-      proxy.$refs.editContainer.visible = true;
+      editContainerRef.value.visible = true;
       nextTick(() => {
-        proxy.$refs.editContainer.init(data.fnJs, "JavaScript", "where");
+        editContainerRef.value.init(data.fnJs, "JavaScript", "where");
       });
     }
 
@@ -516,6 +515,7 @@ export default defineComponent({
       funs,
       activeKey,
       eventActionList,
+      editContainerRef,
       onAddEvent,
       init,
       onDelete,

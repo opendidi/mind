@@ -18,7 +18,7 @@
     :cancel-button-props="{ style: { display: 'none' } }"
   >
     <div
-      ref="editContainer"
+      ref="editContainerRef"
       class="code-editor"
       :style="{ height: editorHeight }"
     ></div>
@@ -33,7 +33,6 @@
 import {
   ref,
   defineComponent,
-  getCurrentInstance,
   watch,
   onUnmounted,
 } from "vue";
@@ -110,17 +109,17 @@ export default defineComponent({
   },
   emits: ["oks", "close"],
   setup(props, { emit }) {
-    let { proxy } = getCurrentInstance();
+    const editContainerRef = ref(null);
 
-    let visible = ref(false);
-    let editorHeight = ref("80vh");
-    let language = ref("javascript");
+    const visible = ref(false);
+    const editorHeight = ref("80vh");
+    const language = ref("javascript");
 
     async function init(value, lang = "JavaScript", t) {
       language.value = (lang || "javascript").toLowerCase();
       currentType = t || "";
 
-      await ensureEditor(emit, proxy.$refs.editContainer);
+      await ensureEditor(emit, editContainerRef.value);
 
       // Update language if needed
       const monaco = await getMonaco();
@@ -134,9 +133,9 @@ export default defineComponent({
       editorHeight.value = computeEditorHeight(value || "");
 
       // Move editor from hidden container into the visible modal area
-      if (persistentContainer && proxy.$refs.editContainer) {
-        if (persistentContainer.parentElement !== proxy.$refs.editContainer) {
-          proxy.$refs.editContainer.appendChild(persistentContainer);
+      if (persistentContainer && editContainerRef.value) {
+        if (persistentContainer.parentElement !== editContainerRef.value) {
+          editContainerRef.value.appendChild(persistentContainer);
         }
         persistentContainer.style.position = "relative";
         persistentContainer.style.top = "0";
@@ -196,6 +195,7 @@ export default defineComponent({
       setMonacoEditorValue,
       init,
       editorHeight,
+      editContainerRef,
     };
   },
 });

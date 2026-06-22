@@ -18,22 +18,22 @@
 </template>
 
 <script lang="ts">
-import { ref, getCurrentInstance, defineComponent, watch, nextTick } from "vue";
+import { ref, defineComponent, watch, nextTick } from "vue";
 import FileProps from "@/components/Meta2D/FileProps/index.vue";
 import PenProps from "@/components/Meta2D/PenProps/index.vue";
 import { useSelection, SelectionMode } from "@/services/selections";
 export default defineComponent({
   components: { FileProps, PenProps },
   setup(props) {
-    let { proxy } = getCurrentInstance();
+    const filePropsRef = ref(null);
     const { selections } = useSelection();
 
-    let data = ref({});
+    const data = ref({});
 
     function onInit(dataPens) {
       data.value = dataPens;
-      if (proxy.$refs.fileProps) {
-        proxy.$refs.fileProps.onInit(dataPens);
+      if (filePropsRef.value) {
+        filePropsRef.value.onInit(dataPens);
       }
     }
 
@@ -42,8 +42,8 @@ export default defineComponent({
       (newValue) => {
         if (newValue == SelectionMode.File) {
           nextTick(() => {
-            if (proxy.$refs.fileProps) {
-              proxy.$refs.fileProps.onInit(meta2d.data());
+            if (filePropsRef.value) {
+              filePropsRef.value.onInit(meta2d.data());
             }
           });
         }
@@ -55,6 +55,7 @@ export default defineComponent({
       selections,
       SelectionMode,
       onInit,
+      fileProps: filePropsRef,
     };
   },
 });

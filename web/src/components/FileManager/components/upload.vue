@@ -30,7 +30,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, getCurrentInstance, computed } from "vue";
+import { ref, computed } from "vue";
 import { message } from "ant-design-vue";
 import { FileExplorer } from "@/utils/FileExplorer.ts";
 
@@ -39,8 +39,6 @@ const fileExplorer = new FileExplorer();
 const emit = defineEmits(["oks"]);
 
 const api_url = import.meta.env.VITE_GLOB_API_URL;
-
-const { proxy }: any = getCurrentInstance();
 
 const file_type = ref("");
 

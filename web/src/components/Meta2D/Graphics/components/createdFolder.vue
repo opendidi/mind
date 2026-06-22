@@ -27,13 +27,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, getCurrentInstance, watch } from "vue";
+import { ref, watch } from "vue";
 import { message } from "ant-design-vue";
 import { useCommonStore } from "@/store/modules/common";
 
 const visible = ref(false);
-
-const { proxy } = getCurrentInstance();
 
 const emit = defineEmits(["oks"]);
 

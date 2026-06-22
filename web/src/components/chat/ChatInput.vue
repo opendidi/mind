@@ -173,7 +173,7 @@ async function onDocFileChange(e: Event) {
       docAttachments.value[idx].objectName = res.object_name;
       docAttachments.value[idx].url = res.url;
       docAttachments.value[idx].uploading = false;
-    } catch (err: any) {
+    } catch (err: unknown) {
       docAttachments.value[idx].failed = true;
       docAttachments.value[idx].uploading = false;
       if (err?.message && !err?.response) {

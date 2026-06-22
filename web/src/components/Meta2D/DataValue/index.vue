@@ -131,14 +131,14 @@
       </a-collapse-panel>
     </template>
   </a-collapse>
-  <DataDrawer ref="dataDrawer" @oks="getDataDrawer" />
-  <VariableModal ref="variableModal" @oks="getDataId" />
-  <SelectForm ref="selectForm" @oks="getSelectFormData" />
-  <EditContainer ref="editContainer" @oks="getEditTextValue" />
+  <DataDrawer ref="dataDrawerRef" @oks="getDataDrawer" />
+  <VariableModal ref="variableModalRef" @oks="getDataId" />
+  <SelectForm ref="selectFormRef" @oks="getSelectFormData" />
+  <EditContainer ref="editContainerRef" @oks="getEditTextValue" />
 </template>
 
 <script>
-import { ref, watch, defineComponent, nextTick, getCurrentInstance } from 'vue';
+import { ref, watch, defineComponent, nextTick } from 'vue';
 import { CloseOutlined, EditOutlined, DeleteOutlined, LinkOutlined, PlusOutlined } from '@ant-design/icons-vue';
 import { useSelection } from '@/services/selections';
 import { Empty, message } from 'ant-design-vue';
@@ -162,15 +162,19 @@ export default defineComponent({
   emits: ['oks', 'getDataValue', 'deleteDataValue'],
   setup(props, { emit }) {
     const { selections } = useSelection();
-    let { proxy } = getCurrentInstance();
 
-    let activeKey = ref([1, 2]);
+    const dataDrawerRef = ref(null);
+    const variableModalRef = ref(null);
+    const selectFormRef = ref(null);
+    const editContainerRef = ref(null);
 
-    let pen = ref({
+    const activeKey = ref([1, 2]);
+
+    const pen = ref({
       tags: [],
     });
 
-    let tags = ref({
+    const tags = ref({
       text: '',
     });
 
@@ -184,7 +188,7 @@ export default defineComponent({
     }
 
     function onAdd() {
-      proxy.$refs.dataDrawer.visible = true;
+      dataDrawerRef.value.visible = true;
     }
 
     function getDataDrawer(model) {
@@ -216,11 +220,11 @@ export default defineComponent({
      * 打开代码编辑器
      */
     function openEditContainer(data, index) {
-      proxy.$refs.editContainer.visible = true;
+      editContainerRef.value.visible = true;
       dataIndex = index;
       nextTick(() => {
         let value = pen.value[data.key];
-        proxy.$refs.editContainer.init(value ? value : '');
+        editContainerRef.value.init(value ? value : '');
       });
     }
 
@@ -254,7 +258,7 @@ export default defineComponent({
      * 打开变量弹窗
      */
     const openVariable = (data, index) => {
-      proxy.$refs.variableModal.visible = true;
+      variableModalRef.value.visible = true;
       dataIndex = index;
     };
 
@@ -298,13 +302,13 @@ export default defineComponent({
      *
      */
     function onAddSelect() {
-      proxy.$refs.selectForm.visible = true;
+      selectFormRef.value.visible = true;
     }
 
     function onEditSelect(idx) {
-      proxy.$refs.selectForm.visible = true;
+      selectFormRef.value.visible = true;
       nextTick(() => {
-        proxy.$refs.selectForm.init(pen.value['dropdownList'][idx], idx);
+        selectFormRef.value.init(pen.value['dropdownList'][idx], idx);
       });
     }
 
@@ -359,6 +363,10 @@ export default defineComponent({
       onDeleteSelectData,
       getSelectFormData,
       simpleImage: Empty.PRESENTED_IMAGE_SIMPLE,
+      dataDrawerRef,
+      variableModalRef,
+      selectFormRef,
+      editContainerRef,
     };
   },
 });

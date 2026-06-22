@@ -44,7 +44,7 @@
 </template>
 
 <script>
-import { ref, defineComponent, getCurrentInstance, watch } from "vue";
+import { ref, defineComponent, watch } from "vue";
 import { message } from "ant-design-vue";
 import { RedoOutlined } from "@ant-design/icons-vue";
 import { useCommonStore } from "@/store/modules/common";
@@ -54,17 +54,15 @@ import { setGraphicGroups } from "@/utils/meta-storage";
 export default defineComponent({
   components: { RedoOutlined },
   setup(props, { emit }) {
-    let { proxy } = getCurrentInstance();
+    const visible = ref(false);
 
-    let visible = ref(false);
+    const dataValue = ref([]);
 
-    let dataValue = ref([]);
+    const checkedList = ref([]);
 
-    let checkedList = ref([]);
+    const checkall = ref(true);
 
-    let checkall = ref(true);
-
-    let indeterminate = ref(false);
+    const indeterminate = ref(false);
 
     watch(
       () => dataValue.value,

@@ -513,20 +513,20 @@
         </div> -->
       </a-tab-pane>
       <a-tab-pane :key="2" tab="事件">
-        <EventFunc ref="eventFunc" @event="getEventList" @oks="getEventList" />
+        <EventFunc ref="eventFuncRef" @event="getEventList" @oks="getEventList" />
       </a-tab-pane>
       <a-tab-pane :key="3" tab="动效">
         <Animate
-          ref="animate"
+          ref="animateRef"
           :pen="pen"
           @onChange="changeValue"
           v-show="pen.name !== 'video'"
         />
-        <VideoComputed ref="videoComputed" v-if="pen.name == 'video'" />
+        <VideoComputed ref="videoComputedRef" v-if="pen.name == 'video'" />
       </a-tab-pane>
       <a-tab-pane :key="4" tab="数据">
         <DataValueLayout
-          ref="dataValueLayout"
+          ref="dataValueLayoutRef"
           @oks="onRefreshData"
           @getDataValue="getDataValue"
           @deleteDataValue="deleteDataValue"
@@ -535,9 +535,9 @@
     </a-tabs>
     <EditContainer ref="editContainer" @oks="getEditTextValue" />
     <!-- 弹窗 -->
-    <CommonModal ref="commonModal" :width="'90vw'" />
+    <CommonModal ref="commonModalRef" :width="'90vw'" />
     <!-- 小窗展示 -->
-    <IframeModal ref="iframeModal" />
+    <IframeModal ref="iframeModalRef" />
     <FileManager
       ref="fileManagerRef"
       :mode="'single'"
@@ -567,7 +567,7 @@ export default defineComponent({
 </script>
 
 <script lang="ts" setup>
-import { ref, watch, getCurrentInstance, nextTick } from "vue";
+import { ref, watch, nextTick } from "vue";
 import { useSelection } from "@/services/selections";
 import EventFunc from "@/components/Meta2D/Event/index.vue";
 import Animate from "@/components/Meta2D/Animate/index.vue";
@@ -577,8 +577,6 @@ import FileManager from "@/components/FileManager/index.vue";
 import { FolderOpenOutlined } from "@ant-design/icons-vue";
 
 import { CONFIG_LINE_DASH as configLineDash } from "@/utils/config-line";
-
-let { proxy } = getCurrentInstance();
 
 const { selections } = useSelection();
 
@@ -599,6 +597,12 @@ const rect = ref<any>();
 let dataIndex = -1;
 
 const fileManagerRef = ref(null);
+const eventFuncRef = ref(null);
+const animateRef = ref(null);
+const videoComputedRef = ref(null);
+const dataValueLayoutRef = ref(null);
+const commonModalRef = ref(null);
+const iframeModalRef = ref(null);
 let currentImageField = "";
 
 function openFileManager(field: string) {
@@ -649,22 +653,22 @@ function getPen() {
       if (event.action !== 7) return;
       const handler = event.value === "iframe-dialog"
         ? (e: any) => {
-            if (proxy.$refs.iframeModal) {
-              Object.assign(proxy.$refs.iframeModal, {
+            if (iframeModalRef.value) {
+              Object.assign(iframeModalRef.value, {
                 visible: true,
                 title: "展示",
                 url: event.params,
               });
-              nextTick(() => proxy.$refs.iframeModal.init(e));
+              nextTick(() => iframeModalRef.value.init(e));
             }
           }
         : (e: any) => {
-            if (proxy.$refs.commonModal) {
-              Object.assign(proxy.$refs.commonModal, {
+            if (commonModalRef.value) {
+              Object.assign(commonModalRef.value, {
                 visible: true,
                 title: "自定义弹窗",
               });
-              nextTick(() => proxy.$refs.commonModal.init(event));
+              nextTick(() => commonModalRef.value.init(event));
             }
           };
       meta2d.on(event.value, handler);
@@ -690,18 +694,18 @@ watch(
       switch (tab) {
         case 2: {
           const data: any[] = pen.value?.events;
-          proxy.$refs.eventFunc?.init(data || []);
+          eventFuncRef.value?.init(data || []);
           break;
         }
         case 3:
           if (pen.value?.name === "video") {
-            proxy.$refs.videoComputed?.init(pen.value);
+            videoComputedRef.value?.init(pen.value);
           } else {
-            proxy.$refs.animate?.init(pen.value);
+            animateRef.value?.init(pen.value);
           }
           break;
         case 4:
-          proxy.$refs.dataValueLayout?.init(pen.value);
+          dataValueLayoutRef.value?.init(pen.value);
           break;
         default:
           break;

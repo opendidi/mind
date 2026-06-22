@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, getCurrentInstance, onMounted, onUnmounted, watch } from "vue";
+import { ref, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { provideCanvas } from "@/composables/useCanvas";
 import { message } from "ant-design-vue";
@@ -45,8 +45,6 @@ import { useSelection } from "@/services/selections";
 import { useKeyboardShortcuts } from "@/composables/useKeyboardShortcuts";
 
 const { select } = useSelection();
-
-let { proxy } = getCurrentInstance();
 
 let onStorageChange: ((e: StorageEvent) => void) | null = null;
 

@@ -126,7 +126,7 @@ function onSpeakerClick() {
 interface ContentPart {
   type: 'text' | 'map' | 'route';
   html?: string;
-  data?: any;
+  data?: Record<string, unknown>;
 }
 
 const contentParts = computed<ContentPart[]>(() => {

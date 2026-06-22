@@ -27,7 +27,6 @@
 import {
   ref,
   defineComponent,
-  getCurrentInstance,
   onMounted,
   watch,
   onUnmounted,
@@ -40,11 +39,10 @@ export default defineComponent({
     },
   },
   setup(props, { emit }) {
-    let { proxy } = getCurrentInstance();
 
-    let visible = ref(false);
+    const visible = ref(false);
 
-    let title = ref("");
+    const title = ref("");
 
     /**
      * 初始化数据

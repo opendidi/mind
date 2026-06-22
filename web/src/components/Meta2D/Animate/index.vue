@@ -151,12 +151,12 @@
         </a-form-item>
       </a-collapse-panel>
     </a-collapse>
-    <FramesDrawer ref="framesDrawer" />
+    <FramesDrawer ref="framesDrawerRef" />
   </a-form>
 </template>
 
 <script>
-import { ref, watch, defineComponent, getCurrentInstance, nextTick } from "vue";
+import { ref, watch, defineComponent, nextTick } from "vue";
 import {
   CaretRightOutlined,
   PauseOutlined,
@@ -177,15 +177,15 @@ export default defineComponent({
   emits: ["onChange"],
   setup(props, { emit }) {
     const { selections } = useSelection();
-    let { proxy } = getCurrentInstance();
-    let model = ref({
+    const framesDrawerRef = ref(null);
+    const model = ref({
       autoPlay: false,
       frames: [],
       duration: 0,
       animateCycle: Infinity,
     });
 
-    let animateKey = 1;
+    const animateKey = 1;
 
     function init(_) {
       model.value = _;
@@ -241,9 +241,9 @@ export default defineComponent({
      * 打开编辑动画帧弹窗
      */
     function openFrames() {
-      proxy.$refs.framesDrawer.visible = true;
+      framesDrawerRef.value.visible = true;
       nextTick(() => {
-        proxy.$refs.framesDrawer.init(model.value);
+        framesDrawerRef.value.init(model.value);
       });
     }
 
@@ -275,6 +275,7 @@ export default defineComponent({
       onStop,
       openFrames,
       changeAnimate,
+      framesDrawerRef,
     };
   },
 });

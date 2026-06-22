@@ -18,7 +18,7 @@
     @afterVisibleChange="onAfterVisibleChange"
   >
     <a-form
-      ref="form"
+      ref="formRef"
       :model="model"
       :rules="rules"
       label-align="left"
@@ -103,14 +103,14 @@
 </template>
 
 <script>
-import { ref, watch, getCurrentInstance, defineComponent } from "vue";
+import { ref, watch, defineComponent } from "vue";
 import { DeleteOutlined, PlusOutlined } from "@ant-design/icons-vue";
 export default defineComponent({
   components: { DeleteOutlined, PlusOutlined },
   setup(props, { emit }) {
-    let { proxy } = getCurrentInstance();
-    let visible = ref(false);
-    let model = ref({
+    const formRef = ref(null);
+    const visible = ref(false);
+    const model = ref({
       // 名称
       name: "",
       // 属性
@@ -120,11 +120,11 @@ export default defineComponent({
       // 描述
       placeholder: "",
     });
-    let rules = ref({});
+    const rules = ref({});
 
-    let drawerStyle = ref({});
+    const drawerStyle = ref({});
 
-    let bodyStyle = ref({
+    const bodyStyle = ref({
       padding: "12px",
     });
 
@@ -164,16 +164,17 @@ export default defineComponent({
     const onFinish = () => {
       emit("oks", model.value);
       visible.value = false;
-      proxy.$refs.form.resetFields();
+      formRef.value?.resetFields();
     };
 
     const onAfterVisibleChange = (e) => {
       if (!e) {
-        proxy.$refs.form.resetFields();
+        formRef.value?.resetFields();
       }
     };
 
     return {
+      formRef,
       visible,
       model,
       rules,

@@ -311,7 +311,7 @@
       </a-tab-pane>
     </a-tabs>
     <EditContainer
-      ref="editContainer"
+      ref="editContainerRef"
       :title="editContainerTitle"
       @oks="getEditTextValue"
       @close="closeEditContainer"
@@ -337,16 +337,16 @@ export default defineComponent({
 </script>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, nextTick, reactive, getCurrentInstance, watch, computed } from "vue";
+import { onMounted, onUnmounted, ref, nextTick, reactive, watch, computed } from "vue";
 import { useRoute } from "vue-router";
 import { message } from "ant-design-vue";
 import FileManager from "@/components/FileManager/index.vue";
 import EditContainer from "@/components/Meta2D/EditContainer/index.vue";
 import { useCommonStore } from "@/store/modules/common";
 
-const { proxy } = getCurrentInstance();
 const commonStore = useCommonStore();
 const fileManagerRef = ref(null);
+const editContainerRef = ref(null);
 
 // 图纸数据
 const data = reactive<any>({
@@ -570,11 +570,11 @@ function onAddHttpSetData() {
  * 打开代码编辑器
  */
 function openEditContainer() {
-  proxy.$refs.editContainer.visible = true;
+  editContainerRef.value.visible = true;
   editContainerTitle.value = "JavaScript";
   nextTick(() => {
     let _ = meta2d.store.data["initJs"];
-    proxy.$refs.editContainer.init(_ ? _ : "");
+    editContainerRef.value.init(_ ? _ : "");
     commonStore.setIsSave("0");
   });
 }
@@ -583,11 +583,11 @@ function openEditContainer() {
  * 打开编辑器编辑HTTP请求头配置信息
  */
 function openEditContainerSettingHeader(data: any, idx: number) {
-  proxy.$refs.editContainer.visible = true;
+  editContainerRef.value.visible = true;
   httpsIndex = idx;
   nextTick(() => {
     editContainerTitle.value = "请求头配置";
-    proxy.$refs.editContainer.init(JSON.stringify(data.httpHeaders), "json");
+    editContainerRef.value.init(JSON.stringify(data.httpHeaders), "json");
     commonStore.setIsSave("0");
   });
 }
@@ -604,12 +604,12 @@ function closeEditContainer() {
  * 打开编辑器编辑消息处理JavaScript
  */
 function onOpenEditContainerSocketCbJs() {
-  proxy.$refs.editContainer.visible = true;
+  editContainerRef.value.visible = true;
   isOpenSocketEditContainer = true;
   nextTick(() => {
     let _ = meta2d.store.data["socketCbJs"];
     editContainerTitle.value = "JavaScript";
-    proxy.$refs.editContainer.init(_ ? _ : "");
+    editContainerRef.value.init(_ ? _ : "");
     commonStore.setIsSave("0");
   });
 }

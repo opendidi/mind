@@ -281,7 +281,7 @@
 </template>
 
 <script>
-import { ref, reactive, watch, createVNode, onMounted, defineComponent, getCurrentInstance } from 'vue';
+import { ref, reactive, watch, createVNode, onMounted, defineComponent } from 'vue';
 import { Modal } from 'ant-design-vue';
 import { DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue';
 import { GRADIENT as Gradient } from '@/utils/index';
@@ -290,13 +290,12 @@ import { CONFIG_LINE_DASH as configLineDash } from '@/utils/config-line';
 export default defineComponent({
   components: { DeleteOutlined },
   setup(props, { emit }) {
-    let { proxy } = getCurrentInstance();
 
-    let visible = ref(false);
+    const visible = ref(false);
 
-    let model = ref([]);
+    const model = ref([]);
 
-    let animateKey = ref(0);
+    const animateKey = ref(0);
 
     /**
      * 初始化动画帧

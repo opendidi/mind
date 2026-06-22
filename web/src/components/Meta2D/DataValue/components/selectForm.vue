@@ -79,7 +79,7 @@
 </template>
 
 <script>
-import { ref, watch, getCurrentInstance, defineComponent } from "vue";
+import { ref, watch, defineComponent } from "vue";
 import {
   QuestionCircleOutlined,
   PlusCircleOutlined,
@@ -92,16 +92,16 @@ export default defineComponent({
     CloseCircleOutlined,
   },
   setup(props, { emit }) {
-    let visible = ref(false);
+    const visible = ref(false);
 
-    let idx = ref();
+    const idx = ref();
 
-    let model = ref({
+    const model = ref({
       text: "",
       keysValue: [],
     });
 
-    let rules = ref({
+    const rules = ref({
       text: [{ required: true, message: "请输入选项名" }],
     });
 

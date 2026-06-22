@@ -57,22 +57,23 @@
 </template>
 
 <script>
-import { ref, defineComponent, getCurrentInstance, nextTick } from "vue";
+import { ref, defineComponent } from "vue";
+import { useRoute } from "vue-router";
 import useClipboard from "vue-clipboard3";
 import { message } from "ant-design-vue";
 import QrcodeVue from "qrcode.vue";
 export default defineComponent({
   components: { QrcodeVue },
   setup() {
-    let { proxy } = getCurrentInstance();
+    const route = useRoute();
 
-    let visible = ref(false);
+    const visible = ref(false);
 
     const { toClipboard } = useClipboard();
 
-    let date = Date.now();
-    let args = [`id=${proxy.$route.query.id || 1}`, `r=${date + ""}`];
-    let model = ref({
+    const date = Date.now();
+    const args = [`id=${route.query.id || 1}`, `r=${date + ""}`];
+    const model = ref({
       url: `${window.location.href}preview?${args.join("&")}`,
     });
 

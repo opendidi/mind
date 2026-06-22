@@ -40,7 +40,7 @@
         </template>
       </a-dropdown>
       <template v-if="activePen && multiPen">
-        <Appearance ref="appearance" />
+        <Appearance ref="appearanceRef" />
       </template>
       <template v-else>
         <Props :data="propsData" />
@@ -51,7 +51,8 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, nextTick, getCurrentInstance, onMounted, onUnmounted } from "vue";
+import { ref, nextTick, onMounted, onUnmounted } from "vue";
+import { useRoute } from "vue-router";
 import type { MenuProps } from "ant-design-vue";
 import Header from "@/components/Meta2D/Header/index.vue";
 import Graphics from "@/components/Meta2D/Graphics/index.vue";
@@ -69,11 +70,12 @@ import { useSelection } from "@/services/selections";
 import { useCommonStore, useCommonStoreWithOut } from "@/store/modules/common";
 import { apiBlueprintFind } from "@/api/blueprint";
 
-const { proxy } = getCurrentInstance();
+const route = useRoute();
 
 const { selections } = useSelection();
 
 const agentPanelRef = ref();
+const appearanceRef = ref();
 
 const menuLists = ref(menus);
 
@@ -107,9 +109,9 @@ function save() {
  * 初始化监听事件
  */
 async function onInit() {
-  const id = proxy.$route.query.id;
+  const id = route.query.id;
   if (id) {
-    const data = await apiBlueprintFind({ id: proxy.$route.query.id });
+    const data = await apiBlueprintFind({ id: route.query.id });
   }
   // 参考: https://doc.le5le.com/document/138387361#%E6%80%BB%E7%BB%93
   // 缩放画布
@@ -140,7 +142,7 @@ async function onInit() {
     if (args.length > 1) {
       multiPen.value = true;
       nextTick(() => {
-        proxy.$refs.appearance.init(pens.value);
+        appearanceRef.value?.init(pens.value);
       });
     } else {
       multiPen.value = false;

@@ -52,7 +52,7 @@ const ready = ref(false);
 const scalePercent = ref(100);
 
 let containerEl: HTMLElement | null = null;
-let meta2d: any = null;
+let meta2d: Record<string, unknown> | null = null;
 let inited = false;
 let observer: IntersectionObserver | null = null;
 

@@ -12,7 +12,7 @@
             v-model:value="keyword"
             placeholder="搜索"
             @input="debouncedFilter"
-            :disabled="activeKey == 2 ? true : false"
+            :disabled="activeKey == 2"
           />
         </div>
         <div class="scroll">
@@ -171,8 +171,8 @@
         </a-spin>
       </a-tab-pane>
     </a-tabs>
-    <MoreModal ref="moreModal" @oks="heandleGraphicGroups" />
-    <CreatedFolder ref="createdFolder" @oks="onFolderCreated" />
+    <MoreModal ref="moreModalRef" @oks="handleGraphicGroups" />
+    <CreatedFolder ref="createdFolderRef" @oks="onFolderCreated" />
   </div>
 </template>
 
@@ -183,7 +183,6 @@ import {
   nextTick,
   onMounted,
   onUnmounted,
-  getCurrentInstance,
 } from "vue";
 import { message } from "ant-design-vue";
 import {
@@ -200,36 +199,37 @@ import { useRouter } from "vue-router";
 import { apiBlueprintList, apiBlueprintDelete } from "@/api/blueprint";
 
 // 原数据
-let originalGraphicGroups = graphicGroups;
+const originalGraphicGroups = graphicGroups;
 
-let graphicGroupsList = ref(graphicGroups);
+const graphicGroupsList = ref(graphicGroups);
 
-let { proxy } = getCurrentInstance();
+const moreModalRef = ref(null);
+const createdFolderRef = ref(null);
 
-let tabsActiveKey = ref("1");
+const tabsActiveKey = ref("1");
 
-let activeKey = ref(0);
+const activeKey = ref(0);
 
-let directoryVisible = ref(false);
+const directoryVisible = ref(false);
 
 // 文件夹名称
-let directoryName = ref("");
+const directoryName = ref("");
 
 // 文件夹列表
-let directoryList = ref(useCommonStore().customFolders || []);
+const directoryList = ref(useCommonStore().customFolders || []);
 
 // 折叠key
-let directoryKey = ref("");
+const directoryKey = ref("");
 
 // 路由
 const router = useRouter();
 
 // 图纸列表
-let blueprintList = ref<any[]>([]);
-let blueprintLoading = ref(false);
+const blueprintList = ref<any[]>([]);
+const blueprintLoading = ref(false);
 
 // 过滤值
-let keyword = ref("");
+const keyword = ref("");
 
 // 防抖定时器
 let debounceTimer: ReturnType<typeof setTimeout> | null = null;
@@ -243,7 +243,7 @@ watch(
   }
 );
 
-const dragStart = (e: any, elem: any) => {
+const dragStart = (e: DragEvent | MouseEvent, elem: { name: string; data: any; icon: string; iconFamily?: string; subClassName?: string; svg?: string }) => {
   let commonStore = useCommonStore();
   if (!elem) {
     return;
@@ -260,16 +260,16 @@ const dragStart = (e: any, elem: any) => {
 };
 
 function openGraphics() {
-  proxy.$refs.moreModal.visible = true;
+  moreModalRef.value.visible = true;
   nextTick(() => {
-    proxy.$refs.moreModal.init();
+    moreModalRef.value.init();
   });
 }
 
 /**
  * 显示/隐藏回调后处理左侧栏是否显示或者隐藏
  */
-function heandleGraphicGroups() {
+function handleGraphicGroups() {
   let graphicsKey = useCommonStore().graphics;
   let keys = Object.keys(graphicsKey);
   let array: any = [];
@@ -301,28 +301,29 @@ function debouncedFilter() {
  * 筛选过滤组件
  */
 function filterGraphicGroups() {
-  let key = keyword.value;
+  const key = keyword.value;
   if (key) {
-    let list = originalGraphicGroups;
-    let array: any = [];
+    const list = originalGraphicGroups;
+    const array: typeof graphicGroups = [];
     for (let i = 0; i < list.length; i++) {
       if (list[i].name.indexOf(key) !== -1) {
         array.push({
           ...list[i],
         });
       }
-      const foundInList = list[i].list.filter((item: any) => {
-        let { name } = item;
+      const foundInList = list[i].list.filter((item) => {
+        const { name } = item;
         if (name.indexOf("http") !== -1) {
           const decodedStr = decodeURIComponent(name);
           if (decodedStr.indexOf(key) !== -1) {
-            return item;
+            return true;
           }
         } else {
           if (name.indexOf(key) !== -1) {
-            return item;
+            return true;
           }
         }
+        return false;
       });
       if (foundInList.length !== 0) {
         array.push({
@@ -338,36 +339,41 @@ function filterGraphicGroups() {
 }
 
 const openCreatedFolder = () => {
-  proxy.$refs.createdFolder.visible = true;
+  createdFolderRef.value.visible = true;
 };
 
-const onFolderCreated = (folders: any) => {
+const onFolderCreated = (folders: Array<{ name: string; list: unknown[] }>) => {
   directoryList.value = folders;
 };
 
 function loadBlueprints() {
   blueprintLoading.value = true;
   apiBlueprintList({ current: 1, page_size: 50 })
-    .then((res: any) => {
+    .then((res) => {
       blueprintList.value = res.list || [];
+    })
+    .catch(() => {
+      message.error("加载图纸列表失败");
     })
     .finally(() => {
       blueprintLoading.value = false;
     });
 }
 
-function onOpenBlueprint(item: any) {
+function onOpenBlueprint(item: { id: string }) {
   router.push({ path: "/", query: { id: item.id } });
 }
 
-function onDeleteBlueprint(item: any) {
-  apiBlueprintDelete({ id: item.id }).then((res: any) => {
+function onDeleteBlueprint(item: { id: string }) {
+  apiBlueprintDelete({ id: item.id }).then((res) => {
     if (res.code === 200) {
       message.success("已删除");
       loadBlueprints();
     } else {
       message.error(res.message || "删除失败");
     }
+  }).catch(() => {
+    message.error("删除失败，请重试");
   });
 }
 
@@ -395,7 +401,7 @@ onUnmounted(() => {
   window.removeEventListener("blueprint:deleted", onBlueprintDeleted);
 });
 
-heandleGraphicGroups();
+handleGraphicGroups();
 </script>
 
 <style lang="less" scoped>

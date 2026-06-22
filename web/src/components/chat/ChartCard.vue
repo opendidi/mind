@@ -15,6 +15,8 @@ const chartRef = ref<HTMLElement>();
 const chartHeight = ref(props.height || "360px");
 let chart: echarts.ECharts | null = null;
 let resizeObserver: ResizeObserver | null = null;
+let resizeTimer1: ReturnType<typeof setTimeout> | null = null;
+let resizeTimer2: ReturnType<typeof setTimeout> | null = null;
 
 function initChart() {
   if (!chartRef.value) return;
@@ -23,8 +25,8 @@ function initChart() {
   }
   chart.setOption(props.option, true);
   // Catch late layout — parent may not have settled by nextTick
-  setTimeout(() => chart?.resize(), 50);
-  setTimeout(() => chart?.resize(), 200);
+  resizeTimer1 = setTimeout(() => chart?.resize(), 50);
+  resizeTimer2 = setTimeout(() => chart?.resize(), 200);
 }
 
 function handleResize() {
@@ -51,6 +53,10 @@ onMounted(() => {
 });
 
 onBeforeUnmount(() => {
+  if (resizeTimer1) clearTimeout(resizeTimer1);
+  if (resizeTimer2) clearTimeout(resizeTimer2);
+  resizeTimer1 = null;
+  resizeTimer2 = null;
   window.removeEventListener("resize", handleResize);
   resizeObserver?.disconnect();
   resizeObserver = null;
