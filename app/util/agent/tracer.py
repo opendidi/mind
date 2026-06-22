@@ -2,6 +2,7 @@
 """AgentTracer — Span-tree tracing for full execution lifecycle observability."""
 
 import contextlib
+import glob
 import json
 import logging
 import os
@@ -10,6 +11,24 @@ import time
 import uuid
 from dataclasses import dataclass, field
 from typing import Optional
+
+_TRACE_MAX_DIR_SIZE = 500 * 1024 * 1024  # 500 MB
+
+
+def _enforce_trace_dir_limit(log_dir: str):
+    """Remove oldest trace files if directory exceeds _TRACE_MAX_DIR_SIZE."""
+    if not os.path.exists(log_dir):
+        return
+    files = sorted(
+        glob.glob(os.path.join(log_dir, "trace_*.json")),
+        key=os.path.getmtime
+    )
+    total = sum(os.path.getsize(f) for f in files)
+    while total > _TRACE_MAX_DIR_SIZE and len(files) > 1:
+        oldest = files.pop(0)
+        total -= os.path.getsize(oldest)
+        os.remove(oldest)
+        logging.info(f"Tracer: removed old trace file {os.path.basename(oldest)} (dir size limit)")
 
 
 @dataclass
@@ -114,6 +133,7 @@ class AgentTracer:
             fname = f"trace_{self.trace_id}.json"
             with open(os.path.join(log_dir, fname), "w", encoding="utf-8") as f:
                 f.write(dump)
+            _enforce_trace_dir_limit(log_dir)
             logging.info("AgentTracer trace saved to local file: logs/%s", fname)
         except Exception:
             logging.exception("AgentTracer local file flush failed")
