@@ -8,7 +8,7 @@ import time
 from concurrent.futures import TimeoutError as FutureTimeoutError
 
 from app.config import LLM_TIMEOUT, AGENT_DEFAULT_MODEL
-from app.util.agents import get_all_agents
+from app.util.agent.agents import get_all_agents
 from app.util.agent.agents.base import AgentBase
 from app.util.executor import ManagedPool
 
