@@ -53,8 +53,11 @@ def run_tool_call(tool_name, tool_args, tool_context, dispatcher=None,
                 import queue as _queue
                 relay_queue = _queue.Queue()
 
+                worker_ready = _threading.Event()
+
                 def _relay_worker():
                     """Forward sub-agent events to main SSE queue with translation."""
+                    worker_ready.set()  # signal readiness before entering loop
                     while True:
                         try:
                             evt = relay_queue.get(timeout=0.5)
@@ -78,6 +81,7 @@ def run_tool_call(tool_name, tool_args, tool_context, dispatcher=None,
                 import threading as _threading
                 relay_thread = _threading.Thread(target=_relay_worker, daemon=True)
                 relay_thread.start()
+                worker_ready.wait(timeout=5)  # ensure worker is ready before dispatch
 
             # Signal sub-agent start to frontend
             if event_queue is not None:
