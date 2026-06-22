@@ -386,6 +386,10 @@ watch(activeModelIdx, (val) => {
   if (modelList.value[val]) localStorage.setItem("chat-model-idx", String(val));
 });
 
+// Deferred save hooks — avoid TDZ: useAgentChat runs before useConversations
+// but its callbacks reference saveCurrentConv / silentSave.
+const _saveHooks: { onDone?: () => void; onStreamTick?: () => void } = {};
+
 // Agent composable — plan / tool calls / SSE events handled centrally
 const {
   messages,
@@ -412,10 +416,10 @@ const {
     }
   },
   onDone() {
-    saveCurrentConv();
+    _saveHooks.onDone?.();
   },
   onStreamTick() {
-    silentSave();
+    _saveHooks.onStreamTick?.();
   },
 });
 
@@ -449,6 +453,10 @@ const {
   route,
   onLoaded: () => scrollToBottom(true),
 });
+
+// Wire deferred save hooks — now that saveCurrentConv / silentSave are initialized
+_saveHooks.onDone = saveCurrentConv;
+_saveHooks.onStreamTick = silentSave;
 
 // Multi-select
 const {

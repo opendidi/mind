@@ -111,6 +111,18 @@
                   :to="seg.data.to"
                 />
               </template>
+              <template v-else-if="seg.type === 'code'">
+                <div class="code-block">
+                  <div class="code-header">
+                    <span class="code-lang">{{ seg.language || 'text' }}</span>
+                    <span class="code-copy-btn" @click.stop="onCopyCode(seg.content || '', si)">
+                      <CopyOutlined />
+                      <span>{{ codeCopiedId === `code-${si}` ? '已复制' : '复制代码' }}</span>
+                    </span>
+                  </div>
+                  <pre class="code-body"><code>{{ seg.content }}</code></pre>
+                </div>
+              </template>
             </template>
           </div>
           <MsgReferenceCard :references="message.references" @selectRefs="(refs) => $emit('selectRefs', refs)" />
@@ -383,16 +395,17 @@ function onFeedBack(type: string) {
   emit("feedback", props.message.id, fbState.value);
 }
 
-// ── Message segments (mindmap / map / route detection) ──
+// ── Message segments (mindmap / map / route / code detection) ──
 
-const BLOCK_RE = /```(mindmap|map|route|files)\s*\n([\s\S]*?)```/g;
+const BLOCK_RE = /```(\w*)\s*\n?([\s\S]*?)```/g;
 
 type BlockType = "mindmap" | "map" | "route" | "files";
 
 interface MsgSegment {
-  type: "text" | BlockType;
+  type: "text" | BlockType | "code";
   content?: string;
   data?: any;
+  language?: string;
 }
 
 const messageSegments = computed(() => {
@@ -409,14 +422,15 @@ const messageSegments = computed(() => {
     const blockContent = match[2].trim();
     if (blockType === "mindmap") {
       segments.push({ type: "mindmap", content: blockContent });
-    } else {
+    } else if (blockType === "map" || blockType === "route" || blockType === "files") {
       try {
         const data = JSON.parse(blockContent);
         segments.push({ type: blockType as BlockType, data });
       } catch {
-        // Invalid JSON — render as code block
-        segments.push({ type: "text", content: `\`\`\`${blockType}\n${blockContent}\n\`\`\`` });
+        segments.push({ type: "code", language: blockType, content: blockContent });
       }
+    } else {
+      segments.push({ type: "code", language: blockType, content: blockContent });
     }
     lastIndex = match.index + match[0].length;
   }
@@ -425,6 +439,19 @@ const messageSegments = computed(() => {
   }
   return segments.length > 0 ? segments : [{ type: "text", content: text }];
 });
+
+// ── Code block copy ─────────────────────────────────────────
+
+const codeCopiedId = ref("");
+
+function onCopyCode(code: string, si: number) {
+  emit("copy", code);
+  const id = `code-${si}`;
+  codeCopiedId.value = id;
+  setTimeout(() => {
+    if (codeCopiedId.value === id) codeCopiedId.value = "";
+  }, 2000);
+}
 
 function renderSegMd(text: string): string {
   if (!text.trim()) return "";
@@ -637,6 +664,60 @@ onBeforeUnmount(() => {
     white-space: pre-wrap; word-break: break-all; max-height: 180px; overflow-y: auto;
     background: #f1f5f9; color: #334155;
     &.fail { background: #fef2f2; color: #991b1b; }
+  }
+}
+
+// ── Code block ──
+
+.code-block {
+  margin-top: 6px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #1e293b;
+
+  .code-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    background: #334155;
+    border-bottom: 1px solid #475569;
+  }
+  .code-lang {
+    font-size: 11px;
+    font-weight: 600;
+    color: #94a3b8;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    font-family: "Fira Code", "Consolas", monospace;
+  }
+  .code-copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    font-size: 11px;
+    color: #94a3b8;
+    cursor: pointer;
+    border-radius: 5px;
+    transition: all 0.15s;
+    &:hover {
+      color: #e2e8f0;
+      background: rgba(255, 255, 255, 0.08);
+    }
+  }
+  .code-body {
+    margin: 0;
+    padding: 12px;
+    overflow-x: auto;
+    code {
+      font-family: "Fira Code", "Consolas", monospace;
+      font-size: 12.5px;
+      line-height: 1.6;
+      color: #e2e8f0;
+      white-space: pre;
+    }
   }
 }
 

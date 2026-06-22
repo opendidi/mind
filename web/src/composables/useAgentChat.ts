@@ -548,7 +548,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       // ── Done (handled in onComplete) ──
       case 'done':
         pendingRefs = null
-        options.onStreamTick?.()
         break
 
       // ── Passthrough ──
