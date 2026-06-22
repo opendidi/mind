@@ -757,52 +757,42 @@ function onSave(flag: boolean) {
   localStorage.setItem("meta2d", JSON.stringify(data));
   commonStore.setTopology(meta2d);
   if (flag) {
-    const fields: any = [
-      "name",
-      "color",
-      "penBackground",
-      "background",
-      "bkImage",
-      "grid",
-      "gridColor",
-      "gridSize",
-      "gridRotate",
-      "rule",
-      "ruleColor",
-      "initJs",
-      "pens",
-      "https",
-      "thumbnail",
-    ];
-    const params: any = {};
-    Object.keys(data).forEach((key) => {
-      if (fields.includes(key)) {
-        if (["https", "pens"].includes(key)) {
-          params[key] = JSON.stringify(data[key]) || "";
-        } else {
-          params[key] = data[key] || "";
-        }
-      }
-    });
+    // 全量序列化（Meta2D 确保前向兼容）
+    const params: any = { ...data };
 
-    // 生成缩略图 → 上传 MinIO → 保存
-    generateThumbnail((thumbnailUrl) => {
-      params.thumbnail = thumbnailUrl || params.thumbnail;
-      if (!proxy.$route.query["id"]) {
-        apiBlueprintAdd(params).then((res) => {
-          commonStore.setIsSave("1");
-          message.success("保存成功");
-          UrlParamsManager.setParams({ id: res.id });
-          data["id"] = res.id;
+    // 确保 API 期望的字符串字段正确序列化
+    if (typeof params.https !== "string") params.https = JSON.stringify(params.https) || "";
+    if (typeof params.pens !== "string") params.pens = JSON.stringify(params.pens) || "";
+
+    // 先保存（不含缩略图），保存成功后再异步生成缩略图
+    params.thumbnail = "";
+
+    if (!proxy.$route.query["id"]) {
+      apiBlueprintAdd(params).then((res) => {
+        commonStore.setIsSave("1");
+        message.success("保存成功");
+        UrlParamsManager.setParams({ id: res.id });
+        data["id"] = res.id;
+        // 异步更新缩略图
+        generateThumbnail((thumbnailUrl) => {
+          if (thumbnailUrl) {
+            apiBlueprintModify({ id: res.id, thumbnail: thumbnailUrl });
+          }
         });
-      } else {
-        params.id = proxy.$route.query["id"];
-        apiBlueprintModify(params).then((res) => {
-          commonStore.setIsSave("1");
-          message.success("保存成功");
+      });
+    } else {
+      params.id = proxy.$route.query["id"];
+      apiBlueprintModify(params).then((res) => {
+        commonStore.setIsSave("1");
+        message.success("保存成功");
+        // 异步更新缩略图
+        generateThumbnail((thumbnailUrl) => {
+          if (thumbnailUrl) {
+            apiBlueprintModify({ id: params.id, thumbnail: thumbnailUrl });
+          }
         });
-      }
-    });
+      });
+    }
   }
 }
 

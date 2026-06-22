@@ -38,7 +38,6 @@ from .tools import run_tool_call, TOOL_SCHEMAS, _rebuild_schemas
 from .intent import classify_domain, unified_intent_and_plan
 from .executor import AgentExecutor
 from .dispatcher import AgentDispatcher
-from .supervisor import Supervisor
 
 # ── Memory ────────────────────────────────────────────────────────────────
 from .memory import MemoryManager
