@@ -56,16 +56,32 @@ from .agents import AgentBase, CanvasAgent, BlueprintAgent, FileAgent, CodeAgent
 
 # ── Circuit / Fallback / Adaptive / Reflexion ─────────────────────────────
 from .circuit import circuit_allow, circuit_record
-from .fallback import AgentFallback
 from .adaptive import replan_node
-from .reflexion import AgentReflexion
+
+try:
+    from .fallback import AgentFallback
+except ImportError:
+    AgentFallback = None  # type: ignore[assignment]
+
+try:
+    from .reflexion import AgentReflexion
+except ImportError:
+    AgentReflexion = None  # type: ignore[assignment]
 
 # ── DAG ───────────────────────────────────────────────────────────────────
 from .dag import DAGPlan, DAGNode, DAGExecutor
 
 # ── Cache / MCP / Pheromone ───────────────────────────────────────────────
-from .cache import AgentCache
-from .mcp import get_mcp_server
+try:
+    from .cache import AgentCache
+except ImportError:
+    AgentCache = None  # type: ignore[assignment]
+
+try:
+    from .mcp import get_mcp_server
+except ImportError:
+    get_mcp_server = None  # type: ignore[assignment]
+
 from .pheromone import SharedContext, extract_discoveries
 
 # ── TTS ───────────────────────────────────────────────────────────────────

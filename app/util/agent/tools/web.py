@@ -127,6 +127,13 @@ def _tool_web_fetch(args):
         logging.warning("web_fetch 失败: %s", e)
         return {"success": False, "error": f"抓取失败: {str(e)[:150]}"}
 
+def _validate_analyze_image(args):
+    url = args.get("image_url", "")
+    b64 = args.get("image_base64", "")
+    if not (url or b64):
+        return "缺少参数: 需要 image_url 或 image_base64 之一"
+    return None
+
 @ToolRegistry.register(
     "analyze_image",
     "分析一张图片的内容。可进行场景描述(describe)、物体检测(detect)或智能分类(classify)。"

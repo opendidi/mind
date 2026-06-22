@@ -49,9 +49,12 @@ def _tool_file_search(args):
         # query_list returns {"list": [...], "total": N} — not "data"
         items = result.get("list", []) if isinstance(result, dict) else []
         if not items:
-            return {
-                "success": True,
-                "data": {"items": [], "total": 0},
+            return {"success": True, "data": {"items": [], "total": 0}, "message": "没有找到匹配的文件"}
+        return {"success": True, "data": {"items": items, "total": result.get("total", len(items))}}
+    except Exception as e:
+        logging.warning(f"file_search 查询失败：{e}")
+        return {"success": False, "message": f"搜索失败：{e}"}
+
 # ══════════════════════════════════════════════════════════════════════════════
 # File Analysis Tools
 # ══════════════════════════════════════════════════════════════════════════════

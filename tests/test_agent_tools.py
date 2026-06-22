@@ -5,11 +5,9 @@ import json
 import pytest
 from unittest.mock import patch, MagicMock
 
-from app.util.agent.tools import (
-    run_tool_call,
-    _require,
-    _next_pen_id,
-)
+from app.util.agent.tools import run_tool_call
+from app.util.agent.tools.web import _require
+from app.util.agent.tools.canvas import _next_pen_id
 
 
 class TestRequire:
