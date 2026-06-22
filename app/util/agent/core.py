@@ -375,9 +375,10 @@ class AgentSession:
         # ── Restore cross-session memory (messages + prompt) ──
         session_memory_prompt = ""
         try:
-            from app.util.agent.session_memory import SessionMemory
-            restored = SessionMemory.restore(self.user_id)
-            session_memory_prompt = restored.get("prompt", "")
+            from app.util.agent.memory import MemoryManager as _MemMgr
+            _mem = _MemMgr(self._engine.llm)
+            restored = _mem.restore_session(self.user_id)
+            session_memory_prompt = restored.get("memory_prompt", "")
             restored_msgs = restored.get("messages", [])
             if restored_msgs:
                 self.history = list(restored_msgs)
@@ -597,10 +598,11 @@ class AgentSession:
     def _persist_session(self):
         """Persist session memory for cross-session continuity."""
         try:
-            from app.util.agent.session_memory import SessionMemory
+            from app.util.agent.memory import MemoryManager as _MemMgr
             import uuid
             session_id = str(uuid.uuid4())[:8]
             summary = self._compact_summary if self._compact_summary else ""
-            SessionMemory.persist(self.user_id, session_id, self.history, summary)
+            _mem = _MemMgr(self._engine.llm)
+            _mem.persist_session(self.user_id, session_id, self.history, summary)
         except Exception:
             logging.debug("SessionMemory persist skipped", exc_info=True)

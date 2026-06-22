@@ -335,6 +335,60 @@ class MemoryManager:
                    reverse=True)
         return items[:limit]
 
+    def restore_session(self, user_id: str) -> dict:
+        """Restore session context — raw messages + semantic recall merged."""
+        try:
+            r = self._get_redis()
+            if not r:
+                return {}
+            raw = self._load_raw(user_id, r)
+            ctx = self.recall(user_id)
+            result = {}
+            if raw:
+                result["messages"] = raw.get("messages", [])
+                result["summary"] = raw.get("summary", "")
+            else:
+                result["messages"] = []
+                result["summary"] = ""
+            result["memory_prompt"] = ctx.prompt if ctx else ""
+            return result
+        except Exception:
+            logging.debug(f"Memory restore_session failed for user={user_id}")
+            return {}
+
+    def persist_session(self, user_id: str, session_id: str, messages: list,
+                        summary: str = ""):
+        """Persist session messages and update long-term memory."""
+        try:
+            r = self._get_redis()
+            if not r:
+                return
+            key = self._short_key(user_id)
+            payload = {
+                "messages": messages[-20:],
+                "summary": summary,
+            }
+            r.setex(key, SHORT_TERM_TTL,
+                    json.dumps(payload, ensure_ascii=False, default=str))
+            self.remember(user_id, session_id, messages, summary)
+        except Exception:
+            logging.debug(f"Memory persist_session failed for user={user_id}")
+
+    def _load_raw(self, user_id: str, r=None) -> dict | None:
+        """Load raw session data from short-term Redis."""
+        try:
+            if r is None:
+                r = self._get_redis()
+            if not r:
+                return None
+            key = self._short_key(user_id)
+            data = r.get(key)
+            if data:
+                return json.loads(data)
+        except Exception:
+            logging.debug(f"Memory _load_raw failed for user={user_id}")
+        return None
+
     @staticmethod
     def _compute_relevance(entry: dict, query: str) -> float:
         """Simple relevance score based on topic/keyword overlap."""

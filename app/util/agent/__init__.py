@@ -42,7 +42,6 @@ from .supervisor import Supervisor
 
 # ── Memory ────────────────────────────────────────────────────────────────
 from .memory import MemoryManager
-from .session_memory import SessionMemory
 from .plan_eval import PlanMemory, evaluate_plan
 
 # ── Observability & Trace ─────────────────────────────────────────────────
