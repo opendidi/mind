@@ -630,7 +630,7 @@ function clearImageField(field: string) {
 }
 
 // Track registered meta2d event names to clean up on pen switch
-let registeredEvents: string[] = [];
+const registeredHandlers: Array<{ name: string; fn: (...args: any[]) => void }> = [];
 
 function getPen() {
   pen.value = selections.pen;
@@ -640,7 +640,7 @@ function getPen() {
   rect.value = meta2d.getPenRect(pen.value);
 
   // Clean up previous pen's event listeners
-  registeredEvents.forEach((name) => meta2d.off(name));
+  registeredHandlers.forEach(({ name, fn }) => meta2d.off(name, fn));
   registeredEvents = [];
 
   const { events } = pen.value;

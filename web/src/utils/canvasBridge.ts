@@ -371,16 +371,15 @@ async function _addPen(meta2d: any, args: Record<string, unknown>, success: bool
     pen.width = pen.height = Math.min(pen.width, pen.height) || 80
   }
 
-  if (penId) penIdMap.set(penId, penId)
-
   pushUndoState(meta2d)
   try {
     const p = await meta2d.addPen(pen)
-    if (penId && p && (p.id || p.penId)) {
-      penIdMap.set(penId, p.id || p.penId)
+    const realId = (p as any)?.id || (p as any)?.penId
+    if (penId && realId) {
+      penIdMap.set(penId, realId)
     }
   } catch {
-    // pen already tracked via pre-populated penIdMap entry
+    // penIdMap entry will be missing — caller should handle
   }
 
   return true
