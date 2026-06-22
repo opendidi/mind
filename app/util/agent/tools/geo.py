@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-"""Geo tools — geocode and regeocode.
+"""Geo tools — geocode, reverse geocode, and coordinate utilities."""
 
 import json
 import logging

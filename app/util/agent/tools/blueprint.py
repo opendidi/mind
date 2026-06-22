@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-"""Blueprint management tools.
+"""Blueprint management tools — load, save, and manipulate blueprint diagrams."""
 
 import json
 import logging

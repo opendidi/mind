@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-"""Web search and image analysis tools.
+"""Web search tool — search the web and fetch page content."""
 
 import json
 import logging

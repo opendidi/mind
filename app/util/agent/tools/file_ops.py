@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-"""File operations and document analysis tools.
+"""File operations tool — search, download, and analyze files."""
 
 import json
 import logging

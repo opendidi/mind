@@ -1,5 +1,5 @@
 # -*- coding: UTF-8 -*-
-"""Code generation tool.
+"""Code generation tool — generate and execute code snippets."""
 
 import json
 import logging
