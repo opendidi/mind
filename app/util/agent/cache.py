@@ -7,8 +7,7 @@ import logging
 
 from app.util.redis_utils import get_redis
 
-CACHE_TTL = 30
-CACHE_DB = 5
+from app.util.agent.constants import CACHE_TTL, CACHE_DB
 
 READ_TOOLS = {
     "canvas",

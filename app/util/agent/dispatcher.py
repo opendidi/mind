@@ -12,9 +12,9 @@ from app.util.agent.agents import get_all_agents
 from app.util.agent.agents.base import AgentBase
 from app.util.executor import ManagedPool
 
-_SUB_AGENT_TIMEOUT = 120
-_MAX_CONCURRENT_DISPATCH = 3
-_PEER_QUERY_TIMEOUT = 15
+from app.util.agent.constants import SUB_AGENT_TIMEOUT as _SUB_AGENT_TIMEOUT
+from app.util.agent.constants import MAX_CONCURRENT_DISPATCH as _MAX_CONCURRENT_DISPATCH
+from app.util.agent.constants import PEER_QUERY_TIMEOUT as _PEER_QUERY_TIMEOUT
 _dispatch_semaphore = threading.BoundedSemaphore(_MAX_CONCURRENT_DISPATCH)
 _dispatch_pool = ManagedPool(max_workers=_MAX_CONCURRENT_DISPATCH, prefix="subagent-")
 

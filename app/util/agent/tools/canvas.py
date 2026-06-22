@@ -159,8 +159,8 @@ def _tool_canvas(args):
     elif action == "get_state":
         return {
             "success": True,
-            "data": {},
-            "message": "画布状态详见系统提示中的「当前画布状态」以及此前的工具调用结果。如两者均为空，则可直接开始创建图形。",
+            "message": "查看系统提示中的 canvas_context 获取完整画布状态",
+            "tool_hint": "use canvas_context in system prompt for current canvas state",
         }
     return {"success": False, "error": f"未知的 action: {action}，支持: add_pen/add_line/add_diagram/update_pen/delete_pen/clear/undo/redo/get_state"}
 

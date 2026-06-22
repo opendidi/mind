@@ -90,6 +90,9 @@ export interface CanvasContext {
   selectedIds: string[]
   canvasInfo: { width: number; height: number }
   viewportCenter: { x: number; y: number }
+  total_pens: number
+  total_lines: number
+  truncated?: boolean
 }
 
 export interface UseAgentChatReturn {
@@ -177,6 +180,8 @@ export function buildCanvasContext(): CanvasContext | null {
         height: data.height || 1080,
       },
       viewportCenter,
+      total_pens: (data.pens || []).length,
+      total_lines: (data.lines || []).length,
     }
   } catch {
     return null

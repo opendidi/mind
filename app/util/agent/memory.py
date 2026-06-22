@@ -7,8 +7,7 @@ import time
 
 from app.config import AGENT_DEFAULT_MODEL
 
-SHORT_TERM_TTL = 3600        # 1 hour
-LONG_TERM_TTL = 2592000      # 30 days
+from app.util.agent.constants import SHORT_TERM_TTL, LONG_TERM_TTL
 MAX_SHORT_SUMMARY_CHARS = 600
 MAX_LONG_ENTRIES = 50        # max long-term entries per user
 MAX_RECALL_ITEMS = 5         # max items returned per recall

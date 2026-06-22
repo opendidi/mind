@@ -32,8 +32,7 @@ class AgentBase:
     system_prompt: str = ""
     tools: list = []  # list of tool function-calling schema dicts
 
-    MAX_ITERATIONS = 5
-    MAX_LOOP_REPEAT = 3  # max consecutive calls to same tool with same args
+    from app.util.agent.constants import MAX_ITERATIONS, MAX_LOOP_REPEAT
 
     def run(
         self,

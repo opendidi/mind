@@ -1,0 +1,29 @@
+"""Centralized agent constants — single source of truth for all magic numbers."""
+
+# History / Context
+MAX_HISTORY_TOKENS = 8000
+MAX_HISTORY_COMPACT = 4000
+
+# Guard
+MAX_INPUT_LENGTH = 8192
+MAX_CALLS_PER_TOOL = 30
+
+# Execution / Loop
+MAX_REFLECT_RETRIES = 3
+MAX_LOOP_REPEAT = 3
+MAX_DAG_TOTAL_SECONDS = 300
+MAX_NODE_SECONDS = 120
+MAX_ITERATIONS = 5
+
+# Memory TTLs (seconds)
+SHORT_TERM_TTL = 3600
+LONG_TERM_TTL = 2592000
+
+# Cache
+CACHE_TTL = 30
+CACHE_DB = 5
+
+# Dispatch
+SUB_AGENT_TIMEOUT = 120
+MAX_CONCURRENT_DISPATCH = 3
+PEER_QUERY_TIMEOUT = 15

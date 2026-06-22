@@ -8,8 +8,7 @@ from dataclasses import dataclass, field
 from app.config import AGENT_DEFAULT_MODEL
 from app.util.agent.helpers import extract_json
 
-MAX_REFLECT_RETRIES = 3
-MAX_LOOP_REPEAT = 3
+from app.util.agent.constants import MAX_REFLECT_RETRIES, MAX_LOOP_REPEAT
 
 REFLECT_PROMPT = """你是故障诊断专家。一个工具执行失败了，分析原因并提出恢复方案。
 

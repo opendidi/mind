@@ -51,7 +51,7 @@ _PII_PATTERNS = [
 # ── Input Guard ─────────────────────────────────────────────────────────
 
 # Max input length (characters)
-MAX_INPUT_LENGTH = 8192
+from app.util.agent.constants import MAX_INPUT_LENGTH
 
 # Simple injection patterns to reject immediately
 _INJECTION_PATTERNS = [
@@ -109,7 +109,7 @@ class ToolGuard:
     # Max calls per tool per session
     _tool_call_counts: dict = {}
     _lock = threading.Lock()
-    MAX_CALLS_PER_TOOL = 30
+    from app.util.agent.constants import MAX_CALLS_PER_TOOL
 
     @classmethod
     def check_tool_call(cls, tool_name: str, tool_args: dict,

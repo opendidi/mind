@@ -23,10 +23,8 @@ from app.util.agent.engine import AgentEngine
 from app.util.agent.intent import classify_domain, unified_intent_and_plan
 from app.util.agent.skills import get_skills_for_intent
 from app.util.llm_client import get_llm_client
+from app.util.agent.constants import MAX_HISTORY_TOKENS, MAX_HISTORY_COMPACT
 from app.util.agent.helpers import estimate_tokens_from_str as _estimate_tokens
-
-MAX_HISTORY_TOKENS = 8000
-MAX_HISTORY_COMPACT = 4000
 
 
 # ── Base Prompt ───────────────────────────────────────────────────────────

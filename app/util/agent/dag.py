@@ -101,10 +101,7 @@ def _has_cycle(nodes) -> bool:
 
 # ── Constants ──────────────────────────────────────────────────────────────
 
-MAX_REFLECT_RETRIES = 3
-MAX_LOOP_REPEAT = 3
-MAX_DAG_TOTAL_SECONDS = 300
-MAX_NODE_SECONDS = 120
+from app.util.agent.constants import MAX_REFLECT_RETRIES, MAX_LOOP_REPEAT, MAX_DAG_TOTAL_SECONDS, MAX_NODE_SECONDS
 
 
 # ── MODELS ──────────────────────────────────────────────────────────────────

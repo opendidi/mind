@@ -15,8 +15,7 @@ from app.util.agent.llm_stream import (
     parse_stream_chunks, stream_llm_chat,
 )
 
-MAX_LOOP_REPEAT = 3
-MAX_REFLECT_RETRIES = 3
+from app.util.agent.constants import MAX_LOOP_REPEAT, MAX_REFLECT_RETRIES
 
 
 class BaseExecutor:
