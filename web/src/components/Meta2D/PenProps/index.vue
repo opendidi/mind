@@ -710,6 +710,16 @@ watch(
   }
 );
 
+// Debounced render helper
+let _renderTimer: ReturnType<typeof setTimeout> | null = null
+function debouncedRender() {
+  if (_renderTimer) clearTimeout(_renderTimer)
+  _renderTimer = setTimeout(() => {
+    meta2d.render()
+    _renderTimer = null
+  }, 100)
+}
+
 function changeValue(prop: string) {
   const v: any = { id: pen.value.id };
   v[prop] = pen.value[prop];
@@ -721,14 +731,16 @@ function changeValue(prop: string) {
       }
     });
   }
-  meta2d.setValue(v, { render: true });
+  meta2d.setValue(v, { render: false });
+  debouncedRender();
   commonStore.setIsSave("0");
 }
 
 function changeRect(prop: string) {
   const v: any = { id: pen.value.id };
   v[prop] = rect.value[prop];
-  meta2d.setValue(v, { render: true });
+  meta2d.setValue(v, { render: false });
+  debouncedRender();
   commonStore.setIsSave("0");
 }
 

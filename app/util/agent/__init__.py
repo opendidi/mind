@@ -107,7 +107,6 @@ def __getattr__(name):
         'agent_intent': 'intent',
         'agent_executor': 'executor',
         'agent_dispatcher': 'dispatcher',
-        'agent_supervisor': 'supervisor',
         'agent_memory': 'memory',
         'agent_session_memory': 'session_memory',
         'agent_plan_eval': 'plan_eval',
