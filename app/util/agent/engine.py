@@ -16,6 +16,14 @@ from app.util.agent.tracer import AgentTracer
 _rebuild_schemas()
 
 
+def _apply_output_guard(text):
+    """Apply OutputGuard to text. Returns (guard_out_dict_or_None, sanitized_text_or_None)."""
+    guard_out = OutputGuard.process(text)
+    if not guard_out["ok"]:
+        return guard_out, None
+    return None, guard_out.get("text", text)
+
+
 class AgentEngine:
     """V3 unified execution engine with guardrails.
 
@@ -117,17 +125,15 @@ class AgentEngine:
 
                 with tracer.span("execute"):
                     for event in executor.execute(plan):
-                        # Apply OutputGuard to text responses
                         if event[0] == "llm_response":
                             choice = event[1]
                             text = choice.message.content or ""
-                            guard_out = OutputGuard.process(text)
-                            if not guard_out["ok"]:
-                                yield ("error", guard_out.get("reason", "响应被安全策略拦截"))
+                            guard_fail, safe_text = _apply_output_guard(text)
+                            if guard_fail is not None:
+                                yield ("error", guard_fail.get("reason", "响应被安全策略拦截"))
                                 yield ("done", {"status": "blocked"})
                                 return
-                            # Update content with sanitized text
-                            choice.message.content = guard_out.get("text", text)
+                            choice.message.content = safe_text
                             yield event
                         else:
                             yield event
@@ -139,12 +145,12 @@ class AgentEngine:
                         if event[0] == "llm_response":
                             choice = event[1]
                             text = choice.message.content or ""
-                            guard_out = OutputGuard.process(text)
-                            if not guard_out["ok"]:
-                                yield ("error", guard_out.get("reason", "响应被安全策略拦截"))
+                            guard_fail, safe_text = _apply_output_guard(text)
+                            if guard_fail is not None:
+                                yield ("error", guard_fail.get("reason", "响应被安全策略拦截"))
                                 yield ("done", {"status": "blocked"})
                                 return
-                            choice.message.content = guard_out.get("text", text)
+                            choice.message.content = safe_text
                             yield event
                         else:
                             yield event
