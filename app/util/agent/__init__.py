@@ -34,9 +34,8 @@ from .helpers import (
 # ── Tools ─────────────────────────────────────────────────────────────────
 from .tools import run_tool_call, TOOL_SCHEMAS, _rebuild_schemas
 
-# ── Intent / Router / Planner / Executor ──────────────────────────────────
+# ── Intent / Executor ─────────────────────────────────────────────────────
 from .intent import classify_domain, unified_intent_and_plan
-from .planner import AgentPlanner
 from .executor import AgentExecutor
 from .dispatcher import AgentDispatcher
 from .supervisor import Supervisor
@@ -91,7 +90,6 @@ def __getattr__(name):
         'agent_helpers': 'helpers',
         'agent_tools': 'tools',
         'agent_intent': 'intent',
-        'agent_planner': 'planner',
         'agent_executor': 'executor',
         'agent_dispatcher': 'dispatcher',
         'agent_supervisor': 'supervisor',
