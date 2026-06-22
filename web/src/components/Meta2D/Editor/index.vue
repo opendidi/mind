@@ -41,6 +41,7 @@ import "@/assets/js/rg.js";
 import { MetaPlugin } from "@/utils/plugin";
 import { mindBoxPlugin } from "@meta2d/plugin-mind-core";
 import { useSelection } from "@/services/selections";
+import { useKeyboardShortcuts } from "@/composables/useKeyboardShortcuts";
 
 const { select } = useSelection();
 
@@ -85,6 +86,9 @@ onMounted(() => {
   }
   let meta2d = new Meta2d("meta2d", meta2dOptions);
   (window as any).meta2d = meta2d;
+
+  // Register keyboard shortcuts (Delete, Ctrl+C/V/A/D, arrows, Escape)
+  useKeyboardShortcuts(meta2d);
 
   // 按需注册图形库，以下为自带基础图形库
   register(flowPens());

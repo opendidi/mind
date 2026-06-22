@@ -956,17 +956,7 @@ function onSearch() {
   proxy.$refs.shareModal.visible = true;
 }
 
-// Keyboard shortcut handler
-function onKeyDown(e: KeyboardEvent) {
-  const ctrl = e.ctrlKey || e.metaKey;
-  if (!ctrl) return;
-  if (e.key === 'z' && !e.shiftKey) { e.preventDefault(); onUndo(); }
-  if (e.key === 'y' || (e.key === 'z' && e.shiftKey)) { e.preventDefault(); onRedo(); }
-  if (e.key === 's') { e.preventDefault(); onSave(true); }
-}
-
 onMounted(() => {
-  document.addEventListener('keydown', onKeyDown);
   const timer = setInterval(() => {
     if (meta2d) {
       data.value = meta2d.store.data;
@@ -988,9 +978,6 @@ onMounted(() => {
   }, 200);
 });
 
-onUnmounted(() => {
-  document.removeEventListener('keydown', onKeyDown);
-});
 </script>
 
 <style lang="less" scoped>
