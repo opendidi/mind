@@ -7,7 +7,6 @@
 import { ref, type Ref, type ComputedRef, computed } from 'vue'
 import { agentChat } from '@/api/agent'
 import { useCommonStoreWithOut } from '@/store/modules/common'
-import { useSelection } from '@/services/selections'
 
 // ── Types ──────────────────────────────────────────────────────────
 
@@ -123,37 +122,44 @@ export function buildCanvasContext(): CanvasContext | null {
     const data = meta2d.data()
     if (!data) return null
 
-    const { selections } = useSelection()
-    const selectedPen = selections.pen
+    const TARGET_TOKENS = 2000
 
-    // If user has a pen selected, prioritize its neighborhood
-    const pens: any[] = []
-    if (selectedPen) {
-      pens.push({
-        id: selectedPen.id,
-        type: selectedPen.name || 'rectangle',
-        text: selectedPen.text || '',
-        x: selectedPen.x || 0, y: selectedPen.y || 0,
-        width: selectedPen.width || 100, height: selectedPen.height || 60,
-      })
-    }
+    // Priority: selected pens > connected neighbors > viewport pens > rest
+    const selectedIds = new Set<string>(meta2d.active || [])
+    const neighborIds = new Set<string>()
 
-    // Include all pens (trimmed for large diagrams)
-    const MAX_PENS = 50
-    const allPens = (data.pens || []).slice(0, MAX_PENS)
-    for (const p of allPens) {
-      if (!pens.find(x => x.id === p.id)) {
-        pens.push({
-          id: p.id || p.penId,
-          type: p.name || p.type || 'rectangle',
-          text: (p.text || '').slice(0, 200),
-          x: p.x || 0, y: p.y || 0,
-          width: p.width || 100, height: p.height || 60,
-        })
+    // Find neighbors of selected pens (connected via lines)
+    if (selectedIds.size > 0) {
+      for (const line of (data.lines || [])) {
+        if (selectedIds.has(line.source?.id)) neighborIds.add(line.source?.connectTo)
+        if (selectedIds.has(line.target?.id)) neighborIds.add(line.target?.connectTo)
+        if (line.source?.connectTo && selectedIds.has(line.source.connectTo)) neighborIds.add(line.source.id)
       }
     }
 
-    // Include line data (was always empty before!)
+    const priorityPens = [
+      ...(data.pens || []).filter((p: any) => selectedIds.has(p.id)),
+      ...(data.pens || []).filter((p: any) => neighborIds.has(p.id)),
+      ...(data.pens || []),
+    ]
+
+    // Deduplicate and cap at token budget
+    const seen = new Set<string>()
+    const truncatedPens: any[] = []
+    for (const p of priorityPens) {
+      if (seen.has(p.id)) continue
+      seen.add(p.id)
+      truncatedPens.push({
+        id: p.id || p.penId,
+        type: p.name || p.type || 'rectangle',
+        text: (p.text || '').slice(0, 200),
+        x: p.x || 0, y: p.y || 0,
+        width: p.width || 100, height: p.height || 60,
+      })
+      if (JSON.stringify(truncatedPens).length > TARGET_TOKENS * 3) break
+    }
+
+    // Include line data
     const lines = (data.lines || []).map((l: any) => ({
       from: l.fromPen || l.from,
       to: l.toPen || l.to,
@@ -172,9 +178,9 @@ export function buildCanvasContext(): CanvasContext | null {
     }
 
     return {
-      pens,
+      pens: truncatedPens,
       lines,
-      selectedIds: selectedPen ? [selectedPen.id] : [],
+      selectedIds: [...selectedIds],
       canvasInfo: {
         width: data.width || 1920,
         height: data.height || 1080,
@@ -182,6 +188,7 @@ export function buildCanvasContext(): CanvasContext | null {
       viewportCenter,
       total_pens: (data.pens || []).length,
       total_lines: (data.lines || []).length,
+      truncated: truncatedPens.length < (data.pens || []).length,
     }
   } catch {
     return null
