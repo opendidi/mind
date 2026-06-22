@@ -641,7 +641,7 @@ function getPen() {
 
   // Clean up previous pen's event listeners
   registeredHandlers.forEach(({ name, fn }) => meta2d.off(name, fn));
-  registeredEvents = [];
+  registeredHandlers.length = 0;
 
   const { events } = pen.value;
   if (events) {
@@ -668,7 +668,7 @@ function getPen() {
             }
           };
       meta2d.on(event.value, handler);
-      registeredEvents.push(event.value);
+      registeredHandlers.push({ name: event.value, fn: handler });
     });
   }
 }
