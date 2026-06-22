@@ -9,7 +9,7 @@
 
 ---
 
-<img width="100%" align="center" src="./images/1731398154366.jpg" />
+<img width="100%" align="center" src="./images/ffcde3e3-c4f4-4a40-884f-c16eb8005ce6.png" />
 
 ## 功能特性
 
