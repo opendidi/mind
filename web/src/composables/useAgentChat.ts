@@ -108,8 +108,6 @@ export interface UseAgentChatReturn {
   clear: () => void
   addMessage: (role: ChatMessage['role'], text: string) => void
   addUserMessage: (text: string, images?: string[], quote?: QuoteInfo) => void
-  /** Force-save current streamed content (called on unmount) */
-  flushStreamSave: () => void
 }
 
 // ── Default canvas context builder ─────────────────────────────────
@@ -208,34 +206,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   let pendingToolCount = 0
   let pendingRefs: Array<{ title?: string; url: string; snippet?: string; domain?: string }> | null = null
 
-  // ── Stream auto-save ──────────────────────────────────────────────
-  let _streamTokenCount = 0
-  let _streamSaveInterval: ReturnType<typeof setInterval> | null = null
-
-  function _tickStreamSave() {
-    if (_streamTokenCount > 0) {
-      _streamTokenCount = 0
-      options.onStreamTick?.()
-    }
-  }
-
-  function flushStreamSave() {
-    _tickStreamSave()
-  }
-
-  function _startStreamSave() {
-    _streamTokenCount = 0
-    if (_streamSaveInterval) clearInterval(_streamSaveInterval)
-    _streamSaveInterval = setInterval(_tickStreamSave, 3000)
-  }
-
-  function _stopStreamSave() {
-    if (_streamSaveInterval) {
-      clearInterval(_streamSaveInterval)
-      _streamSaveInterval = null
-    }
-    _tickStreamSave()  // final save
-  }
 
   function addMessage(role: ChatMessage['role'], text: string) {
     messages.value.push({
@@ -381,11 +351,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         }
         thinkingText.value = ''
         // Auto-save every 10 tokens during streaming
-        _streamTokenCount++
-        if (_streamTokenCount >= 10) {
-          _streamTokenCount = 0
-          options.onStreamTick?.()
-        }
         break
       }
 
@@ -517,6 +482,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         currentThinking.value = ''
         plan.value = null
         options.onError?.(data.message)
+        options.onStreamTick?.()
         break
 
       // ── References (web_search / web_fetch citations) ──
@@ -570,6 +536,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       // ── Done (handled in onComplete) ──
       case 'done':
         pendingRefs = null
+        options.onStreamTick?.()
         break
 
       // ── Passthrough ──
@@ -612,7 +579,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     toolCalls.value = []
     traceId.value = null
     pendingRefs = null
-    _startStreamSave()
 
     abortCtrl = agentChat({
       userMessage: apiText,
@@ -621,7 +587,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       images: images || undefined,
       onEvent: (event) => handleSSEEvent(event.type, event.data),
       onError: (err) => {
-        _stopStreamSave()
         addMessage('error', err.message)
         loading.value = false
         connected.value = false
@@ -629,7 +594,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         options.onError?.(err.message)
       },
       onComplete: () => {
-        _stopStreamSave()
         loading.value = false
         connected.value = false
         options.onDone?.()
@@ -638,7 +602,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   }
 
   function abort() {
-    _stopStreamSave()
+    options.onStreamTick?.()
     abortCtrl?.abort()
     abortCtrl = null
     loading.value = false
@@ -668,7 +632,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   }
 
   function clear() {
-    _stopStreamSave()
     abort()
     messages.value = []
     toolCalls.value = []
@@ -698,6 +661,5 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     clear,
     addMessage,
     addUserMessage,
-    flushStreamSave,
   }
 }

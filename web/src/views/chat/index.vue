@@ -398,7 +398,6 @@ const {
   abort: agentAbort,
   retry: agentRetry,
   clear: agentClear,
-  flushStreamSave,
 } = useAgentChat({
   userId: useUserStore().userInfo?.id || undefined,
   onToolResult(tool, args, success, result) {
@@ -571,7 +570,6 @@ onMounted(() => {
 
 onBeforeUnmount(() => {
   document.removeEventListener('keydown', onPageKeydown);
-  flushStreamSave();
   if (messages.value.length > 0) silentSave();
   agentAbort();
 });
