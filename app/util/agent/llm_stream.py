@@ -112,8 +112,8 @@ def stream_llm_chat(
         for event in stream_llm_chat(llm, model="deepseek-chat", messages=msgs, tools=ts):
             dispatch(event)
     """
-    from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
     from app.util.agent.circuit import circuit_allow, circuit_record
+    from app.util.agent.retry import retry_llm_call
 
     service = circuit_service or model
     tools_list = tools or None
@@ -123,47 +123,33 @@ def stream_llm_chat(
         yield ("error", "AI 服务不可用（熔断）")
         return
 
-    for attempt in range(3):
-        llm_span_id = None
-        if tracer:
-            llm_span_id = tracer.start_span("llm_api_call", input={"model": model, "attempt": attempt + 1})
-
-        try:
-            response = llm_client.chat.completions.create(
+    llm_span_id = None
+    if tracer:
+        llm_span_id = tracer.start_span("llm_api_call", input={"model": model})
+    try:
+        response = retry_llm_call(
+            lambda: llm_client.chat.completions.create(
                 model=model,
                 messages=messages,
                 tools=tools_list,
                 tool_choice=tool_choice,
                 stream=True,
                 timeout=timeout,
-            )
-
-            circuit_record(True, service=service)
-            if tracer:
-                tracer.end_span(llm_span_id, "ok")
-
-            yield from parse_stream_chunks(response)
-            return
-
-        except (RateLimitError, APITimeoutError, APIConnectionError, APIError) as ex:
-            if tracer:
-                tracer.end_span(llm_span_id, "error", {"error": str(ex)[:100]})
-            if isinstance(ex, APIError):
-                status = getattr(ex, "http_status", None) or getattr(ex, "status_code", None) or 500
-                if status < 500:
-                    circuit_record(False, service=service)
-                    yield ("error", f"API 错误 [{status}]: {ex}")
-                    return
-            if should_retry_llm(ex, attempt):
-                llm_retry_sleep(attempt, isinstance(ex, RateLimitError))
-        except Exception as ex:
-            logging.warning("LLM stream attempt %d: %s", attempt + 1, ex)
-            if tracer:
-                tracer.end_span(llm_span_id, "error", {"error": str(ex)[:100]})
-            if should_retry_llm(ex, attempt):
-                llm_retry_sleep(attempt)
-
-    circuit_record(False, service=service)
-    if tracer:
-        tracer.end_span(llm_span_id, "error", {"error": "All retries exhausted"})
-    yield ("error", "LLM 流式调用失败（已重试 3 次）")
+            ),
+            max_retries=3,
+        )
+        circuit_record(True, service=service)
+        if tracer:
+            tracer.end_span(llm_span_id, "ok")
+        yield from parse_stream_chunks(response)
+    except APIError as ex:
+        circuit_record(False, service=service)
+        if tracer:
+            tracer.end_span(llm_span_id, "error", {"error": str(ex)[:100]})
+        status = getattr(ex, "status_code", 500) if hasattr(ex, "status_code") else 500
+        yield ("error", f"API 错误 [{status}]: {ex}")
+    except Exception as ex:
+        circuit_record(False, service=service)
+        if tracer:
+            tracer.end_span(llm_span_id, "error", {"error": str(ex)[:100]})
+        yield ("error", "LLM 流式调用失败（已重试 3 次）")

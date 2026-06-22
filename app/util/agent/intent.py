@@ -4,8 +4,6 @@ Adapted for mind: canvas/blueprint/file/mindmap/code domains."""
 
 import json
 import logging
-import random
-
 from app.config import AGENT_DEFAULT_MODEL
 
 # ═══════════════════════════════════════════════════════════
@@ -180,6 +178,7 @@ def unified_intent_and_plan(
     import json as _json
 
     from app.util.agent.helpers import extract_json as _extract_json, repair_json as _repair_json
+    from app.util.agent.retry import retry_llm_call
 
     # Build messages for single LLM call with optional feedback injection
     system_prompt = _build_planner_prompt(plan_feedback_hints)
@@ -188,35 +187,20 @@ def unified_intent_and_plan(
         msgs.extend(history[-6:])
     msgs.append({"role": "user", "content": user_message})
 
-    from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
-
-    raw = ""
-    for attempt in range(3):
-        try:
-            resp = llm_client.chat.completions.create(
+    try:
+        resp = retry_llm_call(
+            lambda: llm_client.chat.completions.create(
                 model=model,
                 messages=msgs,
                 temperature=0.1,
                 max_tokens=1024,
                 timeout=30,
-            )
-            break
-        except (RateLimitError, APITimeoutError, APIConnectionError) as ex:
-            if attempt >= 2:
-                logging.warning("unified_intent: LLM call failed after retries, falling back to keyword")
-                return _keyword_fallback(user_message)
-            import time as _t
-            _t.sleep((2 ** attempt) + random.uniform(0, 1))
-        except APIError as ex:
-            status = getattr(ex, "http_status", None) or getattr(ex, "status_code", None) or 500
-            if status < 500 or attempt >= 2:
-                logging.warning("unified_intent: LLM API error, falling back to keyword")
-                return _keyword_fallback(user_message)
-            import time as _t
-            _t.sleep(2 ** attempt)
-        except Exception:
-            logging.warning("unified_intent: LLM call failed, falling back to keyword")
-            return _keyword_fallback(user_message)
+            ),
+            max_retries=3,
+        )
+    except Exception:
+        logging.warning("unified_intent: LLM call failed after retries, falling back to keyword")
+        return _keyword_fallback(user_message)
     try:
         raw = resp.choices[0].message.content or ""
         text = _extract_json(raw)

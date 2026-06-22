@@ -109,38 +109,27 @@ class AgentDispatcher:
             messages.append({"role": "system", "content": f"当前上下文已知信息:\n{pheromone}"})
         messages.append({"role": "user", "content": f"同事 Agent 询问：{question}\n\n请简洁回答（不要调用工具，仅基于你的专业知识回答）。"})
 
-        from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
+        from app.util.agent.retry import retry_llm_call
 
-        for attempt in range(3):
-            try:
-                if tracer:
-                    psid = tracer.start_span(f"peer_query:{agent_name}", input={"question": question[:200], "from": caller_name})
-                resp = llm_client.chat.completions.create(
-                    model=model, messages=messages, temperature=0, max_tokens=512, timeout=_PEER_QUERY_TIMEOUT,
-                )
-                content = resp.choices[0].message.content or ""
-                if tracer:
-                    tracer.end_span(psid, "ok", {"result": content[:200]})
-                return {"success": True, "result": content}
-            except (RateLimitError, APITimeoutError, APIConnectionError) as ex:
-                if attempt >= 2:
-                    break
-                time.sleep((2 ** attempt) + random.uniform(0, 1))
-            except APIError as ex:
-                status = getattr(ex, "http_status", None) or getattr(ex, "status_code", None) or 500
-                if status < 500 or attempt >= 2:
-                    break
-                time.sleep(2 ** attempt)
-            except Exception as ex:
-                logging.warning("Peer query to %s failed: %s", agent_name, ex)
-                if tracer:
-                    tracer.end_span(psid, "error", {"error": str(ex)})
-                return {"success": False, "result": f"向 {agent_name} 查询失败: {ex}"}
-
-        logging.warning("Peer query to %s failed after retries", agent_name)
+        psid = None
         if tracer:
-            tracer.end_span(psid, "error", {"error": "All retries exhausted"})
-        return {"success": False, "result": f"向 {agent_name} 查询失败（重试后仍失败）"}
+            psid = tracer.start_span(f"peer_query:{agent_name}", input={"question": question[:200], "from": caller_name})
+        try:
+            resp = retry_llm_call(
+                lambda: llm_client.chat.completions.create(
+                    model=model, messages=messages, temperature=0, max_tokens=512, timeout=_PEER_QUERY_TIMEOUT,
+                ),
+                max_retries=3,
+            )
+            content = resp.choices[0].message.content or ""
+            if tracer:
+                tracer.end_span(psid, "ok", {"result": content[:200]})
+            return {"success": True, "result": content}
+        except Exception as ex:
+            logging.warning("Peer query to %s failed: %s", agent_name, ex)
+            if tracer:
+                tracer.end_span(psid, "error", {"error": str(ex)[:100]})
+            return {"success": False, "result": f"向 {agent_name} 查询失败（重试后仍失败）"}
 
     def dispatch(self, llm_client, agent_name: str, task: str, tool_context: dict,
                  model: str = AGENT_DEFAULT_MODEL, tracer=None, event_queue=None,

@@ -112,35 +112,22 @@ class AgentReflexion:
             self._consecutive_llm_failures += 1
             return None
 
-        from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
+        from app.util.agent.retry import retry_llm_call
 
-        for attempt in range(3):
-            try:
-                resp = self.llm.chat.completions.create(
+        try:
+            resp = retry_llm_call(
+                lambda: self.llm.chat.completions.create(
                     model=self.model, messages=[{"role": "user", "content": prompt}],
                     temperature=0.1, max_tokens=512, timeout=timeout,
-                )
-                self._consecutive_llm_failures = 0
-                return resp.choices[0].message.content or ""
-            except (RateLimitError, APITimeoutError, APIConnectionError) as ex:
-                if attempt >= 2:
-                    self._consecutive_llm_failures += 1
-                    logging.warning("Reflexion LLM call failed after retries (x%d): %s", self._consecutive_llm_failures, ex)
-                    return None
-                import time as _time
-                _time.sleep((2 ** attempt) + __import__("random").uniform(0, 1))
-            except APIError as ex:
-                status = getattr(ex, "http_status", None) or getattr(ex, "status_code", None) or 500
-                if status < 500 or attempt >= 2:
-                    self._consecutive_llm_failures += 1
-                    logging.warning("Reflexion LLM call failed (x%d): %s", self._consecutive_llm_failures, ex)
-                    return None
-                import time as _time
-                _time.sleep((2 ** attempt))
-            except Exception:
-                self._consecutive_llm_failures += 1
-                logging.warning("Reflexion LLM call failed (x%d)", self._consecutive_llm_failures, exc_info=True)
-                return None
+                ),
+                max_retries=3,
+            )
+            self._consecutive_llm_failures = 0
+            return resp.choices[0].message.content or ""
+        except Exception:
+            self._consecutive_llm_failures += 1
+            logging.warning("Reflexion LLM call failed (x%d)", self._consecutive_llm_failures, exc_info=True)
+            return None
 
     def analyze_failure(self, tool_name: str, tool_args: dict, error_result: dict,
                         goal: str, step_desc: str, completed_steps: list[str],
@@ -214,33 +201,22 @@ class AgentReflexion:
             f"请判断目标是否已基本达成（部分失败不影响核心目标）。"
             f'输出 JSON: {{"overall_success": true/false, "summary": "一句话总结", "missing": ["未完成的要点"]}}'
         )
-        from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
+        from app.util.agent.retry import retry_llm_call
 
-        for attempt in range(2):
-            try:
-                resp = self.llm.chat.completions.create(
+        try:
+            resp = retry_llm_call(
+                lambda: self.llm.chat.completions.create(
                     model=self.model, messages=[{"role": "user", "content": prompt}],
                     temperature=0, max_tokens=256, timeout=10,
-                )
-                raw = resp.choices[0].message.content or ""
-                text = self._extract_json(raw)
-                if text:
-                    return json.loads(text)
-                break  # response ok but no valid JSON — don't retry
-            except (RateLimitError, APITimeoutError, APIConnectionError) as ex:
-                if attempt >= 1:
-                    break
-                import time as _t
-                _t.sleep(1 + __import__("random").uniform(0, 0.5))
-            except APIError as ex:
-                status = getattr(ex, "http_status", None) or getattr(ex, "status_code", None) or 500
-                if status < 500 or attempt >= 1:
-                    break
-                import time as _t
-                _t.sleep(1)
-            except Exception:
-                logging.warning("Overall goal verification failed", exc_info=True)
-                break
+                ),
+                max_retries=2,
+            )
+            raw = resp.choices[0].message.content or ""
+            text = self._extract_json(raw)
+            if text:
+                return json.loads(text)
+        except Exception:
+            logging.warning("Overall goal verification failed", exc_info=True)
 
         n_completed = len(completed_results)
         n_total = n_completed + len(failed_results)

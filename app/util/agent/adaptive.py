@@ -3,9 +3,6 @@
 
 import json
 import logging
-import random
-import time
-
 from app.util.agent.helpers import extract_json, repair_json
 from app.config import AGENT_DEFAULT_MODEL
 
@@ -96,28 +93,19 @@ def replan_node(
         shared_context=shared_context_sniff[:1500] or "无",
     )
 
-    from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
+    from app.util.agent.retry import retry_llm_call
 
     try:
-        for attempt in range(3):
-            try:
-                resp = llm_client.chat.completions.create(
-                    model=model,
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0.1,
-                    max_tokens=512,
-                    timeout=20,
-                )
-                break
-            except (RateLimitError, APITimeoutError, APIConnectionError) as ex:
-                if attempt >= 2:
-                    raise
-                time.sleep((2 ** attempt) + random.uniform(0, 1))
-            except APIError as ex:
-                status = getattr(ex, "http_status", None) or getattr(ex, "status_code", None) or 500
-                if status < 500 or attempt >= 2:
-                    raise
-                time.sleep(2 ** attempt)
+        resp = retry_llm_call(
+            lambda: llm_client.chat.completions.create(
+                model=model,
+                messages=[{"role": "user", "content": prompt}],
+                temperature=0.1,
+                max_tokens=512,
+                timeout=20,
+            ),
+            max_retries=3,
+        )
         raw = resp.choices[0].message.content or ""
         text = extract_json(raw)
         if not text:

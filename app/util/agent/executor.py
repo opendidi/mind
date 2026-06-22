@@ -12,7 +12,6 @@ from app.util.agent.guard import InputGuard, ToolGuard, OutputGuard
 from app.util.agent.helpers import truncate_tool_result as _truncate_tool_result, loop_key as _loop_key
 from app.util.agent.pheromone import extract_discoveries
 from app.util.agent.llm_stream import (
-    should_retry_llm, llm_retry_sleep,
     parse_stream_chunks, stream_llm_chat,
 )
 
@@ -64,12 +63,8 @@ class BaseExecutor:
 
     # ── LLM Calling ──────────────────────────────────────────────────────
 
-    # Delegated to shared llm_stream module for consistency across callers
-    _should_retry_llm = staticmethod(should_retry_llm)
-    _llm_retry_sleep = staticmethod(llm_retry_sleep)
-
     def _call_llm(self, messages=None):
-        from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
+        from app.util.agent.retry import retry_llm_call
         from app.util.agent.circuit import circuit_allow, circuit_record
 
         msgs = messages if messages is not None else self.messages
@@ -78,38 +73,25 @@ class BaseExecutor:
             return None
 
         llm_span_id = None
-        for attempt in range(3):
-            if self.tracer:
-                llm_span_id = self.tracer.start_span("llm_api_call", input={"model": self.model, "attempt": attempt + 1})
-            try:
-                result = self.llm.chat.completions.create(
+        if self.tracer:
+            llm_span_id = self.tracer.start_span("llm_api_call", input={"model": self.model})
+        try:
+            result = retry_llm_call(
+                lambda: self.llm.chat.completions.create(
                     model=self.model, messages=msgs, tools=self.tools,
                     tool_choice="auto", stream=False, timeout=LLM_TIMEOUT,
-                )
-                circuit_record(True, service=self.model)
-                if self.tracer:
-                    self.tracer.end_span(llm_span_id, "ok")
-                return result
-            except (RateLimitError, APITimeoutError, APIConnectionError, APIError) as ex:
-                if self.tracer:
-                    self.tracer.end_span(llm_span_id, "error", {"error": str(ex)[:100]})
-                if isinstance(ex, APIError):
-                    status = getattr(ex, "http_status", None) or getattr(ex, "status_code", None) or 500
-                    if status < 500:
-                        circuit_record(False, service=self.model)
-                        raise
-                if self._should_retry_llm(ex, attempt):
-                    self._llm_retry_sleep(attempt, isinstance(ex, RateLimitError))
-            except Exception as ex:
-                logging.warning("LLM call attempt %d: %s", attempt + 1, ex)
-                if self.tracer:
-                    self.tracer.end_span(llm_span_id, "error", {"error": str(ex)[:100]})
-                if self._should_retry_llm(ex, attempt):
-                    self._llm_retry_sleep(attempt)
-        circuit_record(False, service=self.model)
-        if self.tracer:
-            self.tracer.end_span(llm_span_id, "error", {"error": "All retries exhausted"})
-        return None
+                ),
+                max_retries=3,
+            )
+            circuit_record(True, service=self.model)
+            if self.tracer:
+                self.tracer.end_span(llm_span_id, "ok")
+            return result
+        except Exception as ex:
+            circuit_record(False, service=self.model)
+            if self.tracer:
+                self.tracer.end_span(llm_span_id, "error", {"error": str(ex)[:100]})
+            return None
 
     def _call_llm_stream(self) -> Generator:
         """Streaming LLM call using self.messages. Delegates to shared handler."""

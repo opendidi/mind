@@ -8,7 +8,6 @@ from collections import defaultdict
 
 from app.config import LLM_TIMEOUT, AGENT_DEFAULT_MODEL
 from app.util.agent.llm_stream import (
-    should_retry_llm, llm_retry_sleep,
     parse_stream_chunks, stream_llm_chat,
 )
 from app.util.agent.helpers import (
@@ -35,10 +34,6 @@ class AgentBase:
 
     MAX_ITERATIONS = 5
     MAX_LOOP_REPEAT = 3  # max consecutive calls to same tool with same args
-    MAX_LLM_RETRIES = 3
-
-    _should_retry_llm = staticmethod(should_retry_llm)
-    _llm_retry_sleep = staticmethod(llm_retry_sleep)
 
     def run(
         self,
@@ -198,37 +193,30 @@ class AgentBase:
                 return _finish(True, full_text)
 
             # ── Non-streaming path with retry ──
-            from openai import RateLimitError as _RateLimitError
-            response = None
-            llm_error = None
-            for attempt in range(self.MAX_LLM_RETRIES):
-                if tracer and attempt == 0:
-                    llm_sid = tracer.start_span(
-                        "llm_call",
-                        input={"agent": self.name, "iteration": tool_calls_made + 1},
-                    )
-                try:
-                    response = llm_client.chat.completions.create(
+            from app.util.agent.retry import retry_llm_call
+            llm_sid = None
+            if tracer:
+                llm_sid = tracer.start_span(
+                    "llm_call",
+                    input={"agent": self.name, "iteration": tool_calls_made + 1},
+                )
+            try:
+                response = retry_llm_call(
+                    lambda: llm_client.chat.completions.create(
                         model=model,
                         messages=messages,
                         tools=all_tools if all_tools else None,
                         tool_choice="auto" if all_tools else None,
                         stream=False,
                         timeout=LLM_TIMEOUT,
-                    )
-                    break
-                except Exception as ex:
-                    llm_error = ex
-                    logging.warning("Sub-agent %s LLM call attempt %d: %s", self.name, attempt + 1, ex)
-                    if not self._should_retry_llm(ex, attempt):
-                        break
-                    self._llm_retry_sleep(attempt, isinstance(ex, _RateLimitError))
-
-            if response is None:
-                logging.warning("Sub-agent %s LLM call failed after retries: %s", self.name, llm_error)
+                    ),
+                    max_retries=3,
+                )
+            except Exception as ex:
+                logging.warning("Sub-agent %s LLM call failed after retries: %s", self.name, ex)
                 if tracer:
-                    tracer.end_span(llm_sid, "error", {"error": str(llm_error)})
-                return _finish(False, f"AI service error: {llm_error}")
+                    tracer.end_span(llm_sid, "error", {"error": str(ex)[:100]})
+                return _finish(False, f"AI service error: {ex}")
 
             if not response.choices:
                 if tracer:
