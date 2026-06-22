@@ -13,6 +13,7 @@
 <script lang="ts" setup>
 import { ref, getCurrentInstance, onMounted, onUnmounted, watch } from "vue";
 import { useRoute } from "vue-router";
+import { provideCanvas } from "@/composables/useCanvas";
 import { message } from "ant-design-vue";
 import { apiBlueprintFind } from "@/api/blueprint";
 import * as echarts from "echarts";
@@ -85,7 +86,7 @@ onMounted(() => {
     meta2dOptions["rule"] = true;
   }
   let meta2d = new Meta2d("meta2d", meta2dOptions);
-  (window as any).meta2d = meta2d;
+  provideCanvas(meta2d);
 
   // Register keyboard shortcuts (Delete, Ctrl+C/V/A/D, arrows, Escape)
   useKeyboardShortcuts(meta2d);
