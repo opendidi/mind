@@ -412,6 +412,7 @@ async function _addLine(meta2d: any, args: Record<string, unknown>, success: boo
     type: 1,
     lineName: lineType === 'mind' ? 'mind' : lineType === 'curve' ? 'curve' : 'line',
     anchors: [fromAnchor, toAnchor],
+    source: { id: fromPen.id, connectTo: toPen.id },
     text: (args.text as string) || '',
     lineWidth: (args.lineWidth as number) || 2,
     color: (args.color as string) || '#6b7280',
