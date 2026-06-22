@@ -369,8 +369,38 @@ class DAGExecutor(BaseExecutor):
 
         return _finish_step(False, {"error": "步骤执行异常"})
 
+    def _run_simple_tool_batch(self, tool_calls: list, loop_counter: defaultdict) -> Generator:
+        """Execute a batch of tool calls, yielding tool_call / tool_result events.
+
+        Returns (any_failure, search_missing_keyword) via StopIteration, or
+        yields ("error", ...) and returns None on a fatal loop-guard hit.
+        """
+        any_failure = False
+        search_missing_keyword = False
+        for tc_name, tc_id, tc_args_str in tool_calls:
+            try:
+                tool_args = json.loads(tc_args_str)
+            except json.JSONDecodeError:
+                tool_args = {}
+
+            lk = _loop_key(tc_name, tool_args)
+            loop_counter[lk] += 1
+            if loop_counter[lk] > MAX_LOOP_REPEAT:
+                yield ("error", f"操作 {tc_name} 重复多次仍失败")
+                return None
+
+            yield ("tool_call", tc_name, tool_args)
+            result = self._run_simple_tool(tc_name, tool_args, tc_id)
+            yield ("tool_result", tc_name, result.get("success", False), result)
+            if not result.get("success"):
+                any_failure = True
+                if tc_name in ("web_search", "web_fetch") and "keyword" in str(result.get("error", "")):
+                    search_missing_keyword = True
+
+        return (any_failure, search_missing_keyword)
+
     def _execute_simple(self) -> Generator:
-        """Simple single-round ReAct for non-tool queries. Uses streaming LLM when self.stream."""
+        """Simple single-round ReAct for non-tool queries. Both paths share _run_simple_tool_batch."""
         iteration = 0
         loop_counter = defaultdict(int)
         retries = 0
@@ -400,114 +430,50 @@ class DAGExecutor(BaseExecutor):
                     yield ("error", stream_error)
                     return
 
-                if tool_calls_received:
-                    self.messages.append(self._format_stream_tool_msg(tool_calls_received))
+                if not tool_calls_received:
+                    if full_text:
+                        accumulated_text += full_text
+                    llm_response = SimpleNamespace(message=SimpleNamespace(content=full_text), finish_reason="stop")
+                    yield ("llm_response", llm_response, self._tool_call_count)
+                    return
 
-                    any_failure = False
-                    search_missing_keyword = False
-                    for tc_name, tc_id, tc_args_str in tool_calls_received:
-                        try:
-                            tool_args = json.loads(tc_args_str)
-                        except json.JSONDecodeError:
-                            tool_args = {}
+                self.messages.append(self._format_stream_tool_msg(tool_calls_received))
+                tool_calls = tool_calls_received
+            else:
+                response = self._call_llm()
+                if response is None:
+                    yield ("error", "AI 服务不可用")
+                    return
+                if not response.choices:
+                    yield ("error", "AI 返回异常")
+                    return
 
-                        lk = _loop_key(tc_name, tool_args)
-                        loop_counter[lk] += 1
-                        if loop_counter[lk] > MAX_LOOP_REPEAT:
-                            yield ("error", f"操作 {tc_name} 重复多次仍失败")
-                            return
+                choice = response.choices[0]
+                if choice.finish_reason != "tool_calls":
+                    yield ("llm_response", choice, self._tool_call_count)
+                    return
 
-                        yield ("tool_call", tc_name, tool_args)
-                        result = self._run_simple_tool(tc_name, tool_args, tc_id)
-                        yield ("tool_result", tc_name, result.get("success", False), result)
-                        if not result.get("success"):
-                            any_failure = True
-                            if tc_name in ("web_search", "web_fetch") and "keyword" in str(result.get("error", "")):
-                                search_missing_keyword = True
-
-                    if any_failure and retries < MAX_REFLECT_RETRIES:
-                        retries += 1
-                        self._append_simple_retry_msg(tool_calls_received, retries, search_missing_keyword)
-                        loop_counter.clear()
-                        continue
-                    consecutive_tool_calls += len(tool_calls_received)
-                    if consecutive_tool_calls >= 5:
-                        self.messages.append({"role": "user", "content": "已完成足够多的工具调用，请直接根据已有结果给出最终文字回复，不要再调用工具。"})
-                        consecutive_tool_calls = 0
-                    continue
-
-                if full_text:
-                    accumulated_text += full_text
-                llm_response = SimpleNamespace(message=SimpleNamespace(content=full_text), finish_reason="stop")
-                yield ("llm_response", llm_response, self._tool_call_count)
-                return
-
-            # Non-streaming path
-            response = self._call_llm()
-            if response is None:
-                yield ("error", "AI 服务不可用")
-                return
-            if not response.choices:
-                yield ("error", "AI 返回异常")
-                return
-
-            choice = response.choices[0]
-            finish = choice.finish_reason
-
-            if finish == "tool_calls":
                 msg = choice.message
                 self.messages.append(self._format_assistant_msg(msg))
+                tool_calls = [(tc.function.name, tc.id, tc.function.arguments) for tc in msg.tool_calls]
 
-                any_failure = False
-                search_missing_keyword = False
-                for tc in msg.tool_calls:
-                    tool_name = tc.function.name
-                    try:
-                        tool_args = json.loads(tc.function.arguments)
-                    except json.JSONDecodeError:
-                        tool_args = {}
+            # ── Shared tool execution ──
+            batch_result = yield from self._run_simple_tool_batch(tool_calls, loop_counter)
+            if batch_result is None:
+                return
+            any_failure, search_missing_keyword = batch_result
 
-                    lk = _loop_key(tool_name, tool_args)
-                    loop_counter[lk] += 1
-                    if loop_counter[lk] > MAX_LOOP_REPEAT:
-                        yield ("error", f"操作 {tool_name} 重复多次仍失败")
-                        return
-
-                    yield ("tool_call", tool_name, tool_args)
-                    result = self._run_simple_tool(tool_name, tool_args, tc.id)
-                    yield ("tool_result", tool_name, result.get("success", False), result)
-                    if not result.get("success"):
-                        any_failure = True
-                        if tool_name in ("web_search", "web_fetch") and "keyword" in str(result.get("error", "")):
-                            search_missing_keyword = True
-
-                if any_failure and retries < MAX_REFLECT_RETRIES:
-                    retries += 1
-                    failed_names = {tc.function.name for tc in msg.tool_calls}
-                    if failed_names & {"web_search", "web_fetch"}:
-                        if search_missing_keyword:
-                            self.messages.append({"role": "user", "content": (
-                                "web_search 需要 keyword 参数。请从用户的问题中提取搜索关键词，重新调用 web_search。"
-                                "例如用户问\"有什么新闻\"，keyword 应填 \"新闻\" 或 \"今日新闻\"。不要传空参数。"
-                            )})
-                        else:
-                            self.messages.append({"role": "user", "content": (
-                                "搜索工具暂时不可用。请直接用你自身的知识回答用户的问题，不需要再尝试搜索。直接给出文字回复即可。"
-                            )})
-                    else:
-                        self.messages.append({"role": "user", "content": (
-                            f"上一步工具执行失败了。请分析错误原因，尝试用不同的参数或方法重试。（第 {retries}/{MAX_REFLECT_RETRIES} 次重试）"
-                        )})
-                    loop_counter.clear()
-                    continue
-                consecutive_tool_calls += len(msg.tool_calls)
-                if consecutive_tool_calls >= 5:
-                    self.messages.append({"role": "user", "content": "已完成足够多的工具调用，请直接根据已有结果给出最终文字回复，不要再调用工具。"})
-                    consecutive_tool_calls = 0
+            if any_failure and retries < MAX_REFLECT_RETRIES:
+                retries += 1
+                self._append_simple_retry_msg(tool_calls, retries, search_missing_keyword)
+                loop_counter.clear()
                 continue
 
-            yield ("llm_response", choice, self._tool_call_count)
-            return
+            consecutive_tool_calls += len(tool_calls)
+            if consecutive_tool_calls >= 5:
+                self.messages.append({"role": "user", "content": "已完成足够多的工具调用，请直接根据已有结果给出最终文字回复，不要再调用工具。"})
+                consecutive_tool_calls = 0
+            continue
 
         if accumulated_text.strip():
             llm_response = SimpleNamespace(message=SimpleNamespace(content=accumulated_text.strip()), finish_reason="stop")
