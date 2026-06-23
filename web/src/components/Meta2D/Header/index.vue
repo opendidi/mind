@@ -83,35 +83,19 @@
       </a-badge>
     </div>
     <div class="head-center flex items-center">
-      <a
-        class="flex items-center flex-col"
-        :class="[isOnDrawLine == true ? 'active' : '']"
-        @click="onDrawLine"
-      >
+      <a class="flex items-center flex-col" :class="[isOnDrawLine == true ? 'active' : '']" @click="onDrawLine">
         <t-icon name="pen" />
         <span>钢笔</span>
       </a>
-      <a
-        class="flex items-center flex-col"
-        :class="[isDrawingPencil == true ? 'active' : '']"
-        @click="onDrawingPencil"
-      >
+      <a class="flex items-center flex-col" :class="[isDrawingPencil == true ? 'active' : '']" @click="onDrawingPencil">
         <t-icon name="edit" />
         <span>铅笔</span>
       </a>
-      <a
-        class="flex items-center flex-col"
-        :class="[isShowMagnifier == true ? 'active' : '']"
-        @click="onShowMagnifier"
-      >
+      <a class="flex items-center flex-col" :class="[isShowMagnifier == true ? 'active' : '']" @click="onShowMagnifier">
         <t-icon name="search" />
         <span>放大镜</span>
       </a>
-      <a
-        class="flex items-center flex-col"
-        :class="[visibleMap == true ? 'active' : '']"
-        @click="onOpenMap()"
-      >
+      <a class="flex items-center flex-col" :class="[visibleMap == true ? 'active' : '']" @click="onOpenMap()">
         <t-icon name="location" />
         <span>鹰眼地图</span>
       </a>
@@ -123,19 +107,11 @@
         <t-icon name="rollfront" />
         <span>重做</span>
       </a>
-      <a
-        class="flex items-center flex-col"
-        @dragstart="onAddShape($event, 'line')"
-        @click="onAddShape($event, 'line')"
-      >
+      <a class="flex items-center flex-col" @dragstart="onAddShape($event, 'line')" @click="onAddShape($event, 'line')">
         <t-icon name="remove" />
         <span>直线</span>
       </a>
-      <a
-        class="flex items-center flex-col"
-        @dragstart="onAddShape($event, 'text')"
-        @click="onAddShape($event, 'text')"
-      >
+      <a class="flex items-center flex-col" @dragstart="onAddShape($event, 'text')" @click="onAddShape($event, 'text')">
         <t-icon name="textbox" />
         <span>文字</span>
       </a>
@@ -167,11 +143,7 @@
         <template #overlay>
           <a-menu style="width: 220px">
             <a-menu-item key="1">
-              <a-input-number
-                v-model:value="data.lineWidth"
-                style="width: 100%"
-                @blur="getDataLineWidth"
-              />
+              <a-input-number v-model:value="data.lineWidth" style="width: 100%" @blur="getDataLineWidth" />
             </a-menu-item>
           </a-menu>
         </template>
@@ -180,16 +152,12 @@
         <a class="flex items-center flex-col">
           <span class="flex items-center">
             <svg class="l-icon" aria-hidden="true">
-              <use
-                :xlink:href="
-                  lineTypes.find((item) => item.value === currentLineType)?.icon
-                "
-              ></use>
+              <use :xlink:href="lineTypes.find(item => item.value === currentLineType)?.icon"></use>
             </svg>
             <t-icon name="chevron-down-s" />
           </span>
           <span>
-            {{ lineTypes.find((item) => item.value === currentLineType)?.name }}
+            {{ lineTypes.find(item => item.value === currentLineType)?.name }}
           </span>
         </a>
         <template #overlay>
@@ -217,11 +185,7 @@
         <a class="flex items-center flex-col">
           <span class="flex items-center">
             <svg class="l-icon" aria-hidden="true">
-              <use
-                :xlink:href="
-                  fromArrows.find((item) => item.value === fromArrow)?.icon
-                "
-              ></use>
+              <use :xlink:href="fromArrows.find(item => item.value === fromArrow)?.icon"></use>
             </svg>
             <t-icon name="chevron-down-s" />
           </span>
@@ -231,11 +195,7 @@
           <a-menu style="width: 160px">
             <template v-for="(item, idx) in fromArrows" :key="idx">
               <a-menu-item>
-                <div
-                  class="middle w-full flex items-center"
-                  style="height: 30px"
-                  @click="changeFromArrow(item.value)"
-                >
+                <div class="middle w-full flex items-center" style="height: 30px" @click="changeFromArrow(item.value)">
                   <svg class="l-icon" aria-hidden="true">
                     <use :xlink:href="item.icon"></use>
                   </svg>
@@ -249,11 +209,7 @@
         <a class="flex items-center flex-col">
           <span class="flex items-center">
             <svg class="l-icon" aria-hidden="true">
-              <use
-                :xlink:href="
-                  toArrows.find((item) => item.value === toArrow)?.icon
-                "
-              ></use>
+              <use :xlink:href="toArrows.find(item => item.value === toArrow)?.icon"></use>
             </svg>
             <t-icon name="chevron-down-s" />
           </span>
@@ -263,11 +219,7 @@
           <a-menu style="width: 160px">
             <template v-for="(item, idx) in toArrows" :key="idx">
               <a-menu-item>
-                <div
-                  class="middle w-full flex items-center"
-                  style="height: 30px"
-                  @click="changeToArrow(item.value)"
-                >
+                <div class="middle w-full flex items-center" style="height: 30px" @click="changeToArrow(item.value)">
                   <svg class="l-icon" aria-hidden="true">
                     <use :xlink:href="item.icon"></use>
                   </svg>
@@ -277,22 +229,14 @@
           </a-menu>
         </template>
       </a-dropdown>
-      <a
-        class="flex items-center flex-col"
-        :class="[isAutoAnchor == true ? 'active' : '']"
-        @click="onAutoAnchor"
-      >
+      <a class="flex items-center flex-col" :class="[isAutoAnchor == true ? 'active' : '']" @click="onAutoAnchor">
         <t-icon name="focus" />
         <span>自动锚点</span>
       </a>
-      <a
-        class="flex items-center flex-col"
-        :class="[isDisableAnchor == true ? 'active' : '']"
-        @click="onDisableAnchor"
-      >
+      <a class="flex items-center flex-col" :class="[isDisableAnchor == true ? 'active' : '']" @click="onDisableAnchor">
         <t-icon name="map-aiming" />
         <span>
-          {{ isDisableAnchor ? "显示锚点" : "禁用锚点" }}
+          {{ isDisableAnchor ? '显示锚点' : '禁用锚点' }}
         </span>
       </a>
     </div>
@@ -333,27 +277,15 @@
           <span>还原</span>
         </a>
       </a-tooltip>
-      <a
-        class="flex items-center flex-col"
-        @click="onScaleWindow"
-        title="窗口大小"
-      >
+      <a class="flex items-center flex-col" @click="onScaleWindow" title="窗口大小">
         <t-icon name="fullscreen-exit" />
         <span>窗口大小</span>
       </a>
-      <a
-        class="flex items-center flex-col"
-        title="文件管理"
-        @click="openFileManager"
-      >
+      <a class="flex items-center flex-col" title="文件管理" @click="openFileManager">
         <t-icon name="folder-open" />
         <span>文件管理</span>
       </a>
-      <a
-        class="flex items-center flex-col ai-btn"
-        title="AI 助手"
-        @click="onOpenAgentPanel"
-      >
+      <a class="flex items-center flex-col ai-btn" title="AI 助手" @click="onOpenAgentPanel">
         <t-icon name="robot" />
         <span>AI 助手</span>
       </a>
@@ -361,11 +293,7 @@
         <t-icon name="share" />
         <span>分享</span>
       </a>
-      <a
-        class="flex items-center flex-col"
-        href="https://github.com/opendidi/mind"
-        target="_blank"
-      >
+      <a class="flex items-center flex-col" href="https://github.com/opendidi/mind" target="_blank">
         <t-icon name="logo-github" />
         <span>源代码</span>
       </a>
@@ -376,151 +304,144 @@
 </template>
 
 <script lang="ts" setup>
-import {
-  onMounted,
-  onUnmounted,
-  reactive,
-  ref,
-  watch,
-  nextTick,
-} from "vue";
-import { useRouter, useRoute } from "vue-router";
-import { Pen, PenType, deepClone } from "@meta2d/core";
-import FileSaver from "file-saver";
-import { message } from "ant-design-vue";
-import ShareModal from "../Share/index.vue";
-import { useCommonStoreWithOut } from "@/store/modules/common";
-import { apiBlueprintAdd, apiBlueprintModify } from "@/api/blueprint";
-import { apiChatUploadFile } from "@/api/chat";
-import FileManager from "@/components/FileManager/index.vue";
-import { UrlParamsManager } from "@/utils/urlParamsManager";
+import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { Pen, PenType, deepClone } from '@meta2d/core'
+import FileSaver from 'file-saver'
+import { message } from 'ant-design-vue'
+import ShareModal from '../Share/index.vue'
+import { useCommonStoreWithOut } from '@/store/modules/common'
+import { apiBlueprintAdd, apiBlueprintModify } from '@/api/blueprint'
+import { apiChatUploadFile } from '@/api/chat'
+import FileManager from '@/components/FileManager/index.vue'
+import { UrlParamsManager } from '@/utils/urlParamsManager'
 
-const emit = defineEmits(["openAgentPanel"]);
+const emit = defineEmits(['openAgentPanel'])
 
-const router = useRouter();
-const route = useRoute();
+const router = useRouter()
+const route = useRoute()
 
-const fileManagerRef = ref(null);
-const shareModalRef = ref(null);
+const fileManagerRef = ref(null)
+const shareModalRef = ref(null)
 
-const data = ref({});
+const data = ref({})
 
-const isOnDrawLine = ref(false);
+const isOnDrawLine = ref(false)
 
-const dot = ref(false);
+const dot = ref(false)
 
-const isDrawingPencil = ref<boolean>(false);
+const isDrawingPencil = ref<boolean>(false)
 
 // 连线时，自动选中节点锚点
-const isAutoAnchor = ref<boolean>(false);
+const isAutoAnchor = ref<boolean>(false)
 
 // 禁止显示锚点
-const isDisableAnchor = ref<boolean>(false);
+const isDisableAnchor = ref<boolean>(false)
 
 // 是否开启放大镜
-const isShowMagnifier = ref<boolean>(false);
+const isShowMagnifier = ref<boolean>(false)
 
-const visibleMap = ref<boolean>(false);
+const visibleMap = ref<boolean>(false)
 
-const isDrawLine = ref<boolean>(false);
+const isDrawLine = ref<boolean>(false)
 
-const scale = ref(0);
+const scale = ref(0)
 
-let lineWidthVisible = ref(false);
+const lineWidthVisible = ref(false)
 
-const commonStore = useCommonStoreWithOut();
+const commonStore = useCommonStoreWithOut()
 watch(
   () => commonStore.isSave,
-  (v) => {
-    v == "1" ? (dot.value = false) : (dot.value = true);
+  v => {
+    v == '1' ? (dot.value = false) : (dot.value = true)
   },
-  { immediate: true }
-);
+  { immediate: true },
+)
 
 function scaleSubscriber(val: number) {
-  scale.value = Math.round(val * 100);
+  scale.value = Math.round(val * 100)
 }
 
 const drawLine = () => {
   if (isDrawLine.value) {
-    isDrawLine.value = false;
-    meta2d.finishDrawLine();
-    meta2d.drawLine();
-    meta2d.store.options.disableAnchor = true;
+    isDrawLine.value = false
+    meta2d.finishDrawLine()
+    meta2d.drawLine()
+    meta2d.store.options.disableAnchor = true
   } else {
-    isDrawLine.value = true;
-    meta2d.drawLine(meta2d.store.options.drawingLineName);
-    meta2d.store.options.disableAnchor = false;
+    isDrawLine.value = true
+    meta2d.drawLine(meta2d.store.options.drawingLineName)
+    meta2d.store.options.disableAnchor = false
   }
-};
+}
 
-const lineTypes = reactive([
-  { name: "曲线", icon: "#l-curve2", value: "curve" },
-  { name: "线段", icon: "#l-polyline", value: "polyline" },
-  { name: "直线", icon: "#l-line", value: "line" },
-  { name: "脑图曲线", icon: "#l-mind", value: "mind" },
-]);
-const currentLineType = ref("curve");
+const lineTypes = [
+  { name: '曲线', icon: '#l-curve2', value: 'curve' },
+  { name: '线段', icon: '#l-polyline', value: 'polyline' },
+  { name: '直线', icon: '#l-line', value: 'line' },
+  { name: '脑图曲线', icon: '#l-mind', value: 'mind' },
+]
+const currentLineType = ref('curve')
 
 const changeLineType = (value: string) => {
-  currentLineType.value = value;
+  currentLineType.value = value
   if (meta2d) {
-    meta2d.store.options.drawingLineName = value;
-    meta2d.canvas.drawingLineName && (meta2d.canvas.drawingLineName = value);
-    meta2d.store.active?.forEach((pen) => {
-      meta2d.updateLineType(pen, value);
-    });
+    meta2d.store.options.drawingLineName = value
+    meta2d.canvas.drawingLineName && (meta2d.canvas.drawingLineName = value)
+    meta2d.store.active?.forEach(pen => {
+      meta2d.updateLineType(pen, value)
+    })
   }
-};
+}
 
 /**
  * 获取线宽
  */
 function getDataLineWidth() {
-  if (data.value["lineWidth"]) {
+  if (data.value['lineWidth']) {
     meta2d.setValue({
       lineWidth: data.value.lineWidth,
-    });
-    useCommonStoreWithOut().setTopology(meta2d);
+    })
+    useCommonStoreWithOut().setTopology(meta2d)
   }
 }
 
-const fromArrow = ref("");
+const fromArrow = ref('')
 const fromArrows = [
-  { icon: "#l-line", value: "" },
-  { icon: "#l-from-triangle", value: "triangle" },
-  { icon: "#l-from-diamond", value: "diamond" },
-  { icon: "#l-from-circle", value: "circle" },
-  { icon: "#l-from-lineDown", value: "lineDown" },
-  { icon: "#l-from-lineUp", value: "lineUp" },
-  { icon: "#l-from-triangleSolid", value: "triangleSolid" },
-  { icon: "#l-from-diamondSolid", value: "diamondSolid" },
-  { icon: "#l-from-circleSolid", value: "circleSolid" },
-  { icon: "#l-from-line", value: "line" },
-];
-const toArrow = ref("");
+  { icon: '#l-line', value: '' },
+  { icon: '#l-from-triangle', value: 'triangle' },
+  { icon: '#l-from-diamond', value: 'diamond' },
+  { icon: '#l-from-circle', value: 'circle' },
+  { icon: '#l-from-lineDown', value: 'lineDown' },
+  { icon: '#l-from-lineUp', value: 'lineUp' },
+  { icon: '#l-from-triangleSolid', value: 'triangleSolid' },
+  { icon: '#l-from-diamondSolid', value: 'diamondSolid' },
+  { icon: '#l-from-circleSolid', value: 'circleSolid' },
+  { icon: '#l-from-line', value: 'line' },
+]
+const toArrow = ref('')
 const toArrows = [
-  { icon: "#l-line", value: "" },
-  { icon: "#l-to-triangle", value: "triangle" },
-  { icon: "#l-to-diamond", value: "diamond" },
-  { icon: "#l-to-circle", value: "circle" },
-  { icon: "#l-to-lineDown", value: "lineDown" },
-  { icon: "#l-to-lineUp", value: "lineUp" },
-  { icon: "#l-to-triangleSolid", value: "triangleSolid" },
-  { icon: "#l-to-diamondSolid", value: "diamondSolid" },
-  { icon: "#l-to-circleSolid", value: "circleSolid" },
-  { icon: "#l-to-line", value: "line" },
-];
+  { icon: '#l-line', value: '' },
+  { icon: '#l-to-triangle', value: 'triangle' },
+  { icon: '#l-to-diamond', value: 'diamond' },
+  { icon: '#l-to-circle', value: 'circle' },
+  { icon: '#l-to-lineDown', value: 'lineDown' },
+  { icon: '#l-to-lineUp', value: 'lineUp' },
+  { icon: '#l-to-triangleSolid', value: 'triangleSolid' },
+  { icon: '#l-to-diamondSolid', value: 'diamondSolid' },
+  { icon: '#l-to-circleSolid', value: 'circleSolid' },
+  { icon: '#l-to-line', value: 'line' },
+]
 
 const changeFromArrow = (value: string) => {
-  fromArrow.value = value;
+  fromArrow.value = value
   // 画布默认值
-  meta2d.store.data.fromArrow = value;
+  meta2d.store.data.fromArrow = value
   // 活动层的箭头都变化
   if (meta2d.store.active) {
     meta2d.store.active.forEach((pen: Pen) => {
       if (pen.type === PenType.Line) {
-        pen.fromArrow = value;
+        pen.fromArrow = value
         meta2d.setValue(
           {
             id: pen.id,
@@ -528,23 +449,23 @@ const changeFromArrow = (value: string) => {
           },
           {
             render: false,
-          }
-        );
+          },
+        )
       }
-    });
-    meta2d.render();
+    })
+    meta2d.render()
   }
-};
+}
 
 const changeToArrow = (value: string) => {
-  toArrow.value = value;
+  toArrow.value = value
   // 画布默认值
-  meta2d.store.data.toArrow = value;
+  meta2d.store.data.toArrow = value
   // 活动层的箭头都变化
   if (meta2d.store.active) {
     meta2d.store.active.forEach((pen: Pen) => {
       if (pen.type === PenType.Line) {
-        pen.toArrow = value;
+        pen.toArrow = value
         meta2d.setValue(
           {
             id: pen.id,
@@ -552,277 +473,285 @@ const changeToArrow = (value: string) => {
           },
           {
             render: false,
-          }
-        );
+          },
+        )
       }
-    });
-    meta2d.render();
+    })
+    meta2d.render()
   }
-};
+}
 
 const createBluePrint = () => {
-  UrlParamsManager.clearParams("");
+  UrlParamsManager.clearParams('')
   meta2d.open({
-    name: "",
+    name: '',
     pens: [],
     lines: [],
-    background: "rgba(255, 255, 255, 1)",
-    color: "",
-    penBackground: "",
-    bkImage: "",
-    grid: "0",
-    gridColor: "",
-    gridSize: "",
-    gridRotate: "",
-    rule: "0",
-    ruleColor: "",
-    initJs: "",
+    background: 'rgba(255, 255, 255, 1)',
+    color: '',
+    penBackground: '',
+    bkImage: '',
+    grid: '0',
+    gridColor: '',
+    gridSize: '',
+    gridRotate: '',
+    rule: '0',
+    ruleColor: '',
+    initJs: '',
     https: [],
-    thumbnail: "",
-  });
-  meta2d.store.data.locked = 0;
-  meta2d.store.data.fromArrow = "";
-  meta2d.store.data.toArrow = "triangleSolid";
-  localStorage.removeItem("meta2d");
-};
+    thumbnail: '',
+  })
+  meta2d.store.data.locked = 0
+  meta2d.store.data.fromArrow = ''
+  meta2d.store.data.toArrow = 'triangleSolid'
+  localStorage.removeItem('meta2d')
+}
 
 const downloadJson = () => {
-  const data: any = meta2d.data();
+  const data: any = meta2d.data()
   FileSaver.saveAs(
     new Blob([JSON.stringify(data)], {
-      type: "text/plain;charset=utf-8",
+      type: 'text/plain;charset=utf-8',
     }),
-    `${data.name || "test"}.json`
-  );
-};
+    `${data.name || 'test'}.json`,
+  )
+}
 
 const downloadPng = () => {
-  let name = (meta2d.store.data as any).name;
+  let name = (meta2d.store.data as any).name
   if (name) {
-    name += ".png";
+    name += '.png'
   }
-  meta2d.downloadPng(name);
-};
+  meta2d.downloadPng(name)
+}
 
 // 判断该画笔 是否是组合为状态中 展示的画笔
 function isShowChild(pen: any, store: any) {
-  let selfPen = pen;
+  let selfPen = pen
   while (selfPen && selfPen.parentId) {
-    const oldPen = selfPen;
-    selfPen = store.pens[selfPen.parentId];
-    const showChildIndex = selfPen?.calculative?.showChild;
+    const oldPen = selfPen
+    selfPen = store.pens[selfPen.parentId]
+    const showChildIndex = selfPen?.calculative?.showChild
     if (showChildIndex != undefined) {
-      const showChildId = selfPen.children[showChildIndex];
+      const showChildId = selfPen.children[showChildIndex]
       if (showChildId !== oldPen.id) {
-        return false;
+        return false
       }
     }
   }
-  return true;
+  return true
 }
 
 function downloadSvg() {
   if (!C2S) {
-    message.error("请先加载canvas2svg.js插件");
-    return;
+    message.error('请先加载canvas2svg.js插件')
+    return
   }
 
-  const rect: any = meta2d.getRect();
-  rect.x -= 10;
-  rect.y -= 10;
-  const ctx = new C2S(rect.width + 20, rect.height + 20);
-  ctx.textBaseline = "middle";
+  const rect: any = meta2d.getRect()
+  rect.x -= 10
+  rect.y -= 10
+  const ctx = new C2S(rect.width + 20, rect.height + 20)
+  ctx.textBaseline = 'middle'
   for (const pen of meta2d.store.data.pens) {
     if (pen.visible == false || !isShowChild(pen, meta2d.store)) {
-      continue;
+      continue
     }
-    meta2d.renderPenRaw(ctx, pen, rect);
+    meta2d.renderPenRaw(ctx, pen, rect)
   }
 
-  let mySerializedSVG = ctx.getSerializedSvg();
+  let mySerializedSVG = ctx.getSerializedSvg()
   if (meta2d.store.data.background) {
-    mySerializedSVG = mySerializedSVG.replace("{{bk}}", "");
+    mySerializedSVG = mySerializedSVG.replace('{{bk}}', '')
     mySerializedSVG = mySerializedSVG.replace(
-      "{{bkRect}}",
-      `<rect x="0" y="0" width="100%" height="100%" fill="${meta2d.store.data.background}"></rect>`
-    );
+      '{{bkRect}}',
+      `<rect x="0" y="0" width="100%" height="100%" fill="${meta2d.store.data.background}"></rect>`,
+    )
   } else {
-    mySerializedSVG = mySerializedSVG.replace("{{bk}}", "");
-    mySerializedSVG = mySerializedSVG.replace("{{bkRect}}", "");
+    mySerializedSVG = mySerializedSVG.replace('{{bk}}', '')
+    mySerializedSVG = mySerializedSVG.replace('{{bkRect}}', '')
   }
 
-  mySerializedSVG = mySerializedSVG.replace(/--le5le--/g, "&#x");
+  mySerializedSVG = mySerializedSVG.replace(/--le5le--/g, '&#x')
 
-  const urlObject: any = (window as any).URL || window;
-  const export_blob = new Blob([mySerializedSVG]);
-  const url = urlObject.createObjectURL(export_blob);
+  const urlObject: any = (window as any).URL || window
+  const export_blob = new Blob([mySerializedSVG])
+  const url = urlObject.createObjectURL(export_blob)
 
-  const a = document.createElement("a");
-  a.setAttribute(
-    "download",
-    `${(meta2d.store.data as any).name || "le5le.meta2d"}.svg`
-  );
-  a.setAttribute("href", url);
-  a.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  const a = document.createElement('a')
+  a.setAttribute('download', `${(meta2d.store.data as any).name || 'le5le.meta2d'}.svg`)
+  a.setAttribute('href', url)
+  document.body.appendChild(a)
+  a.dispatchEvent(new MouseEvent('click', { bubbles: true, cancelable: true }))
+  document.body.removeChild(a)
 }
 
 function onUndo() {
-  meta2d.undo();
+  meta2d.undo()
 }
 
 function onRedo() {
-  meta2d.redo();
+  meta2d.redo()
 }
 
 const onOpenMap = () => {
-  visibleMap.value = visibleMap.value ? false : true;
+  visibleMap.value = visibleMap.value ? false : true
   if (visibleMap.value) {
-    meta2d.showMap();
+    meta2d.showMap()
   } else {
-    meta2d.hideMap();
+    meta2d.hideMap()
   }
-};
+}
 
 function onAddShape(event: DragEvent | MouseEvent, name: string) {
-  event.stopPropagation();
-  let data: any;
+  event.stopPropagation()
+  let data: any
   switch (name) {
-    case "text":
+    case 'text':
       // 构建一个文本图元
       data = {
-        text: "text",
+        text: 'text',
         width: 100,
         height: 20,
-        name: "text",
+        name: 'text',
         visible: true,
-      };
-      break;
-    case "line":
+      }
+      break
+    case 'line':
       // 构建一个直线图元
       data = {
         anchors: [
-          { id: "0", x: 1, y: 0 },
-          { id: "1", x: 0, y: 1 },
+          { id: '0', x: 1, y: 0 },
+          { id: '1', x: 0, y: 1 },
         ],
         width: 100,
         height: 100,
-        name: "line",
-        lineName: "line",
+        name: 'line',
+        lineName: 'line',
         type: 1,
         visible: true,
-      };
-      break;
+      }
+      break
   }
   if (!(event as DragEvent).dataTransfer) {
     // 支持点击画布添加
-    meta2d.canvas.addCaches = deepClone([data]);
+    meta2d.canvas.addCaches = deepClone([data])
   } else {
     // 支持拖拽添加
-    (event as DragEvent).dataTransfer?.setData("Meta2d", JSON.stringify(data));
+    ;(event as DragEvent).dataTransfer?.setData('Meta2d', JSON.stringify(data))
   }
 }
 
 const onScaleDefault = () => {
-  meta2d.scale(1);
-  meta2d.centerView();
-};
+  meta2d.scale(1)
+  meta2d.centerView()
+}
 
 const onScaleWindow = () => {
-  meta2d.fitView();
-};
+  meta2d.fitView()
+}
 
 async function onView() {
   // 先停止动画，避免数据波动
-  meta2d.stopAnimate();
-  const savedId = await onSave(true);
-  if (!savedId) return;
+  meta2d.stopAnimate()
+  const savedId = await onSave(true)
+  if (!savedId) return
   // 跳转到预览页面
   router.push({
-    path: "/preview",
+    path: '/preview',
     query: {
-      r: Date.now() + "",
+      r: Date.now() + '',
       id: savedId,
     },
-  });
+  })
 }
 
 function onOpenAgentPanel() {
-  emit("openAgentPanel");
+  emit('openAgentPanel')
 }
 
 function onSave(flag: boolean): Promise<string | false> | boolean {
-  const canvasData: any = meta2d.data();
+  const canvasData: any = meta2d.data()
   if (!canvasData.pens.length) {
-    message.error("无法保存，画布可能没有画笔/画布大小超出浏览器最大限制");
-    return false;
+    message.error('无法保存，画布可能没有画笔/画布大小超出浏览器最大限制')
+    return false
   }
-  localStorage.setItem("meta2d", JSON.stringify(canvasData));
-  commonStore.setTopology(meta2d);
+  localStorage.setItem('meta2d', JSON.stringify(canvasData))
+  commonStore.setTopology(meta2d)
   if (flag) {
     // 全量序列化（Meta2D 确保前向兼容）
-    const params: any = { ...canvasData };
+    const params: any = { ...canvasData }
 
     // 确保 API 期望的字符串字段正确序列化
-    if (typeof params.https !== "string") params.https = JSON.stringify(params.https) || "";
-    if (typeof params.pens !== "string") params.pens = JSON.stringify(params.pens) || "";
+    if (typeof params.https !== 'string') params.https = JSON.stringify(params.https) || ''
+    if (typeof params.pens !== 'string') params.pens = JSON.stringify(params.pens) || ''
 
     // 先保存（不含缩略图），保存成功后再异步生成缩略图
-    params.thumbnail = "";
+    params.thumbnail = ''
 
-    if (!route.query["id"]) {
-      return apiBlueprintAdd(params).then((res) => {
-        commonStore.setIsSave("1");
-        message.success("保存成功");
-        UrlParamsManager.setParams({ id: res.id });
-        canvasData["id"] = res.id;
-        // 异步更新缩略图
-        generateThumbnail((thumbnailUrl) => {
-          if (thumbnailUrl) {
-            apiBlueprintModify({ id: res.id, thumbnail: thumbnailUrl });
-          }
-        });
-        return res.id as string;
-      }).catch((err) => {
-        message.error("保存失败，请重试");
-        console.error("[onSave] add blueprint failed:", err);
-        return false;
-      });
+    if (!route.query['id']) {
+      return apiBlueprintAdd(params)
+        .then(res => {
+          commonStore.setIsSave('1')
+          message.success('保存成功')
+          UrlParamsManager.setParams({ id: res.id })
+          canvasData['id'] = res.id
+          // 异步更新缩略图
+          generateThumbnail(thumbnailUrl => {
+            if (thumbnailUrl) {
+              apiBlueprintModify({ id: res.id, thumbnail: thumbnailUrl })
+            }
+          })
+          return res.id as string
+        })
+        .catch(err => {
+          message.error('保存失败，请重试')
+          console.error('[onSave] add blueprint failed:', err)
+          return false
+        })
     } else {
-      params.id = route.query["id"];
-      return apiBlueprintModify(params).then(() => {
-        commonStore.setIsSave("1");
-        message.success("保存成功");
-        // 异步更新缩略图
-        generateThumbnail((thumbnailUrl) => {
-          if (thumbnailUrl) {
-            apiBlueprintModify({ id: params.id, thumbnail: thumbnailUrl });
-          }
-        });
-        return params.id as string;
-      }).catch((err) => {
-        message.error("保存失败，请重试");
-        console.error("[onSave] modify blueprint failed:", err);
-        return false;
-      });
+      params.id = route.query['id']
+      return apiBlueprintModify(params)
+        .then(() => {
+          commonStore.setIsSave('1')
+          message.success('保存成功')
+          // 异步更新缩略图
+          generateThumbnail(thumbnailUrl => {
+            if (thumbnailUrl) {
+              apiBlueprintModify({ id: params.id, thumbnail: thumbnailUrl })
+            }
+          })
+          return params.id as string
+        })
+        .catch(err => {
+          message.error('保存失败，请重试')
+          console.error('[onSave] modify blueprint failed:', err)
+          return false
+        })
     }
   }
-  return true;
+  return true
 }
 
 function generateThumbnail(callback: (url: string) => void) {
   try {
-    meta2d.toPng(20, async (blob: Blob | null) => {
-      if (!blob) return callback('');
-      try {
-        const file = new File([blob], `thumb_${Date.now()}.png`, { type: 'image/png' });
-        const result = await apiChatUploadFile(file);
-        callback(result?.url || '');
-      } catch {
-        callback('');
-      }
-    }, false, 400);
+    meta2d.toPng(
+      20,
+      async (blob: Blob | null) => {
+        if (!blob) return callback('')
+        try {
+          const file = new File([blob], `thumb_${Date.now()}.png`, { type: 'image/png' })
+          const result = await apiChatUploadFile(file)
+          callback(result?.url || '')
+        } catch {
+          callback('')
+        }
+      },
+      false,
+      400,
+    )
   } catch {
-    callback('');
+    callback('')
   }
 }
 
@@ -830,37 +759,37 @@ function generateThumbnail(callback: (url: string) => void) {
  * 操作画布锁定
  */
 function setLocked() {
-  let { locked }: any = data.value;
-  let key = 0;
+  let { locked }: any = data.value
+  let key = 0
   switch (locked) {
     case 0:
-      key = 1;
-      break;
+      key = 1
+      break
     case 1:
-      key = 2;
-      break;
+      key = 2
+      break
     case 2:
-      key = 0;
-      break;
+      key = 0
+      break
   }
-  data.value.locked = key; //meta2d.store.data;
-  onSave(false);
+  data.value.locked = key //meta2d.store.data;
+  onSave(false)
 }
 
 /**
  * 增加/删除锚点
  */
-const onToggleAnchorMode = () => meta2d.toggleAnchorMode();
+const onToggleAnchorMode = () => meta2d.toggleAnchorMode()
 
 /**
  * 添加手柄
  */
-const onAddAnchorHand = () => meta2d.addAnchorHand();
+const onAddAnchorHand = () => meta2d.addAnchorHand()
 
 /**
  * 删除手柄
  */
-const onRemoveAnchorHand = () => meta2d.removeAnchorHand();
+const onRemoveAnchorHand = () => meta2d.removeAnchorHand()
 
 /**
  * 钢笔绘制线条
@@ -868,12 +797,12 @@ const onRemoveAnchorHand = () => meta2d.removeAnchorHand();
 function onDrawLine() {
   if (!isOnDrawLine.value) {
     // 开始绘画：curve。除了curve，还有polyline、line、mind
-    meta2d.drawLine("curve");
-    isOnDrawLine.value = true;
+    meta2d.drawLine('curve')
+    isOnDrawLine.value = true
   } else {
     // 手动完成绘画
-    meta2d.finishDrawLine();
-    isOnDrawLine.value = false;
+    meta2d.finishDrawLine()
+    isOnDrawLine.value = false
   }
 }
 
@@ -882,11 +811,11 @@ function onDrawLine() {
  */
 function onDrawingPencil() {
   if (!isDrawingPencil.value) {
-    meta2d.drawingPencil();
-    isDrawingPencil.value = true;
+    meta2d.drawingPencil()
+    isDrawingPencil.value = true
   } else {
-    meta2d.stopPencil();
-    isDrawingPencil.value = false;
+    meta2d.stopPencil()
+    isDrawingPencil.value = false
   }
 }
 
@@ -897,13 +826,13 @@ function onDisableAnchor() {
   if (!isDisableAnchor.value) {
     meta2d.setOptions({
       disableAnchor: true,
-    });
-    isDisableAnchor.value = true;
+    })
+    isDisableAnchor.value = true
   } else {
     meta2d.setOptions({
       disableAnchor: false,
-    });
-    isDisableAnchor.value = false;
+    })
+    isDisableAnchor.value = false
   }
 }
 
@@ -914,13 +843,13 @@ function onAutoAnchor() {
   if (!isAutoAnchor.value) {
     meta2d.setOptions({
       autoAnchor: true,
-    });
-    isAutoAnchor.value = true;
+    })
+    isAutoAnchor.value = true
   } else {
     meta2d.setOptions({
       autoAnchor: false,
-    });
-    isAutoAnchor.value = false;
+    })
+    isAutoAnchor.value = false
   }
 }
 
@@ -929,11 +858,11 @@ function onAutoAnchor() {
  */
 function onShowMagnifier() {
   if (!isShowMagnifier.value) {
-    meta2d.showMagnifier();
-    isShowMagnifier.value = true;
+    meta2d.showMagnifier()
+    isShowMagnifier.value = true
   } else {
-    meta2d.hideMagnifier();
-    isShowMagnifier.value = false;
+    meta2d.hideMagnifier()
+    isShowMagnifier.value = false
   }
 }
 
@@ -941,46 +870,56 @@ function onShowMagnifier() {
  * 打开素材库
  */
 function openFileManager() {
-  const fileManager = fileManagerRef.value;
-  fileManager.visible = true;
+  const fileManager = fileManagerRef.value
+  fileManager.visible = true
   nextTick(() => {
-    fileManager.initMaterialFolder().then((res) => {
-      fileManager.selectedKeys = [res];
-      fileManager.queryParam.parent_id = res;
-      fileManager.init();
-    });
-  });
+    fileManager.initMaterialFolder().then(res => {
+      fileManager.selectedKeys = [res]
+      fileManager.queryParam.parent_id = res
+      fileManager.init()
+    })
+  })
 }
 
 /**
  * 分享
  */
 function onSearch() {
-  shareModalRef.value.visible = true;
+  shareModalRef.value.visible = true
+}
+
+function onMeta2dReady() {
+  if (!meta2d || !meta2d.store) {
+    // meta2d global exists but store not yet initialized — retry once
+    setTimeout(onMeta2dReady, 50)
+    return
+  }
+  data.value = meta2d.store.data
+  if (meta2d.store.data['lineWidth'] == undefined) {
+    meta2d.store.data['lineWidth'] = 1
+    meta2d.setValue({ lineWidth: 1 })
+  }
+  scaleSubscriber(meta2d.store.data.scale)
+  meta2d.on('scale', scaleSubscriber)
+  const options: any = meta2d.getOptions()
+  isAutoAnchor.value = options.autoAnchor
 }
 
 onMounted(() => {
-  const timer = setInterval(() => {
-    if (meta2d) {
-      data.value = meta2d.store.data;
-      if (meta2d.store.data["lineWidth"] == undefined) {
-        meta2d.store.data["lineWidth"] = 1;
-        meta2d.setValue({
-          lineWidth: 1,
-        });
-      }
-      clearInterval(timer);
-      // 获取初始缩放比例
-      scaleSubscriber(meta2d.store.data.scale);
-      // 监听缩放
-      meta2d.on("scale", scaleSubscriber);
-      let options: any = meta2d.getOptions();
-      // 自动锚点
-      isAutoAnchor.value = options.autoAnchor;
-    }
-  }, 200);
-});
+  window.addEventListener('meta2d:ready', onMeta2dReady, { once: true })
+  // Safety timeout in case event was already dispatched before mount
+  if (meta2d) {
+    onMeta2dReady()
+  } else {
+    setTimeout(() => {
+      if (meta2d) onMeta2dReady()
+    }, 2000)
+  }
+})
 
+onUnmounted(() => {
+  if (meta2d) meta2d.off('scale', scaleSubscriber)
+})
 </script>
 
 <style lang="less" scoped>

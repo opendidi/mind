@@ -131,6 +131,29 @@ from app.util.agent_core import AgentSession
 - 错误级别：业务异常用 `logging.warning()`，系统错误用 `logging.error()`
 - 格式：`f"模块名 操作 错误：{e}"`
 
+### Vue 模板规范
+
+- `v-if` / `v-for` / `v-else-if` / `v-else` / `:key` 必须包裹在 `<template>` 标签中，禁止直接写在 HTML 元素或组件上
+
+```vue
+<!-- ✅ 推荐 -->
+<template v-if="visible">
+  <div class="box">...</div>
+</template>
+<template v-else>
+  <OtherComponent />
+</template>
+
+<template v-for="item in list" :key="item.id">
+  <MsgRow :message="item" />
+</template>
+
+<!-- ❌ 禁止 -->
+<div v-if="visible" class="box">...</div>
+<OtherComponent v-else />
+<MsgRow v-for="item in list" :key="item.id" :message="item" />
+```
+
 ### 错误处理
 
 - 统一中英文错误消息（用户可读 → 中文，内部日志 → 英文）

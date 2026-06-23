@@ -35,12 +35,7 @@
                   <a-dropdown :trigger="['contextmenu']">
                     <span>{{ title }}</span>
                     <template #overlay>
-                      <a-menu
-                        @click="
-                          ({ key: menuKey }) =>
-                            onContextMenuClick(treeKey, menuKey)
-                        "
-                      >
+                      <a-menu @click="({ key: menuKey }) => onContextMenuClick(treeKey, menuKey)">
                         <a-menu-item key="1">
                           <delete-outlined />
                           <span>删除</span>
@@ -98,10 +93,7 @@
                   :class="[!clipboard || spinning ? 'disabled' : '']"
                   @click="onPaste"
                 >
-                  <span
-                    v-if="clipboard"
-                    class="clipboard-badge"
-                  >{{ clipboard.action === 'cut' ? '✂' : '📋' }}</span>
+                  <span v-if="clipboard" class="clipboard-badge">{{ clipboard.action === 'cut' ? '✂' : '📋' }}</span>
                 </li>
                 <li
                   title="重命名"
@@ -112,17 +104,11 @@
                 <li
                   title="删除"
                   class="opt-item icon ico-trash"
-                  :class="[
-                    selectedRowKeys.length == 0 || spinning ? 'disabled' : '',
-                  ]"
+                  :class="[selectedRowKeys.length == 0 || spinning ? 'disabled' : '']"
                   @click="onDelete"
                 ></li>
                 <li class="opt-item liider"></li>
-                <li
-                  title="新建目录"
-                  class="opt-item icon ico-add-dir"
-                  @click="onCreateDirectory"
-                ></li>
+                <li title="新建目录" class="opt-item icon ico-add-dir" @click="onCreateDirectory"></li>
                 <li
                   title="全选"
                   class="opt-item icon ico-select-all"
@@ -132,18 +118,10 @@
                 <li
                   title="切换布局"
                   class="opt-item icon ico-list-layout"
-                  :class="[
-                    currentLayout == 'list'
-                      ? 'ico-list-layout'
-                      : 'ico-grid-layout',
-                  ]"
+                  :class="[currentLayout == 'list' ? 'ico-list-layout' : 'ico-grid-layout']"
                   @click="onToggleLayouts"
                 ></li>
-                <li
-                  title="同步文件"
-                  class="opt-item icon ico-refresh"
-                  @click="onRefresh()"
-                ></li>
+                <li title="同步文件" class="opt-item icon ico-refresh" @click="onRefresh()"></li>
               </ul>
               <a-form layout="inline">
                 <a-form-item>
@@ -160,9 +138,7 @@
                 </a-form-item>
               </a-form>
             </div>
-            <div
-              class="crumb-sort-bar flex items-center justify-between w-full"
-            >
+            <div class="crumb-sort-bar flex items-center justify-between w-full">
               <a-breadcrumb>
                 <a-breadcrumb-item @click="navigateToPathSegment(-1)" style="cursor: pointer">
                   <home-outlined />
@@ -181,58 +157,38 @@
                 </template>
               </a-breadcrumb>
               <div class="sort flex items-center">
-                <span title="切换排序类型" class="sort-item sort-date">
-                  时间排序
-                </span>
+                <span title="切换排序类型" class="sort-item sort-date"> 时间排序 </span>
                 <i
                   title="切换排序次序"
                   class="sort-item icon ml-1"
-                  :class="[
-                    queryParam.sort_order == 'DESC' ? 'ico-down' : 'ico-up',
-                  ]"
+                  :class="[queryParam.sort_order == 'DESC' ? 'ico-down' : 'ico-up']"
                   @click="onSort()"
                 ></i>
               </div>
             </div>
           </div>
           <template v-if="dataSource.length !== 0">
-            <div
-              class="file-list"
-              :class="[currentLayout == 'grid' ? 'layout-grid' : 'layout-list']"
-            >
+            <div class="file-list" :class="[currentLayout == 'grid' ? 'layout-grid' : 'layout-list']">
               <template v-for="(item, idx) in dataSource" :key="idx">
                 <div
                   class="file-item"
-                  :class="[
-                    actionIndex == idx || selectedRowKeys.includes(item.id)
-                      ? 'selected'
-                      : '',
-                  ]"
+                  :class="[actionIndex == idx || selectedRowKeys.includes(item.id) ? 'selected' : '']"
                   @click="onSelectFile(item, idx)"
                   @dblclick="onOperateFileOrDir(item)"
                 >
                   <template v-if="mode == 'multiple'">
-                    <div
-                      class="checkbox-wrap"
-                      @click.native.stop="onMultipleChoices(item, idx)"
-                    >
+                    <div class="checkbox-wrap" @click.native.stop="onMultipleChoices(item, idx)">
                       <div class="icon ico-checkbox"></div>
                     </div>
                   </template>
-                  <div
-                    class="bg-thumb"
-                    :style="{ backgroundImage: formatBackgroundImage(item) }"
-                  ></div>
+                  <div class="bg-thumb" :style="{ backgroundImage: formatBackgroundImage(item) }"></div>
                   <div class="title">{{ item.name }}</div>
                   <template v-if="item.type !== 'dir'">
                     <div class="preview">
                       <span>预览</span>
                     </div>
                   </template>
-                  <div
-                    class="icon"
-                    :class="[item.lock == 1 ? 'ico-lock-on-face' : '']"
-                  ></div>
+                  <div class="icon" :class="[item.lock == 1 ? 'ico-lock-on-face' : '']"></div>
                   <div class="date">{{ item.created_at }}</div>
                 </div>
               </template>
@@ -259,14 +215,7 @@
 </template>
 
 <script lang="ts" setup>
-import {
-  ref,
-  createVNode,
-  watch,
-  nextTick,
-  computed,
-  onUnmounted,
-} from "vue";
+import { ref, createVNode, watch, nextTick, computed, onUnmounted } from 'vue'
 import {
   apiMaterialList,
   apiMaterialFolder,
@@ -274,10 +223,10 @@ import {
   apiMaterialCreatedFolder,
   apiMaterialCopy,
   apiMaterialScissors,
-} from "@/api/material";
-import { FileUpload, FilePreview, Rename } from "./components/index";
-import { getFileIconByExt } from "./config.ts";
-import { Modal, Empty, message } from "ant-design-vue";
+} from '@/api/material'
+import { FileUpload, FilePreview, Rename } from './components/index'
+import { getFileIconByExt } from './config.ts'
+import { Modal, Empty, message } from 'ant-design-vue'
 import {
   FolderOutlined,
   FolderOpenOutlined,
@@ -285,193 +234,199 @@ import {
   DeleteOutlined,
   HomeOutlined,
   SearchOutlined,
-} from "@ant-design/icons-vue";
+} from '@ant-design/icons-vue'
 
-const fileUploadRef = ref(null);
-const filePreviewRef = ref(null);
-const renameRef = ref(null);
+const fileUploadRef = ref(null)
+const filePreviewRef = ref(null)
+const renameRef = ref(null)
 
 const props = defineProps({
   mode: {
     type: String,
-    default: "single", // single: 单选, multiple: 多选, view 查看
+    default: 'single', // single: 单选, multiple: 多选, view 查看
   },
-});
+})
 
-const fileUpload = ref(null);
+const fileUpload = ref(null)
 
-const simpleImage = Empty.PRESENTED_IMAGE_SIMPLE;
+const simpleImage = Empty.PRESENTED_IMAGE_SIMPLE
 
-const emit = defineEmits(["oks"]);
+const emit = defineEmits(['oks'])
 
-const currentPath = ref([]);
+const currentPath = ref([])
 
 const bodyStyle = ref({
-  padding: "0",
-});
+  padding: '0',
+})
 
-const mode = ref(props.mode);
+const mode = ref(props.mode)
 
 // 剪贴板：{ data, action: 'copy' | 'cut' }
-const clipboard = ref<{ data: any; action: 'copy' | 'cut' } | null>(null);
+const clipboard = ref<{ data: any; action: 'copy' | 'cut' } | null>(null)
 
 const footer = computed(() => {
-  if (mode.value === "view") {
-    return null;
+  if (mode.value === 'view') {
+    return null
   }
-  return undefined;
-});
+  return undefined
+})
 
-const actionIndex = ref(-1);
+const actionIndex = ref(-1)
 
 const queryParam = ref({
-  keyword: "",
-  type: "",
-  parent_id: "",
-  sort_order: "DESC",
-});
+  keyword: '',
+  type: '',
+  parent_id: '',
+  sort_order: 'DESC',
+})
 
-const selectedKeys = ref([]);
+const selectedKeys = ref([])
 
-const currentLayout = ref("grid");
+const currentLayout = ref('grid')
 
-const spinning = ref(false);
+const spinning = ref(false)
 
-const visible = ref(false);
+const visible = ref(false)
 
-const selectedRowKeys = ref([]);
+const selectedRowKeys = ref([])
 
 const ipagination = ref({
   current: 1,
   pageSize: 10,
-  pageSizeOptions: ["10", "20", "30"],
+  pageSizeOptions: ['10', '20', '30'],
   showTotal: (total, range) => {
-    return range[0] + "-" + range[1] + " 共" + total + "条";
+    return range[0] + '-' + range[1] + ' 共' + total + '条'
   },
   showQuickJumper: true,
   showSizeChanger: true,
   total: 0,
-});
+})
 
-const dataSource = ref([]);
+const dataSource = ref([])
 
-const folderTreeData = ref([]);
+const folderTreeData = ref([])
 
 // 导航历史
 interface HistoryEntry {
-  parent_id: string;
-  currentPath: string[];
-  selectedKeys: (string | number)[];
-  selectedRowKeys: (string | number)[];
+  parent_id: string
+  currentPath: string[]
+  selectedKeys: (string | number)[]
+  selectedRowKeys: (string | number)[]
 }
-const historyStack = ref<HistoryEntry[]>([]);
-const historyIndex = ref(-1);
-let isNavigating = false;
+const historyStack = ref<HistoryEntry[]>([])
+const historyIndex = ref(-1)
+let isNavigating = false
 
 function pushHistory() {
-  if (isNavigating) return;
+  if (isNavigating) return
   // Skip duplicate consecutive entries
-  const last = historyStack.value[historyIndex.value];
-  if (last && last.parent_id === queryParam.value.parent_id) return;
+  const last = historyStack.value[historyIndex.value]
+  if (last && last.parent_id === queryParam.value.parent_id) return
   const entry: HistoryEntry = {
     parent_id: queryParam.value.parent_id,
     currentPath: [...currentPath.value],
     selectedKeys: [...selectedKeys.value],
     selectedRowKeys: [...selectedRowKeys.value],
-  };
+  }
   // Truncate forward history if we're not at the tip
   if (historyIndex.value < historyStack.value.length - 1) {
-    historyStack.value = historyStack.value.slice(0, historyIndex.value + 1);
+    historyStack.value = historyStack.value.slice(0, historyIndex.value + 1)
   }
-  historyStack.value.push(entry);
-  historyIndex.value = historyStack.value.length - 1;
+  historyStack.value.push(entry)
+  historyIndex.value = historyStack.value.length - 1
 }
 
 function goBack() {
-  if (historyIndex.value <= 0) return;
-  historyIndex.value--;
-  applyHistoryEntry(historyStack.value[historyIndex.value]);
+  if (historyIndex.value <= 0) return
+  historyIndex.value--
+  applyHistoryEntry(historyStack.value[historyIndex.value])
 }
 
 function goForward() {
-  if (historyIndex.value >= historyStack.value.length - 1) return;
-  historyIndex.value++;
-  applyHistoryEntry(historyStack.value[historyIndex.value]);
+  if (historyIndex.value >= historyStack.value.length - 1) return
+  historyIndex.value++
+  applyHistoryEntry(historyStack.value[historyIndex.value])
 }
 
 function applyHistoryEntry(entry: HistoryEntry) {
-  isNavigating = true;
-  queryParam.value.parent_id = entry.parent_id;
-  currentPath.value = entry.currentPath;
-  selectedKeys.value = entry.selectedKeys;
-  selectedRowKeys.value = entry.selectedRowKeys;
-  actionIndex.value = -1;
-  init();
-  nextTick(() => { isNavigating = false; });
+  isNavigating = true
+  queryParam.value.parent_id = entry.parent_id
+  currentPath.value = entry.currentPath
+  selectedKeys.value = entry.selectedKeys
+  selectedRowKeys.value = entry.selectedRowKeys
+  actionIndex.value = -1
+  init()
+  nextTick(() => {
+    isNavigating = false
+  })
 }
 
 // Track pending image loads so they can be cancelled on unmount / re-init
-let pendingImages: HTMLImageElement[] = [];
+let pendingImages: HTMLImageElement[] = []
 
 /**
  * 初始化资源文件
  */
 async function init() {
-  spinning.value = true;
+  spinning.value = true
   // Cancel any in-flight image onload handlers from previous init
-  pendingImages.forEach((img) => { img.onload = null; });
-  pendingImages = [];
+  pendingImages.forEach(img => {
+    img.onload = null
+  })
+  pendingImages = []
 
-  let { current, pageSize } = ipagination.value;
+  let { current, pageSize } = ipagination.value
   let data: Record<string, any> = {
     current,
     page_size: pageSize,
-  };
+  }
   for (const [key, val] of Object.entries(queryParam.value)) {
-    if (val !== "") {
-      data[key] = val;
+    if (val !== '') {
+      data[key] = val
     }
   }
-  await apiMaterialList(data).then((res) => {
-    spinning.value = false;
-    if (res.data) {
-      let { list, current, page_size, total } = res.data;
-      dataSource.value = list.map((_: any) => {
-        if (["jpg", "png", "jpeg", "gif"].includes(_.extension)) {
-          const img = new Image();
-          pendingImages.push(img);
-          img.onload = () => {
-            _["width"] = img.width;
-            _["height"] = img.height;
-          };
-          img.src = _.url;
-        }
-        return _;
-      });
-      Object.assign(ipagination.value, {
-        current,
-        pageSize: page_size,
-        total,
-      });
-    }
-  }).catch(() => {
-    spinning.value = false;
-    message.error("加载文件列表失败");
-  });
+  await apiMaterialList(data)
+    .then(res => {
+      spinning.value = false
+      if (res.data) {
+        let { list, current, page_size, total } = res.data
+        dataSource.value = list.map((_: any) => {
+          if (['jpg', 'png', 'jpeg', 'gif'].includes(_.extension)) {
+            const img = new Image()
+            pendingImages.push(img)
+            img.onload = () => {
+              _['width'] = img.width
+              _['height'] = img.height
+            }
+            img.src = _.url
+          }
+          return _
+        })
+        Object.assign(ipagination.value, {
+          current,
+          pageSize: page_size,
+          total,
+        })
+      }
+    })
+    .catch(() => {
+      spinning.value = false
+      message.error('加载文件列表失败')
+    })
 }
 
 function selectDirData(e, { node }) {
-  let [a] = e;
-  pushHistory();
-  currentPath.value = node.path.split("/");
-  actionIndex.value = -1;
-  selectedRowKeys.value = [];
-  const parentId = e.length !== 0 ? a : "";
-  queryParam.value.parent_id = parentId;
+  let [a] = e
+  pushHistory()
+  currentPath.value = node.path.split('/')
+  actionIndex.value = -1
+  selectedRowKeys.value = []
+  const parentId = e.length !== 0 ? a : ''
+  queryParam.value.parent_id = parentId
   if (fileUploadRef.value) {
-    Object.assign(fileUploadRef.value.data, { parent_id: parentId });
+    Object.assign(fileUploadRef.value.data, { parent_id: parentId })
   }
-  init();
+  init()
 }
 
 /**
@@ -479,25 +434,25 @@ function selectDirData(e, { node }) {
  * @param {Number} idx - 路径段索引，-1 表示根目录
  */
 function navigateToPathSegment(idx: number) {
-  pushHistory();
-  actionIndex.value = -1;
-  selectedRowKeys.value = [];
+  pushHistory()
+  actionIndex.value = -1
+  selectedRowKeys.value = []
   if (idx < 0) {
     // 回到根目录
-    queryParam.value.parent_id = "";
-    selectedKeys.value = [];
-    currentPath.value = [];
-    init();
-    return;
+    queryParam.value.parent_id = ''
+    selectedKeys.value = []
+    currentPath.value = []
+    init()
+    return
   }
-  const segments = currentPath.value.slice(0, idx + 1);
-  const targetPath = segments.join("/");
-  const foundNode = findNodeByPath(folderTreeData.value, targetPath);
+  const segments = currentPath.value.slice(0, idx + 1)
+  const targetPath = segments.join('/')
+  const foundNode = findNodeByPath(folderTreeData.value, targetPath)
   if (foundNode) {
-    queryParam.value.parent_id = foundNode.id;
-    selectedKeys.value = [foundNode.id];
-    currentPath.value = foundNode.path.split("/");
-    init();
+    queryParam.value.parent_id = foundNode.id
+    selectedKeys.value = [foundNode.id]
+    currentPath.value = foundNode.path.split('/')
+    init()
   }
 }
 
@@ -506,61 +461,63 @@ function navigateToPathSegment(idx: number) {
  */
 function findNodeByPath(tree: any[], path: string): any {
   for (const node of tree) {
-    if (node.path === path) return node;
+    if (node.path === path) return node
     if (node.children) {
-      const found = findNodeByPath(node.children, path);
-      if (found) return found;
+      const found = findNodeByPath(node.children, path)
+      if (found) return found
     }
   }
-  return null;
+  return null
 }
 
-const onSearch = () => init();
+const onSearch = () => init()
 
 /**
  * 初始化文件目录数据
  */
 async function initMaterialFolder() {
   const request = await apiMaterialFolder({}).catch(() => {
-    message.error("加载文件夹失败");
-    return { data: null };
-  });
+    message.error('加载文件夹失败')
+    return { data: null }
+  })
   if (request.data) {
-    folderTreeData.value = mapDataToTree(request.data);
+    folderTreeData.value = mapDataToTree(request.data)
   }
 }
 
-const mapDataToTree = (data) => {
-  return data.map((item) => ({
+const mapDataToTree = data => {
+  return data.map(item => ({
     ...item,
     key: item.id,
     title: item.name,
     children: item.children ? mapDataToTree(item.children) : null,
-  }));
-};
+  }))
+}
 
 /**
  * 打开文件夹
  */
 function openFolder(e) {
-  if (e.type == "dir") {
-    pushHistory();
-    queryParam.value.parent_id = e.id;
-    actionIndex.value = -1;
-    selectedRowKeys.value = [];
-    selectedKeys.value = [e.id];
-    init();
+  if (e.type == 'dir') {
+    pushHistory()
+    queryParam.value.parent_id = e.id
+    actionIndex.value = -1
+    selectedRowKeys.value = []
+    selectedKeys.value = [e.id]
+    init()
   }
 }
 
 const onContextMenuClick = (treeKey: string, menuKey: string | number) => {
-  apiMaterialDelete({ id: treeKey }).then((res) => {
-    message.success("删除成功");
-    initMaterialFolder();
-  }).catch(() => {
-    message.error("删除失败");
-  });
-};
+  apiMaterialDelete({ id: treeKey })
+    .then(res => {
+      message.success('删除成功')
+      initMaterialFolder()
+    })
+    .catch(() => {
+      message.error('删除失败')
+    })
+}
 
 /**
  * 删除素材文件
@@ -568,318 +525,318 @@ const onContextMenuClick = (treeKey: string, menuKey: string | number) => {
  */
 function onDelete() {
   Modal.confirm({
-    title: "删除提示",
+    title: '删除提示',
     icon: createVNode(ExclamationCircleOutlined),
-    content: "确认删除选中的文件夹? 请谨慎删除。",
-    okText: "确认",
-    cancelText: "取消",
-    okType: "danger",
+    content: '确认删除选中的文件夹? 请谨慎删除。',
+    okText: '确认',
+    cancelText: '取消',
+    okType: 'danger',
     onOk() {
-      const promises = selectedRowKeys.value.map((id: string) => apiMaterialDelete({ id }));
+      const promises = selectedRowKeys.value.map((id: string) => apiMaterialDelete({ id }))
       Promise.all(promises).then(() => {
-        message.success("删除成功");
-        init();
-        initMaterialFolder();
-      });
+        message.success('删除成功')
+        init()
+        initMaterialFolder()
+      })
     },
-  });
+  })
 }
 
 const onSelectAll = () => {
-  if (mode.value == "multiple") {
+  if (mode.value == 'multiple') {
     if (selectedRowKeys.value.length == dataSource.value.length) {
-      selectedRowKeys.value = [];
+      selectedRowKeys.value = []
     } else {
-      selectedRowKeys.value = dataSource.value.map((k) => k.id);
+      selectedRowKeys.value = dataSource.value.map(k => k.id)
     }
   }
-};
+}
 
 /**
  * 上传文件回调
  */
-const uploadSuccessDone = () => init();
+const uploadSuccessDone = () => init()
 
 function onChangePagination(e) {
-  ipagination.value.current = e;
-  init();
+  ipagination.value.current = e
+  init()
 }
 
 const onToggleLayouts = () => {
-  currentLayout.value == "list"
-    ? (currentLayout.value = "grid")
-    : (currentLayout.value = "list");
-};
+  currentLayout.value == 'list' ? (currentLayout.value = 'grid') : (currentLayout.value = 'list')
+}
 
 /**
  * 新建目录
  */
 const onCreateDirectory = () => {
-  let data = {};
-  let { parent_id } = queryParam.value;
+  let data = {}
+  let { parent_id } = queryParam.value
   if (parent_id) {
-    data["parent_id"] = parent_id;
+    data['parent_id'] = parent_id
   }
-  apiMaterialCreatedFolder(data).then((res) => {
-    message.success(res.message);
-    init();
-    initMaterialFolder();
-  }).catch(() => {
-    message.error("创建目录失败");
-  });
-};
+  apiMaterialCreatedFolder(data)
+    .then(res => {
+      message.success(res.message)
+      init()
+      initMaterialFolder()
+    })
+    .catch(() => {
+      message.error('创建目录失败')
+    })
+}
 
 const onOperateFileOrDir = (params: any) => {
-  if (params.type == "dir") {
-    openFolder(params);
+  if (params.type == 'dir') {
+    openFolder(params)
   } else {
     switch (params.extension) {
-      case "png":
-      case "jpg":
-      case "jpeg":
-      case "gif":
-      case "svg":
+      case 'png':
+      case 'jpg':
+      case 'jpeg':
+      case 'gif':
+      case 'svg':
         {
-          const img = new Image();
+          const img = new Image()
           img.onload = () => {
-            img.onload = null;
+            img.onload = null
             filePreviewRef.value?.openPreview({
               url: params.url,
               width: img.width,
               height: img.height,
-            });
-          };
-          img.src = params.url;
+            })
+          }
+          img.src = params.url
         }
-        break;
-      case "md":
-      case "markdown":
+        break
+      case 'md':
+      case 'markdown':
         fetch(params.url)
-          .then((res) => res.text())
-          .then((text) => {
+          .then(res => res.text())
+          .then(text => {
             filePreviewRef.value.openTextPreview({
               content: text,
-              type: "markdown",
+              type: 'markdown',
               title: params.name,
-            });
+            })
           })
-          .catch(() => message.error("加载文件失败"));
-        break;
-      case "json":
-      case "js":
-      case "ts":
-      case "css":
-      case "html":
-      case "xml":
-      case "yaml":
-      case "yml":
-      case "py":
-      case "sh":
-      case "sql":
-      case "csv":
-      case "txt":
-      case "log":
-      case "ini":
-      case "cfg":
-      case "conf":
+          .catch(() => message.error('加载文件失败'))
+        break
+      case 'json':
+      case 'js':
+      case 'ts':
+      case 'css':
+      case 'html':
+      case 'xml':
+      case 'yaml':
+      case 'yml':
+      case 'py':
+      case 'sh':
+      case 'sql':
+      case 'csv':
+      case 'txt':
+      case 'log':
+      case 'ini':
+      case 'cfg':
+      case 'conf':
         fetch(params.url)
-          .then((res) => res.text())
-          .then((text) => {
+          .then(res => res.text())
+          .then(text => {
             filePreviewRef.value.openTextPreview({
               content: text,
               type: params.extension,
               title: params.name,
-            });
+            })
           })
-          .catch(() => message.error("加载文件失败"));
-        break;
+          .catch(() => message.error('加载文件失败'))
+        break
       default:
         // Try as plain text, fallback to opening in new tab
         fetch(params.url)
-          .then((res) => res.text())
-          .then((text) => {
+          .then(res => res.text())
+          .then(text => {
             filePreviewRef.value.openTextPreview({
               content: text,
-              type: "text",
+              type: 'text',
               title: params.name,
-            });
+            })
           })
           .catch(() => {
-            window.open(params.url, "_blank");
-          });
-        break;
+            window.open(params.url, '_blank')
+          })
+        break
     }
   }
-};
+}
 
 const formatBackgroundImage = (params: any) => {
-  return getFileIconByExt(params.extension || params.type);
-};
+  return getFileIconByExt(params.extension || params.type)
+}
 
 const onSelectFile = (params: any, idx: any) => {
   if (actionIndex.value == idx) {
-    actionIndex.value = -1;
-    return false;
+    actionIndex.value = -1
+    return false
   }
-  actionIndex.value = idx;
-};
+  actionIndex.value = idx
+}
 
 const onMultipleChoices = ({ id }, idx: number) => {
   if (selectedRowKeys.value.includes(id)) {
-    selectedRowKeys.value.splice(selectedRowKeys.value.indexOf(id), 1);
+    selectedRowKeys.value.splice(selectedRowKeys.value.indexOf(id), 1)
   } else {
-    selectedRowKeys.value.push(id);
+    selectedRowKeys.value.push(id)
   }
-};
+}
 
 /**
  * 刷新文件列表
  */
-const onRefresh = () => init();
+const onRefresh = () => init()
 
 function handleKeydown(e: KeyboardEvent) {
   // Don't capture shortcuts when focus is in an input
-  const tag = (e.target as HTMLElement)?.tagName;
-  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+  const tag = (e.target as HTMLElement)?.tagName
+  if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return
 
   if (e.key === 'Delete') {
-    if (selectedRowKeys.value.length > 0) onDelete();
+    if (selectedRowKeys.value.length > 0) onDelete()
   } else if (e.key === 'F2') {
-    e.preventDefault();
-    onModifyRename();
+    e.preventDefault()
+    onModifyRename()
   } else if (e.ctrlKey && e.key === 'c') {
-    e.preventDefault();
-    onCopy();
+    e.preventDefault()
+    onCopy()
   } else if (e.ctrlKey && e.key === 'x') {
-    e.preventDefault();
-    onCut();
+    e.preventDefault()
+    onCut()
   } else if (e.ctrlKey && e.key === 'v') {
-    e.preventDefault();
-    onPaste();
+    e.preventDefault()
+    onPaste()
   }
 }
 
 watch(
   () => visible.value,
-  (val) => {
-    selectedRowKeys.value = [];
-    actionIndex.value = -1;
+  val => {
+    selectedRowKeys.value = []
+    actionIndex.value = -1
     if (val) {
       // Reset navigation history when modal opens
-      historyStack.value = [];
-      historyIndex.value = -1;
-      document.addEventListener('keydown', handleKeydown);
+      historyStack.value = []
+      historyIndex.value = -1
+      document.addEventListener('keydown', handleKeydown)
     } else {
-      folderTreeData.value = [];
-      dataSource.value = [];
+      folderTreeData.value = []
+      dataSource.value = []
       queryParam.value = {
-        keyword: "",
-        type: "",
-        parent_id: "",
-        sort_order: "DESC",
-      };
-      document.removeEventListener('keydown', handleKeydown);
+        keyword: '',
+        type: '',
+        parent_id: '',
+        sort_order: 'DESC',
+      }
+      document.removeEventListener('keydown', handleKeydown)
     }
-  }
-);
+  },
+)
 
 watch(
   () => queryParam.value.type,
-  (e) => {
+  e => {
     if (fileUpload.value) {
-      fileUpload.value.typeValue = e || "";
+      fileUpload.value.typeValue = e || ''
     }
-  }
-);
+  },
+)
 
 watch(
   () => queryParam.value.parent_id,
-  (parent_id) => {
+  parent_id => {
     if (parent_id && fileUploadRef.value) {
       Object.assign(fileUploadRef.value.data, {
         parent_id,
-      });
+      })
     }
-  }
-);
+  },
+)
 
 const onSort = () => {
-  let { sort_order } = queryParam.value;
-  sort_order == "DESC"
-    ? (queryParam.value.sort_order = "ASC")
-    : (queryParam.value.sort_order = "DESC");
-  init();
-};
+  let { sort_order } = queryParam.value
+  sort_order == 'DESC' ? (queryParam.value.sort_order = 'ASC') : (queryParam.value.sort_order = 'DESC')
+  init()
+}
 
 const onModifyRename = () => {
-  const item = dataSource.value[actionIndex.value];
-  if (!item) return;
-  renameRef.value.visible = true;
+  const item = dataSource.value[actionIndex.value]
+  if (!item) return
+  renameRef.value.visible = true
   nextTick(() => {
-    renameRef.value.init({ id: item.id, name: item.name });
-  });
-};
+    renameRef.value.init({ id: item.id, name: item.name })
+  })
+}
 
 const onCopy = () => {
-  const data = dataSource.value[actionIndex.value];
-  if (!data) return;
-  clipboard.value = { data, action: 'copy' };
-  message.success(`已复制「${data.name}」`);
-};
+  const data = dataSource.value[actionIndex.value]
+  if (!data) return
+  clipboard.value = { data, action: 'copy' }
+  message.success(`已复制「${data.name}」`)
+}
 
 const onCut = () => {
-  const data = dataSource.value[actionIndex.value];
-  if (!data) return;
-  clipboard.value = { data, action: 'cut' };
-  message.success(`已剪切「${data.name}」`);
-};
+  const data = dataSource.value[actionIndex.value]
+  if (!data) return
+  clipboard.value = { data, action: 'cut' }
+  message.success(`已剪切「${data.name}」`)
+}
 
 const onPaste = () => {
-  if (!clipboard.value) return;
-  const { data, action } = clipboard.value;
-  spinning.value = true;
-  const apiFn = action === 'cut' ? apiMaterialScissors : apiMaterialCopy;
+  if (!clipboard.value) return
+  const { data, action } = clipboard.value
+  spinning.value = true
+  const apiFn = action === 'cut' ? apiMaterialScissors : apiMaterialCopy
   apiFn({ id: data.id, folder: queryParam.value.parent_id })
-    .then((res) => {
-      spinning.value = false;
-      clipboard.value = null;
-      actionIndex.value = -1;
-      init();
-      if (action === 'cut') initMaterialFolder();
-      message.success("粘贴成功");
+    .then(res => {
+      spinning.value = false
+      clipboard.value = null
+      actionIndex.value = -1
+      init()
+      if (action === 'cut') initMaterialFolder()
+      message.success('粘贴成功')
     })
     .catch(() => {
-      spinning.value = false;
-      clipboard.value = null;
-      message.error("粘贴失败");
-    });
-};
+      spinning.value = false
+      clipboard.value = null
+      message.error('粘贴失败')
+    })
+}
 
 const handleOk = () => {
   switch (mode.value) {
-    case "multiple":
-      let fileList: any = [];
+    case 'multiple':
+      let fileList: any = []
       dataSource.value.map((k: any) => {
         if (selectedRowKeys.value.includes(k.id)) {
-          fileList.push(k);
+          fileList.push(k)
         }
-      });
-      emit("oks", fileList);
-      break;
-    case "single":
+      })
+      emit('oks', fileList)
+      break
+    case 'single':
       if (actionIndex.value !== -1) {
-        emit("oks", dataSource.value[actionIndex.value]);
+        emit('oks', dataSource.value[actionIndex.value])
       }
-      break;
+      break
   }
-  visible.value = false;
-};
+  visible.value = false
+}
 
 onUnmounted(() => {
-  pendingImages.forEach((img) => { img.onload = null; });
-  pendingImages = [];
-  document.removeEventListener('keydown', handleKeydown);
-});
+  pendingImages.forEach(img => {
+    img.onload = null
+  })
+  pendingImages = []
+  document.removeEventListener('keydown', handleKeydown)
+})
 
 defineExpose({
   selectedKeys,
@@ -887,7 +844,7 @@ defineExpose({
   visible,
   init,
   initMaterialFolder,
-});
+})
 </script>
 
 <style lang="less" scoped>
@@ -995,51 +952,51 @@ defineExpose({
                 }
 
                 &.ico-left {
-                  background-image: url("@/assets/images/file-explorer/icon/左2.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/左2.svg');
 
                   &.disabled {
-                    background-image: url("@/assets/images/file-explorer/icon/左2浅灰.svg");
+                    background-image: url('@/assets/images/file-explorer/icon/左2浅灰.svg');
                   }
                 }
 
                 &.ico-right {
-                  background-image: url("@/assets/images/file-explorer/icon/右2.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/右2.svg');
 
                   &.disabled {
-                    background-image: url("@/assets/images/file-explorer/icon/右2浅灰.svg");
+                    background-image: url('@/assets/images/file-explorer/icon/右2浅灰.svg');
                   }
                 }
 
                 &.ico-edit {
-                  background-image: url("@/assets/images/file-explorer/icon/edit_gray_linear.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/edit_gray_linear.svg');
 
                   &.disabled {
-                    background-image: url("@/assets/images/file-explorer/icon/edit_light_gray_linear.svg");
+                    background-image: url('@/assets/images/file-explorer/icon/edit_light_gray_linear.svg');
                   }
                 }
 
                 &.ico-scissors {
-                  background-image: url("@/assets/images/file-explorer/icon/剪刀.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/剪刀.svg');
 
                   &.disabled {
-                    background-image: url("@/assets/images/file-explorer/icon/剪刀浅灰.svg");
+                    background-image: url('@/assets/images/file-explorer/icon/剪刀浅灰.svg');
                   }
                 }
 
                 &.ico-copy {
-                  background-image: url("@/assets/images/file-explorer/icon/复制.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/复制.svg');
 
                   &.disabled {
-                    background-image: url("@/assets/images/file-explorer/icon/复制浅灰.svg");
+                    background-image: url('@/assets/images/file-explorer/icon/复制浅灰.svg');
                   }
                 }
 
                 &.ico-paste {
-                  background-image: url("@/assets/images/file-explorer/icon/粘帖.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/粘帖.svg');
                   position: relative;
 
                   &.disabled {
-                    background-image: url("@/assets/images/file-explorer/icon/粘帖浅灰.svg");
+                    background-image: url('@/assets/images/file-explorer/icon/粘帖浅灰.svg');
                   }
 
                   .clipboard-badge {
@@ -1053,47 +1010,47 @@ defineExpose({
                 }
 
                 &.ico-rename {
-                  background-image: url("@/assets/images/file-explorer/icon/重命名.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/重命名.svg');
 
                   &.disabled {
-                    background-image: url("@/assets/images/file-explorer/icon/重命名浅灰.svg");
+                    background-image: url('@/assets/images/file-explorer/icon/重命名浅灰.svg');
                   }
                 }
 
                 &.ico-trash {
-                  background-image: url("@/assets/images/file-explorer/icon/垃圾桶.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/垃圾桶.svg');
 
                   &.disabled {
-                    background-image: url("@/assets/images/file-explorer/icon/垃圾桶浅灰.svg");
+                    background-image: url('@/assets/images/file-explorer/icon/垃圾桶浅灰.svg');
                   }
                 }
 
                 &.ico-lock-on {
-                  background-image: url("@/assets/images/file-explorer/icon/lock_on_deep_gray_linear.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/lock_on_deep_gray_linear.svg');
 
                   &.disabled {
-                    background-image: url("@/assets/images/file-explorer/icon/lock_on_gray_linear2.svg");
+                    background-image: url('@/assets/images/file-explorer/icon/lock_on_gray_linear2.svg');
                   }
                 }
 
                 &.ico-add-dir {
-                  background-image: url("@/assets/images/file-explorer/icon/创建文件夹.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/创建文件夹.svg');
                 }
 
                 &.ico-select-all {
-                  background-image: url("@/assets/images/file-explorer/icon/全选.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/全选.svg');
                 }
 
                 &.ico-list-layout {
-                  background-image: url("@/assets/images/file-explorer/icon/列表.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/列表.svg');
                 }
 
                 &.ico-grid-layout {
-                  background-image: url("@/assets/images/file-explorer/icon/网格.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/网格.svg');
                 }
 
                 &.ico-refresh {
-                  background-image: url("@/assets/images/file-explorer/icon/refresh_gray_linear.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/refresh_gray_linear.svg');
                 }
               }
             }
@@ -1132,11 +1089,11 @@ defineExpose({
               }
 
               &.ico-up {
-                background-image: url("@/assets/images/file-explorer/icon/上2.svg");
+                background-image: url('@/assets/images/file-explorer/icon/上2.svg');
               }
 
               &.ico-down {
-                background-image: url("@/assets/images/file-explorer/icon/下2.svg");
+                background-image: url('@/assets/images/file-explorer/icon/下2.svg');
               }
             }
           }
@@ -1173,13 +1130,13 @@ defineExpose({
             width: 16px;
             background-size: 16px;
             background-repeat: no-repeat;
-            background-image: url("@/assets/images/file-explorer/icon/lock_on_face.svg");
+            background-image: url('@/assets/images/file-explorer/icon/lock_on_face.svg');
           }
 
           &:hover {
             .checkbox-wrap {
               .ico-checkbox {
-                background-image: url("@/assets/images/file-explorer/icon/checkbox_gray_linear.svg");
+                background-image: url('@/assets/images/file-explorer/icon/checkbox_gray_linear.svg');
               }
             }
           }
@@ -1187,7 +1144,7 @@ defineExpose({
           &.selected {
             .checkbox-wrap {
               .ico-checkbox {
-                background-image: url("@/assets/images/file-explorer/icon/checkbox_checked_face.svg");
+                background-image: url('@/assets/images/file-explorer/icon/checkbox_checked_face.svg');
               }
             }
           }
@@ -1284,7 +1241,7 @@ defineExpose({
                 display: block;
 
                 .ico-checkbox {
-                  background-image: url("@/assets/images/file-explorer/icon/checkbox_gray_linear.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/checkbox_gray_linear.svg');
                 }
               }
             }
@@ -1296,7 +1253,7 @@ defineExpose({
                 display: block;
 
                 .ico-checkbox {
-                  background-image: url("@/assets/images/file-explorer/icon/checkbox_checked_face.svg");
+                  background-image: url('@/assets/images/file-explorer/icon/checkbox_checked_face.svg');
                 }
               }
 

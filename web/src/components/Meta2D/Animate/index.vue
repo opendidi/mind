@@ -7,26 +7,12 @@
  * @LastEditTime: 2024-04-03 10:25:32
 -->
 <template>
-  <a-form
-    label-align="left"
-    :label-col="{ span: 10 }"
-    v-if="model"
-    class="animate-form"
-  >
-    <a-collapse
-      v-model:activeKey="animateKey"
-      size="small"
-      expand-icon-position="right"
-    >
+  <a-form label-align="left" :label-col="{ span: 10 }" v-if="model" class="animate-form">
+    <a-collapse v-model:activeKey="animateKey" size="small" expand-icon-position="right">
       <a-collapse-panel :key="1" header="动画">
         <template v-if="model.name !== 'line'">
           <a-form-item label="时长">
-            <a-input
-              v-model:value="model.duration"
-              readOnly
-              :bordered="false"
-              style="width: 100%"
-            />
+            <a-input v-model:value="model.duration" readOnly :bordered="false" style="width: 100%" />
           </a-form-item>
         </template>
         <a-form-item label="动画效果">
@@ -42,11 +28,7 @@
             </a-select>
           </template>
           <template v-else>
-            <a-select
-              v-model:value="model.animateType"
-              @change="changeAnimate"
-              placeholder="请选择动画效果"
-            >
+            <a-select v-model:value="model.animateType" @change="changeAnimate" placeholder="请选择动画效果">
               <a-select-option value="">无</a-select-option>
               <template v-for="vo in animateType" :key="vo.key">
                 <a-select-option :value="vo.key">
@@ -55,9 +37,7 @@
               </template>
             </a-select>
             <template v-if="model.animateType == 'custom'">
-              <a-button size="small" class="mt-12" @click="openFrames"
-                >编辑</a-button
-              >
+              <a-button size="small" class="mt-12" @click="openFrames">编辑</a-button>
             </template>
           </template>
         </a-form-item>
@@ -69,23 +49,13 @@
           />
         </a-form-item>
         <a-form-item label="下个动画">
-          <a-input
-            v-model:value="model.nextAnimate"
-            @change="changeValue('nextAnimate')"
-            placeholder="tag"
-          />
+          <a-input v-model:value="model.nextAnimate" @change="changeValue('nextAnimate')" placeholder="tag" />
         </a-form-item>
         <a-form-item label="自动播放">
-          <a-switch
-            v-model:checked="model.autoPlay"
-            @change="changeValue('autoPlay')"
-          />
+          <a-switch v-model:checked="model.autoPlay" @change="changeValue('autoPlay')" />
         </a-form-item>
         <a-form-item label="保持动画状态">
-          <a-switch
-            v-model:checked="model.keepAnimateState"
-            @change="changeValue('keepAnimateState')"
-          />
+          <a-switch v-model:checked="model.keepAnimateState" @change="changeValue('keepAnimateState')" />
         </a-form-item>
         <a-form-item label="动画线宽">
           <a-input-number
@@ -116,10 +86,7 @@
           />
         </a-form-item>
         <a-form-item label="反向流动">
-          <a-switch
-            v-model:checked="model.animateReverse"
-            @change="changeValue('animateReverse')"
-          />
+          <a-switch v-model:checked="model.animateReverse" @change="changeValue('animateReverse')" />
         </a-form-item>
         <a-form-item label="线性播放">
           <a-select v-model:value="model.linear">
@@ -156,63 +123,59 @@
 </template>
 
 <script>
-import { ref, watch, defineComponent, nextTick } from "vue";
-import {
-  CaretRightOutlined,
-  PauseOutlined,
-  CloseOutlined,
-} from "@ant-design/icons-vue";
-import { animateType } from "@/utils/defaultConfig.ts";
-import { useSelection } from "@/services/selections";
-import FramesDrawer from "@/components/Meta2D/Frames/index.vue";
-import { ColorPicker } from "tdesign-vue-next";
+import { ref, watch, defineComponent, nextTick } from 'vue'
+import { CaretRightOutlined, PauseOutlined, CloseOutlined } from '@ant-design/icons-vue'
+import { animateType } from '@/utils/defaultConfig.ts'
+import { useSelection } from '@/services/selections'
+import FramesDrawer from '@/components/Meta2D/Frames/index.vue'
+import { ColorPicker } from 'tdesign-vue-next'
 export default defineComponent({
   components: {
     CaretRightOutlined,
     PauseOutlined,
     CloseOutlined,
     FramesDrawer,
-    "t-color-picker": ColorPicker,
+    't-color-picker': ColorPicker,
   },
-  emits: ["onChange"],
+  emits: ['onChange'],
   setup(props, { emit }) {
-    const { selections } = useSelection();
-    const framesDrawerRef = ref(null);
+    const { selections } = useSelection()
+    const framesDrawerRef = ref(null)
     const model = ref({
       autoPlay: false,
       frames: [],
       duration: 0,
       animateCycle: Infinity,
-    });
+    })
 
-    const animateKey = 1;
+    const animateKey = 1
 
     function init(_) {
-      model.value = _;
+      model.value = _
     }
 
     function changeValue(prop) {
-      emit("onChange", prop);
+      emit('onChange', prop)
     }
 
     /**
      * 选择动画
      */
     function changeAnimate(f) {
-      const data = animateType.find((_) => _.key == f);
+      const data = animateType.find(_ => _.key == f)
       if (data) {
-        let { frames } = data;
+        let { frames } = data
         if (frames.length !== 0) {
           Object.assign(model.value, {
             frames,
             duration: frames[0].duration,
-          });
+          })
         }
-        Object.keys(model.value).map((_) => {
-          if (["animateType", "frames"].includes(_)) {
-            changeValue(_);
+        Object.keys(model.value).map(_ => {
+          if (['animateType', 'frames'].includes(_)) {
+            changeValue(_)
           }
-        });
+        })
       }
     }
 
@@ -220,49 +183,49 @@ export default defineComponent({
      * 开始播放动画
      */
     function onPlay() {
-      meta2d.startAnimate(model.value.id);
+      meta2d.startAnimate(model.value.id)
     }
 
     /**
      * 暂停播放
      */
     function onPause() {
-      meta2d.pauseAnimate(model.value.id);
+      meta2d.pauseAnimate(model.value.id)
     }
 
     /**
      * 结束动画
      */
     function onStop() {
-      meta2d.stopAnimate(model.value.id);
+      meta2d.stopAnimate(model.value.id)
     }
 
     /**
      * 打开编辑动画帧弹窗
      */
     function openFrames() {
-      framesDrawerRef.value.visible = true;
+      framesDrawerRef.value.visible = true
       nextTick(() => {
-        framesDrawerRef.value.init(model.value);
-      });
+        framesDrawerRef.value.init(model.value)
+      })
     }
 
     watch(
       () => model.value.animateType,
-      (e) => {
-        const data = animateType.find((_) => _.key == e);
+      e => {
+        const data = animateType.find(_ => _.key == e)
         if (data) {
-          model.value["frames"] = data.frames;
+          model.value['frames'] = data.frames
         }
-      }
-    );
+      },
+    )
 
     watch(
       () => selections.pen,
-      (val) => {
-        init(val);
-      }
-    );
+      val => {
+        init(val)
+      },
+    )
 
     return {
       changeValue,
@@ -276,9 +239,9 @@ export default defineComponent({
       openFrames,
       changeAnimate,
       framesDrawerRef,
-    };
+    }
   },
-});
+})
 </script>
 <style lang="less" scoped>
 .animate-form {

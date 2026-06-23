@@ -23,93 +23,112 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, onBeforeUnmount, nextTick } from "vue";
-import { Meta2d, register, registerAnchors } from "@meta2d/core";
-import { flowPens, flowAnchors } from "@meta2d/flow-diagram";
-import { DownloadOutlined, FileImageOutlined, ZoomInOutlined, ZoomOutOutlined } from "@ant-design/icons-vue";
+import { ref, computed, onMounted, onBeforeUnmount, nextTick } from 'vue'
+import { Meta2d, register, registerAnchors } from '@meta2d/core'
+import { flowPens, flowAnchors } from '@meta2d/flow-diagram'
+import { DownloadOutlined, FileImageOutlined, ZoomInOutlined, ZoomOutOutlined } from '@ant-design/icons-vue'
 
 interface DiagramNode {
-  id?: string; pen_id?: string; type?: string; text?: string;
-  x?: number; y?: number; width?: number; height?: number;
-  background?: string; color?: string; fontSize?: number;
-  borderWidth?: number; borderColor?: string;
+  id?: string
+  pen_id?: string
+  type?: string
+  text?: string
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  background?: string
+  color?: string
+  fontSize?: number
+  borderWidth?: number
+  borderColor?: string
 }
 
 interface DiagramEdge {
-  from?: string; to?: string; _from_id?: string; _to_id?: string;
-  text?: string; line_type?: string; arrow?: string;
+  from?: string
+  to?: string
+  _from_id?: string
+  _to_id?: string
+  text?: string
+  line_type?: string
+  arrow?: string
 }
 
 const props = defineProps<{
-  nodes?: DiagramNode[];
-  edges?: DiagramEdge[];
-}>();
+  nodes?: DiagramNode[]
+  edges?: DiagramEdge[]
+}>()
 
-const nodeCount = computed(() => props.nodes?.length || 0);
-const edgeCount = computed(() => props.edges?.length || 0);
+const nodeCount = computed(() => props.nodes?.length || 0)
+const edgeCount = computed(() => props.edges?.length || 0)
 
-const ready = ref(false);
-const scalePercent = ref(100);
+const ready = ref(false)
+const scalePercent = ref(100)
 
-let containerEl: HTMLElement | null = null;
-let meta2d: Record<string, unknown> | null = null;
-let inited = false;
-let observer: IntersectionObserver | null = null;
+let containerEl: HTMLElement | null = null
+let meta2d: Record<string, unknown> | null = null
+let inited = false
+let observer: IntersectionObserver | null = null
 
 function setContainerRef(el: any) {
-  containerEl = (el as HTMLElement) || null;
+  containerEl = (el as HTMLElement) || null
 }
 
 const TYPE_MAP: Record<string, string> = {
-  rectangle: "rectangle", circle: "circle", triangle: "triangle",
-  diamond: "diamond", pentagon: "pentagon", star: "star", text: "text",
-};
+  rectangle: 'rectangle',
+  circle: 'circle',
+  triangle: 'triangle',
+  diamond: 'diamond',
+  pentagon: 'pentagon',
+  star: 'star',
+  text: 'text',
+}
 
 const COLOR_DEFAULTS: Record<string, { background: string; color: string }> = {
-  rectangle: { background: "#e8f4fd", color: "#1e40af" },
-  circle: { background: "#fef3c7", color: "#92400e" },
-  triangle: { background: "#fce4ec", color: "#c62828" },
-  diamond: { background: "#f3e5f5", color: "#6a1b9a" },
-  pentagon: { background: "#e8f5e9", color: "#2e7d32" },
-  star: { background: "#fff8e1", color: "#f57f17" },
-  text: { background: "transparent", color: "#333" },
-};
+  rectangle: { background: '#e8f4fd', color: '#1e40af' },
+  circle: { background: '#fef3c7', color: '#92400e' },
+  triangle: { background: '#fce4ec', color: '#c62828' },
+  diamond: { background: '#f3e5f5', color: '#6a1b9a' },
+  pentagon: { background: '#e8f5e9', color: '#2e7d32' },
+  star: { background: '#fff8e1', color: '#f57f17' },
+  text: { background: 'transparent', color: '#333' },
+}
 
 function initCanvas() {
-  if (!containerEl || inited) return;
-  inited = true;
+  if (!containerEl || inited) return
+  inited = true
 
   // Register pen types
-  register(flowPens());
-  registerAnchors(flowAnchors());
+  register(flowPens())
+  registerAnchors(flowAnchors())
 
   meta2d = new Meta2d(containerEl as any, {
-    background: "transparent",
+    background: 'transparent',
     rule: false,
     locked: 2,
-  });
+  })
 
-  ready.value = true;
-  nextTick(() => renderContent());
+  ready.value = true
+  nextTick(() => renderContent())
 }
 
 function renderContent() {
-  if (!meta2d || !props.nodes?.length) return;
-  renderAsync();
+  if (!meta2d || !props.nodes?.length) return
+  renderAsync()
 }
 
 async function renderAsync() {
-  if (!meta2d || !props.nodes?.length) return;
+  if (!meta2d || !props.nodes?.length) return
 
-  const logicalToActual = new Map<string, string>();
+  const logicalToActual = new Map<string, string>()
 
   for (const node of props.nodes) {
-    const penType = (node.type || "rectangle").toLowerCase();
-    const name = TYPE_MAP[penType] || "rectangle";
-    const defaults = COLOR_DEFAULTS[name] || COLOR_DEFAULTS.rectangle;
+    const penType = (node.type || 'rectangle').toLowerCase()
+    const name = TYPE_MAP[penType] || 'rectangle'
+    const defaults = COLOR_DEFAULTS[name] || COLOR_DEFAULTS.rectangle
     const pen: any = {
       name,
-      text: node.text || "",
+      text: node.text || '',
       x: node.x ?? 0,
       y: node.y ?? 0,
       width: node.width || 120,
@@ -118,36 +137,39 @@ async function renderAsync() {
       color: node.color || defaults.color,
       fontSize: node.fontSize || 14,
       lineWidth: node.borderWidth || 1,
-      borderColor: node.borderColor || "#d1d5db",
+      borderColor: node.borderColor || '#d1d5db',
       locked: 2,
-    };
-    if (name === "circle") {
-      pen.width = pen.height = Math.min(pen.width, pen.height) || 80;
+    }
+    if (name === 'circle') {
+      pen.width = pen.height = Math.min(pen.width, pen.height) || 80
     }
 
-    const actualPen = await meta2d.addPen(pen);
+    const actualPen = await meta2d.addPen(pen)
     if (actualPen) {
-      const logicalId = node.pen_id || node.id || "";
-      const actualId = actualPen.id || actualPen.penId || "";
-      if (logicalId) logicalToActual.set(logicalId, actualId);
+      const logicalId = node.pen_id || node.id || ''
+      const actualId = actualPen.id || actualPen.penId || ''
+      if (logicalId) logicalToActual.set(logicalId, actualId)
     }
   }
 
   for (const edge of props.edges || []) {
-    const fromLogical = edge._from_id || edge.from || "";
-    const toLogical = edge._to_id || edge.to || "";
-    const fromId = logicalToActual.get(fromLogical) || fromLogical;
-    const toId = logicalToActual.get(toLogical) || toLogical;
+    const fromLogical = edge._from_id || edge.from || ''
+    const toLogical = edge._to_id || edge.to || ''
+    const fromId = logicalToActual.get(fromLogical) || fromLogical
+    const toId = logicalToActual.get(toLogical) || toLogical
 
-    if (!fromId || !toId) continue;
+    if (!fromId || !toId) continue
 
-    const fromPen = meta2d.findOne(fromId);
-    const toPen = meta2d.findOne(toId);
-    if (!fromPen || !toPen) continue;
+    const fromPen = meta2d.findOne(fromId)
+    const toPen = meta2d.findOne(toId)
+    if (!fromPen || !toPen) continue
 
     // Shape-aware anchors (same logic as canvasBridge)
     function _anchor(pen: any, side: 'top' | 'bottom'): { x: number; y: number } {
-      const x = pen.x || 0, y = pen.y || 0, w = pen.width || 120, h = pen.height || 60
+      const x = pen.x || 0,
+        y = pen.y || 0,
+        w = pen.width || 120,
+        h = pen.height || 60
       const n = (pen.name || 'rectangle') as string
       if (n === 'circle') {
         const r = Math.min(w, h) / 2
@@ -166,85 +188,101 @@ async function renderAsync() {
       from: fromAnchor,
       to: toAnchor,
       lineWidth: 2,
-      color: edge.color || "#94a3b8",
-      text: edge.text || "",
+      color: edge.color || '#94a3b8',
+      text: edge.text || '',
       fontSize: 12,
       animate: false,
       locked: 2,
-    };
-    const arrow = edge.arrow || "end";
-    if (arrow === "end" || arrow === "both") line.toArrow = "triangleSolid";
-    if (arrow === "start" || arrow === "both") line.fromArrow = "triangleSolid";
+    }
+    const arrow = edge.arrow || 'end'
+    if (arrow === 'end' || arrow === 'both') line.toArrow = 'triangleSolid'
+    if (arrow === 'start' || arrow === 'both') line.fromArrow = 'triangleSolid'
 
-    meta2d.addLine(line);
+    meta2d.addLine(line)
   }
 
   // Render and fit view
-  meta2d.render();
+  meta2d.render()
   setTimeout(() => {
-    try { meta2d.fitView(40); } catch { /* ignore */ }
-    scalePercent.value = Math.round((meta2d?.store?.data?.scale || 1) * 100);
-  }, 80);
+    try {
+      meta2d.fitView(40)
+    } catch {
+      /* ignore */
+    }
+    scalePercent.value = Math.round((meta2d?.store?.data?.scale || 1) * 100)
+  }, 80)
 }
 
 function onDownloadPng() {
-  if (!meta2d) return;
-  try { meta2d.downloadPng("preview"); } catch { /* ignore */ }
+  if (!meta2d) return
+  try {
+    meta2d.downloadPng('preview')
+  } catch {
+    /* ignore */
+  }
 }
 
 function onDownloadSvg() {
-  if (!meta2d) return;
-  try { meta2d.downloadSvg(); } catch { /* ignore */ }
+  if (!meta2d) return
+  try {
+    meta2d.downloadSvg()
+  } catch {
+    /* ignore */
+  }
 }
 
 function getCanvasCenter() {
-  if (!containerEl) return { x: 0, y: 0 };
-  return { x: containerEl.clientWidth / 2, y: containerEl.clientHeight / 2 };
+  if (!containerEl) return { x: 0, y: 0 }
+  return { x: containerEl.clientWidth / 2, y: containerEl.clientHeight / 2 }
 }
 
 function onZoomIn() {
-  if (!meta2d) return;
-  const cur = meta2d.store.data.scale || 1;
-  const next = Math.min(cur * 1.3, 5);
-  meta2d.scale(next, getCanvasCenter());
-  scalePercent.value = Math.round(next * 100);
+  if (!meta2d) return
+  const cur = meta2d.store.data.scale || 1
+  const next = Math.min(cur * 1.3, 5)
+  meta2d.scale(next, getCanvasCenter())
+  scalePercent.value = Math.round(next * 100)
 }
 
 function onZoomOut() {
-  if (!meta2d) return;
-  const cur = meta2d.store.data.scale || 1;
-  const next = Math.max(cur / 1.3, 0.1);
-  meta2d.scale(next, getCanvasCenter());
-  scalePercent.value = Math.round(next * 100);
+  if (!meta2d) return
+  const cur = meta2d.store.data.scale || 1
+  const next = Math.max(cur / 1.3, 0.1)
+  meta2d.scale(next, getCanvasCenter())
+  scalePercent.value = Math.round(next * 100)
 }
 
 onMounted(() => {
-  if (!containerEl) return;
+  if (!containerEl) return
 
-  if (typeof IntersectionObserver !== "undefined") {
+  if (typeof IntersectionObserver !== 'undefined') {
     observer = new IntersectionObserver(
-      (entries) => {
+      entries => {
         if (entries[0]?.isIntersecting && !inited) {
-          nextTick(initCanvas);
-          observer?.disconnect();
-          observer = null;
+          nextTick(initCanvas)
+          observer?.disconnect()
+          observer = null
         }
       },
-      { rootMargin: "200px" }
-    );
-    observer.observe(containerEl);
+      { rootMargin: '200px' },
+    )
+    observer.observe(containerEl)
   } else {
-    nextTick(initCanvas);
+    nextTick(initCanvas)
   }
-});
+})
 
 onBeforeUnmount(() => {
-  observer?.disconnect();
+  observer?.disconnect()
   if (meta2d) {
-    try { meta2d.destroy?.(); } catch { /* ignore */ }
-    meta2d = null;
+    try {
+      meta2d.destroy?.()
+    } catch {
+      /* ignore */
+    }
+    meta2d = null
   }
-});
+})
 </script>
 
 <style lang="scss" scoped>

@@ -44,10 +44,18 @@
             <a-form-item :label="vo.name">
               <div class="flex items-center justify-between">
                 <template v-if="vo.type == 'text'">
-                  <a-input v-model:value="pen[vo.key]" @change="getDataValue(vo.key, pen[vo.key])" style="width: 100%" />
+                  <a-input
+                    v-model:value="pen[vo.key]"
+                    @change="getDataValue(vo.key, pen[vo.key])"
+                    style="width: 100%"
+                  />
                 </template>
                 <template v-else-if="vo.type == 'number'">
-                  <a-input-number v-model:value="pen[vo.key]" style="flex: 1" @change="getDataValue(vo.key, pen[vo.key])" />
+                  <a-input-number
+                    v-model:value="pen[vo.key]"
+                    style="flex: 1"
+                    @change="getDataValue(vo.key, pen[vo.key])"
+                  />
                 </template>
                 <template v-else-if="vo.type == 'switch'">
                   <a-switch v-model:checked="pen[vo.key]" />
@@ -138,15 +146,15 @@
 </template>
 
 <script>
-import { ref, watch, defineComponent, nextTick } from 'vue';
-import { CloseOutlined, EditOutlined, DeleteOutlined, LinkOutlined, PlusOutlined } from '@ant-design/icons-vue';
-import { useSelection } from '@/services/selections';
-import { Empty, message } from 'ant-design-vue';
-import DataDrawer from './components/form.vue';
-import VariableModal from './components/variable.vue';
-import SelectForm from './components/selectForm.vue';
-import EditContainer from "@/components/Meta2D/EditContainer/index.vue";
-let dataIndex = -1;
+import { ref, watch, defineComponent, nextTick } from 'vue'
+import { CloseOutlined, EditOutlined, DeleteOutlined, LinkOutlined, PlusOutlined } from '@ant-design/icons-vue'
+import { useSelection } from '@/services/selections'
+import { Empty, message } from 'ant-design-vue'
+import DataDrawer from './components/form.vue'
+import VariableModal from './components/variable.vue'
+import SelectForm from './components/selectForm.vue'
+import EditContainer from '@/components/Meta2D/EditContainer/index.vue'
+let dataIndex = -1
 export default defineComponent({
   components: {
     PlusOutlined,
@@ -161,50 +169,50 @@ export default defineComponent({
   },
   emits: ['oks', 'getDataValue', 'deleteDataValue'],
   setup(props, { emit }) {
-    const { selections } = useSelection();
+    const { selections } = useSelection()
 
-    const dataDrawerRef = ref(null);
-    const variableModalRef = ref(null);
-    const selectFormRef = ref(null);
-    const editContainerRef = ref(null);
+    const dataDrawerRef = ref(null)
+    const variableModalRef = ref(null)
+    const selectFormRef = ref(null)
+    const editContainerRef = ref(null)
 
-    const activeKey = ref([1, 2]);
+    const activeKey = ref([1, 2])
 
     const pen = ref({
       tags: [],
-    });
+    })
 
     const tags = ref({
       text: '',
-    });
+    })
 
     function init(_) {
       pen.value = {
         tags: [],
-      };
+      }
       Object.assign(pen.value, {
         ..._,
-      });
+      })
     }
 
     function onAdd() {
-      dataDrawerRef.value.visible = true;
+      dataDrawerRef.value.visible = true
     }
 
     function getDataDrawer(model) {
       if (!pen.value['form']) {
-        pen.value['form'] = [];
+        pen.value['form'] = []
       }
       switch (model.type) {
         case 'text':
-          pen.value[model.key] = '';
-          break;
+          pen.value[model.key] = ''
+          break
         case 'switch':
-          pen.value[model.key] = true;
-          break;
+          pen.value[model.key] = true
+          break
         case 'number':
-          pen.value[model.key] = model.min;
-          break;
+          pen.value[model.key] = model.min
+          break
       }
       pen.value.form.push({
         ...model,
@@ -212,20 +220,20 @@ export default defineComponent({
           dataId: '',
           name: '',
         },
-      });
-      emit('oks', pen.value);
+      })
+      emit('oks', pen.value)
     }
 
     /**
      * 打开代码编辑器
      */
     function openEditContainer(data, index) {
-      editContainerRef.value.visible = true;
-      dataIndex = index;
+      editContainerRef.value.visible = true
+      dataIndex = index
       nextTick(() => {
-        let value = pen.value[data.key];
-        editContainerRef.value.init(value ? value : '');
-      });
+        let value = pen.value[data.key]
+        editContainerRef.value.init(value ? value : '')
+      })
     }
 
     /**
@@ -233,11 +241,11 @@ export default defineComponent({
      */
     function getEditTextValue(textValue) {
       if (dataIndex >= 0 && pen.value.form) {
-        const formItem = pen.value.form[dataIndex];
-        pen.value[formItem.key] = textValue;
-        emit('oks', pen.value);
+        const formItem = pen.value.form[dataIndex]
+        pen.value[formItem.key] = textValue
+        emit('oks', pen.value)
       }
-      dataIndex = -1;
+      dataIndex = -1
     }
 
     /**
@@ -246,77 +254,77 @@ export default defineComponent({
      * @param {Number} idx
      */
     function onDeleteData(data, idx) {
-      pen.value.form.splice(idx, 1);
-      emit('deleteDataValue', data.key);
+      pen.value.form.splice(idx, 1)
+      emit('deleteDataValue', data.key)
     }
 
     function getDataValue(k, v) {
-      emit('getDataValue', k, v);
+      emit('getDataValue', k, v)
     }
 
     /**
      * 打开变量弹窗
      */
     const openVariable = (data, index) => {
-      variableModalRef.value.visible = true;
-      dataIndex = index;
-    };
+      variableModalRef.value.visible = true
+      dataIndex = index
+    }
 
     /**
      * 获取绑定变量ID
      */
     function getDataId(e) {
-      let { id, name } = e;
+      let { id, name } = e
       Object.assign(pen.value.form[dataIndex], {
         dataIds: {
           dataId: id,
           name,
         },
-      });
-      dataIndex = -1;
+      })
+      dataIndex = -1
     }
 
     function onDeleteDataIds(vo, idx) {
       pen.value.form[idx].dataIds = {
         dataId: '',
         name: '',
-      };
+      }
     }
 
     function addPenTags() {
       if (tags.value['text'] == '') {
-        message.warning('文本不能为空');
-        return false;
+        message.warning('文本不能为空')
+        return false
       }
-      pen.value['tags'].push(tags.value['text']);
-      tags.value['text'] = '';
-      emit('oks', pen.value);
+      pen.value['tags'].push(tags.value['text'])
+      tags.value['text'] = ''
+      emit('oks', pen.value)
     }
 
     function onClosePenTag(idx) {
-      pen.value['tags'].splice(idx, 1);
-      emit('oks', pen.value);
+      pen.value['tags'].splice(idx, 1)
+      emit('oks', pen.value)
     }
 
     /**
      *
      */
     function onAddSelect() {
-      selectFormRef.value.visible = true;
+      selectFormRef.value.visible = true
     }
 
     function onEditSelect(idx) {
-      selectFormRef.value.visible = true;
+      selectFormRef.value.visible = true
       nextTick(() => {
-        selectFormRef.value.init(pen.value['dropdownList'][idx], idx);
-      });
+        selectFormRef.value.init(pen.value['dropdownList'][idx], idx)
+      })
     }
 
     /**
      * 删除下拉选项
      */
     function onDeleteSelectData(data, index) {
-      pen.value['dropdownList'].splice(index, 1);
+      pen.value['dropdownList'].splice(index, 1)
     }
 
     /**
@@ -324,22 +332,22 @@ export default defineComponent({
      */
     function getSelectFormData(data, idx) {
       if (idx !== '') {
-        pen.value['dropdownList'][idx] = data;
+        pen.value['dropdownList'][idx] = data
       } else {
-        pen.value['dropdownList'].push(data);
+        pen.value['dropdownList'].push(data)
       }
     }
 
     function onUpdatePen() {
-      emit('oks', pen.value);
+      emit('oks', pen.value)
     }
 
     watch(
       () => selections.pen,
-      (val) => {
-        init(val);
-      }
-    );
+      val => {
+        init(val)
+      },
+    )
 
     return {
       pen,
@@ -367,9 +375,9 @@ export default defineComponent({
       variableModalRef,
       selectFormRef,
       editContainerRef,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

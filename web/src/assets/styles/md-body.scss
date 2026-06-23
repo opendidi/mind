@@ -10,35 +10,67 @@ $border: #e2e8f0;
   line-height: 1.75;
   word-break: break-word;
 
-  h1, h2, h3, h4 {
+  h1,
+  h2,
+  h3,
+  h4 {
     font-weight: 700;
     margin: 16px 0 8px;
     line-height: 1.35;
-    &:first-child { margin-top: 0; }
+    &:first-child {
+      margin-top: 0;
+    }
   }
-  h1 { font-size: 18px; color: $text; }
-  h2 { font-size: 16px; color: $text; }
-  h3 { font-size: 14px; color: $text-secondary; }
-  h4 { font-size: 13px; color: $text-muted; }
+  h1 {
+    font-size: 18px;
+    color: $text;
+  }
+  h2 {
+    font-size: 16px;
+    color: $text;
+  }
+  h3 {
+    font-size: 14px;
+    color: $text-secondary;
+  }
+  h4 {
+    font-size: 13px;
+    color: $text-muted;
+  }
 
   p {
     margin: 0 0 8px;
-    &:last-child { margin-bottom: 0; }
+    &:last-child {
+      margin-bottom: 0;
+    }
   }
 
-  strong { font-weight: 700; color: #0f172a; }
-  em { font-style: italic; color: $text-secondary; }
+  strong {
+    font-weight: 700;
+    color: #0f172a;
+  }
+  em {
+    font-style: italic;
+    color: $text-secondary;
+  }
 
-  ul, ol {
+  ul,
+  ol {
     margin: 6px 0;
     padding-left: 22px;
   }
   li {
     margin-bottom: 3px;
-    &::marker { color: $text-muted; }
+    &::marker {
+      color: $text-muted;
+    }
   }
-  ul li { list-style-type: disc; }
-  ol li { list-style-type: decimal; }
+  ul li {
+    list-style-type: disc;
+  }
+  ol li {
+    list-style-type: decimal;
+  }
 
   code {
     background: #eef2ff;
@@ -46,7 +78,7 @@ $border: #e2e8f0;
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 12px;
-    font-family: "Fira Code", "Cascadia Code", "Consolas", monospace;
+    font-family: 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
     font-weight: 500;
   }
 
@@ -75,14 +107,18 @@ $border: #e2e8f0;
     border-radius: 0 8px 8px 0;
     color: $text-secondary;
     font-style: italic;
-    p { margin-bottom: 4px; }
+    p {
+      margin-bottom: 4px;
+    }
   }
 
   a {
     color: $primary;
     text-decoration: none;
     border-bottom: 1px solid rgba($primary, 0.3);
-    transition: border-color 0.15s, color 0.15s;
+    transition:
+      border-color 0.15s,
+      color 0.15s;
     &:hover {
       border-bottom-color: $primary;
       color: #4338ca;
@@ -122,9 +158,15 @@ $border: #e2e8f0;
     }
     tr {
       transition: background 0.15s;
-      &:nth-child(even) { background: #fafbfc; }
-      &:hover { background: #eef2ff; }
-      &:last-child td { border-bottom: none; }
+      &:nth-child(even) {
+        background: #fafbfc;
+      }
+      &:hover {
+        background: #eef2ff;
+      }
+      &:last-child td {
+        border-bottom: none;
+      }
     }
   }
 
@@ -135,7 +177,9 @@ $border: #e2e8f0;
     margin: 8px 0;
     border: 1px solid $border;
     cursor: pointer;
-    transition: transform 0.15s, box-shadow 0.15s;
+    transition:
+      transform 0.15s,
+      box-shadow 0.15s;
     &:hover {
       transform: scale(1.02);
       box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
@@ -148,7 +192,7 @@ $border: #e2e8f0;
     margin: 14px 0;
   }
 
-  input[type="checkbox"] {
+  input[type='checkbox'] {
     margin-right: 6px;
     accent-color: $primary;
   }

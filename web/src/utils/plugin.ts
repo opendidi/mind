@@ -6,15 +6,14 @@
  * @LastEditors: htang
  * @LastEditTime: 2024-04-03 21:17:51
  */
-import { mindBoxPlugin } from "@meta2d/plugin-mind-core";
-import { collapseChildPlugin } from "@meta2d/plugin-mind-collapse"
+import { mindBoxPlugin } from '@meta2d/plugin-mind-core'
+import { collapseChildPlugin } from '@meta2d/plugin-mind-collapse'
 
 export class MetaPlugin {
-
-  editor: any;
+  editor: any
 
   constructor(editor: any) {
-    this.editor = editor;
+    this.editor = editor
   }
 
   /**
@@ -24,13 +23,15 @@ export class MetaPlugin {
    * @param {*} options 配置信息
    */
   initPlugin(meta2d: any, target: string, options: any = {}) {
-    meta2d.installPenPlugins({ name: target }, [{
-      plugin: mindBoxPlugin,
-      options,
-    }, {
-      plugin: collapseChildPlugin,
-      options,
-    }])
+    meta2d.installPenPlugins({ name: target }, [
+      {
+        plugin: mindBoxPlugin,
+        options,
+      },
+      {
+        plugin: collapseChildPlugin,
+        options,
+      },
+    ])
   }
-
 }

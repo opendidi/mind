@@ -22,13 +22,7 @@
           <h2>创建账户</h2>
           <p>注册后即可使用全部功能</p>
         </div>
-        <a-form
-          ref="formRef"
-          :model="form"
-          :rules="rules"
-          layout="vertical"
-          @finish="onSubmit"
-        >
+        <a-form ref="formRef" :model="form" :rules="rules" layout="vertical" @finish="onSubmit">
           <a-form-item name="username" label="用户名">
             <a-input
               v-model:value="form.username"
@@ -81,14 +75,7 @@
             </div>
           </a-form-item>
           <a-form-item>
-            <a-button
-              type="primary"
-              html-type="submit"
-              size="large"
-              block
-              :loading="submitting"
-              class="submit-btn"
-            >
+            <a-button type="primary" html-type="submit" size="large" block :loading="submitting" class="submit-btn">
               注册
             </a-button>
           </a-form-item>
@@ -103,76 +90,72 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
-import { useRouter } from "vue-router";
-import { message } from "ant-design-vue";
-import {
-  UserOutlined,
-  LockOutlined,
-  SafetyOutlined,
-} from "@ant-design/icons-vue";
-import { useAuthCaptcha } from "@/composables/useAuthCaptcha";
-import { apiRegister } from "@/api/user";
+import { ref, reactive } from 'vue'
+import { useRouter } from 'vue-router'
+import { message } from 'ant-design-vue'
+import { UserOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons-vue'
+import { useAuthCaptcha } from '@/composables/useAuthCaptcha'
+import { apiRegister } from '@/api/user'
 
-const router = useRouter();
-const { randCodeData, initAuthCaptcha } = useAuthCaptcha();
+const router = useRouter()
+const { randCodeData, initAuthCaptcha } = useAuthCaptcha()
 
-const formRef = ref();
-const submitting = ref(false);
+const formRef = ref()
+const submitting = ref(false)
 
 const form = reactive({
-  username: "",
-  password: "",
-  passwordConfirm: "",
-  captcha: "",
-});
+  username: '',
+  password: '',
+  passwordConfirm: '',
+  captcha: '',
+})
 
 const validatePasswordConfirm = (_rule: any, value: string) => {
-  if (!value) return Promise.reject("请确认密码");
-  if (value !== form.password) return Promise.reject("两次输入的密码不一致");
-  return Promise.resolve();
-};
+  if (!value) return Promise.reject('请确认密码')
+  if (value !== form.password) return Promise.reject('两次输入的密码不一致')
+  return Promise.resolve()
+}
 
 const rules = {
   username: [
-    { required: true, message: "请输入用户名", trigger: "blur" },
+    { required: true, message: '请输入用户名', trigger: 'blur' },
     {
       pattern: /^[a-zA-Z0-9_]{3,20}$/,
-      message: "用户名只能包含字母、数字和下划线，长度 3-20",
-      trigger: "blur",
+      message: '用户名只能包含字母、数字和下划线，长度 3-20',
+      trigger: 'blur',
     },
   ],
   password: [
-    { required: true, message: "请输入密码", trigger: "blur" },
-    { min: 8, message: "密码至少 8 个字符", trigger: "blur" },
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 8, message: '密码至少 8 个字符', trigger: 'blur' },
   ],
   passwordConfirm: [
-    { required: true, message: "请确认密码", trigger: "blur" },
-    { validator: validatePasswordConfirm, trigger: "blur" },
+    { required: true, message: '请确认密码', trigger: 'blur' },
+    { validator: validatePasswordConfirm, trigger: 'blur' },
   ],
   captcha: [
-    { required: true, message: "请输入验证码", trigger: "blur" },
-    { len: 4, message: "验证码为 4 位", trigger: "blur" },
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { len: 4, message: '验证码为 4 位', trigger: 'blur' },
   ],
-};
+}
 
 async function onSubmit() {
-  submitting.value = true;
+  submitting.value = true
   try {
-    const formData = new FormData();
-    formData.append("username", form.username);
-    formData.append("password", form.password);
-    formData.append("captcha", form.captcha);
-    formData.append("captcha_id", randCodeData.captcha_id);
+    const formData = new FormData()
+    formData.append('username', form.username)
+    formData.append('password', form.password)
+    formData.append('captcha', form.captcha)
+    formData.append('captcha_id', randCodeData.captcha_id)
 
-    await apiRegister(formData);
-    message.success("注册成功，请登录");
-    router.push("/login");
+    await apiRegister(formData)
+    message.success('注册成功，请登录')
+    router.push('/login')
   } catch (err: any) {
-    initAuthCaptcha();
-    form.captcha = "";
+    initAuthCaptcha()
+    form.captcha = ''
   } finally {
-    submitting.value = false;
+    submitting.value = false
   }
 }
 </script>

@@ -24,9 +24,7 @@
               <a-input :value="profile.last_login || '-'" disabled />
             </a-form-item>
             <a-form-item>
-              <a-button type="primary" :loading="savingProfile" @click="onSaveProfile">
-                保存
-              </a-button>
+              <a-button type="primary" :loading="savingProfile" @click="onSaveProfile"> 保存 </a-button>
             </a-form-item>
           </a-form>
         </a-tab-pane>
@@ -63,9 +61,7 @@
               />
             </a-form-item>
             <a-form-item>
-              <a-button type="primary" html-type="submit" :loading="changingPwd">
-                修改密码
-              </a-button>
+              <a-button type="primary" html-type="submit" :loading="changingPwd"> 修改密码 </a-button>
             </a-form-item>
           </a-form>
         </a-tab-pane>
@@ -75,86 +71,90 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, onMounted } from "vue";
-import { message } from "ant-design-vue";
-import { useUserStore } from "@/store/modules/user";
+import { ref, reactive, onMounted } from 'vue'
+import { message } from 'ant-design-vue'
+import { useUserStore } from '@/store/modules/user'
 
-const userStore = useUserStore();
-const activeTab = ref("info");
-const savingProfile = ref(false);
-const changingPwd = ref(false);
-const pwdFormRef = ref();
+const userStore = useUserStore()
+const activeTab = ref('info')
+const savingProfile = ref(false)
+const changingPwd = ref(false)
+const pwdFormRef = ref()
 
 const profile = reactive({
-  username: "",
-  email: "",
-  created_at: "",
-  last_login: "",
-});
+  username: '',
+  email: '',
+  created_at: '',
+  last_login: '',
+})
 
 const pwdForm = reactive({
-  oldPassword: "",
-  newPassword: "",
-  confirmPassword: "",
-});
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: '',
+})
 
 const validatePwdConfirm = (_rule: any, value: string) => {
-  if (!value) return Promise.reject("请确认新密码");
-  if (value !== pwdForm.newPassword) return Promise.reject("两次输入的密码不一致");
-  return Promise.resolve();
-};
+  if (!value) return Promise.reject('请确认新密码')
+  if (value !== pwdForm.newPassword) return Promise.reject('两次输入的密码不一致')
+  return Promise.resolve()
+}
 
 const pwdRules = {
-  oldPassword: [{ required: true, message: "请输入原密码", trigger: "blur" }],
+  oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
   newPassword: [
-    { required: true, message: "请输入新密码", trigger: "blur" },
-    { min: 8, max: 128, message: "密码长度 8-128 个字符", trigger: "blur" },
+    { required: true, message: '请输入新密码', trigger: 'blur' },
+    { min: 8, max: 128, message: '密码长度 8-128 个字符', trigger: 'blur' },
   ],
   confirmPassword: [
-    { required: true, message: "请确认新密码", trigger: "blur" },
-    { validator: validatePwdConfirm, trigger: "blur" },
+    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { validator: validatePwdConfirm, trigger: 'blur' },
   ],
-};
+}
 
 onMounted(async () => {
   try {
-    await userStore.fetchProfile();
-    const info = userStore.getUserInfo;
+    await userStore.fetchProfile()
+    const info = userStore.getUserInfo
     if (info) {
-      profile.username = info.username || "";
-      profile.email = info.email || "";
-      profile.created_at = info.created_at || "";
-      profile.last_login = info.last_login || "";
+      profile.username = info.username || ''
+      profile.email = info.email || ''
+      profile.created_at = info.created_at || ''
+      profile.last_login = info.last_login || ''
     }
-  } catch { /* ignore */ }
-});
+  } catch {
+    /* ignore */
+  }
+})
 
 async function onSaveProfile() {
-  savingProfile.value = true;
+  savingProfile.value = true
   try {
-    await userStore.updateProfile({ email: profile.email });
-    message.success("保存成功");
-  } catch { /* handled by interceptor */
+    await userStore.updateProfile({ email: profile.email })
+    message.success('保存成功')
+  } catch {
+    /* handled by interceptor */
   } finally {
-    savingProfile.value = false;
+    savingProfile.value = false
   }
 }
 
 async function onChangePassword() {
-  changingPwd.value = true;
+  changingPwd.value = true
   try {
     await userStore.changePassword({
       old_password: pwdForm.oldPassword,
       new_password: pwdForm.newPassword,
-    });
-    message.success("密码修改成功");
-    pwdForm.oldPassword = "";
-    pwdForm.newPassword = "";
-    pwdForm.confirmPassword = "";
-    pwdFormRef.value?.resetFields();
-  } catch { /* handled by interceptor */
+    })
+    message.success('密码修改成功')
+    pwdForm.oldPassword = ''
+    pwdForm.newPassword = ''
+    pwdForm.confirmPassword = ''
+    pwdFormRef.value?.resetFields()
+  } catch {
+    /* handled by interceptor */
   } finally {
-    changingPwd.value = false;
+    changingPwd.value = false
   }
 }
 </script>
@@ -177,9 +177,16 @@ async function onChangePassword() {
     color: #4f46e5;
     text-decoration: none;
     font-size: 14px;
-    &:hover { text-decoration: underline; }
+    &:hover {
+      text-decoration: underline;
+    }
   }
-  h1 { margin: 0; font-size: 18px; font-weight: 600; color: #1e293b; }
+  h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1e293b;
+  }
 }
 
 .profile-content {
@@ -190,7 +197,8 @@ async function onChangePassword() {
   padding: 24px 32px;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
 
-  .info-form, .pwd-form {
+  .info-form,
+  .pwd-form {
     max-width: 400px;
   }
 }

@@ -4,7 +4,18 @@
     <div class="think-header" @click="toggle">
       <div class="think-header-left">
         <!-- Brain icon -->
-        <svg class="think-brain-icon" :class="{ pulse: thinking }" viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+        <svg
+          class="think-brain-icon"
+          :class="{ pulse: thinking }"
+          viewBox="0 0 24 24"
+          width="16"
+          height="16"
+          fill="none"
+          stroke="currentColor"
+          stroke-width="1.8"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+        >
           <path d="M12 4a4 4 0 0 1 3.46 6 3.5 3.5 0 0 1 0 6 4 4 0 0 1-6.92 0 3.5 3.5 0 0 1 0-6A4 4 0 0 1 12 4z" />
           <path d="M9 12h.01" />
           <path d="M15 12h.01" />
@@ -22,7 +33,16 @@
           <span v-if="duration != null" class="think-meta">{{ formatDuration(duration) }}</span>
         </template>
       </div>
-      <svg class="think-chevron" :class="{ rotated: expanded }" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+      <svg
+        class="think-chevron"
+        :class="{ rotated: expanded }"
+        viewBox="0 0 24 24"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
         <path d="M6 9l6 6 6-6" />
       </svg>
     </div>
@@ -37,42 +57,42 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue';
+import { ref, computed } from 'vue'
 
 const props = defineProps<{
-  content: string;
+  content: string
   /** Whether the AI is still thinking/streaming */
-  thinking?: boolean;
+  thinking?: boolean
   /** Thinking duration in milliseconds */
-  duration?: number;
+  duration?: number
   /** Initial expanded state (defaults to auto: expanded if thinking, collapsed otherwise) */
-  startExpanded?: boolean;
-}>();
+  startExpanded?: boolean
+}>()
 
-const expanded = ref(props.startExpanded ?? (props.thinking ?? false));
+const expanded = ref(props.startExpanded ?? props.thinking ?? false)
 
 function toggle() {
-  expanded.value = !expanded.value;
+  expanded.value = !expanded.value
 }
 
 const stepCount = computed(() => {
-  if (!props.content) return 0;
+  if (!props.content) return 0
   // Count numbered steps like "1. xxx", "2)", "步骤1", "第1步"
-  const lines = props.content.split('\n');
-  let count = 0;
+  const lines = props.content.split('\n')
+  let count = 0
   for (const line of lines) {
-    const t = line.trim();
-    if (/^(\d+[\.\)、]|第\d+步|步骤\d+|Step\s*\d+)/i.test(t)) count++;
+    const t = line.trim()
+    if (/^(\d+[\.\)、]|第\d+步|步骤\d+|Step\s*\d+)/i.test(t)) count++
   }
-  return count;
-});
+  return count
+})
 
 function formatDuration(ms: number): string {
-  if (ms < 1000) return `${ms}ms`;
-  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`;
-  const mins = Math.floor(ms / 60000);
-  const secs = Math.round((ms % 60000) / 1000);
-  return `${mins}m ${secs}s`;
+  if (ms < 1000) return `${ms}ms`
+  if (ms < 60000) return `${(ms / 1000).toFixed(1)}s`
+  const mins = Math.floor(ms / 60000)
+  const secs = Math.round((ms % 60000) / 1000)
+  return `${mins}m ${secs}s`
 }
 </script>
 
@@ -84,7 +104,9 @@ function formatDuration(ms: number): string {
   border: 1px solid #ede9fe;
   border-left: 3px solid #a78bfa;
   overflow: hidden;
-  transition: border-color 0.25s, box-shadow 0.25s;
+  transition:
+    border-color 0.25s,
+    box-shadow 0.25s;
 
   &.is-streaming {
     border-left-color: #7c3aed;
@@ -98,8 +120,13 @@ function formatDuration(ms: number): string {
 }
 
 @keyframes think-glow {
-  0%, 100% { box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.04); }
-  50% { box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12); }
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px rgba(124, 58, 237, 0.04);
+  }
+  50% {
+    box-shadow: 0 0 0 2px rgba(124, 58, 237, 0.12);
+  }
 }
 
 .think-header {
@@ -127,7 +154,9 @@ function formatDuration(ms: number): string {
 .think-brain-icon {
   color: #a78bfa;
   flex-shrink: 0;
-  transition: color 0.25s, transform 0.3s;
+  transition:
+    color 0.25s,
+    transform 0.3s;
 
   .is-streaming & {
     color: #7c3aed;
@@ -139,8 +168,15 @@ function formatDuration(ms: number): string {
 }
 
 @keyframes brain-pulse {
-  0%, 100% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.08); opacity: 1; }
+  0%,
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.08);
+    opacity: 1;
+  }
 }
 
 .think-label {
@@ -173,14 +209,26 @@ function formatDuration(ms: number): string {
     background: #a78bfa;
     animation: dot-wave 1.4s infinite both;
 
-    &:nth-child(2) { animation-delay: 0.2s; }
-    &:nth-child(3) { animation-delay: 0.4s; }
+    &:nth-child(2) {
+      animation-delay: 0.2s;
+    }
+    &:nth-child(3) {
+      animation-delay: 0.4s;
+    }
   }
 }
 
 @keyframes dot-wave {
-  0%, 60%, 100% { opacity: 0.25; transform: translateY(0); }
-  30% { opacity: 1; transform: translateY(-3px); }
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-3px);
+  }
 }
 
 .think-chevron {
@@ -224,7 +272,7 @@ function formatDuration(ms: number): string {
   word-break: break-word;
   max-height: 280px;
   overflow-y: auto;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "PingFang SC", "Microsoft YaHei", sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'PingFang SC', 'Microsoft YaHei', sans-serif;
 
   // Scrollbar styling
   &::-webkit-scrollbar {

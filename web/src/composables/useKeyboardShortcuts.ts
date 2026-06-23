@@ -53,19 +53,27 @@ export function useKeyboardShortcuts(meta2d: Meta2d) {
 
     if (ctrl && e.key === 's') {
       e.preventDefault()
-      return  // Save handled by Header component
+      return // Save handled by Header component
     }
 
     const step = e.shiftKey ? 10 : 1
     switch (e.key) {
       case 'ArrowUp':
-        e.preventDefault(); moveActive(meta2d, 0, -step); break
+        e.preventDefault()
+        moveActive(meta2d, 0, -step)
+        break
       case 'ArrowDown':
-        e.preventDefault(); moveActive(meta2d, 0, step); break
+        e.preventDefault()
+        moveActive(meta2d, 0, step)
+        break
       case 'ArrowLeft':
-        e.preventDefault(); moveActive(meta2d, -step, 0); break
+        e.preventDefault()
+        moveActive(meta2d, -step, 0)
+        break
       case 'ArrowRight':
-        e.preventDefault(); moveActive(meta2d, step, 0); break
+        e.preventDefault()
+        moveActive(meta2d, step, 0)
+        break
       case 'Escape':
         e.preventDefault()
         ;(meta2d.store as any).active = []

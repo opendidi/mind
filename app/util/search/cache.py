@@ -8,6 +8,7 @@ Stale TTL: 30 分钟（引擎全挂时兜底）
 
 import json
 import logging
+import re as _re
 import time
 
 from app.util.redis_utils import get_redis
@@ -17,6 +18,23 @@ _SEARCH_CACHE_TTL = 300  # 5 分钟（新鲜）
 _SEARCH_STALE_TTL = 1800  # 30 分钟（引擎全挂时兜底）
 _SEARCH_RATE_MAX = 10
 _SEARCH_RATE_WINDOW = 60
+
+_CACHE_KEY_STRIP_RE = _re.compile(
+    r"(帮我|搜索|查一下|搜一下|查找|帮我搜索|帮我查|帮我找|请|一下|吧|吗|呢|呀|啊|哦|哈|啦)",
+)
+_CACHE_KEY_WS_RE = _re.compile(r"\s+")
+
+
+def _normalize_keyword(keyword: str) -> str:
+    """Normalize keyword for cache key matching.
+
+    Strips common Chinese filler words and normalizes whitespace,
+    so "帮我搜索 python async" and "python async" share the same cache.
+    """
+    kw = keyword.strip()
+    kw = _CACHE_KEY_STRIP_RE.sub("", kw)
+    kw = _CACHE_KEY_WS_RE.sub(" ", kw).strip()
+    return kw.lower()
 
 
 def _get_cache_redis():
@@ -45,7 +63,7 @@ def check_search_rate(user_id: str) -> bool:
 
 def cache_get(keyword: str, n: int) -> dict | None:
     """从缓存获取新鲜搜索结果。返回 dict 或 None。"""
-    key = f"search:{keyword.lower().strip()}:{n}"
+    key = f"search:{_normalize_keyword(keyword)}:{n}"
     try:
         r = _get_cache_redis()
         data = r.get(key)
@@ -68,7 +86,7 @@ def cache_get_stale(keyword: str, n: int) -> dict | None:
     Uses a separate Redis key with longer TTL to persist stale entries.
     Fresh cache already returned by cache_get; this is the last-resort fallback.
     """
-    stale_key = f"search:stale:{keyword.lower().strip()}:{n}"
+    stale_key = f"search:stale:{_normalize_keyword(keyword)}:{n}"
     try:
         r = _get_cache_redis()
         data = r.get(stale_key)
@@ -93,8 +111,8 @@ def cache_set(keyword: str, n: int, result: dict):
     results = result.get("data", {}).get("results", [])
     if not results:
         return
-    key = f"search:{keyword.lower().strip()}:{n}"
-    stale_key = f"search:stale:{keyword.lower().strip()}:{n}"
+    key = f"search:{_normalize_keyword(keyword)}:{n}"
+    stale_key = f"search:stale:{_normalize_keyword(keyword)}:{n}"
     try:
         r = _get_cache_redis()
         data = json.dumps(result, ensure_ascii=False)

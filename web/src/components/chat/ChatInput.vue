@@ -4,7 +4,7 @@
     <!-- Quote preview -->
     <div v-if="quotedText" class="quote-bar">
       <span class="quote-label">
-        {{ quotedText.role === "user" ? "你" : "AI" }}
+        {{ quotedText.role === 'user' ? '你' : 'AI' }}
       </span>
       <span class="quote-preview">{{ quotedText.text }}</span>
       <a-button type="text" size="small" class="quote-close" @click="$emit('removeQuote')">
@@ -53,21 +53,8 @@
     </div>
 
     <!-- Hidden file inputs -->
-    <input
-      ref="imgInputRef"
-      type="file"
-      accept="image/*"
-      multiple
-      hidden
-      @change="onFileChange"
-    />
-    <input
-      ref="docInputRef"
-      type="file"
-      accept=".docx,.xlsx,.xls,.txt,.json"
-      hidden
-      @change="onDocFileChange"
-    />
+    <input ref="imgInputRef" type="file" accept="image/*" multiple hidden @change="onFileChange" />
+    <input ref="docInputRef" type="file" accept=".docx,.xlsx,.xls,.txt,.json" hidden @change="onDocFileChange" />
 
     <!-- Input box -->
     <div class="input-inner">
@@ -109,143 +96,135 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
-import {
-  CloseOutlined, SendOutlined,
-  PaperClipOutlined, FileTextOutlined,
-} from "@ant-design/icons-vue";
-import { message } from "ant-design-vue";
-import type { QuoteInfo, ChatFile } from "@/composables/useAgentChat";
-import { useAttachments } from "@/composables/useAttachments";
-import { apiChatUploadFile } from "@/api/chat";
+import { ref, computed } from 'vue'
+import { CloseOutlined, SendOutlined, PaperClipOutlined, FileTextOutlined } from '@ant-design/icons-vue'
+import { message } from 'ant-design-vue'
+import type { QuoteInfo, ChatFile } from '@/composables/useAgentChat'
+import { useAttachments } from '@/composables/useAttachments'
+import { apiChatUploadFile } from '@/api/chat'
 
 const props = defineProps<{
-  loading: boolean;
-  modelList?: { id: string }[];
-  modelIdx?: number;
-  quotedText?: QuoteInfo | null;
-}>();
+  loading: boolean
+  modelList?: { id: string }[]
+  modelIdx?: number
+  quotedText?: QuoteInfo | null
+}>()
 
 const emit = defineEmits<{
-  "update:modelIdx": [idx: number];
-  send: [text: string, imageUrls: string[], docMarkers: string[], docFiles: ChatFile[], quotedText?: QuoteInfo];
-  abort: [];
-  removeQuote: [];
-}>();
+  'update:modelIdx': [idx: number]
+  send: [text: string, imageUrls: string[], docMarkers: string[], docFiles: ChatFile[], quotedText?: QuoteInfo]
+  abort: []
+  removeQuote: []
+}>()
 
-const inputText = ref("");
-const textareaRef = ref<HTMLTextAreaElement | null>(null);
-const imgInputRef = ref<HTMLInputElement | null>(null);
-const docInputRef = ref<HTMLInputElement | null>(null);
+const inputText = ref('')
+const textareaRef = ref<HTMLTextAreaElement | null>(null)
+const imgInputRef = ref<HTMLInputElement | null>(null)
+const docInputRef = ref<HTMLInputElement | null>(null)
 
 // Image attachments via composable
-const { attachments, onFileChange, onRemoveAttachment, cleanup } = useAttachments();
+const { attachments, onFileChange, onRemoveAttachment, cleanup } = useAttachments()
 
 // Document attachments
 interface DocAttach {
-  name: string;
-  objectName: string;
-  url: string;
-  uploading: boolean;
-  failed: boolean;
+  name: string
+  objectName: string
+  url: string
+  uploading: boolean
+  failed: boolean
 }
-const docAttachments = ref<DocAttach[]>([]);
+const docAttachments = ref<DocAttach[]>([])
 
 async function onDocFileChange(e: Event) {
-  const input = e.target as HTMLInputElement;
-  const files = input.files;
-  if (!files || files.length === 0) return;
+  const input = e.target as HTMLInputElement
+  const files = input.files
+  if (!files || files.length === 0) return
 
   for (let i = 0; i < files.length; i++) {
-    const file = files[i];
+    const file = files[i]
     const item: DocAttach = {
       name: file.name,
-      objectName: "",
-      url: "",
+      objectName: '',
+      url: '',
       uploading: true,
       failed: false,
-    };
-    docAttachments.value.push(item);
-    const idx = docAttachments.value.length - 1;
+    }
+    docAttachments.value.push(item)
+    const idx = docAttachments.value.length - 1
 
     try {
-      const res = await apiChatUploadFile(file);
-      docAttachments.value[idx].objectName = res.object_name;
-      docAttachments.value[idx].url = res.url;
-      docAttachments.value[idx].uploading = false;
+      const res = await apiChatUploadFile(file)
+      docAttachments.value[idx].objectName = res.object_name
+      docAttachments.value[idx].url = res.url
+      docAttachments.value[idx].uploading = false
     } catch (err: unknown) {
-      docAttachments.value[idx].failed = true;
-      docAttachments.value[idx].uploading = false;
+      docAttachments.value[idx].failed = true
+      docAttachments.value[idx].uploading = false
       if (err?.message && !err?.response) {
-        message.error(err.message);
+        message.error(err.message)
       }
     }
   }
 
-  input.value = "";
+  input.value = ''
 }
 
 function onRemoveDoc(idx: number) {
-  docAttachments.value.splice(idx, 1);
+  docAttachments.value.splice(idx, 1)
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === "Enter" && !e.shiftKey && !e.isComposing) {
-    e.preventDefault();
-    onSend();
+  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+    e.preventDefault()
+    onSend()
   }
 }
 
 function onTextareaInput() {
-  const el = textareaRef.value;
-  if (!el) return;
-  el.style.height = "auto";
-  el.style.height = Math.min(el.scrollHeight, 160) + "px";
+  const el = textareaRef.value
+  if (!el) return
+  el.style.height = 'auto'
+  el.style.height = Math.min(el.scrollHeight, 160) + 'px'
 }
 
-const hasReadyImages = computed(() =>
-  attachments.value.some((a) => !a.uploading && !a.failed && a.url)
-);
-const hasReadyDocs = computed(() =>
-  docAttachments.value.some((d) => !d.uploading && !d.failed && d.objectName)
-);
-const hasUploading = computed(() =>
-  attachments.value.some((a) => a.uploading) || docAttachments.value.some((d) => d.uploading)
-);
-const canSend = computed(() =>
-  (inputText.value.trim().length > 0 || hasReadyImages.value || hasReadyDocs.value || !!props.quotedText)
-  && !hasUploading.value
-);
+const hasReadyImages = computed(() => attachments.value.some(a => !a.uploading && !a.failed && a.url))
+const hasReadyDocs = computed(() => docAttachments.value.some(d => !d.uploading && !d.failed && d.objectName))
+const hasUploading = computed(
+  () => attachments.value.some(a => a.uploading) || docAttachments.value.some(d => d.uploading),
+)
+const canSend = computed(
+  () =>
+    (inputText.value.trim().length > 0 || hasReadyImages.value || hasReadyDocs.value || !!props.quotedText) &&
+    !hasUploading.value,
+)
 
 function onSend() {
-  const text = inputText.value.trim();
-  const hasQuote = !!props.quotedText;
-  if (!canSend.value || props.loading) return;
+  const text = inputText.value.trim()
+  const hasQuote = !!props.quotedText
+  if (!canSend.value || props.loading) return
 
-  inputText.value = "";
-  if (textareaRef.value) textareaRef.value.style.height = "";
+  inputText.value = ''
+  if (textareaRef.value) textareaRef.value.style.height = ''
 
-  const imageUrls = attachments.value
-    .filter((a) => !a.failed && a.url)
-    .map((a) => a.url);
+  const imageUrls = attachments.value.filter(a => !a.failed && a.url).map(a => a.url)
 
-  const readyDocs = docAttachments.value.filter((d) => !d.failed && d.objectName);
+  const readyDocs = docAttachments.value.filter(d => !d.failed && d.objectName)
 
-  const docMarkers = readyDocs.map((d) => `[上传文件: ${d.objectName} (${d.name})]`);
+  const docMarkers = readyDocs.map(d => `[上传文件: ${d.objectName} (${d.name})]`)
 
-  const docFiles = readyDocs.map((d) => ({
+  const docFiles = readyDocs.map(d => ({
     name: d.name,
     objectName: d.objectName,
     url: d.url,
-  }));
+  }))
 
-  emit("send", text, imageUrls, docMarkers, docFiles, props.quotedText);
+  emit('send', text, imageUrls, docMarkers, docFiles, props.quotedText)
 
   // Clear uploaded attachments after send
-  cleanup();
-  docAttachments.value = [];
+  cleanup()
+  docAttachments.value = []
 
-  if (hasQuote) emit("removeQuote");
+  if (hasQuote) emit('removeQuote')
 }
 </script>
 
@@ -292,7 +271,9 @@ $text-muted: #94a3b8;
     .quote-close {
       flex-shrink: 0;
       color: $text-muted;
-      &:hover { color: #dc2626; }
+      &:hover {
+        color: #dc2626;
+      }
     }
   }
 
@@ -306,41 +287,71 @@ $text-muted: #94a3b8;
 
   .attach-thumb {
     position: relative;
-    width: 56px; height: 56px;
-    border-radius: 8px; overflow: hidden;
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    overflow: hidden;
     border: 1px solid $border;
     background: #f8fafc;
-    display: flex; align-items: center; justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 
-    img { width: 100%; height: 100%; object-fit: cover; }
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
 
-    &.uploading { opacity: 0.6; }
-    &.failed { border-color: #fca5a5; background: #fef2f2; }
+    &.uploading {
+      opacity: 0.6;
+    }
+    &.failed {
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
 
     .attach-spin {
-      position: absolute; inset: 0;
+      position: absolute;
+      inset: 0;
       border: 2px solid #e2e8f0;
       border-top-color: $primary;
       border-radius: 50%;
-      width: 20px; height: 20px;
+      width: 20px;
+      height: 20px;
       margin: auto;
       animation: spin 0.6s linear infinite;
     }
     .attach-fail-icon {
-      font-size: 20px; color: #ef4444; font-weight: 700;
+      font-size: 20px;
+      color: #ef4444;
+      font-weight: 700;
     }
     .attach-remove {
-      position: absolute; top: 2px; right: 2px;
-      width: 16px; height: 16px; border-radius: 50%;
-      background: rgba(0,0,0,0.45); color: #fff;
-      font-size: 11px; line-height: 16px; text-align: center;
-      cursor: pointer; opacity: 0; transition: opacity 0.15s;
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, 0.45);
+      color: #fff;
+      font-size: 11px;
+      line-height: 16px;
+      text-align: center;
+      cursor: pointer;
+      opacity: 0;
+      transition: opacity 0.15s;
     }
-    &:hover .attach-remove { opacity: 1; }
+    &:hover .attach-remove {
+      opacity: 1;
+    }
   }
 
   .doc-attach {
-    display: inline-flex; align-items: center; gap: 4px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
     padding: 4px 10px;
     border-radius: 8px;
     border: 1px solid $border;
@@ -348,14 +359,34 @@ $text-muted: #94a3b8;
     font-size: 12px;
     max-width: 260px;
 
-    &.uploading { opacity: 0.6; }
-    &.failed { border-color: #fca5a5; background: #fef2f2; }
+    &.uploading {
+      opacity: 0.6;
+    }
+    &.failed {
+      border-color: #fca5a5;
+      background: #fef2f2;
+    }
 
-    .doc-icon { font-size: 14px; color: $primary; flex-shrink: 0; }
-    .doc-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: #1e293b; }
-    .doc-ok { color: #22c55e; font-size: 12px; flex-shrink: 0; }
+    .doc-icon {
+      font-size: 14px;
+      color: $primary;
+      flex-shrink: 0;
+    }
+    .doc-name {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      color: #1e293b;
+    }
+    .doc-ok {
+      color: #22c55e;
+      font-size: 12px;
+      flex-shrink: 0;
+    }
     .attach-spin {
-      width: 12px; height: 12px; flex-shrink: 0;
+      width: 12px;
+      height: 12px;
+      flex-shrink: 0;
       border: 2px solid #e2e8f0;
       border-top-color: $primary;
       border-radius: 50%;
@@ -363,15 +394,27 @@ $text-muted: #94a3b8;
     }
     .attach-remove {
       flex-shrink: 0;
-      width: 14px; height: 14px; border-radius: 50%;
-      background: #e2e8f0; color: #64748b;
-      font-size: 10px; line-height: 14px; text-align: center;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #64748b;
+      font-size: 10px;
+      line-height: 14px;
+      text-align: center;
       cursor: pointer;
-      &:hover { background: #fca5a5; color: #fff; }
+      &:hover {
+        background: #fca5a5;
+        color: #fff;
+      }
     }
   }
 
-  @keyframes spin { to { transform: rotate(360deg); } }
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
 
   .model-row {
     max-width: 1024px;
@@ -388,8 +431,13 @@ $text-muted: #94a3b8;
       color: #64748b;
       cursor: pointer;
       transition: all 0.15s;
-      &:hover { background: #e2e8f0; }
-      &.active { background: $primary; color: #fff; }
+      &:hover {
+        background: #e2e8f0;
+      }
+      &.active {
+        background: $primary;
+        color: #fff;
+      }
     }
   }
 
@@ -403,7 +451,9 @@ $text-muted: #94a3b8;
     border: 1px solid $border;
     border-radius: 16px;
     padding: 8px 12px 8px 16px;
-    transition: border-color 0.2s, box-shadow 0.2s;
+    transition:
+      border-color 0.2s,
+      box-shadow 0.2s;
 
     &:focus-within {
       border-color: $primary;
@@ -426,7 +476,9 @@ $text-muted: #94a3b8;
       font-family: inherit;
       color: #1e293b;
 
-      &::placeholder { color: $text-muted; }
+      &::placeholder {
+        color: $text-muted;
+      }
     }
 
     .input-actions {
@@ -437,29 +489,67 @@ $text-muted: #94a3b8;
     }
 
     .tool-btn {
-      width: 36px; height: 36px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0; color: $text-muted; border: none; font-size: 18px;
-      transition: color 0.15s, background 0.15s;
-      &:hover:not(:disabled) { color: $primary; background: rgba($primary, 0.06); }
-      &:disabled { color: #d1d5db; }
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      color: $text-muted;
+      border: none;
+      font-size: 18px;
+      transition:
+        color 0.15s,
+        background 0.15s;
+      &:hover:not(:disabled) {
+        color: $primary;
+        background: rgba($primary, 0.06);
+      }
+      &:disabled {
+        color: #d1d5db;
+      }
     }
 
     .send-btn {
-      width: 36px; height: 36px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0; background: $primary; border: none; outline: none;
-      &:hover:not(:disabled) { background: #4338ca; }
-      &:disabled { background: #cbd5e1; }
-      :deep(.anticon) { font-size: 15px; }
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      background: $primary;
+      border: none;
+      outline: none;
+      &:hover:not(:disabled) {
+        background: #4338ca;
+      }
+      &:disabled {
+        background: #cbd5e1;
+      }
+      :deep(.anticon) {
+        font-size: 15px;
+      }
     }
 
     .abort-btn {
-      width: 36px; height: 36px; border-radius: 10px;
-      display: flex; align-items: center; justify-content: center;
-      padding: 0; background: #dc2626; border: none; outline: none;
-      &:hover { background: #b91c1c; }
-      :deep(.anticon) { font-size: 15px; }
+      width: 36px;
+      height: 36px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 0;
+      background: #dc2626;
+      border: none;
+      outline: none;
+      &:hover {
+        background: #b91c1c;
+      }
+      :deep(.anticon) {
+        font-size: 15px;
+      }
     }
   }
 }

@@ -1,10 +1,6 @@
 <!-- MindMap card — renders ```mindmap blocks via markmap -->
 <template>
-  <div
-    class="mindmap-card"
-    :class="{ fullscreen: isFullscreen }"
-    ref="containerRef"
-  >
+  <div class="mindmap-card" :class="{ fullscreen: isFullscreen }" ref="containerRef">
     <div class="mm-header">
       <span class="mm-title">思维导图</span>
       <span class="mm-actions">
@@ -30,76 +26,84 @@
         </span>
       </span>
     </div>
-    <svg ref="svgRef" class="mm-svg"></svg>
+    <template v-if="renderError">
+      <pre class="mm-fallback">{{ markdown }}</pre>
+    </template>
+    <svg v-else ref="svgRef" class="mm-svg"></svg>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, watch, nextTick } from "vue";
-import { Transformer } from "markmap-lib";
-import { Markmap } from "markmap-view";
+import { ref, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import { Transformer } from 'markmap-lib'
+import { Markmap } from 'markmap-view'
 
 const props = defineProps<{
-  markdown: string;
-}>();
+  markdown: string
+}>()
 
-const containerRef = ref<HTMLElement>();
-const svgRef = ref<SVGElement>();
-const isFullscreen = ref(false);
+const containerRef = ref<HTMLElement>()
+const svgRef = ref<SVGElement>()
+const isFullscreen = ref(false)
+const renderError = ref(false)
 
-let mmInstance: Markmap | null = null;
-let transformer: Transformer | null = null;
+let mmInstance: Markmap | null = null
+let transformer: Transformer | null = null
 
 // Depth-based color palette — matches markmap repl style
 const DEPTH_COLORS = [
-  "#f97316", // orange   - depth 0 (root)
-  "#eab308", // yellow   - depth 1
-  "#22c55e", // green    - depth 2
-  "#06b6d4", // cyan     - depth 3
-  "#3b82f6", // blue     - depth 4
-  "#8b5cf6", // purple   - depth 5
-  "#ec4899", // pink     - depth 6+
-];
+  '#f97316', // orange   - depth 0 (root)
+  '#eab308', // yellow   - depth 1
+  '#22c55e', // green    - depth 2
+  '#06b6d4', // cyan     - depth 3
+  '#3b82f6', // blue     - depth 4
+  '#8b5cf6', // purple   - depth 5
+  '#ec4899', // pink     - depth 6+
+]
 
 // Walk the node tree and apply depth-based colors
 function colorNodes(node: any, depth: number) {
-  node.state = node.state || {};
-  node.state.color = DEPTH_COLORS[Math.min(depth, DEPTH_COLORS.length - 1)];
+  node.state = node.state || {}
+  node.state.color = DEPTH_COLORS[Math.min(depth, DEPTH_COLORS.length - 1)]
   if (node.children) {
     for (const child of node.children) {
-      colorNodes(child, depth + 1);
+      colorNodes(child, depth + 1)
     }
   }
 }
 
 function build() {
-  if (!svgRef.value) return;
-  const md = props.markdown || "";
-  if (!md.trim()) return;
+  if (!svgRef.value) return
+  const md = props.markdown || ''
+  if (!md.trim()) return
 
   if (!transformer) {
-    transformer = new Transformer();
+    transformer = new Transformer()
   }
 
   try {
-    const { root } = transformer.transform(md);
-    if (!root || !root.children || root.children.length === 0) return;
-
-    // Apply depth-based colors (markmap repl style)
-    colorNodes(root, 0);
-
-    if (mmInstance) {
-      mmInstance.destroy();
-      mmInstance = null;
+    const { root } = transformer.transform(md)
+    if (!root || !root.children || root.children.length === 0) {
+      renderError.value = true
+      return
     }
 
+    // Apply depth-based colors (markmap repl style)
+    colorNodes(root, 0)
+
+    if (mmInstance) {
+      mmInstance.destroy()
+      mmInstance = null
+    }
+
+    renderError.value = false
     mmInstance = Markmap.create(
       svgRef.value!,
       {
         autoFit: true,
         duration: 300,
-        initialExpandLevel: 2,
-        maxWidth: 260,
+        initialExpandLevel: 3,
+        maxWidth: 240,
         nodeMinHeight: 16,
         paddingX: 12,
         spacingHorizontal: 70,
@@ -108,52 +112,53 @@ function build() {
         pan: true,
         toggleRecursively: true,
       },
-      root
-    );
+      root,
+    )
   } catch (e) {
-    console.warn("MindMap render error:", e);
+    console.warn('MindMap render error:', e)
+    renderError.value = true
   }
 }
 
 function onFit() {
-  mmInstance?.fit();
+  mmInstance?.fit()
 }
 
 function onZoomIn() {
-  mmInstance?.rescale(1.3);
+  mmInstance?.rescale(1.3)
 }
 
 function onZoomOut() {
-  mmInstance?.rescale(0.75);
+  mmInstance?.rescale(0.75)
 }
 
 function onToggleFullscreen() {
-  isFullscreen.value = !isFullscreen.value;
+  isFullscreen.value = !isFullscreen.value
 }
 
 function onEsc(e: KeyboardEvent) {
-  if (e.key === "Escape" && isFullscreen.value) {
-    isFullscreen.value = false;
+  if (e.key === 'Escape' && isFullscreen.value) {
+    isFullscreen.value = false
   }
 }
 
 onMounted(() => {
-  nextTick(build);
-  document.addEventListener("keydown", onEsc);
-});
+  nextTick(build)
+  document.addEventListener('keydown', onEsc)
+})
 
 onBeforeUnmount(() => {
-  document.removeEventListener("keydown", onEsc);
-  mmInstance?.destroy();
-  mmInstance = null;
-});
+  document.removeEventListener('keydown', onEsc)
+  mmInstance?.destroy()
+  mmInstance = null
+})
 
 watch(
   () => props.markdown,
   () => {
-    nextTick(build);
-  }
-);
+    nextTick(build)
+  },
+)
 </script>
 
 <style lang="scss" scoped>
@@ -228,5 +233,19 @@ watch(
   &:active {
     cursor: grabbing;
   }
+}
+
+.mm-fallback {
+  flex: 1;
+  margin: 12px;
+  padding: 12px;
+  background: #fefce8;
+  border: 1px solid #facc15;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.6;
+  color: #92400e;
+  white-space: pre-wrap;
+  overflow-y: auto;
 }
 </style>

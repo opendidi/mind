@@ -7,7 +7,14 @@
  * @LastEditTime: 2024-01-12 21:12:44
 -->
 <template>
-  <a-drawer v-model:visible="visible" title="节点动画" placement="right" :width="300" :bodyStyle="bodyStyle" class="pen-frames-drawer">
+  <a-drawer
+    v-model:visible="visible"
+    title="节点动画"
+    placement="right"
+    :width="300"
+    :bodyStyle="bodyStyle"
+    class="pen-frames-drawer"
+  >
     <a-button type="primary" style="width: 100%" @click="onAddFrames">新增动画帧</a-button>
     <template v-if="model.length !== 0">
       <div class="mt-4">
@@ -281,27 +288,26 @@
 </template>
 
 <script>
-import { ref, reactive, watch, createVNode, onMounted, defineComponent } from 'vue';
-import { Modal } from 'ant-design-vue';
-import { DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue';
-import { GRADIENT as Gradient } from '@/utils/index';
-import { fontFamilys } from '@/utils/defaultConfig';
-import { CONFIG_LINE_DASH as configLineDash } from '@/utils/config-line';
+import { ref, reactive, watch, createVNode, onMounted, defineComponent } from 'vue'
+import { Modal } from 'ant-design-vue'
+import { DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue'
+import { GRADIENT as Gradient } from '@/utils/index'
+import { fontFamilys } from '@/utils/defaultConfig'
+import { CONFIG_LINE_DASH as configLineDash } from '@/utils/config-line'
 export default defineComponent({
   components: { DeleteOutlined },
   setup(props, { emit }) {
+    const visible = ref(false)
 
-    const visible = ref(false);
+    const model = ref([])
 
-    const model = ref([]);
-
-    const animateKey = ref(0);
+    const animateKey = ref(0)
 
     /**
      * 初始化动画帧
      */
     function init({ frames }) {
-      model.value = frames !== undefined ? frames : [];
+      model.value = frames !== undefined ? frames : []
     }
 
     let GradientList = ref([
@@ -317,31 +323,31 @@ export default defineComponent({
         name: '发散渐变',
         value: Gradient.Radial,
       },
-    ]);
+    ])
 
     watch(
       () => visible.value,
-      (e) => {
+      e => {
         if (!e) {
-          model.value = [];
+          model.value = []
         }
-      }
-    );
+      },
+    )
 
     /**
      * 增加帧动画文本节点
      */
     function onAddFrames() {
-      model.value.push({});
+      model.value.push({})
     }
 
     /**
      * 选择线条样式
      */
     function changeDashValue(e, index) {
-      const data = configLineDash.find((_, idx) => e == idx);
+      const data = configLineDash.find((_, idx) => e == idx)
       if (data) {
-        model.value[index]['lineDash'] = JSON.parse(data.value);
+        model.value[index]['lineDash'] = JSON.parse(data.value)
       }
     }
 
@@ -357,9 +363,9 @@ export default defineComponent({
         centered: true,
         content: createVNode('div', { style: 'color:red;' }, '确定删除当前动画?'),
         onOk() {
-          model.value.splice(idx, 1);
+          model.value.splice(idx, 1)
         },
-      });
+      })
     }
 
     return {
@@ -376,12 +382,12 @@ export default defineComponent({
       init,
       GradientList,
       onDelete,
-    };
+    }
   },
-});
+})
 </script>
 
-<style lang="less" >
+<style lang="less">
 .pen-frames-drawer {
   .ant-form {
     .ant-form-item {

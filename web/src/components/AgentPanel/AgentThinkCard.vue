@@ -12,13 +12,13 @@
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
+import { ref } from 'vue'
 
 defineProps<{
-  content: string;
-}>();
+  content: string
+}>()
 
-const expanded = ref(false);
+const expanded = ref(false)
 </script>
 
 <style scoped lang="less">

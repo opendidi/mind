@@ -10,7 +10,23 @@
 export const FileExplorer = function (options: any) {
   this._filterExt = {
     // all: ['.gif', '.jpg', '.png', '.bmp', '.jpeg', '.swf', '.mp3', '.mp4', '.flv', '.webm', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.pdf', '.odt', '.csv', '.rar', '.zip'],
-    all: ['.gif', '.jpg', '.png', '.bmp', '.jpeg', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.pdf', '.odt', '.csv'],
+    all: [
+      '.gif',
+      '.jpg',
+      '.png',
+      '.bmp',
+      '.jpeg',
+      '.txt',
+      '.doc',
+      '.docx',
+      '.xls',
+      '.xlsx',
+      '.ppt',
+      '.pptx',
+      '.pdf',
+      '.odt',
+      '.csv',
+    ],
     image: ['.gif', '.jpg', '.png', '.bmp', '.jpeg', '.svg'],
     // flash: ['.swf'],
     audio: ['.mp3', '.wma', '.ra'],
@@ -21,6 +37,6 @@ export const FileExplorer = function (options: any) {
     // material: ['.gif', '.jpg', '.png', '.bmp', '.jpeg', '.mp3', '.wma', '.ra']
     material: ['.gif', '.jpg', '.png', '.bmp', '.jpeg'],
     // svg
-    icons: ['.svg']
+    icons: ['.svg'],
   }
 }

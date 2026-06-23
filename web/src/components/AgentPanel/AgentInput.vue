@@ -5,8 +5,17 @@
       <div v-for="(img, idx) in images" :key="idx" class="image-thumb">
         <img :src="img" alt="预览图片" />
         <button class="remove-btn" @click="removeImage(idx)" title="移除图片">
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round">
-            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          <svg
+            width="12"
+            height="12"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="3"
+            stroke-linecap="round"
+          >
+            <line x1="18" y1="6" x2="6" y2="18" />
+            <line x1="6" y1="6" x2="18" y2="18" />
           </svg>
         </button>
       </div>
@@ -27,25 +36,24 @@
 
       <div class="btn-group">
         <button class="upload-btn" :disabled="disabled" @click="triggerUpload" title="上传图片">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          >
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
             <polyline points="21 15 16 10 5 21" />
           </svg>
         </button>
-        <input
-          ref="fileInputRef"
-          type="file"
-          accept="image/*"
-          hidden
-          @change="handleFileChange"
-        />
+        <input ref="fileInputRef" type="file" accept="image/*" hidden @change="handleFileChange" />
 
-        <button
-          class="send-btn"
-          :disabled="disabled || (!inputText.trim() && images.length === 0)"
-          @click="handleSend"
-        >
+        <button class="send-btn" :disabled="disabled || (!inputText.trim() && images.length === 0)" @click="handleSend">
           <svg
             width="18"
             height="18"
@@ -66,67 +74,67 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick } from "vue";
+import { ref, watch, nextTick } from 'vue'
 
 const props = defineProps<{
-  disabled: boolean;
-  initialValue?: string;
-}>();
+  disabled: boolean
+  initialValue?: string
+}>()
 
 const emit = defineEmits<{
-  send: [text: string, images: string[]];
-}>();
+  send: [text: string, images: string[]]
+}>()
 
-const inputText = ref("");
-const images = ref<string[]>([]);
-const textareaRef = ref<HTMLTextAreaElement>();
-const fileInputRef = ref<HTMLInputElement>();
-const focused = ref(false);
+const inputText = ref('')
+const images = ref<string[]>([])
+const textareaRef = ref<HTMLTextAreaElement>()
+const fileInputRef = ref<HTMLInputElement>()
+const focused = ref(false)
 
 // Apply preset context on mount
 watch(
   () => props.initialValue,
-  (val) => {
+  val => {
     if (val) {
-      inputText.value = val;
-      nextTick(autoResize);
+      inputText.value = val
+      nextTick(autoResize)
     }
   },
   { immediate: true },
-);
+)
 
 // ── Image helpers ────────────────────────────────────────────────
 
 function addImage(dataUrl: string) {
-  images.value = [...images.value, dataUrl];
+  images.value = [...images.value, dataUrl]
 }
 
 function removeImage(idx: number) {
-  images.value = images.value.filter((_, i) => i !== idx);
+  images.value = images.value.filter((_, i) => i !== idx)
 }
 
 function readFileAsDataURL(file: File): Promise<string> {
   return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => resolve(reader.result as string);
-    reader.onerror = () => reject(reader.error);
-    reader.readAsDataURL(file);
-  });
+    const reader = new FileReader()
+    reader.onload = () => resolve(reader.result as string)
+    reader.onerror = () => reject(reader.error)
+    reader.readAsDataURL(file)
+  })
 }
 
 async function handlePaste(e: ClipboardEvent) {
-  const items = e.clipboardData?.items;
-  if (!items) return;
+  const items = e.clipboardData?.items
+  if (!items) return
 
   for (let i = 0; i < items.length; i++) {
-    const item = items[i];
-    if (item.type.startsWith("image/")) {
-      e.preventDefault();
-      const file = item.getAsFile();
+    const item = items[i]
+    if (item.type.startsWith('image/')) {
+      e.preventDefault()
+      const file = item.getAsFile()
       if (file) {
         try {
-          const dataUrl = await readFileAsDataURL(file);
-          addImage(dataUrl);
+          const dataUrl = await readFileAsDataURL(file)
+          addImage(dataUrl)
         } catch {
           // ignore failed reads
         }
@@ -136,63 +144,63 @@ async function handlePaste(e: ClipboardEvent) {
 }
 
 function triggerUpload() {
-  fileInputRef.value?.click();
+  fileInputRef.value?.click()
 }
 
 async function handleFileChange(e: Event) {
-  const input = e.target as HTMLInputElement;
-  const files = input.files;
-  if (!files) return;
+  const input = e.target as HTMLInputElement
+  const files = input.files
+  if (!files) return
 
   for (let i = 0; i < files.length; i++) {
     try {
-      const dataUrl = await readFileAsDataURL(files[i]);
-      addImage(dataUrl);
+      const dataUrl = await readFileAsDataURL(files[i])
+      addImage(dataUrl)
     } catch {
       // ignore failed reads
     }
   }
   // Reset so the same file can be selected again
-  input.value = "";
+  input.value = ''
 }
 
 // ── Textarea auto-resize ─────────────────────────────────────────
 
-const TEXTAREA_MAX_HEIGHT = 160;
+const TEXTAREA_MAX_HEIGHT = 160
 
 function autoResize() {
-  const el = textareaRef.value;
-  if (!el) return;
+  const el = textareaRef.value
+  if (!el) return
   // Reset to auto first so scrollHeight reflects the true content height
-  el.style.height = "auto";
-  const h = Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT);
-  el.style.height = h + "px";
+  el.style.height = 'auto'
+  const h = Math.min(el.scrollHeight, TEXTAREA_MAX_HEIGHT)
+  el.style.height = h + 'px'
   // Show native scrollbar only when content exceeds max height
-  el.style.overflowY = el.scrollHeight > TEXTAREA_MAX_HEIGHT ? "auto" : "hidden";
+  el.style.overflowY = el.scrollHeight > TEXTAREA_MAX_HEIGHT ? 'auto' : 'hidden'
 }
 
 // Also resize when images change (thumbnail strip affects available width → line wrap)
-watch([inputText, images], () => nextTick(autoResize), { flush: "post" });
+watch([inputText, images], () => nextTick(autoResize), { flush: 'post' })
 
 // ── Send ─────────────────────────────────────────────────────────
 
 function handleSend() {
-  const text = inputText.value.trim();
-  const hasText = !!text;
-  const hasImages = images.value.length > 0;
-  if ((!hasText && !hasImages) || props.disabled) return;
-  emit("send", text, [...images.value]);
-  inputText.value = "";
-  images.value = [];
+  const text = inputText.value.trim()
+  const hasText = !!text
+  const hasImages = images.value.length > 0
+  if ((!hasText && !hasImages) || props.disabled) return
+  emit('send', text, [...images.value])
+  inputText.value = ''
+  images.value = []
   // Shrink textarea back to single-row after clearing
-  nextTick(autoResize);
+  nextTick(autoResize)
 }
 
 function handleEnter(e: KeyboardEvent) {
-  if (e.key !== "Enter") return;
-  if (e.shiftKey) return;
-  e.preventDefault();
-  handleSend();
+  if (e.key !== 'Enter') return
+  if (e.shiftKey) return
+  e.preventDefault()
+  handleSend()
 }
 </script>
 
@@ -205,7 +213,9 @@ function handleEnter(e: KeyboardEvent) {
   border: 1px solid #e0e0e0;
   border-radius: 12px;
   background: #fff;
-  transition: border-color 0.2s, box-shadow 0.2s;
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
 
   &.focused {
     border-color: #1677ff;
@@ -308,7 +318,9 @@ function handleEnter(e: KeyboardEvent) {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: color 0.2s, background 0.2s;
+    transition:
+      color 0.2s,
+      background 0.2s;
 
     &:hover:not(:disabled) {
       color: #1677ff;
@@ -333,7 +345,9 @@ function handleEnter(e: KeyboardEvent) {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: background 0.2s, opacity 0.2s;
+    transition:
+      background 0.2s,
+      opacity 0.2s;
 
     &:hover:not(:disabled) {
       background: #4096ff;

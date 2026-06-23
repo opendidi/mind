@@ -22,20 +22,9 @@
           <h2>欢迎回来</h2>
           <p>登录你的账户继续创作</p>
         </div>
-        <a-form
-          ref="formRef"
-          :model="form"
-          :rules="rules"
-          layout="vertical"
-          @finish="onSubmit"
-        >
+        <a-form ref="formRef" :model="form" :rules="rules" layout="vertical" @finish="onSubmit">
           <a-form-item name="username" label="用户名">
-            <a-input
-              v-model:value="form.username"
-              placeholder="请输入用户名"
-              size="large"
-              autocomplete="username"
-            >
+            <a-input v-model:value="form.username" placeholder="请输入用户名" size="large" autocomplete="username">
               <template #prefix><UserOutlined /></template>
             </a-input>
           </a-form-item>
@@ -71,14 +60,7 @@
             </div>
           </a-form-item>
           <a-form-item>
-            <a-button
-              type="primary"
-              html-type="submit"
-              size="large"
-              block
-              :loading="submitting"
-              class="submit-btn"
-            >
+            <a-button type="primary" html-type="submit" size="large" block :loading="submitting" class="submit-btn">
               登录
             </a-button>
           </a-form-item>
@@ -93,63 +75,59 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from "vue";
-import { useRouter, useRoute } from "vue-router";
-import { message } from "ant-design-vue";
-import {
-  UserOutlined,
-  LockOutlined,
-  SafetyOutlined,
-} from "@ant-design/icons-vue";
-import { useAuthCaptcha } from "@/composables/useAuthCaptcha";
-import { useUserStore } from "@/store/modules/user";
+import { ref, reactive } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
+import { message } from 'ant-design-vue'
+import { UserOutlined, LockOutlined, SafetyOutlined } from '@ant-design/icons-vue'
+import { useAuthCaptcha } from '@/composables/useAuthCaptcha'
+import { useUserStore } from '@/store/modules/user'
 
-const router = useRouter();
-const route = useRoute();
-const userStore = useUserStore();
-const { randCodeData, initAuthCaptcha } = useAuthCaptcha();
+const router = useRouter()
+const route = useRoute()
+const userStore = useUserStore()
+const { randCodeData, initAuthCaptcha } = useAuthCaptcha()
 
-const formRef = ref();
-const submitting = ref(false);
+const formRef = ref()
+const submitting = ref(false)
 
 const form = reactive({
-  username: "",
-  password: "",
-  captcha: "",
-});
+  username: '',
+  password: '',
+  captcha: '',
+})
 
 const rules = {
   username: [
-    { required: true, message: "请输入用户名", trigger: "blur" },
-    { min: 3, max: 20, message: "用户名长度应为 3-20 个字符", trigger: "blur" },
+    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 20, message: '用户名长度应为 3-20 个字符', trigger: 'blur' },
   ],
   password: [
-    { required: true, message: "请输入密码", trigger: "blur" },
-    { min: 3, message: "密码至少 3 个字符", trigger: "blur" },
+    { required: true, message: '请输入密码', trigger: 'blur' },
+    { min: 3, message: '密码至少 3 个字符', trigger: 'blur' },
   ],
   captcha: [
-    { required: true, message: "请输入验证码", trigger: "blur" },
-    { len: 4, message: "验证码为 4 位", trigger: "blur" },
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { len: 4, message: '验证码为 4 位', trigger: 'blur' },
   ],
-};
+}
 
 async function onSubmit() {
-  submitting.value = true;
+  submitting.value = true
   try {
     await userStore.login({
       username: form.username,
       password: form.password,
       captcha: form.captcha,
       captcha_id: randCodeData.captcha_id,
-    });
-    message.success("登录成功");
-    const redirect = (route.query.redirect as string) || "/";
-    router.push(redirect);
+    })
+    message.success('登录成功')
+    const redirect = (route.query.redirect as string) || '/'
+    router.push(redirect)
   } catch (err: any) {
-    initAuthCaptcha();
-    form.captcha = "";
+    initAuthCaptcha()
+    form.captcha = ''
   } finally {
-    submitting.value = false;
+    submitting.value = false
   }
 }
 </script>

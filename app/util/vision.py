@@ -109,8 +109,18 @@ class VisionHandler:
             raw = response.choices[0].message.content
             return VisionHandler._parse_result(raw, task_type)
         except Exception as ex:
+            err_msg = str(ex)
+            if "image_url" in err_msg and ("unknown variant" in err_msg or "expected" in err_msg):
+                logging.warning(
+                    "当前配置的模型 %s 不支持图片分析。请设置 VISION_API_KEY/VISION_MODEL 为支持视觉的模型。",
+                    _vision_model,
+                )
+                return (
+                    False,
+                    f"当前模型 {_vision_model} 不支持图片/视觉分析，请配置支持多模态的视觉模型（如 gpt-4o、qwen-vl 等）",
+                )
             logging.warning("Vision API 批量分析失败: %s", ex)
-            return False, str(ex)
+            return False, str(ex)[:500]
 
     @staticmethod
     def _call_vision(img_src, prompt, task_type):
@@ -135,8 +145,19 @@ class VisionHandler:
             content = response.choices[0].message.content
             return VisionHandler._parse_result(content, task_type)
         except Exception as ex:
+            err_msg = str(ex)
+            # Detect API rejection of image_url (model doesn't support vision)
+            if "image_url" in err_msg and ("unknown variant" in err_msg or "expected" in err_msg):
+                logging.warning(
+                    "当前配置的模型 %s 不支持图片分析。请设置 VISION_API_KEY/VISION_MODEL 为支持视觉的模型。",
+                    _vision_model,
+                )
+                return (
+                    False,
+                    f"当前模型 {_vision_model} 不支持图片/视觉分析，请配置支持多模态的视觉模型（如 gpt-4o、qwen-vl 等）",
+                )
             logging.warning("Vision API 调用失败: %s", ex)
-            return False, str(ex)
+            return False, err_msg[:500]
 
     @staticmethod
     def _parse_result(content, task_type):
@@ -147,6 +168,8 @@ class VisionHandler:
             return VisionHandler._parse_classify(content)
         elif task_type == "detect":
             return VisionHandler._parse_detect(content)
+        elif task_type == "ocr":
+            return VisionHandler._parse_ocr(content)
         return True, {"raw": content}
 
     # ── Prompt builders ──────────────────────────────────────────────────
@@ -186,6 +209,22 @@ class VisionHandler:
             ensure_ascii=False,
         )
 
+    @staticmethod
+    def build_ocr_prompt():
+        return json.dumps(
+            {
+                "task": "ocr",
+                "instructions": (
+                    "提取图片中的所有文字，保持原文语言输出。"
+                    "如有表格，用 Markdown 表格格式输出。"
+                    "按从上到下、从左到右的顺序组织文本，保留段落结构。"
+                    "如果图中没有文字，返回空字符串。"
+                ),
+                "output_format": '{"text":"<提取的文字>","has_text":true/false,"language":"<主要语言>"}',
+            },
+            ensure_ascii=False,
+        )
+
     # ── Parsers ──────────────────────────────────────────────────────────
 
     @staticmethod
@@ -211,3 +250,12 @@ class VisionHandler:
             return True, data
         except (json.JSONDecodeError, TypeError):
             return True, {"raw": content, "objects": []}
+
+    @staticmethod
+    def _parse_ocr(content):
+        try:
+            data = json.loads(content)
+            return True, data
+        except (json.JSONDecodeError, TypeError):
+            # Model returned plain text instead of JSON — wrap it
+            return True, {"text": content, "has_text": bool(content.strip()), "language": ""}

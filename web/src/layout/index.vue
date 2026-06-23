@@ -52,37 +52,37 @@
 </template>
 
 <script setup lang="ts">
-import { createVNode, ref, watch } from "vue";
-import { useRouter } from "vue-router";
-import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
-import { Modal } from "ant-design-vue";
-import { useUserStore } from "@/store/modules/user";
-import AppMain from "./AppMain.vue";
-import BluePrintList from "@/components/blueprint/index.vue";
+import { createVNode, ref, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { ExclamationCircleOutlined } from '@ant-design/icons-vue'
+import { Modal } from 'ant-design-vue'
+import { useUserStore } from '@/store/modules/user'
+import AppMain from './AppMain.vue'
+import BluePrintList from '@/components/blueprint/index.vue'
 
-const router = useRouter();
-const userStore = useUserStore();
-const blueprintListRef = ref(null);
-const showBlueprintList = ref(false);
+const router = useRouter()
+const userStore = useUserStore()
+const blueprintListRef = ref(null)
+const showBlueprintList = ref(false)
 
 function handleLogout() {
   Modal.confirm({
-    title: "退出提示",
+    title: '退出提示',
     icon: createVNode(ExclamationCircleOutlined),
-    content: createVNode("div", { style: "color:red;" }, "确定要退出吗？"),
+    content: createVNode('div', { style: 'color:red;' }, '确定要退出吗？'),
     onOk() {
       userStore.logout().then(() => {
-        router.push({ path: "/login" });
-      });
+        router.push({ path: '/login' })
+      })
     },
-  });
+  })
 }
 
-watch(showBlueprintList, (val) => {
+watch(showBlueprintList, val => {
   if (blueprintListRef.value) {
-    (blueprintListRef.value as any).visible = val;
+    ;(blueprintListRef.value as any).visible = val
   }
-});
+})
 </script>
 
 <style lang="scss" scoped>
@@ -180,17 +180,20 @@ watch(showBlueprintList, (val) => {
   height: 24px;
   margin-bottom: 2px;
   background: linear-gradient(135deg, #818cf8, #c084fc);
-  clip-path: polygon(
-    50% 0%, 62% 38%, 100% 50%,
-    62% 62%, 50% 100%, 38% 62%,
-    0% 50%, 38% 38%
-  );
+  clip-path: polygon(50% 0%, 62% 38%, 100% 50%, 62% 62%, 50% 100%, 38% 62%, 0% 50%, 38% 38%);
   animation: sparkle-pulse 2.4s ease-in-out infinite;
 }
 
 @keyframes sparkle-pulse {
-  0%, 100% { opacity: 0.7; transform: scale(0.95); }
-  50% { opacity: 1; transform: scale(1.05); }
+  0%,
+  100% {
+    opacity: 0.7;
+    transform: scale(0.95);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.05);
+  }
 }
 
 .nav-label {

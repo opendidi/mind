@@ -135,27 +135,36 @@ def _tool_web_fetch(args):
 def _validate_analyze_image(args):
     url = args.get("image_url", "")
     b64 = args.get("image_base64", "")
-    if not (url or b64):
-        return "缺少参数: 需要 image_url 或 image_base64 之一"
+    obj = args.get("object_name", "")
+    if not (url or b64 or obj):
+        return "缺少参数: 需要 image_url / image_base64 / object_name 之一"
     return None
 
 
 @ToolRegistry.register(
     "analyze_image",
-    "分析一张图片的内容。可进行场景描述(describe)、物体检测(detect)或智能分类(classify)。"
-    "支持两种输入方式：1) image_url — 图片URL地址；2) image_base64 — base64格式的图片数据。二者选一即可。",
+    "分析一张图片的内容。可进行场景描述(describe)、物体检测(detect)、智能分类(classify)或文字提取(ocr)。"
+    "三种输入方式任选其一：1) image_url — 图片URL地址（可使用 file_search 返回结果中的 url 字段）；"
+    "2) image_base64 — base64格式的图片数据；3) object_name — MinIO 中的图片对象路径（由文件上传接口返回）。",
     {
         "type": "object",
         "properties": {
-            "image_url": {"type": "string", "description": "图片URL地址（与 image_base64 二选一）"},
+            "image_url": {
+                "type": "string",
+                "description": "图片URL地址，可直接使用 file_search 返回结果中的 url 字段（与 image_base64 / object_name 三选一）",
+            },
             "image_base64": {
                 "type": "string",
-                "description": "base64格式的图片数据，data:image/...;base64,... 格式（与 image_url 二选一）",
+                "description": "base64格式的图片数据，data:image/...;base64,... 格式（与 image_url / object_name 三选一）",
+            },
+            "object_name": {
+                "type": "string",
+                "description": "MinIO 中的图片对象路径，由文件上传接口返回（与 image_url / image_base64 三选一）",
             },
             "task_type": {
                 "type": "string",
-                "enum": ["describe", "detect", "classify"],
-                "description": "describe=场景描述(含关键词), detect=物体检测, classify=智能分类",
+                "enum": ["describe", "detect", "classify", "ocr"],
+                "description": "describe=场景描述(含关键词), detect=物体检测, classify=智能分类, ocr=文字提取",
             },
         },
         "required": ["task_type"],
@@ -163,16 +172,50 @@ def _validate_analyze_image(args):
     validator=_validate_analyze_image,
 )
 def _tool_analyze_image(args):
+    import base64 as _b64
+
     task_type = args["task_type"]
     image_base64 = args.get("image_base64", "")
     image_url = args.get("image_url", "")
+    object_name = args.get("object_name", "")
 
     if task_type == "classify":
         prompt = VisionHandler.build_classify_prompt([])
     elif task_type == "detect":
         prompt = VisionHandler.build_detect_prompt()
+    elif task_type == "ocr":
+        prompt = VisionHandler.build_ocr_prompt()
     else:
         prompt = VisionHandler.build_describe_prompt()
+
+    # Resolve object_name → base64 via MinIO download
+    if object_name and not image_base64 and not image_url:
+        from app.plugin.minio.app.controller import bucket_name, minio_client
+
+        _, ext = os.path.splitext(object_name)
+        fd, tmp_path = tempfile.mkstemp(suffix=ext)
+        os.close(fd)
+        try:
+            minio_client.fget_object(bucket_name, object_name, tmp_path)
+            with open(tmp_path, "rb") as f:
+                raw = f.read()
+            ext_clean = ext.lstrip(".").lower()
+            mime = {
+                "png": "image/png",
+                "jpg": "image/jpeg",
+                "jpeg": "image/jpeg",
+                "gif": "image/gif",
+                "webp": "image/webp",
+                "svg": "image/svg+xml",
+            }.get(ext_clean, "image/png")
+            image_base64 = f"data:{mime};base64,{_b64.b64encode(raw).decode()}"
+        except Exception as e:
+            return {"success": False, "error": f"从 MinIO 下载图片失败: {e}"}
+        finally:
+            try:
+                os.remove(tmp_path)
+            except OSError:
+                pass
 
     if image_base64:
         ok, result = VisionHandler.analyze_base64(image_base64, prompt, task_type)

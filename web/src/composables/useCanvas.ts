@@ -6,7 +6,7 @@ export const CanvasKey: InjectionKey<Meta2d> = Symbol('meta2d-canvas')
 export function provideCanvas(meta2d: Meta2d) {
   provide(CanvasKey, meta2d)
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  ;(window as any).meta2d = meta2d  // backward compatibility
+  ;(window as any).meta2d = meta2d // backward compatibility
 }
 
 export function useCanvas(): Meta2d {

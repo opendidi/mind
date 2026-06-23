@@ -36,11 +36,7 @@
 
 <script setup lang="ts">
 import { computed } from 'vue'
-import {
-  CheckCircleFilled,
-  CloseCircleFilled,
-  LoadingOutlined,
-} from '@ant-design/icons-vue'
+import { CheckCircleFilled, CloseCircleFilled, LoadingOutlined } from '@ant-design/icons-vue'
 
 export interface PlanStep {
   id: string
@@ -84,43 +80,102 @@ const riskLabel = computed(() => {
     align-items: center;
     gap: 8px;
     margin-bottom: 8px;
-    .plan-icon { font-size: 18px; }
-    .plan-title { font-weight: 700; font-size: 14px; color: #4338ca; }
+    .plan-icon {
+      font-size: 18px;
+    }
+    .plan-title {
+      font-weight: 700;
+      font-size: 14px;
+      color: #4338ca;
+    }
     .plan-risk {
-      font-size: 11px; padding: 1px 8px; border-radius: 10px; font-weight: 500; margin-left: auto;
-      &.low { background: #d1fae5; color: #065f46; }
-      &.medium { background: #fef3c7; color: #92400e; }
-      &.high { background: #fee2e2; color: #991b1b; }
+      font-size: 11px;
+      padding: 1px 8px;
+      border-radius: 10px;
+      font-weight: 500;
+      margin-left: auto;
+      &.low {
+        background: #d1fae5;
+        color: #065f46;
+      }
+      &.medium {
+        background: #fef3c7;
+        color: #92400e;
+      }
+      &.high {
+        background: #fee2e2;
+        color: #991b1b;
+      }
     }
   }
 
   .plan-goal {
-    font-size: 13px; color: #475569; margin-bottom: 12px; padding-left: 26px;
+    font-size: 13px;
+    color: #475569;
+    margin-bottom: 12px;
+    padding-left: 26px;
   }
 
   .plan-steps .plan-step {
-    display: flex; align-items: center; gap: 10px;
-    padding: 7px 10px; border-radius: 8px; font-size: 13px; transition: background 0.2s;
-    &.active { background: rgba(79, 70, 229, 0.08); }
-    &.done { opacity: 0.7; }
-    .step-num {
-      width: 22px; height: 22px; display: flex; align-items: center; justify-content: center;
-      font-size: 12px; font-weight: 600; color: #6366f1; background: #e0e7ff;
-      border-radius: 50%; flex-shrink: 0;
-      :deep(.anticon) { font-size: 16px; }
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    border-radius: 8px;
+    font-size: 13px;
+    transition: background 0.2s;
+    &.active {
+      background: rgba(79, 70, 229, 0.08);
     }
-    &.done .step-num { color: #10b981; background: #d1fae5; }
-    &.failed .step-num { color: #ef4444; background: #fee2e2; }
-    &.active .step-num { color: #6366f1; background: #c7d2fe; }
-    .step-desc { flex: 1; color: #334155; }
+    &.done {
+      opacity: 0.7;
+    }
+    .step-num {
+      width: 22px;
+      height: 22px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: 600;
+      color: #6366f1;
+      background: #e0e7ff;
+      border-radius: 50%;
+      flex-shrink: 0;
+      :deep(.anticon) {
+        font-size: 16px;
+      }
+    }
+    &.done .step-num {
+      color: #10b981;
+      background: #d1fae5;
+    }
+    &.failed .step-num {
+      color: #ef4444;
+      background: #fee2e2;
+    }
+    &.active .step-num {
+      color: #6366f1;
+      background: #c7d2fe;
+    }
+    .step-desc {
+      flex: 1;
+      color: #334155;
+    }
     .step-tool-tag {
-      font-size: 10px; padding: 1px 6px; border-radius: 6px;
-      background: #e0e7ff; color: #4338ca;
-      font-family: "Fira Code", "Consolas", monospace;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 6px;
+      background: #e0e7ff;
+      color: #4338ca;
+      font-family: 'Fira Code', 'Consolas', monospace;
     }
     .step-confirm-tag {
-      font-size: 10px; padding: 1px 6px; border-radius: 6px;
-      background: #fef3c7; color: #b45309;
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 6px;
+      background: #fef3c7;
+      color: #b45309;
     }
   }
 }

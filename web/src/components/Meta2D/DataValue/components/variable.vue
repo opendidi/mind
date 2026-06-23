@@ -58,35 +58,35 @@
 </template>
 
 <script>
-import { ref, defineComponent, onMounted } from 'vue';
-import { useCommonStoreWithOut } from '@/store/modules/common';
-import { DeleteOutlined, SearchOutlined } from '@ant-design/icons-vue';
-import { TREE_LIST as treeList } from './tree';
+import { ref, defineComponent, onMounted } from 'vue'
+import { useCommonStoreWithOut } from '@/store/modules/common'
+import { DeleteOutlined, SearchOutlined } from '@ant-design/icons-vue'
+import { TREE_LIST as treeList } from './tree'
 export default defineComponent({
   components: { SearchOutlined, DeleteOutlined },
   setup(props, { emit }) {
-    let visible = ref(false);
+    let visible = ref(false)
 
     let model = ref({
       name: '',
       dataId: '',
-    });
+    })
 
-    let treeData = ref([]);
+    let treeData = ref([])
 
     let fieldNames = ref({
       key: 'id',
       title: 'name',
       children: 'children',
-    });
+    })
 
     function handleOk() {
-      visible.value = false;
-      let data = treeData.value.find((item) => item.id == model.value.dataId);
+      visible.value = false
+      let data = treeData.value.find(item => item.id == model.value.dataId)
       if (data) {
         emit('oks', {
           ...data,
-        });
+        })
       }
     }
 
@@ -94,18 +94,18 @@ export default defineComponent({
       model.value = {
         name: '',
         dataId: '',
-      };
-    };
+      }
+    }
 
     const onSelect = ([dataId]) => {
       if (dataId.indexOf('device') == -1) {
-        model.value.dataId = dataId;
+        model.value.dataId = dataId
       }
-    };
+    }
 
     onMounted(() => {
-      treeData.value = useCommonStoreWithOut().variableData;
-    });
+      treeData.value = useCommonStoreWithOut().variableData
+    })
 
     return {
       visible,
@@ -115,9 +115,9 @@ export default defineComponent({
       onSelect,
       handleOk,
       handleCancel,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

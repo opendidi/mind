@@ -4,10 +4,7 @@
 import { ref, type Ref } from 'vue'
 import type { ChatMessage } from './useAgentChat'
 
-export function useMessageSelect(
-  messages: Ref<ChatMessage[]>,
-  onChanged: () => void,
-) {
+export function useMessageSelect(messages: Ref<ChatMessage[]>, onChanged: () => void) {
   const selectMode = ref(false)
   const selectedIds = ref(new Set<string>())
 
@@ -20,13 +17,13 @@ export function useMessageSelect(
   }
 
   function onToggleSelect(msgId: string) {
-    const idx = messages.value.findIndex((m) => m.id === msgId)
+    const idx = messages.value.findIndex(m => m.id === msgId)
     if (idx === -1) return
     const { start, end } = getTurnRange(idx)
-    const ids = messages.value.slice(start, end + 1).map((m) => m.id)
+    const ids = messages.value.slice(start, end + 1).map(m => m.id)
     const adding = !selectedIds.value.has(msgId)
     const next = new Set(selectedIds.value)
-    ids.forEach((id) => (adding ? next.add(id) : next.delete(id)))
+    ids.forEach(id => (adding ? next.add(id) : next.delete(id)))
     selectedIds.value = next
   }
 
@@ -36,7 +33,7 @@ export function useMessageSelect(
   }
 
   function onSelectAll() {
-    selectedIds.value = new Set(messages.value.map((m) => m.id))
+    selectedIds.value = new Set(messages.value.map(m => m.id))
   }
 
   function onCancelSelect() {
@@ -47,7 +44,7 @@ export function useMessageSelect(
   function onBatchDelete() {
     if (selectedIds.value.size === 0) return
     const ids = selectedIds.value
-    messages.value = messages.value.filter((m) => !ids.has(m.id))
+    messages.value = messages.value.filter(m => !ids.has(m.id))
     selectedIds.value = new Set()
     selectMode.value = false
     onChanged()

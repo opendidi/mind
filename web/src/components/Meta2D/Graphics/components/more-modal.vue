@@ -26,9 +26,7 @@
     </template>
     <div class="m-4">
       <div class="mb-6">
-        <a-checkbox v-model:checked="checkall" @change="onCheckAllChange"
-          >全选</a-checkbox
-        >
+        <a-checkbox v-model:checked="checkall" @change="onCheckAllChange">全选</a-checkbox>
       </div>
       <a-checkbox-group v-model:value="dataValue" style="width: 100%">
         <a-row :gutter="[16, 16]">
@@ -44,93 +42,89 @@
 </template>
 
 <script>
-import { ref, defineComponent, watch } from "vue";
-import { message } from "ant-design-vue";
-import { RedoOutlined } from "@ant-design/icons-vue";
-import { useCommonStore } from "@/store/modules/common";
-import { GRAPHIC_GROUPS } from "@/utils/graphicGroups";
-import { setGraphicGroups } from "@/utils/meta-storage";
+import { ref, defineComponent, watch } from 'vue'
+import { message } from 'ant-design-vue'
+import { RedoOutlined } from '@ant-design/icons-vue'
+import { useCommonStore } from '@/store/modules/common'
+import { GRAPHIC_GROUPS } from '@/utils/graphicGroups'
+import { setGraphicGroups } from '@/utils/meta-storage'
 
 export default defineComponent({
   components: { RedoOutlined },
   setup(props, { emit }) {
-    const visible = ref(false);
+    const visible = ref(false)
 
-    const dataValue = ref([]);
+    const dataValue = ref([])
 
-    const checkedList = ref([]);
+    const checkedList = ref([])
 
-    const checkall = ref(true);
+    const checkall = ref(true)
 
-    const indeterminate = ref(false);
+    const indeterminate = ref(false)
 
     watch(
       () => dataValue.value,
-      (params) => {
-        indeterminate.value =
-          !!params.length && params.length < checkedList.value.length;
-        checkall.value =
-          params.length > 0 && params.length === checkedList.value.length;
-        let obj = useCommonStore().graphics;
-        checkedList.value.map((_) => {
+      params => {
+        indeterminate.value = !!params.length && params.length < checkedList.value.length
+        checkall.value = params.length > 0 && params.length === checkedList.value.length
+        let obj = useCommonStore().graphics
+        checkedList.value.map(_ => {
           if (!dataValue.value.includes(_.id)) {
-            _.value = false;
+            _.value = false
           } else {
-            _.value = true;
+            _.value = true
           }
-          obj[_.label] = _.value;
-        });
-        setGraphicGroups(obj);
-        emit("oks");
-      }
-    );
+          obj[_.label] = _.value
+        })
+        setGraphicGroups(obj)
+        emit('oks')
+      },
+    )
 
     /**
      * 初始化多选框设置
      */
     function init() {
-      reset();
-      let obj = useCommonStore().graphics;
-      let keys = Object.keys(obj);
+      reset()
+      let obj = useCommonStore().graphics
+      let keys = Object.keys(obj)
       Object.values(obj).map((_, idx) => {
         checkedList.value.push({
           id: idx,
           label: keys[idx],
           value: _,
-        });
-      });
+        })
+      })
       checkedList.value.map((_, i) => {
         if (_.value == true) {
-          dataValue.value.push(i);
+          dataValue.value.push(i)
         }
-      });
+      })
     }
 
     function reset() {
-      checkall.value = true;
-      checkedList.value = [];
-      dataValue.value = [];
+      checkall.value = true
+      checkedList.value = []
+      dataValue.value = []
     }
 
     function onCheckAllChange(e) {
-      dataValue.value = e.target.checked
-        ? checkedList.value.map((item) => item.id)
-        : [];
-      indeterminate.value = false;
+      dataValue.value = e.target.checked ? checkedList.value.map(item => item.id) : []
+      indeterminate.value = false
     }
 
     /**
      * 刷新缓存
      */
     function onRefresh() {
-      let obj = {};
-      GRAPHIC_GROUPS.map((_) => {
-        obj[_.name] = _.show;
-      });
-      setGraphicGroups(obj);
-      useCommonStore().setGraphicGroups(obj);
-      init();
-      message.success("刷新成功");
+      let obj = {}
+      GRAPHIC_GROUPS.map(_ => {
+        obj[_.name] = _.show
+      })
+      setGraphicGroups(obj)
+      useCommonStore().setGraphicGroups(obj)
+      init()
+      message.success('刷新成功')
     }
 
     return {
@@ -142,7 +136,7 @@ export default defineComponent({
       init,
       onCheckAllChange,
       onRefresh,
-    };
+    }
   },
-});
+})
 </script>

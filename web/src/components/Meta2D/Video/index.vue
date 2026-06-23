@@ -7,50 +7,23 @@
  * @LastEditTime: 2024-04-10 11:54:39
 -->
 <template>
-  <a-form
-    label-align="left"
-    :label-col="{ span: 10 }"
-    v-if="model"
-    class="video-form"
-  >
-    <a-collapse
-      v-model:activeKey="animateKey"
-      size="small"
-      expand-icon-position="right"
-    >
+  <a-form label-align="left" :label-col="{ span: 10 }" v-if="model" class="video-form">
+    <a-collapse v-model:activeKey="animateKey" size="small" expand-icon-position="right">
       <a-collapse-panel :key="1" header="视频">
         <a-form-item label="音频URL">
-          <a-input
-            v-model:value="model.audio"
-            :bordered="false"
-            style="width: 100%"
-          />
+          <a-input v-model:value="model.audio" :bordered="false" style="width: 100%" />
         </a-form-item>
         <a-form-item label="视频URL">
-          <a-input
-            v-model:value="model.video"
-            :bordered="false"
-            style="width: 100%"
-          />
+          <a-input v-model:value="model.video" :bordered="false" style="width: 100%" />
         </a-form-item>
         <a-form-item label="自动播放">
-          <a-switch
-            v-model:checked="model.autoPlay"
-            @change="changeValue('autoPlay')"
-          />
+          <a-switch v-model:checked="model.autoPlay" @change="changeValue('autoPlay')" />
         </a-form-item>
         <a-form-item label="下个播放">
-          <a-input
-            v-model:value="model.nextAnimate"
-            :bordered="false"
-            style="width: 100%"
-          />
+          <a-input v-model:value="model.nextAnimate" :bordered="false" style="width: 100%" />
         </a-form-item>
         <a-form-item label="循环播放">
-          <a-switch
-            v-model:checked="model.playLoop"
-            @change="changeValue('playLoop')"
-          />
+          <a-switch v-model:checked="model.playLoop" @change="changeValue('playLoop')" />
         </a-form-item>
         <a-form-item>
           <div class="flex items-center justify-between">
@@ -80,12 +53,8 @@
 </template>
 
 <script>
-import { ref, watch, defineComponent } from "vue";
-import {
-  CaretRightOutlined,
-  PauseOutlined,
-  CloseOutlined,
-} from "@ant-design/icons-vue";
+import { ref, watch, defineComponent } from 'vue'
+import { CaretRightOutlined, PauseOutlined, CloseOutlined } from '@ant-design/icons-vue'
 export default defineComponent({
   components: {
     CaretRightOutlined,
@@ -93,47 +62,46 @@ export default defineComponent({
     CloseOutlined,
   },
   setup(props, { emit }) {
-
-    const animateKey = 1;
+    const animateKey = 1
 
     const model = ref({
       // 音频
-      audio: "",
+      audio: '',
       // 视频地址
-      video: "",
+      video: '',
       // 下一个tab
-      nextAnimate: "",
-    });
+      nextAnimate: '',
+    })
 
     function init(_) {
       model.value = {
         ..._,
-      };
+      }
     }
 
     function changeValue(prop) {
-      emit("onChange", prop);
+      emit('onChange', prop)
     }
 
     /**
      * 开始播放动画
      */
     function onPlay() {
-      meta2d.startVideo(model.value.id);
+      meta2d.startVideo(model.value.id)
     }
 
     /**
      * 暂停播放
      */
     function onPause() {
-      meta2d.pauseVideo(model.value.id);
+      meta2d.pauseVideo(model.value.id)
     }
 
     /**
      * 结束动画
      */
     function onStop() {
-      meta2d.stopVideo(model.value.id);
+      meta2d.stopVideo(model.value.id)
     }
 
     return {
@@ -144,9 +112,9 @@ export default defineComponent({
       onPlay,
       onPause,
       onStop,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

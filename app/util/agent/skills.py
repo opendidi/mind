@@ -29,6 +29,19 @@ _FILE_SKILL = """## 文件管理能力
 - file_search: 按关键词和类型（image/svg/document）搜索文件
 - 支持图片、SVG、文档等多种格式
 
+### 图片分析与 OCR
+当用户要求识别/分析文件管理器中的图片时：
+1. 使用 file_search 搜索图片，获取结果中的 url 字段
+2. 调用 analyze_image(image_url=url, task_type="...") 分析图片
+
+analyze_image task_type：
+- ocr: 提取图片中的文字，支持中英文，自动识别表格
+- describe: 场景描述，获取图片内容、物体、关键词
+- detect: 物体检测，返回物体名称和位置
+- classify: 智能分类
+
+输入方式（三选一）：image_url（file_search 返回的 url 字段）/ object_name（MinIO路径）/ image_base64
+
 ### Excel 数据分析与图表
 当用户上传 Excel 文件（.xlsx/.xls）并要求分析时：
 1. 使用 `extract_excel` 工具解析文件数据
@@ -50,11 +63,10 @@ _FILE_SKILL = """## 文件管理能力
 - 相关性 → scatter"""
 
 _MINDMAP_SKILL = """## 思维导图能力
-你可以创建和编辑思维导图：
-- 使用 ```mindmap 格式输出标准 Markdown 无序列表
-- 每行一项，缩进表示层级
+你可以生成思维导图，**必须使用 ```mindmap 代码块输出，不要用 canvas 工具**：
+- 输出标准 Markdown 无序列表，每行一项，2空格缩进
 - 根主题 → 分支 → 细节节点
-- 使用 mind 曲线连接节点"""
+- 前端会通过 markmap 渲染为 SVG 树图"""
 
 _CODE_SKILL = """## 代码生成能力
 你可以生成 JavaScript/JSON 代码片段：
@@ -72,6 +84,7 @@ _GENERAL_SKILL = """## 通用能力
 - 画布图形编辑（创建、修改、删除、连线、布局）
 - 蓝图管理（保存、加载、搜索、导出）
 - 文件搜索
+- 图片分析（场景描述、物体检测、智能分类、OCR 文字提取）
 - 代码生成
 - 地图查询与路线规划"""
 

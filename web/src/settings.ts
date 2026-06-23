@@ -7,7 +7,7 @@
  * @LastEditTime: 2024-10-17 20:23:57
  */
 
-const { VITE_GLOB_APP_TITLE } = import.meta.env;
+const { VITE_GLOB_APP_TITLE } = import.meta.env
 
 export default {
   title: VITE_GLOB_APP_TITLE,

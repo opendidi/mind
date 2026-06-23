@@ -3,18 +3,11 @@
     <a-tabs v-model:activeKey="tags" :tabBarStyle="tabBarStyle">
       <a-tab-pane :key="1" tab="图纸">
         <div class="mb-12">
-          <a-collapse
-            v-model:activeKey="fileKey"
-            size="small"
-            expand-icon-position="right"
-          >
+          <a-collapse v-model:activeKey="fileKey" size="small" expand-icon-position="right">
             <a-collapse-panel :key="1" :forceRender="true" header="文件">
               <a-form label-align="left" :label-col="{ span: 7 }">
                 <a-form-item label="文件名称">
-                  <a-input
-                    v-model:value="data.name"
-                    @change="onChangeData('name', data.name)"
-                  />
+                  <a-input v-model:value="data.name" @change="onChangeData('name', data.name)" />
                 </a-form-item>
               </a-form>
             </a-collapse-panel>
@@ -54,9 +47,7 @@
                   />
                 </a-form-item>
                 <a-form-item label="背景图片">
-                  <a-button type="primary" block @click="openFileManager()">
-                    获取背景图片
-                  </a-button>
+                  <a-button type="primary" block @click="openFileManager()"> 获取背景图片 </a-button>
                 </a-form-item>
                 <a-form-item label="背景图片地址">
                   <a-input
@@ -66,10 +57,7 @@
                   />
                 </a-form-item>
                 <a-form-item label="背景网格">
-                  <a-switch
-                    v-model:checked="options.grid"
-                    @change="onChangeData('grid', options.grid)"
-                  />
+                  <a-switch v-model:checked="options.grid" @change="onChangeData('grid', options.grid)" />
                 </a-form-item>
                 <a-form-item label="网格颜色">
                   <t-color-picker
@@ -99,10 +87,7 @@
                   />
                 </a-form-item>
                 <a-form-item label="标尺">
-                  <a-switch
-                    v-model:checked="options.rule"
-                    @change="onChangeData('rule', options.rule)"
-                  />
+                  <a-switch v-model:checked="options.rule" @change="onChangeData('rule', options.rule)" />
                 </a-form-item>
                 <a-form-item label="标尺颜色">
                   <t-color-picker
@@ -125,17 +110,9 @@
       </a-tab-pane>
       <a-tab-pane :key="2" tab="通信">
         <div class="mb-12">
-          <a-collapse
-            v-model:activeKey="activeKey"
-            size="small"
-            expand-icon-position="right"
-          >
+          <a-collapse v-model:activeKey="activeKey" size="small" expand-icon-position="right">
             <a-collapse-panel :key="1" :forceRender="true" header="WebSocket">
-              <a-input
-                v-model:value="data.websocket"
-                placeholder="请输入websocket地址"
-                @blur="getWebSocketData"
-              />
+              <a-input v-model:value="data.websocket" placeholder="请输入websocket地址" @blur="getWebSocketData" />
             </a-collapse-panel>
             <a-collapse-panel :key="2" :forceRender="true" header="MQTT">
               <a-form
@@ -152,9 +129,7 @@
                   <a-input v-model:value="mqttForm.mqttOptions.clientId" />
                 </a-form-item>
                 <a-form-item label="关闭自动生成">
-                  <a-switch
-                    v-model:checked="mqttForm.mqttOptions.customClientId"
-                  />
+                  <a-switch v-model:checked="mqttForm.mqttOptions.customClientId" />
                 </a-form-item>
                 <a-form-item label="用户名">
                   <a-input v-model:value="mqttForm.mqttOptions.username" />
@@ -163,42 +138,24 @@
                   <a-input v-model:value="mqttForm.mqttOptions.password" />
                 </a-form-item>
                 <a-form-item label="Topics" name="mqttTopics">
-                  <a-input
-                    v-model:value="mqttForm.mqttTopics"
-                    placeholder="多个topic以英文逗号“,”分隔"
-                  />
+                  <a-input v-model:value="mqttForm.mqttTopics" placeholder="多个topic以英文逗号“,”分隔" />
                 </a-form-item>
                 <a-form-item label="操作">
-                  <a-button type="primary" html-type="submit" class="w-full">
-                    提交
-                  </a-button>
+                  <a-button type="primary" html-type="submit" class="w-full"> 提交 </a-button>
                 </a-form-item>
               </a-form>
             </a-collapse-panel>
             <a-collapse-panel :key="3" :forceRender="true" header="HTTP通信">
               <a-form label-align="left" :label-col="{ span: 7 }">
                 <template v-for="(vo, idx) in https" :key="idx">
-                  <a-card
-                    :title="'http' + (idx + 1)"
-                    size="small"
-                    style="width: 100%"
-                    :bordered="false"
-                  >
+                  <a-card :title="'http' + (idx + 1)" size="small" style="width: 100%" :bordered="false">
                     <template #extra>
                       <template v-if="idx !== 0">
                         <a @click="onDeleteHttpNode(vo, idx)">删除</a>
                       </template>
                     </template>
-                    <a-form-item
-                      label="URL地址"
-                      name="gridSize"
-                      @change="setHttpData(vo, idx)"
-                    >
-                      <a-input
-                        v-model:value="vo.http"
-                        @blur="onChangeOptions"
-                        style="width: 100%"
-                      />
+                    <a-form-item label="URL地址" name="gridSize" @change="setHttpData(vo, idx)">
+                      <a-input v-model:value="vo.http" @blur="onChangeOptions" style="width: 100%" />
                     </a-form-item>
                     <a-form-item label="请求方式" name="name">
                       <a-select
@@ -220,29 +177,17 @@
                       />
                     </a-form-item>
                     <a-form-item label="请求头">
-                      <a-button
-                        @click="openEditContainerSettingHeader(vo, idx)"
-                      >
-                        ...
-                      </a-button>
+                      <a-button @click="openEditContainerSettingHeader(vo, idx)"> ... </a-button>
                     </a-form-item>
                   </a-card>
                 </template>
-                <a-button block @click="onAddHttpSetData">
-                  增加HTTP通信
-                </a-button>
+                <a-button block @click="onAddHttpSetData"> 增加HTTP通信 </a-button>
               </a-form>
             </a-collapse-panel>
-            <a-collapse-panel
-              :key="4"
-              :forceRender="true"
-              header="消息处理JavaScript"
-            >
+            <a-collapse-panel :key="4" :forceRender="true" header="消息处理JavaScript">
               <a-form label-align="left" :label-col="{ span: 8 }">
                 <a-form-item label="消息处理">
-                  <a-button @click="onOpenEditContainerSocketCbJs"
-                    >...</a-button
-                  >
+                  <a-button @click="onOpenEditContainerSocketCbJs">...</a-button>
                 </a-form-item>
               </a-form>
             </a-collapse-panel>
@@ -251,26 +196,17 @@
       </a-tab-pane>
       <a-tab-pane :key="3" tab="布局">
         <div class="layout mb-12">
-          <a-collapse
-            v-model:activeKey="layoutKey"
-            size="small"
-            expand-icon-position="right"
-          >
+          <a-collapse v-model:activeKey="layoutKey" size="small" expand-icon-position="right">
             <a-collapse-panel :key="1" :forceRender="true" header="布局">
               <a-form label-align="left" :label-col="{ span: 7 }">
                 <a-form-item label="最大宽度">
                   <a-input v-model:value="layout.width" placeholder="自适应" />
                 </a-form-item>
                 <a-form-item label="间距">
-                  <a-input-number
-                    v-model:value="layout.space"
-                    placeholder="自适应"
-                  />
+                  <a-input-number v-model:value="layout.space" placeholder="自适应" />
                 </a-form-item>
                 <a-form-item>
-                  <a-button type="primary" block @click="onSetLayout()">
-                    开始排版
-                  </a-button>
+                  <a-button type="primary" block @click="onSetLayout()"> 开始排版 </a-button>
                 </a-form-item>
               </a-form>
             </a-collapse-panel>
@@ -281,27 +217,16 @@
         <div class="structure">
           <ul>
             <template v-for="(item, index) in flatPens" :key="index">
-              <li
-                class="flex items-center justify-between p-3"
-                @click="onActive(item)"
-              >
+              <li class="flex items-center justify-between p-3" @click="onActive(item)">
                 <span>{{ item.name }}</span>
                 <div class="flex items-center" @click.stop>
                   <t-icon name="delete" @click="onDeletePen(item)" />
                   <a-divider type="vertical" />
                   <template v-if="item.visible">
-                    <t-icon
-                      name="browse"
-                      title="显示"
-                      @click="openPen(item, index, false)"
-                    />
+                    <t-icon name="browse" title="显示" @click="openPen(item, index, false)" />
                   </template>
                   <template v-else>
-                    <t-icon
-                      name="browse-off"
-                      title="隐藏"
-                      @click="openPen(item, index, true)"
-                    />
+                    <t-icon name="browse-off" title="隐藏" @click="openPen(item, index, true)" />
                   </template>
                 </div>
               </li>
@@ -316,113 +241,109 @@
       @oks="getEditTextValue"
       @close="closeEditContainer"
     />
-    <FileManager
-      ref="fileManagerRef"
-      :mode="'single'"
-      @oks="onFileManagerOks"
-    />
+    <FileManager ref="fileManagerRef" :mode="'single'" @oks="onFileManagerOks" />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { ColorPicker } from "tdesign-vue-next";
-import { Icon } from "tdesign-icons-vue-next";
+import { defineComponent } from 'vue'
+import { ColorPicker } from 'tdesign-vue-next'
+import { Icon } from 'tdesign-icons-vue-next'
 export default defineComponent({
   components: {
-    "t-color-picker": ColorPicker,
+    't-color-picker': ColorPicker,
     Icon,
   },
-});
+})
 </script>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, ref, nextTick, reactive, watch, computed } from "vue";
-import { useRoute } from "vue-router";
-import { message } from "ant-design-vue";
-import FileManager from "@/components/FileManager/index.vue";
-import EditContainer from "@/components/Meta2D/EditContainer/index.vue";
-import { useCommonStore } from "@/store/modules/common";
+import { onMounted, onUnmounted, ref, nextTick, reactive, watch, computed } from 'vue'
+import { useRoute } from 'vue-router'
+import { message } from 'ant-design-vue'
+import FileManager from '@/components/FileManager/index.vue'
+import EditContainer from '@/components/Meta2D/EditContainer/index.vue'
+import { useCommonStore } from '@/store/modules/common'
 
-const commonStore = useCommonStore();
-const fileManagerRef = ref(null);
-const editContainerRef = ref(null);
+const commonStore = useCommonStore()
+const fileManagerRef = ref(null)
+const editContainerRef = ref(null)
 
 // 图纸数据
 const data = reactive<any>({
-  name: "",
+  name: '',
   background: undefined,
   color: undefined,
-});
+})
 
 const layout = ref({
   // 宽度
-  width: "",
+  width: '',
   // 间距
   space: 30,
-});
+})
 
-let tags = ref<number>(1);
-let fileKey = ref<number[]>([1, 2, 3, 4]);
-let layoutKey = ref<number[]>([1]);
-let activeKey = ref<number[]>([1, 2, 3]);
+let tags = ref<number>(1)
+let fileKey = ref<number[]>([1, 2, 3, 4])
+let layoutKey = ref<number[]>([1])
+let activeKey = ref<number[]>([1, 2, 3])
 
 let tabBarStyle = reactive({
-  background: "#fff",
-});
+  background: '#fff',
+})
 
 let mqttForm = reactive({
   // mqtt地址
-  mqtt: "",
+  mqtt: '',
   // mqtt 订阅主题
-  mqttTopics: "",
+  mqttTopics: '',
   mqttOptions: {
     // 客户端ID
-    clientId: "",
+    clientId: '',
     // 用户名
-    username: "",
+    username: '',
     // 密码
-    password: "",
+    password: '',
     // ture - clientId不变；false - clientId随机，避免相同连接clientId冲突
     customClientId: false,
   },
-});
+})
 
 let mqttRules = reactive({
-  mqtt: [{ required: true, message: "请输入MQTT地址" }],
-  mqttTopics: [{ required: true, message: "请输入Topics" }],
-});
+  mqtt: [{ required: true, message: '请输入MQTT地址' }],
+  mqttTopics: [{ required: true, message: '请输入Topics' }],
+})
 
 let https = ref([
   {
-    http: "",
-    method: "",
+    http: '',
+    method: '',
     // 轮询间隔时间
     httpTimeInterval: 1000,
     // 请求头设置
     httpHeaders: {},
   },
-]);
-let httpsIndex = 0;
+])
+let httpsIndex = 0
 
-let isOpenSocketEditContainer = false;
+let isOpenSocketEditContainer = false
 
 // 画布选项
 const options = reactive<{
-  grid: boolean;
-  gridSize: number;
-  gridRotate: undefined;
-  gridColor: undefined;
-  rule: boolean;
+  grid: boolean
+  gridSize: number
+  gridRotate: undefined
+  gridColor: undefined
+  rule: boolean
 }>({
   grid: false,
   gridSize: 10,
   gridRotate: undefined,
   gridColor: undefined,
   rule: true,
-});
+})
 
-let editContainerTitle = ref<string>();
+let editContainerTitle = ref<string>()
 
 /**
  * Flatten pens including children of grouped pens.
@@ -430,188 +351,191 @@ let editContainerTitle = ref<string>();
  * every individual pen is selectable in the structure list.
  */
 const flatPens = computed(() => {
-  const pens = data.pens || [];
-  const result: any[] = [];
+  const pens = data.pens || []
+  const result: any[] = []
   const walk = (list: any[]) => {
     for (const pen of list) {
-      if (!pen) continue;
-      result.push(pen);
+      if (!pen) continue
+      result.push(pen)
       if (pen.children && pen.children.length > 0) {
-        walk(pen.children);
+        walk(pen.children)
       }
     }
-  };
-  walk(pens);
-  return result;
-});
+  }
+  walk(pens)
+  return result
+})
 
 /**
  * 初始化数据
  */
 function onInit(dataValue: any) {
-  const d: any = dataValue; //JSON.parse(useCommonStore().originalData);
+  const d: any = dataValue //JSON.parse(useCommonStore().originalData);
 
-  if (d["https"]) {
-    if (d["https"].length !== 0) {
-      meta2d.store.data.https = d["https"];
-      meta2d.connectHttp();
-      https.value = d["https"];
+  if (d['https']) {
+    if (d['https'].length !== 0) {
+      meta2d.store.data.https = d['https']
+      meta2d.connectHttp()
+      https.value = d['https']
     }
   } else {
-    meta2d.store.data.https = https.value;
-    meta2d.connectHttp();
+    meta2d.store.data.https = https.value
+    meta2d.connectHttp()
   }
 
-  if (d["websocket"] == "") {
-    data["websocket"] = "";
-    meta2d.store.data["websocket"] = "";
+  if (d['websocket'] == '') {
+    data['websocket'] = ''
+    meta2d.store.data['websocket'] = ''
   }
 
   Object.assign(data, {
-    name: d.name || "",
+    name: d.name || '',
     background: d.background,
     color: d.color,
     ...d,
-  });
+  })
 
-  Object.assign(options, meta2d.getOptions());
+  Object.assign(options, meta2d.getOptions())
 }
 
 onMounted(() => {
-  onInit(meta2d.data());
-  window.addEventListener('meta2d:dataLoaded', onMeta2dDataLoaded);
-});
+  onInit(meta2d.data())
+  window.addEventListener('meta2d:dataLoaded', onMeta2dDataLoaded)
+})
 
 onUnmounted(() => {
-  window.removeEventListener('meta2d:dataLoaded', onMeta2dDataLoaded);
-});
+  window.removeEventListener('meta2d:dataLoaded', onMeta2dDataLoaded)
+})
 
 function onMeta2dDataLoaded() {
-  if (window.meta2d) onInit(window.meta2d.data());
+  if (window.meta2d) onInit(window.meta2d.data())
 }
 
 // 新建图纸时同步清空表单（路由 id 被清除）
-const route = useRoute();
-watch(() => route.query.id, (val) => {
-  if (!val && window.meta2d) onInit(window.meta2d.data());
-});
+const route = useRoute()
+watch(
+  () => route.query.id,
+  val => {
+    if (!val && window.meta2d) onInit(window.meta2d.data())
+  },
+)
 
 function onChangeData(key: string, dataValue: string) {
   switch (key) {
-    case "background":
-      meta2d.setBackgroundColor(dataValue);
-      break;
-    case "bkImage":
-      meta2d.setBackgroundImage(dataValue);
-      break;
-    case "grid":
-    case "gridColor":
-    case "gridSize":
-    case "gridRotate":
-      meta2d.setGrid({ [key]: dataValue });
-      break;
-    case "rule":
-    case "ruleColor":
-      meta2d.setRule({ [key]: dataValue });
-      break;
+    case 'background':
+      meta2d.setBackgroundColor(dataValue)
+      break
+    case 'bkImage':
+      meta2d.setBackgroundImage(dataValue)
+      break
+    case 'grid':
+    case 'gridColor':
+    case 'gridSize':
+    case 'gridRotate':
+      meta2d.setGrid({ [key]: dataValue })
+      break
+    case 'rule':
+    case 'ruleColor':
+      meta2d.setRule({ [key]: dataValue })
+      break
     default:
-      break;
+      break
   }
-  commonStore.setIsSave("0");
-  meta2d.store.data[key] = dataValue;
+  commonStore.setIsSave('0')
+  meta2d.store.data[key] = dataValue
   // meta2d.store.patchFlagsBackground = true;
-  meta2d.render();
+  meta2d.render()
 }
 
 /**
  * 获取socket地址
  */
 function getWebSocketData() {
-  const pattern = /^wss?:\/\/[^\s/$.?#].[^\s]*$/i;
-  let url = data["websocket"];
+  const pattern = /^wss?:\/\/[^\s/$.?#].[^\s]*$/i
+  let url = data['websocket']
   if (url) {
     if (pattern.test(url)) {
-      meta2d.store.data["websocket"] = url;
+      meta2d.store.data['websocket'] = url
     } else {
       nextTick(() => {
-        message.warning("不符合 WebSocket 地址的格式");
-      });
+        message.warning('不符合 WebSocket 地址的格式')
+      })
     }
-  } else if (url == "") {
-    meta2d.store.data["websocket"] = "";
+  } else if (url == '') {
+    meta2d.store.data['websocket'] = ''
   }
 }
 
 function onChangeOptions() {
-  commonStore.setIsSave("0");
-  meta2d.setOptions(options);
-  meta2d.render();
+  commonStore.setIsSave('0')
+  meta2d.setOptions(options)
+  meta2d.render()
 }
 
 function setHttpData(data: any, idx: any) {
   if (data) {
-    meta2d.store.data.https = https.value;
-    meta2d.connectHttp();
+    meta2d.store.data.https = https.value
+    meta2d.connectHttp()
   }
 }
 
 function onAddHttpSetData() {
   https.value.push({
-    http: "",
-    method: "",
+    http: '',
+    method: '',
     // 轮询间隔时间
     httpTimeInterval: 3000,
     // 请求头设置
     httpHeaders: {},
-  });
+  })
 }
 
 /**
  * 打开代码编辑器
  */
 function openEditContainer() {
-  editContainerRef.value.visible = true;
-  editContainerTitle.value = "JavaScript";
+  editContainerRef.value.visible = true
+  editContainerTitle.value = 'JavaScript'
   nextTick(() => {
-    let _ = meta2d.store.data["initJs"];
-    editContainerRef.value.init(_ ? _ : "");
-    commonStore.setIsSave("0");
-  });
+    let _ = meta2d.store.data['initJs']
+    editContainerRef.value.init(_ ? _ : '')
+    commonStore.setIsSave('0')
+  })
 }
 
 /**
  * 打开编辑器编辑HTTP请求头配置信息
  */
 function openEditContainerSettingHeader(data: any, idx: number) {
-  editContainerRef.value.visible = true;
-  httpsIndex = idx;
+  editContainerRef.value.visible = true
+  httpsIndex = idx
   nextTick(() => {
-    editContainerTitle.value = "请求头配置";
-    editContainerRef.value.init(JSON.stringify(data.httpHeaders), "json");
-    commonStore.setIsSave("0");
-  });
+    editContainerTitle.value = '请求头配置'
+    editContainerRef.value.init(JSON.stringify(data.httpHeaders), 'json')
+    commonStore.setIsSave('0')
+  })
 }
 
 /**
  * 当编辑器关闭后状态还原
  */
 function closeEditContainer() {
-  editContainerTitle.value = "";
-  isOpenSocketEditContainer = false;
+  editContainerTitle.value = ''
+  isOpenSocketEditContainer = false
 }
 
 /**
  * 打开编辑器编辑消息处理JavaScript
  */
 function onOpenEditContainerSocketCbJs() {
-  editContainerRef.value.visible = true;
-  isOpenSocketEditContainer = true;
+  editContainerRef.value.visible = true
+  isOpenSocketEditContainer = true
   nextTick(() => {
-    let _ = meta2d.store.data["socketCbJs"];
-    editContainerTitle.value = "JavaScript";
-    editContainerRef.value.init(_ ? _ : "");
-    commonStore.setIsSave("0");
-  });
+    let _ = meta2d.store.data['socketCbJs']
+    editContainerTitle.value = 'JavaScript'
+    editContainerRef.value.init(_ ? _ : '')
+    commonStore.setIsSave('0')
+  })
 }
 
 /**
@@ -619,88 +543,88 @@ function onOpenEditContainerSocketCbJs() {
  * @param {String} textValue
  */
 function getEditTextValue(textValue: string) {
-  if (editContainerTitle.value.indexOf("请求头配置") !== -1) {
-    https[httpsIndex].httpHeaders = JSON.parse(textValue);
-    meta2d.store.data.https = https.value;
-    editContainerTitle.value = "";
+  if (editContainerTitle.value.indexOf('请求头配置') !== -1) {
+    https[httpsIndex].httpHeaders = JSON.parse(textValue)
+    meta2d.store.data.https = https.value
+    editContainerTitle.value = ''
   } else if (isOpenSocketEditContainer == true) {
-    meta2d.store.data["socketCbJs"] = textValue;
-    isOpenSocketEditContainer = false;
+    meta2d.store.data['socketCbJs'] = textValue
+    isOpenSocketEditContainer = false
   } else {
-    meta2d.store.data["initJs"] = textValue;
+    meta2d.store.data['initJs'] = textValue
   }
-  commonStore.setIsSave("0");
+  commonStore.setIsSave('0')
 }
 
 function onDeleteHttpNode(data: any, idx: number) {
-  https.value.splice(idx, 1);
-  commonStore.setIsSave("0");
+  https.value.splice(idx, 1)
+  commonStore.setIsSave('0')
 }
 
 const openFileManager = () => {
-  const fileManager: any = fileManagerRef.value;
-  fileManager.visible = true;
+  const fileManager: any = fileManagerRef.value
+  fileManager.visible = true
   nextTick(() => {
-    fileManager.initMaterialFolder().then((res) => {
-      fileManager.selectedKeys = [res];
-      fileManager.queryParam.parent_id = res;
-      fileManager.init();
-    });
-  });
-};
+    fileManager.initMaterialFolder().then(res => {
+      fileManager.selectedKeys = [res]
+      fileManager.queryParam.parent_id = res
+      fileManager.init()
+    })
+  })
+}
 
 const onFileManagerOks = (params: any) => {
   Object.assign(data, {
     bkImage: params.url,
-  });
-  onChangeData("bkImage", params.url);
-};
+  })
+  onChangeData('bkImage', params.url)
+}
 
 const onSetLayout = () => {
-  const { width, space }: any = layout.value;
-  meta2d.layout(undefined, width, space);
-};
+  const { width, space }: any = layout.value
+  meta2d.layout(undefined, width, space)
+}
 
 /**
  * https://doc.le5le.com/document/119620524#MQTT
  */
 function onMqttDataFinish() {
   try {
-    meta2d.connectMqtt(mqttForm);
+    meta2d.connectMqtt(mqttForm)
   } catch {
-    message.error("MQTT 连接失败");
+    message.error('MQTT 连接失败')
   }
 }
 
 const onActive = (params: any) => {
-  meta2d.store.active = [params];
-  meta2d.render();
-  commonStore.setIsSave("0");
-};
+  meta2d.store.active = [params]
+  meta2d.render()
+  commonStore.setIsSave('0')
+}
 
 const onDeletePen = (param: any) => {
-  meta2d.delete([param]);
-  onSave();
-};
+  meta2d.delete([param])
+  onSave()
+}
 
 const openPen = (params: any, _index: number, visible: any) => {
-  const pen = data.pens.find((p: any) => p.id === params.id);
-  if (pen) pen.visible = visible;
-  meta2d.setValue({ id: params.id, visible });
-  onSave();
-};
+  const pen = data.pens.find((p: any) => p.id === params.id)
+  if (pen) pen.visible = visible
+  meta2d.setValue({ id: params.id, visible })
+  onSave()
+}
 
 const onSave = () => {
-  meta2d.render();
-  const bpData: any = meta2d.data();
-  localStorage.setItem("meta2d", JSON.stringify(bpData));
-  Object.assign(data, { ...bpData });
-  commonStore.setIsSave("0");
-};
+  meta2d.render()
+  const bpData: any = meta2d.data()
+  localStorage.setItem('meta2d', JSON.stringify(bpData))
+  Object.assign(data, { ...bpData })
+  commonStore.setIsSave('0')
+}
 
 defineExpose({
   onInit,
-});
+})
 </script>
 
 <style lang="less" scoped>

@@ -6,9 +6,9 @@
  * @LastEditors: htang
  * @LastEditTime: 2023-10-11 15:06:28
  */
-import { Meta2d } from '@meta2d/core';
+import { Meta2d } from '@meta2d/core'
 
 declare global {
-  var meta2d: Meta2d;
-  var C2S: any;
+  var meta2d: Meta2d
+  var C2S: any
 }

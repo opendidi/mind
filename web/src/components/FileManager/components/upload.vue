@@ -23,71 +23,69 @@
     </a-upload>
   </template>
   <template v-else>
-    <a-button type="primary" :disabled="true" class="w-full">
-      上传文件
-    </a-button>
+    <a-button type="primary" :disabled="true" class="w-full"> 上传文件 </a-button>
   </template>
 </template>
 
 <script lang="ts" setup>
-import { ref, computed } from "vue";
-import { message } from "ant-design-vue";
-import { FileExplorer } from "@/utils/FileExplorer.ts";
+import { ref, computed } from 'vue'
+import { message } from 'ant-design-vue'
+import { FileExplorer } from '@/utils/FileExplorer.ts'
 
-const fileExplorer = new FileExplorer();
+const fileExplorer = new FileExplorer()
 
-const emit = defineEmits(["oks"]);
+const emit = defineEmits(['oks'])
 
-const api_url = import.meta.env.VITE_GLOB_API_URL;
+const api_url = import.meta.env.VITE_GLOB_API_URL
 
-const file_type = ref("");
+const file_type = ref('')
 
 const accept = computed(() => {
   switch (file_type.value) {
-    case "image":
-    case "panorama":
-      return fileExplorer._filterExt.image.join(",");
-    case "video":
-      return fileExplorer._filterExt.video.join(",");
-    case "audio":
-      return fileExplorer._filterExt.audio.join(",");
+    case 'image':
+    case 'panorama':
+      return fileExplorer._filterExt.image.join(',')
+    case 'video':
+      return fileExplorer._filterExt.video.join(',')
+    case 'audio':
+      return fileExplorer._filterExt.audio.join(',')
     default:
-      return fileExplorer._filterExt.image.join(",");
+      return fileExplorer._filterExt.image.join(',')
   }
-});
+})
 
 let data = ref({
-  type: file_type.value ? file_type.value : "panorama",
-  parent_id: "",
-});
+  type: file_type.value ? file_type.value : 'panorama',
+  parent_id: '',
+})
 
 let action = computed(() => {
-  const base = api_url.endsWith('/') ? api_url : api_url + '/';
-  return base + "material/upload";
-});
+  const base = api_url.endsWith('/') ? api_url : api_url + '/'
+  return base + 'material/upload'
+})
 
 // 文件列表
-let fileList = ref([]);
+let fileList = ref([])
 
 function handleChange(info: any) {
-  const status = info.file.status;
-  if (status == "done") {
+  const status = info.file.status
+  if (status == 'done') {
     if (info.file.response.code == 200) {
-      message.success(`${info.file.name} 文件上传成功`);
-      fileList.value = [];
+      message.success(`${info.file.name} 文件上传成功`)
+      fileList.value = []
     } else {
-      message.error(`文件上传失败。`);
+      message.error(`文件上传失败。`)
     }
-    emit("oks");
-  } else if (status === "error") {
-    message.error(`${info.file.name} 文件上传失败。`);
+    emit('oks')
+  } else if (status === 'error') {
+    message.error(`${info.file.name} 文件上传失败。`)
   }
 }
 
 defineExpose({
   data,
   file_type,
-});
+})
 </script>
 
 <style lang="less" scoped>

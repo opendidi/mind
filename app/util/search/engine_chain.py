@@ -16,12 +16,9 @@
 
 import logging
 import re
-
-# ── Race-mode pool singleton ───────────────────────────────────────────
 import threading as _threading
 import time
-from concurrent.futures import FIRST_COMPLETED
-from concurrent.futures import TimeoutError as FutureTimeoutError
+from concurrent.futures import FIRST_COMPLETED, ThreadPoolExecutor, as_completed
 from concurrent.futures import wait as cf_wait
 
 from app.util.agent.tools import ToolRegistry, _require
@@ -102,15 +99,17 @@ _DOMAIN_ROUTES = {
 _DOMAIN_PATTERNS = {
     "code": [
         r"\b(代码|编程|bug|错误|报错|函数|API|接口|import|python|javascript|golang?|rust|java|typescript|react|vue|算法|数据结构|leetcode|github|git\s|commit|pull\s*request|stackoverflow|抛出|异常|exception|syntax|error|deprecate)\b",
+        r"\b(how\s+(to|do|fix|solve|implement|write|use|make|create|build|handle)|what\s+(is|does|are)\s+wrong|why\s+(is|does|are|isn['']t|doesn['']t|won['']t|can['']t))\b",
+        r"\b(安装|配置|部署|调试|优化|重构|升级|降级|编译|打包|发布|测试|单元测试|集成测试|性能|内存泄漏|死锁|并发|线程|异步|回调|闭包|继承|多态|封装|序列化|反序列化|正则|编码|解码|加密|解密|签名|认证|授权|中间件|拦截器|过滤器|代理|负载|缓存|队列|消息|日志|监控|报警|熔断|限流|降级)\b",
     ],
     "academic": [
-        r"\b(论文|研究|文献|学术|arxiv|doi|期刊|引用|citation|abstract|introduction|methodology|conclusion|survey)\b",
+        r"\b(论文|研究|文献|学术|arxiv|doi|期刊|引用|citation|abstract|introduction|methodology|conclusion|survey|method|experiment|evaluation|dataset|benchmark|state-of-the-art|SOTA|对比|方法|实验|评估|数据集|基准)\b",
     ],
     "wiki": [
-        r"\b(百科|维基|wikipedia|定义|什么是|谁[是叫]|哪个|哪些|历史|人物|概述|简介)\b",
+        r"\b(百科|维基|wikipedia|定义|什么是|谁[是叫]|哪个|哪些|历史|人物|概述|简介|概念|术语|缩写|全称|起源|背景)\b",
     ],
     "news_cn": [
-        r"\b(news|headlines?|breaking|today|新闻|今日|刚刚|突发|热点事件|头条|报道|快讯|直播|发布会|通报)\b",
+        r"\b(news|headlines?|breaking|today|新闻|今日|刚刚|突发|热点事件|头条|报道|快讯|直播|发布会|通报|最新消息|最新进展|事件|事故)\b",
     ],
 }
 
@@ -301,18 +300,19 @@ def _deep_fetch_results(results: list, keyword: str) -> list:
 
     Appends extracted content to each result's snippet. Limits to
     first _DEEP_FETCH_LIMIT results to avoid excessive network calls.
+    Fetches all top-N URLs in parallel (ThreadPoolExecutor) for speed.
     """
     if not results:
         return results
 
     from app.util.agent.tools import run_tool_call
 
-    enriched = []
-    for i, r in enumerate(results[:_DEEP_FETCH_LIMIT]):
+    targets = [r for r in results[:_DEEP_FETCH_LIMIT] if r.get("url")]
+    if not targets:
+        return results
+
+    def _fetch_one(r: dict) -> dict:
         url = r.get("url", "")
-        if not url:
-            enriched.append(r)
-            continue
         try:
             fetch_result, _ = run_tool_call("web_fetch", {"url": url}, {}, None, None, None, None)
             if fetch_result.get("success"):
@@ -323,11 +323,22 @@ def _deep_fetch_results(results: list, keyword: str) -> list:
                     r["snippet"] = r.get("snippet", "") + f"\n\n[全文摘要]\n{content[:1000]}"
         except Exception:
             logging.debug("Deep fetch failed for: %s", url, exc_info=True)
-        enriched.append(r)
+        return r
 
-    # Append remaining unfetched results
-    enriched.extend(results[_DEEP_FETCH_LIMIT:])
-    return enriched
+    enriched_map = {id(r): r for r in results}  # preserve original order
+
+    with ThreadPoolExecutor(max_workers=_DEEP_FETCH_LIMIT) as pool:
+        futures = {pool.submit(_fetch_one, r): i for i, r in enumerate(targets)}
+        for future in as_completed(futures, timeout=20):
+            idx = futures[future]
+            r_old = targets[idx]
+            try:
+                r_new = future.result(timeout=5)
+                enriched_map[id(r_old)] = r_new
+            except Exception:
+                logging.debug("Deep fetch timeout for: %s", r_old.get("url", ""))
+
+    return list(enriched_map.values())
 
 
 # ── Core search orchestrator ─────────────────────────────────────────
@@ -429,6 +440,7 @@ def _engine_chain(engine: str, search_type: str):
         yield "searxng"
     elif engine == "ddg":
         yield "ddg"
+        yield "bing_img"
         yield "ddg_html"
         yield "ddg_api"
     elif engine == "bing":
@@ -570,7 +582,6 @@ def web_search(args):
     args["search_type"] = search_type
 
     if search_type == "image":
-        engine = "ddg"
         search_depth = "basic"  # images don't support deep fetch
 
     if not check_search_rate(user_id):

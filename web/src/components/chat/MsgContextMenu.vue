@@ -6,9 +6,7 @@
     </div>
     <template #overlay>
       <a-menu @click="onMenuClick">
-        <a-menu-item key="copy">
-          <CopyOutlined /><span style="margin-left: 8px">复制</span>
-        </a-menu-item>
+        <a-menu-item key="copy"> <CopyOutlined /><span style="margin-left: 8px">复制</span> </a-menu-item>
         <a-menu-item v-if="showQuote" key="quote">
           <MessageOutlined /><span style="margin-left: 8px">引用</span>
         </a-menu-item>
@@ -25,13 +23,16 @@
 import { ref } from 'vue'
 import { CopyOutlined, DeleteOutlined, MessageOutlined } from '@ant-design/icons-vue'
 
-const props = withDefaults(defineProps<{
-  showQuote?: boolean
-  showDelete?: boolean
-}>(), {
-  showQuote: true,
-  showDelete: false,
-})
+const props = withDefaults(
+  defineProps<{
+    showQuote?: boolean
+    showDelete?: boolean
+  }>(),
+  {
+    showQuote: true,
+    showDelete: false,
+  },
+)
 
 const emit = defineEmits<{
   copy: []

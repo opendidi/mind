@@ -1,8 +1,7 @@
 :root {
-  --font-family: '-apple-system', 'BlinkMacSystemFont', 'PingFang SC',
-    'Hiragino Sans GB', 'Microsoft YaHei UI', ' Microsoft YaHei',
-    'Source Han Sans CN', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji',
-    'Segoe UI Symbol';
+  --font-family:
+    '-apple-system', 'BlinkMacSystemFont', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', ' Microsoft YaHei',
+    'Source Han Sans CN', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
   --font-size: 13px;
   --color: #595959;
   --color-title: #262626;
@@ -849,7 +848,8 @@ a.hover:hover {
 }
 .shadow {
   --tw-shadow: 0 0.05208rem 0.15625rem 0 rgba(0, 0, 0, 0.1), 0 0.05208rem 0.10417rem -0.05208rem rgb(0 0 0/0.1);
-  --tw-shadow-colored: 0 0.05208rem 0.15625rem 0 var(--tw-shadow-color), 0 0.05208rem 0.10417rem -0.05208rem var(--tw-shadow-color);
+  --tw-shadow-colored:
+    0 0.05208rem 0.15625rem 0 var(--tw-shadow-color), 0 0.05208rem 0.10417rem -0.05208rem var(--tw-shadow-color);
   -webkit-box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
   box-shadow: var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow);
 }
@@ -891,25 +891,25 @@ a.hover:hover {
   text-indent: 1.5rem;
 }
 .content-box {
-  content: "box";
+  content: 'box';
 }
 .content-fix {
-  content: "fix";
+  content: 'fix';
 }
 .content-top {
-  content: "top";
+  content: 'top';
 }
 .content-image {
-  content: "image";
+  content: 'image';
 }
 .content-icon {
-  content: "icon";
+  content: 'icon';
 }
 .content-bottom {
-  content: "bottom";
+  content: 'bottom';
 }
 .content-type {
-  content: "type";
+  content: 'type';
 }
 .visible {
   visibility: visible;

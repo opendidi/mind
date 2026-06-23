@@ -6,12 +6,12 @@
  * @LastEditors: htang
  * @LastEditTime: 2023-10-10 10:34:45
  */
-import type { App } from 'vue';
-import { createPinia } from 'pinia';
-const store = createPinia();
+import type { App } from 'vue'
+import { createPinia } from 'pinia'
+const store = createPinia()
 
 export function setupStore(app: App<Element>) {
-  app.use(store);
+  app.use(store)
 }
 
-export { store };
+export { store }

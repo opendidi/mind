@@ -130,7 +130,7 @@ export function buildCanvasContext(): CanvasContext | null {
 
     // Find neighbors of selected pens (connected via lines)
     if (selectedIds.size > 0) {
-      for (const line of (data.lines || [])) {
+      for (const line of data.lines || []) {
         if (selectedIds.has(line.source?.id)) neighborIds.add(line.source?.connectTo)
         if (selectedIds.has(line.target?.id)) neighborIds.add(line.target?.connectTo)
         if (line.source?.connectTo && selectedIds.has(line.source.connectTo)) neighborIds.add(line.source.id)
@@ -153,8 +153,10 @@ export function buildCanvasContext(): CanvasContext | null {
         id: p.id || p.penId,
         type: p.name || p.type || 'rectangle',
         text: (p.text || '').slice(0, 200),
-        x: p.x || 0, y: p.y || 0,
-        width: p.width || 100, height: p.height || 60,
+        x: p.x || 0,
+        y: p.y || 0,
+        width: p.width || 100,
+        height: p.height || 60,
       })
       if (JSON.stringify(truncatedPens).length > TARGET_TOKENS * 3) break
     }
@@ -217,7 +219,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   const pendingToolArgs = new Map<string, Record<string, unknown>>()
   let pendingToolCount = 0
   let pendingRefs: Array<{ title?: string; url: string; snippet?: string; domain?: string }> | null = null
-
 
   function addMessage(role: ChatMessage['role'], text: string) {
     messages.value.push({
@@ -405,7 +406,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
 
       // ── Thinking ──
       case 'thinking':
-        currentThinking.value += (data.text || data.content || '')
+        currentThinking.value += data.text || data.content || ''
         thinkingText.value = data.text || data.content || ''
         break
 
@@ -502,7 +503,12 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       // them when the next agent message (token/message) is created.
       // Multiple web_search calls within one turn → MERGE refs, don't overwrite.
       case 'references': {
-        const refs = (data.references || data.refs || []) as Array<{ title?: string; url: string; snippet?: string; domain?: string }>
+        const refs = (data.references || data.refs || []) as Array<{
+          title?: string
+          url: string
+          snippet?: string
+          domain?: string
+        }>
         if (refs.length > 0) {
           // Try the last message: if it's an agent msg from THIS turn, merge refs
           const last = messages.value[messages.value.length - 1]
@@ -579,9 +585,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       : text.trim()
 
     // Build canvas context (caller override or default)
-    const canvasContext = options.getCanvasContext
-      ? options.getCanvasContext()
-      : buildCanvasContext()
+    const canvasContext = options.getCanvasContext ? options.getCanvasContext() : buildCanvasContext()
 
     loading.value = true
     connected.value = true
@@ -596,8 +600,8 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       user_id: options.userId,
       canvasContext,
       images: images || undefined,
-      onEvent: (event) => handleSSEEvent(event.type, event.data),
-      onError: (err) => {
+      onEvent: event => handleSSEEvent(event.type, event.data),
+      onError: err => {
         addMessage('error', err.message)
         loading.value = false
         connected.value = false
@@ -632,7 +636,10 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     // Find the error message and the user message that triggered it
     let cutIdx = -1
     for (let i = msgs.length - 1; i >= 0; i--) {
-      if (msgs[i].role === 'error') { cutIdx = i; break }
+      if (msgs[i].role === 'error') {
+        cutIdx = i
+        break
+      }
     }
     if (cutIdx < 0) {
       console.warn('[retry] no error message found')

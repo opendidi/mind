@@ -35,7 +35,9 @@ export const useUserStore = defineStore('app-auth-token', {
       try {
         const payload = JSON.parse(atob(state.token.split('.')[1]))
         if (payload.exp * 1000 < Date.now()) return ''
-      } catch { return '' }
+      } catch {
+        return ''
+      }
       return state.token
     },
     getUserInfo(state): UserInfo | null {
@@ -65,7 +67,11 @@ export const useUserStore = defineStore('app-auth-token', {
     },
 
     async logout() {
-      try { await apiLogout() } catch { /* ignore */ }
+      try {
+        await apiLogout()
+      } catch {
+        /* ignore */
+      }
       this.token = ''
       this.refreshToken = ''
       this.userInfo = null

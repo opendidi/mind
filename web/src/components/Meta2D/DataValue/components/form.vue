@@ -17,14 +17,7 @@
     :width="400"
     @afterVisibleChange="onAfterVisibleChange"
   >
-    <a-form
-      ref="formRef"
-      :model="model"
-      :rules="rules"
-      label-align="left"
-      :label-col="{ span: 6 }"
-      @finish="onFinish"
-    >
+    <a-form ref="formRef" :model="model" :rules="rules" label-align="left" :label-col="{ span: 6 }" @finish="onFinish">
       <a-form-item label="显示名称" name="name">
         <a-input v-model:value="model.name" placeholder="请输入名称" />
       </a-form-item>
@@ -43,19 +36,7 @@
           <a-select-option value="slider">滑块</a-select-option>
         </a-select>
       </a-form-item>
-      <template
-        v-if="
-          [
-            'text',
-            'number',
-            'color',
-            'textarea',
-            'switch',
-            'code',
-            'slider',
-          ].includes(model.type)
-        "
-      >
+      <template v-if="['text', 'number', 'color', 'textarea', 'switch', 'code', 'slider'].includes(model.type)">
         <a-form-item label="提示文字" name="placeholder">
           <a-input v-model:value="model.placeholder" />
         </a-form-item>
@@ -103,75 +84,75 @@
 </template>
 
 <script>
-import { ref, watch, defineComponent } from "vue";
-import { DeleteOutlined, PlusOutlined } from "@ant-design/icons-vue";
+import { ref, watch, defineComponent } from 'vue'
+import { DeleteOutlined, PlusOutlined } from '@ant-design/icons-vue'
 export default defineComponent({
   components: { DeleteOutlined, PlusOutlined },
   setup(props, { emit }) {
-    const formRef = ref(null);
-    const visible = ref(false);
+    const formRef = ref(null)
+    const visible = ref(false)
     const model = ref({
       // 名称
-      name: "",
+      name: '',
       // 属性
-      key: "",
+      key: '',
       // 类型
-      type: "",
+      type: '',
       // 描述
-      placeholder: "",
-    });
-    const rules = ref({});
+      placeholder: '',
+    })
+    const rules = ref({})
 
-    const drawerStyle = ref({});
+    const drawerStyle = ref({})
 
     const bodyStyle = ref({
-      padding: "12px",
-    });
+      padding: '12px',
+    })
 
     watch(
       () => model.value.type,
-      (type) => {
-        if (type !== "select") {
-          delete model.value.options;
+      type => {
+        if (type !== 'select') {
+          delete model.value.options
         }
-        if (!["number", "slider"].includes(type)) {
-          delete model.value.min;
-          delete model.value.max;
-          delete model.value.step;
-          delete model.value.precision;
+        if (!['number', 'slider'].includes(type)) {
+          delete model.value.min
+          delete model.value.max
+          delete model.value.step
+          delete model.value.precision
         }
-      }
-    );
+      },
+    )
 
     const addOptions = () => {
-      if (model.value["options"] == undefined) {
-        model.value["options"] = [];
+      if (model.value['options'] == undefined) {
+        model.value['options'] = []
       }
-      model.value["options"].push({
-        label: "",
-        value: "",
-      });
-    };
+      model.value['options'].push({
+        label: '',
+        value: '',
+      })
+    }
 
-    const init = (data) => {
-      model.value = data;
-    };
+    const init = data => {
+      model.value = data
+    }
 
-    const onDelete = (idx) => {
-      model.value.options.splice(idx, 1);
-    };
+    const onDelete = idx => {
+      model.value.options.splice(idx, 1)
+    }
 
     const onFinish = () => {
-      emit("oks", model.value);
-      visible.value = false;
-      formRef.value?.resetFields();
-    };
+      emit('oks', model.value)
+      visible.value = false
+      formRef.value?.resetFields()
+    }
 
-    const onAfterVisibleChange = (e) => {
+    const onAfterVisibleChange = e => {
       if (!e) {
-        formRef.value?.resetFields();
+        formRef.value?.resetFields()
       }
-    };
+    }
 
     return {
       formRef,
@@ -185,9 +166,9 @@ export default defineComponent({
       onDelete,
       onFinish,
       onAfterVisibleChange,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

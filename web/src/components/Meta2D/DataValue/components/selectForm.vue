@@ -29,10 +29,7 @@
               <td>key</td>
               <td>value</td>
               <td>
-                <plus-circle-outlined
-                  title="新增"
-                  @click="addKeyValueNode(vo, idx)"
-                />
+                <plus-circle-outlined title="新增" @click="addKeyValueNode(vo, idx)" />
               </td>
             </tr>
           </thead>
@@ -40,14 +37,8 @@
             <template v-for="(kv, i) in model.keysValue" :key="i">
               <tr>
                 <td>
-                  <a-select
-                    v-model:value="kv.key"
-                    style="width: 100%"
-                    allowClear
-                  >
-                    <a-select-option value="background">
-                      背景颜色
-                    </a-select-option>
+                  <a-select v-model:value="kv.key" style="width: 100%" allowClear>
+                    <a-select-option value="background"> 背景颜色 </a-select-option>
                     <a-select-option value="color">背景</a-select-option>
                     <a-select-option value="width">宽度</a-select-option>
                     <a-select-option value="height">高度</a-select-option>
@@ -57,17 +48,10 @@
                   </a-select>
                 </td>
                 <td>
-                  <a-input
-                    v-model:value="kv.value"
-                    style="width: 100%"
-                    allowClear
-                  />
+                  <a-input v-model:value="kv.value" style="width: 100%" allowClear />
                 </td>
                 <td>
-                  <close-circle-outlined
-                    title="删除"
-                    @click="onDeleteKeyValue(i)"
-                  />
+                  <close-circle-outlined title="删除" @click="onDeleteKeyValue(i)" />
                 </td>
               </tr>
             </template>
@@ -79,12 +63,8 @@
 </template>
 
 <script>
-import { ref, watch, defineComponent } from "vue";
-import {
-  QuestionCircleOutlined,
-  PlusCircleOutlined,
-  CloseCircleOutlined,
-} from "@ant-design/icons-vue";
+import { ref, watch, defineComponent } from 'vue'
+import { QuestionCircleOutlined, PlusCircleOutlined, CloseCircleOutlined } from '@ant-design/icons-vue'
 export default defineComponent({
   components: {
     QuestionCircleOutlined,
@@ -92,81 +72,81 @@ export default defineComponent({
     CloseCircleOutlined,
   },
   setup(props, { emit }) {
-    const visible = ref(false);
+    const visible = ref(false)
 
-    const idx = ref();
+    const idx = ref()
 
     const model = ref({
-      text: "",
+      text: '',
       keysValue: [],
-    });
+    })
 
     const rules = ref({
-      text: [{ required: true, message: "请输入选项名" }],
-    });
+      text: [{ required: true, message: '请输入选项名' }],
+    })
 
     watch(
       () => visible.value,
-      (bool) => {
+      bool => {
         if (!bool) {
           model.value = {
-            text: "",
+            text: '',
             keysValue: [],
-          };
-          idx.value = "";
+          }
+          idx.value = ''
         }
-      }
-    );
+      },
+    )
 
     /**
      * 初始化数据
      */
     const init = (_, i) => {
-      idx.value = i;
-      let { text } = _;
+      idx.value = i
+      let { text } = _
       Object.assign(model.value, {
         text,
         keysValue: [],
-      });
-      let keys = Object.keys(_);
+      })
+      let keys = Object.keys(_)
       Object.values(_).map((_, idx) => {
-        if (keys[idx] !== "text") {
+        if (keys[idx] !== 'text') {
           model.value.keysValue.push({
             key: keys[idx],
             value: _,
-          });
+          })
         }
-      });
-    };
+      })
+    }
 
     const addKeyValueNode = (data, idx) => {
       model.value.keysValue.push({
-        key: "",
-        value: "",
-      });
-    };
+        key: '',
+        value: '',
+      })
+    }
 
     /**
      * 删除keysValue数组
      */
-    const onDeleteKeyValue = (i) => {
-      model.value.keysValue.splice(i, 1);
-    };
+    const onDeleteKeyValue = i => {
+      model.value.keysValue.splice(i, 1)
+    }
 
     const handleOk = () => {
-      let { text, keysValue } = model.value;
+      let { text, keysValue } = model.value
       let data = {
         text,
-      };
+      }
       keysValue.map((_, i) => {
         Object.assign(data, {
           [_.key]: _.value,
-        });
-      });
-      visible.value = false;
-      emit("oks", data, idx.value);
-      idx.value = "";
-    };
+        })
+      })
+      visible.value = false
+      emit('oks', data, idx.value)
+      idx.value = ''
+    }
 
     return {
       visible,
@@ -177,9 +157,9 @@ export default defineComponent({
       addKeyValueNode,
       onDeleteKeyValue,
       handleOk,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

@@ -4,49 +4,22 @@
       <a-tab-pane :key="1" tab="图纸">
         <div class="mb-12">
           <a-form label-align="left" :label-col="{ span: 10 }" v-if="pen">
-            <a-collapse
-              v-model:activeKey="activeKey"
-              size="small"
-              expand-icon-position="right"
-            >
-              <a-collapse-panel
-                :key="1"
-                :forceRender="true"
-                header="位置和大小"
-              >
+            <a-collapse v-model:activeKey="activeKey" size="small" expand-icon-position="right">
+              <a-collapse-panel :key="1" :forceRender="true" header="位置和大小">
                 <a-form-item label="X">
-                  <a-input-number
-                    v-model:value="rect.x"
-                    @change="changeRect('x')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="rect.x" @change="changeRect('x')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="Y">
-                  <a-input-number
-                    v-model:value="rect.y"
-                    @change="changeRect('y')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="rect.y" @change="changeRect('y')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="宽">
-                  <a-input-number
-                    v-model:value="rect.width"
-                    @change="changeRect('width')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="rect.width" @change="changeRect('width')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="高">
-                  <a-input-number
-                    v-model:value="rect.height"
-                    @change="changeRect('height')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="rect.height" @change="changeRect('height')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="锁定宽高比">
-                  <a-switch
-                    v-model:checked="pen.ratio"
-                    @change="changeValue('ratio')"
-                  />
+                  <a-switch v-model:checked="pen.ratio" @change="changeValue('ratio')" />
                 </a-form-item>
                 <a-form-item label="圆角">
                   <a-input-number
@@ -57,11 +30,7 @@
                   />
                 </a-form-item>
                 <a-form-item label="旋转">
-                  <a-input-number
-                    v-model:value="pen.rotate"
-                    @change="changeValue('rotate')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.rotate" @change="changeValue('rotate')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="内边距 - 上">
                   <a-input-number
@@ -92,11 +61,7 @@
                   />
                 </a-form-item>
                 <a-form-item label="进度">
-                  <a-input-number
-                    v-model:value="pen.progress"
-                    @change="changeValue('progress')"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.progress" @change="changeValue('progress')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="进度颜色">
                   <t-color-picker
@@ -110,40 +75,23 @@
                   />
                 </a-form-item>
                 <a-form-item label="垂直进度">
-                  <a-switch
-                    v-model:checked="pen.verticalProgress"
-                    @change="changeValue('verticalProgress')"
-                  />
+                  <a-switch v-model:checked="pen.verticalProgress" @change="changeValue('verticalProgress')" />
                 </a-form-item>
                 <a-form-item label="水平翻转">
-                  <a-switch
-                    v-model:checked="pen.flipX"
-                    @change="changeValue('flipX')"
-                  />
+                  <a-switch v-model:checked="pen.flipX" @change="changeValue('flipX')" />
                 </a-form-item>
                 <a-form-item label="垂直翻转">
-                  <a-switch
-                    v-model:checked="pen.flipY"
-                    @change="changeValue('flipY')"
-                  />
+                  <a-switch v-model:checked="pen.flipY" @change="changeValue('flipY')" />
                 </a-form-item>
                 <a-form-item label="输入框">
-                  <a-switch
-                    v-model:checked="pen.input"
-                    @change="changeValue('input')"
-                  />
+                  <a-switch v-model:checked="pen.input" @change="changeValue('input')" />
                 </a-form-item>
                 <template v-if="pen.showChild !== undefined">
                   <a-form-item label="状态">
-                    <a-select
-                      v-model:value="pen.showChild"
-                      @change="changeValue('showChild')"
-                    >
+                    <a-select v-model:value="pen.showChild" @change="changeValue('showChild')">
                       <a-select-option value="">无</a-select-option>
                       <template v-for="(vo, idx) in pen.children" :key="vo">
-                        <a-select-option :value="idx">
-                          状态{{ idx }}
-                        </a-select-option>
+                        <a-select-option :value="idx"> 状态{{ idx }} </a-select-option>
                       </template>
                     </a-select>
                   </a-form-item>
@@ -151,10 +99,7 @@
               </a-collapse-panel>
               <a-collapse-panel :key="2" :forceRender="true" header="样式">
                 <a-form-item label="线条样式">
-                  <a-select
-                    v-model:value="pen.dash"
-                    @change="changeValue('dash')"
-                  >
+                  <a-select v-model:value="pen.dash" @change="changeValue('dash')">
                     <template v-for="(vo, idx) in configLineDash" :key="idx">
                       <a-select-option :value="idx">
                         <span v-html="vo.node"></span>
@@ -243,10 +188,7 @@
                       />
                     </a-col>
                     <a-col :span="4">
-                      <span
-                        class="ml-16"
-                        style="width: 50px; line-height: 30px"
-                      >
+                      <span class="ml-16" style="width: 50px; line-height: 30px">
                         {{ pen.globalAlpha }}
                       </span>
                     </a-col>
@@ -255,10 +197,7 @@
               </a-collapse-panel>
               <a-collapse-panel :key="3" :forceRender="true" header="文字">
                 <a-form-item label="字体名">
-                  <a-input
-                    v-model:value="pen.text"
-                    @change="changeValue('text')"
-                  />
+                  <a-input v-model:value="pen.text" @change="changeValue('text')" />
                 </a-form-item>
                 <a-form-item label="文字大小">
                   <a-input-number
@@ -280,19 +219,13 @@
                   />
                 </a-form-item>
                 <a-form-item label="倾斜">
-                  <a-select
-                    v-model:value="pen.fontStyle"
-                    @change="changeValue('fontStyle')"
-                  >
+                  <a-select v-model:value="pen.fontStyle" @change="changeValue('fontStyle')">
                     <a-select-option value="normal">正常</a-select-option>
                     <a-select-option value="italic">倾斜</a-select-option>
                   </a-select>
                 </a-form-item>
                 <a-form-item label="加粗">
-                  <a-select
-                    v-model:value="pen.fontWeight"
-                    @change="changeValue('fontWeight')"
-                  >
+                  <a-select v-model:value="pen.fontWeight" @change="changeValue('fontWeight')">
                     <a-select-option value="normal">正常</a-select-option>
                     <a-select-option value="bold">加粗</a-select-option>
                   </a-select>
@@ -320,20 +253,14 @@
                   />
                 </a-form-item>
                 <a-form-item label="水平对齐">
-                  <a-select
-                    v-model:value="pen.textAlign"
-                    @change="changeValue('textAlign')"
-                  >
+                  <a-select v-model:value="pen.textAlign" @change="changeValue('textAlign')">
                     <a-select-option value="left">左对齐</a-select-option>
                     <a-select-option value="center">居中</a-select-option>
                     <a-select-option value="right">右对齐</a-select-option>
                   </a-select>
                 </a-form-item>
                 <a-form-item label="垂直对齐">
-                  <a-select
-                    v-model:value="pen.textBaseline"
-                    @change="changeValue('textBaseline')"
-                  >
+                  <a-select v-model:value="pen.textBaseline" @change="changeValue('textBaseline')">
                     <a-select-option value="top">顶部对齐</a-select-option>
                     <a-select-option value="middle">居中</a-select-option>
                     <a-select-option value="bottom">底部对齐</a-select-option>
@@ -347,42 +274,25 @@
                   />
                 </a-form-item>
                 <a-form-item label="换行">
-                  <a-select
-                    v-model:value="pen.whiteSpace"
-                    @change="changeValue('whiteSpace')"
-                  >
+                  <a-select v-model:value="pen.whiteSpace" @change="changeValue('whiteSpace')">
                     <a-select-option value="">默认</a-select-option>
                     <a-select-option value="nowrap">不换行</a-select-option>
                     <a-select-option value="pre-line">回车换行</a-select-option>
-                    <a-select-option value="break-all"
-                      >永远换行</a-select-option
-                    >
+                    <a-select-option value="break-all">永远换行</a-select-option>
                   </a-select>
                 </a-form-item>
               </a-collapse-panel>
               <a-collapse-panel :key="4" :forceRender="true" header="图片">
                 <a-form-item label="图片选择">
                   <div class="flex items-center">
-                    <img
-                      :src="pen.image"
-                      alt=""
-                      style="width: 50px; height: 50px"
-                    />
+                    <img :src="pen.image" alt="" style="width: 50px; height: 50px" />
                     <close-outlined title="清除图片" @click="clearImageField('image')" />
                   </div>
                 </a-form-item>
                 <a-form-item label="图片地址">
                   <div class="flex items-center" style="gap: 4px">
-                    <a-input
-                      v-model:value="pen.image"
-                      placeholder="请通过右侧按钮选择图片"
-                      readonly
-                      style="flex: 1"
-                    />
-                    <a-button
-                      @click="openFileManager('image')"
-                      style="flex-shrink: 0"
-                    >
+                    <a-input v-model:value="pen.image" placeholder="请通过右侧按钮选择图片" readonly style="flex: 1" />
+                    <a-button @click="openFileManager('image')" style="flex-shrink: 0">
                       <template #icon>
                         <folder-open-outlined />
                       </template>
@@ -391,11 +301,7 @@
                 </a-form-item>
                 <a-form-item label="背景图片">
                   <div class="flex items-center">
-                    <img
-                      :src="pen.backgroundImage"
-                      alt=""
-                      style="width: 50px; height: 50px"
-                    />
+                    <img :src="pen.backgroundImage" alt="" style="width: 50px; height: 50px" />
                     <close-outlined title="清除背景图片" @click="clearImageField('backgroundImage')" />
                   </div>
                 </a-form-item>
@@ -407,10 +313,7 @@
                       readonly
                       style="flex: 1"
                     />
-                    <a-button
-                      @click="openFileManager('backgroundImage')"
-                      style="flex-shrink: 0"
-                    >
+                    <a-button @click="openFileManager('backgroundImage')" style="flex-shrink: 0">
                       <template #icon>
                         <folder-open-outlined />
                       </template>
@@ -419,11 +322,7 @@
                 </a-form-item>
                 <a-form-item label="描绘图片">
                   <div class="flex items-center">
-                    <img
-                      :src="pen.strokeImage"
-                      alt=""
-                      style="width: 50px; height: 50px"
-                    />
+                    <img :src="pen.strokeImage" alt="" style="width: 50px; height: 50px" />
                     <close-outlined title="清除描绘图片" @click="clearImageField('strokeImage')" />
                   </div>
                 </a-form-item>
@@ -435,10 +334,7 @@
                       readonly
                       style="flex: 1"
                     />
-                    <a-button
-                      @click="openFileManager('strokeImage')"
-                      style="flex-shrink: 0"
-                    >
+                    <a-button @click="openFileManager('strokeImage')" style="flex-shrink: 0">
                       <template #icon>
                         <folder-open-outlined />
                       </template>
@@ -446,35 +342,19 @@
                   </div>
                 </a-form-item>
                 <a-form-item label="宽度">
-                  <a-input-number
-                    v-model:value="pen.iconWidth"
-                    placeholder="自适应"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.iconWidth" placeholder="自适应" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="高度">
-                  <a-input-number
-                    v-model:value="pen.iconHeight"
-                    placeholder="自适应"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.iconHeight" placeholder="自适应" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="保持比例">
                   <a-switch v-model:checked="pen.imageRatio" />
                 </a-form-item>
                 <a-form-item label="水平偏移">
-                  <a-input-number
-                    v-model:value="pen.iconLeft"
-                    placeholder="请输入水平偏移"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.iconLeft" placeholder="请输入水平偏移" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="垂直偏移">
-                  <a-input-number
-                    v-model:value="pen.iconTop"
-                    placeholder="请输入垂直偏移"
-                    style="width: 100%"
-                  />
+                  <a-input-number v-model:value="pen.iconTop" placeholder="请输入垂直偏移" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="对齐方式">
                   <a-select v-model:value="pen.iconAlign" allowClear>
@@ -516,12 +396,7 @@
         <EventFunc ref="eventFuncRef" @event="getEventList" @oks="getEventList" />
       </a-tab-pane>
       <a-tab-pane :key="3" tab="动效">
-        <Animate
-          ref="animateRef"
-          :pen="pen"
-          @onChange="changeValue"
-          v-show="pen.name !== 'video'"
-        />
+        <Animate ref="animateRef" :pen="pen" @onChange="changeValue" v-show="pen.name !== 'video'" />
         <VideoComputed ref="videoComputedRef" v-if="pen.name == 'video'" />
       </a-tab-pane>
       <a-tab-pane :key="4" tab="数据">
@@ -538,22 +413,18 @@
     <CommonModal ref="commonModalRef" :width="'90vw'" />
     <!-- 小窗展示 -->
     <IframeModal ref="iframeModalRef" />
-    <FileManager
-      ref="fileManagerRef"
-      :mode="'single'"
-      @oks="onFileManagerOks"
-    />
+    <FileManager ref="fileManagerRef" :mode="'single'" @oks="onFileManagerOks" />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent } from "vue";
-import { CloseOutlined } from "@ant-design/icons-vue";
-import DataValueLayout from "@/components/Meta2D/DataValue/index.vue";
-import CommonModal from "@/components/Meta2D/CommonModal/index.vue";
-import IframeModal from "@/components/Meta2D/IframeModal/index.vue";
-import EditContainer from "@/components/Meta2D/EditContainer/index.vue";
-import { ColorPicker } from "tdesign-vue-next";
+import { defineComponent } from 'vue'
+import { CloseOutlined } from '@ant-design/icons-vue'
+import DataValueLayout from '@/components/Meta2D/DataValue/index.vue'
+import CommonModal from '@/components/Meta2D/CommonModal/index.vue'
+import IframeModal from '@/components/Meta2D/IframeModal/index.vue'
+import EditContainer from '@/components/Meta2D/EditContainer/index.vue'
+import { ColorPicker } from 'tdesign-vue-next'
 export default defineComponent({
   components: {
     DataValueLayout,
@@ -561,119 +432,120 @@ export default defineComponent({
     EditContainer,
     CommonModal,
     IframeModal,
-    "t-color-picker": ColorPicker,
+    't-color-picker': ColorPicker,
   },
-});
+})
 </script>
 
 <script lang="ts" setup>
-import { ref, watch, nextTick } from "vue";
-import { useSelection } from "@/services/selections";
-import EventFunc from "@/components/Meta2D/Event/index.vue";
-import Animate from "@/components/Meta2D/Animate/index.vue";
-import VideoComputed from "@/components/Meta2D/Video/index.vue";
-import { useCommonStore } from "@/store/modules/common";
-import FileManager from "@/components/FileManager/index.vue";
-import { FolderOpenOutlined } from "@ant-design/icons-vue";
+import { ref, watch, nextTick } from 'vue'
+import { useSelection } from '@/services/selections'
+import EventFunc from '@/components/Meta2D/Event/index.vue'
+import Animate from '@/components/Meta2D/Animate/index.vue'
+import VideoComputed from '@/components/Meta2D/Video/index.vue'
+import { useCommonStore } from '@/store/modules/common'
+import FileManager from '@/components/FileManager/index.vue'
+import { FolderOpenOutlined } from '@ant-design/icons-vue'
 
-import { CONFIG_LINE_DASH as configLineDash } from "@/utils/config-line";
+import { CONFIG_LINE_DASH as configLineDash } from '@/utils/config-line'
 
-const { selections } = useSelection();
+const { selections } = useSelection()
 
-const commonStore = useCommonStore();
+const commonStore = useCommonStore()
 
 const tabBarStyle = ref({
-  background: "#fff",
-});
+  background: '#fff',
+})
 
-const activeKey = ref<number>([1, 2, 3]);
+const activeKey = ref<number>([1, 2, 3])
 
-const tags = ref<number>(1);
+const tags = ref<number>(1)
 
-const pen = ref<any>();
+const pen = ref<any>()
 // 位置数据。当前版本位置需要动态计算获取
-const rect = ref<any>();
+const rect = ref<any>()
 
-let dataIndex = -1;
+let dataIndex = -1
 
-const fileManagerRef = ref(null);
-const eventFuncRef = ref(null);
-const animateRef = ref(null);
-const videoComputedRef = ref(null);
-const dataValueLayoutRef = ref(null);
-const commonModalRef = ref(null);
-const iframeModalRef = ref(null);
-let currentImageField = "";
+const fileManagerRef = ref(null)
+const eventFuncRef = ref(null)
+const animateRef = ref(null)
+const videoComputedRef = ref(null)
+const dataValueLayoutRef = ref(null)
+const commonModalRef = ref(null)
+const iframeModalRef = ref(null)
+let currentImageField = ''
 
 function openFileManager(field: string) {
-  currentImageField = field;
-  const fm: any = fileManagerRef.value;
-  if (!fm) return;
-  fm.visible = true;
+  currentImageField = field
+  const fm: any = fileManagerRef.value
+  if (!fm) return
+  fm.visible = true
   nextTick(() => {
     fm.initMaterialFolder().then((id: string) => {
       if (id) {
-        fm.selectedKeys = [id];
-        fm.queryParam.parent_id = id;
+        fm.selectedKeys = [id]
+        fm.queryParam.parent_id = id
       }
-      fm.init();
-    });
-  });
+      fm.init()
+    })
+  })
 }
 
 function onFileManagerOks(params: any) {
-  if (!pen.value || !currentImageField) return;
-  pen.value[currentImageField] = params.url;
-  changeValue(currentImageField);
+  if (!pen.value || !currentImageField) return
+  pen.value[currentImageField] = params.url
+  changeValue(currentImageField)
 }
 
 function clearImageField(field: string) {
-  if (!pen.value) return;
-  pen.value[field] = "";
-  changeValue(field);
+  if (!pen.value) return
+  pen.value[field] = ''
+  changeValue(field)
 }
 
 // Track registered meta2d event names to clean up on pen switch
-const registeredHandlers: Array<{ name: string; fn: (...args: any[]) => void }> = [];
+const registeredHandlers: Array<{ name: string; fn: (...args: any[]) => void }> = []
 
 function getPen() {
-  pen.value = selections.pen;
+  pen.value = selections.pen
   if (!pen.value.globalAlpha) {
-    pen.value.globalAlpha = 1;
+    pen.value.globalAlpha = 1
   }
-  rect.value = meta2d.getPenRect(pen.value);
+  rect.value = meta2d.getPenRect(pen.value)
 
   // Clean up previous pen's event listeners
-  registeredHandlers.forEach(({ name, fn }) => meta2d.off(name, fn));
-  registeredHandlers.length = 0;
+  registeredHandlers.forEach(({ name, fn }) => meta2d.off(name, fn))
+  registeredHandlers.length = 0
 
-  const { events } = pen.value;
+  const { events } = pen.value
   if (events) {
     events.forEach((event: any) => {
-      if (event.action !== 7) return;
-      const handler = event.value === "iframe-dialog"
-        ? (e: any) => {
-            if (iframeModalRef.value) {
-              Object.assign(iframeModalRef.value, {
-                visible: true,
-                title: "展示",
-                url: event.params,
-              });
-              nextTick(() => iframeModalRef.value.init(e));
+      if (event.action !== 7) return
+      const handler =
+        event.value === 'iframe-dialog'
+          ? (e: any) => {
+              if (iframeModalRef.value) {
+                Object.assign(iframeModalRef.value, {
+                  visible: true,
+                  title: '展示',
+                  url: event.params,
+                })
+                nextTick(() => iframeModalRef.value.init(e))
+              }
             }
-          }
-        : (e: any) => {
-            if (commonModalRef.value) {
-              Object.assign(commonModalRef.value, {
-                visible: true,
-                title: "自定义弹窗",
-              });
-              nextTick(() => commonModalRef.value.init(event));
+          : (e: any) => {
+              if (commonModalRef.value) {
+                Object.assign(commonModalRef.value, {
+                  visible: true,
+                  title: '自定义弹窗',
+                })
+                nextTick(() => commonModalRef.value.init(event))
+              }
             }
-          };
-      meta2d.on(event.value, handler);
-      registeredHandlers.push({ name: event.value, fn: handler });
-    });
+      meta2d.on(event.value, handler)
+      registeredHandlers.push({ name: event.value, fn: handler })
+    })
   }
 }
 
@@ -681,11 +553,11 @@ watch(
   () => selections.pen,
   (newVal: any) => {
     if (newVal) {
-      getPen();
+      getPen()
     }
   },
-  { immediate: true }
-);
+  { immediate: true },
+)
 
 watch(
   () => tags.value,
@@ -693,26 +565,26 @@ watch(
     nextTick(() => {
       switch (tab) {
         case 2: {
-          const data: any[] = pen.value?.events;
-          eventFuncRef.value?.init(data || []);
-          break;
+          const data: any[] = pen.value?.events
+          eventFuncRef.value?.init(data || [])
+          break
         }
         case 3:
-          if (pen.value?.name === "video") {
-            videoComputedRef.value?.init(pen.value);
+          if (pen.value?.name === 'video') {
+            videoComputedRef.value?.init(pen.value)
           } else {
-            animateRef.value?.init(pen.value);
+            animateRef.value?.init(pen.value)
           }
-          break;
+          break
         case 4:
-          dataValueLayoutRef.value?.init(pen.value);
-          break;
+          dataValueLayoutRef.value?.init(pen.value)
+          break
         default:
-          break;
+          break
       }
-    });
-  }
-);
+    })
+  },
+)
 
 // Debounced render helper
 let _renderTimer: ReturnType<typeof setTimeout> | null = null
@@ -725,63 +597,62 @@ function debouncedRender() {
 }
 
 function changeValue(prop: string) {
-  const v: any = { id: pen.value.id };
-  v[prop] = pen.value[prop];
-  if (prop === "dash") {
-    const key = v[prop];
+  const v: any = { id: pen.value.id }
+  v[prop] = pen.value[prop]
+  if (prop === 'dash') {
+    const key = v[prop]
     configLineDash.forEach((item, idx) => {
       if (key === idx) {
-        v.lineDash = JSON.parse(item.value);
+        v.lineDash = JSON.parse(item.value)
       }
-    });
+    })
   }
-  meta2d.setValue(v, { render: false });
-  debouncedRender();
-  commonStore.setIsSave("0");
+  meta2d.setValue(v, { render: false })
+  debouncedRender()
+  commonStore.setIsSave('0')
 }
 
 function changeRect(prop: string) {
-  const v: any = { id: pen.value.id };
-  v[prop] = rect.value[prop];
-  meta2d.setValue(v, { render: false });
-  debouncedRender();
-  commonStore.setIsSave("0");
+  const v: any = { id: pen.value.id }
+  v[prop] = rect.value[prop]
+  meta2d.setValue(v, { render: false })
+  debouncedRender()
+  commonStore.setIsSave('0')
 }
 
 function onRefreshData(data: any) {
   Object.assign(pen.value, {
     ...data,
-  });
-  commonStore.setIsSave("0");
+  })
+  commonStore.setIsSave('0')
 }
 
 function getDataValue(k: any, v: any) {
   Object.assign(pen.value, {
     [k]: v,
-  });
-  commonStore.setIsSave("0");
+  })
+  commonStore.setIsSave('0')
 }
 
 function deleteDataValue(k: string) {
-  delete pen.value[k];
-  localStorage.setItem("meta2d", JSON.stringify(meta2d.data()));
+  delete pen.value[k]
+  localStorage.setItem('meta2d', JSON.stringify(meta2d.data()))
 }
 
 function getEventList(event: any) {
-  pen.value.events = event;
-  commonStore.setIsSave("0");
+  pen.value.events = event
+  commonStore.setIsSave('0')
 }
 
 function getEditTextValue(textValue: string) {
   pen.value.form.forEach((item: any, idx: number) => {
     if (idx === dataIndex) {
-      pen.value[item.key] = textValue;
+      pen.value[item.key] = textValue
     }
-  });
-  dataIndex = -1;
-  commonStore.setIsSave("0");
+  })
+  dataIndex = -1
+  commonStore.setIsSave('0')
 }
-
 </script>
 
 <style lang="less" scoped>

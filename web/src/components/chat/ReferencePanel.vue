@@ -7,7 +7,17 @@
           <!-- Header -->
           <div class="ref-drawer-header">
             <div class="ref-drawer-title">
-              <svg class="ref-icon-globe" viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <svg
+                class="ref-icon-globe"
+                viewBox="0 0 24 24"
+                width="18"
+                height="18"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              >
                 <circle cx="12" cy="12" r="10" />
                 <line x1="2" y1="12" x2="22" y2="12" />
                 <path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
@@ -24,12 +34,7 @@
 
           <!-- Reference list -->
           <div class="ref-drawer-body">
-            <div
-              v-for="(ref, idx) in references"
-              :key="idx"
-              class="ref-item"
-              @click="openUrl(ref.url)"
-            >
+            <div v-for="(ref, idx) in references" :key="idx" class="ref-item" @click="openUrl(ref.url)">
               <div class="ref-item-index">{{ idx + 1 }}</div>
               <div class="ref-item-content">
                 <div class="ref-item-header">
@@ -56,41 +61,41 @@
 
 <script setup lang="ts">
 defineProps<{
-  visible: boolean;
-  references: Array<{ title?: string; url: string; snippet?: string; domain?: string }>;
-}>();
+  visible: boolean
+  references: Array<{ title?: string; url: string; snippet?: string; domain?: string }>
+}>()
 
-const emit = defineEmits<{ close: [] }>();
+const emit = defineEmits<{ close: [] }>()
 
 function close() {
-  emit('close');
+  emit('close')
 }
 
 function openUrl(url: string) {
-  if (url) window.open(url, '_blank', 'noopener');
+  if (url) window.open(url, '_blank', 'noopener')
 }
 
 function extractDomain(url: string): string {
   try {
-    const u = new URL(url);
-    return u.hostname.replace(/^www\./, '');
+    const u = new URL(url)
+    return u.hostname.replace(/^www\./, '')
   } catch {
-    return '';
+    return ''
   }
 }
 
 function faviconUrl(url: string): string {
   try {
-    const u = new URL(url);
-    return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`;
+    const u = new URL(url)
+    return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`
   } catch {
-    return '';
+    return ''
   }
 }
 
 function onFaviconError(e: Event) {
-  const img = e.target as HTMLImageElement;
-  img.style.display = 'none';
+  const img = e.target as HTMLImageElement
+  img.style.display = 'none'
 }
 </script>
 

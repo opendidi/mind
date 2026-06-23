@@ -79,7 +79,7 @@ export function useAttachments() {
   }
 
   function cleanup() {
-    attachments.value.forEach((a) => {
+    attachments.value.forEach(a => {
       if (a.preview?.startsWith('blob:')) URL.revokeObjectURL(a.preview)
     })
     attachments.value = []

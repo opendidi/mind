@@ -24,41 +24,34 @@
 </template>
 
 <script>
-import {
-  ref,
-  defineComponent,
-  onMounted,
-  watch,
-  onUnmounted,
-} from "vue";
+import { ref, defineComponent, onMounted, watch, onUnmounted } from 'vue'
 export default defineComponent({
   props: {
     width: {
       type: String,
-      default: "520px",
+      default: '520px',
     },
   },
   setup(props, { emit }) {
+    const visible = ref(false)
 
-    const visible = ref(false);
-
-    const title = ref("");
+    const title = ref('')
 
     /**
      * 初始化数据
      */
     function init(params) {
-      let { panoUrl } = params;
+      let { panoUrl } = params
       if (panoUrl) {
-        let root = panoUrl.split("/").slice(0, 4).join("/");
+        let root = panoUrl.split('/').slice(0, 4).join('/')
         embedpano({
           swf: `${root}/pano/tour.swf`,
           xml: params.panoUrl,
-          target: "pano",
-          html5: "prefer",
+          target: 'pano',
+          html5: 'prefer',
           mobilescale: 1.0,
           passQueryParameters: true,
-        });
+        })
       }
     }
 
@@ -66,7 +59,7 @@ export default defineComponent({
      *
      */
     function handleOk() {
-      visible.value = false;
+      visible.value = false
     }
 
     return {
@@ -74,9 +67,9 @@ export default defineComponent({
       title,
       handleOk,
       init,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>

@@ -22,7 +22,9 @@ export function useAuthCaptcha() {
           randCodeData.captcha_id = res.data.captcha_id
           randCodeData.randCodeImage = res.data.captcha_image
         }
-      } catch { /* ignore */ }
+      } catch {
+        /* ignore */
+      }
       initTimer = null
     }, 500)
   }

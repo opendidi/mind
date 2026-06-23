@@ -10,22 +10,13 @@
     <!-- Assistant message -->
     <div v-else-if="message.role === 'assistant'" class="msg-assistant">
       <!-- Thinking -->
-      <ThinkCard
-        v-if="message.thinking"
-        :content="message.thinking"
-      />
+      <ThinkCard v-if="message.thinking" :content="message.thinking" />
 
       <!-- Tool calls (grouped for canvas) -->
       <div v-if="message.toolCalls?.length" class="tool-calls-block">
         <template v-for="item in groupedCalls" :key="Array.isArray(item) ? item[0].id : item.id">
-          <AgentToolGroupCard
-            v-if="Array.isArray(item) && item.length > 1"
-            :tool-calls="item"
-          />
-          <AgentToolCard
-            v-else
-            :tool-call="Array.isArray(item) ? item[0] : item"
-          />
+          <AgentToolGroupCard v-if="Array.isArray(item) && item.length > 1" :tool-calls="item" />
+          <AgentToolCard v-else :tool-call="Array.isArray(item) ? item[0] : item" />
         </template>
       </div>
 
@@ -73,135 +64,138 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue';
-import type { ChatMessage, ToolCallRecord } from './AgentStreamHandler';
-import { sanitizeHtml } from '@/utils/sanitize';
-import { useSpeech } from '@/composables/useSpeech';
-import ThinkCard from '@/components/chat/ThinkCard.vue';
-import AgentToolCard from './AgentToolCard.vue';
-import AgentToolGroupCard from './AgentToolGroupCard.vue';
-import MapCard from '@/components/shared/MapCard.vue';
-import RouteCard from '@/components/shared/RouteCard.vue';
+import { computed } from 'vue'
+import type { ChatMessage, ToolCallRecord } from './AgentStreamHandler'
+import { sanitizeHtml } from '@/utils/sanitize'
+import { useSpeech } from '@/composables/useSpeech'
+import ThinkCard from '@/components/chat/ThinkCard.vue'
+import AgentToolCard from './AgentToolCard.vue'
+import AgentToolGroupCard from './AgentToolGroupCard.vue'
+import MapCard from '@/components/shared/MapCard.vue'
+import RouteCard from '@/components/shared/RouteCard.vue'
 
 const props = defineProps<{
-  message: ChatMessage;
-}>();
+  message: ChatMessage
+}>()
 
-const { speaking: ttsSpeaking, loading: ttsLoading, speakChatTTS, stop } = useSpeech();
+const { speaking: ttsSpeaking, loading: ttsLoading, speakChatTTS, stop } = useSpeech()
 
 // ── show speaker only for completed assistant messages with content ──────
 
 const showSpeaker = computed(() => {
-  if (props.message.role !== 'assistant') return false;
-  const text = props.message.content;
-  if (!text || text.trim().length < 2) return false;
+  if (props.message.role !== 'assistant') return false
+  const text = props.message.content
+  if (!text || text.trim().length < 2) return false
   // Don't show if message is still streaming (check for streaming flag)
-  if ((props.message as any).streaming) return false;
-  return true;
-});
+  if ((props.message as any).streaming) return false
+  return true
+})
 
 const speakerLabel = computed(() => {
-  if (ttsLoading.value) return '生成中...';
-  if (ttsSpeaking.value) return '停止';
-  return '朗读';
-});
+  if (ttsLoading.value) return '生成中...'
+  if (ttsSpeaking.value) return '停止'
+  return '朗读'
+})
 
 const speakerTooltip = computed(() => {
-  if (ttsLoading.value) return 'ChatTTS 正在生成语音...';
-  if (ttsSpeaking.value) return '停止播放';
-  return 'ChatTTS 朗读此消息';
-});
+  if (ttsLoading.value) return 'ChatTTS 正在生成语音...'
+  if (ttsSpeaking.value) return '停止播放'
+  return 'ChatTTS 朗读此消息'
+})
 
 function onSpeakerClick() {
-  if (ttsLoading.value) return; // do nothing while loading
+  if (ttsLoading.value) return // do nothing while loading
   if (ttsSpeaking.value) {
-    stop();
-    return;
+    stop()
+    return
   }
-  speakChatTTS(props.message.content);
+  speakChatTTS(props.message.content)
 }
 
 // ── content parsing ──────────────────────────────────────────────────────
 
 interface ContentPart {
-  type: 'text' | 'map' | 'route';
-  html?: string;
-  data?: Record<string, unknown>;
+  type: 'text' | 'map' | 'route'
+  html?: string
+  data?: Record<string, unknown>
 }
 
 const contentParts = computed<ContentPart[]>(() => {
-  const text = props.message.content;
-  if (!text) return [];
+  const text = props.message.content
+  if (!text) return []
 
-  const parts: ContentPart[] = [];
+  const parts: ContentPart[] = []
 
   // Match ```map or ```route blocks, extract JSON content
-  const combinedRegex = /```(map|route)\s*\n([\s\S]*?)```/g;
-  let lastIndex = 0;
-  let match: RegExpExecArray | null;
+  const combinedRegex = /```(map|route)\s*\n([\s\S]*?)```/g
+  let lastIndex = 0
+  let match: RegExpExecArray | null
 
   while ((match = combinedRegex.exec(text)) !== null) {
     // Text before this match
     if (match.index > lastIndex) {
-      const before = text.slice(lastIndex, match.index).trim();
+      const before = text.slice(lastIndex, match.index).trim()
       if (before) {
-        parts.push({ type: 'text', html: renderContent(before) });
+        parts.push({ type: 'text', html: renderContent(before) })
       }
     }
 
-    const blockType = match[1];
-    const blockContent = match[2].trim();
+    const blockType = match[1]
+    const blockContent = match[2].trim()
 
     try {
-      const data = JSON.parse(blockContent);
+      const data = JSON.parse(blockContent)
       if (blockType === 'map') {
-        parts.push({ type: 'map', data });
+        parts.push({ type: 'map', data })
       } else {
-        parts.push({ type: 'route', data });
+        parts.push({ type: 'route', data })
       }
     } catch {
       // Invalid JSON — render as code block
-      parts.push({ type: 'text', html: renderContent(`\`\`\`${blockType}\n${blockContent}\n\`\`\``) });
+      parts.push({ type: 'text', html: renderContent(`\`\`\`${blockType}\n${blockContent}\n\`\`\``) })
     }
 
-    lastIndex = match.index + match[0].length;
+    lastIndex = match.index + match[0].length
   }
 
   // Remaining text after last match
   if (lastIndex < text.length) {
-    const after = text.slice(lastIndex).trim();
+    const after = text.slice(lastIndex).trim()
     if (after) {
-      parts.push({ type: 'text', html: renderContent(after) });
+      parts.push({ type: 'text', html: renderContent(after) })
     }
   }
 
-  return parts;
-});
+  return parts
+})
 
 const groupedCalls = computed(() => {
-  const tcs = props.message.toolCalls;
-  if (!tcs || tcs.length === 0) return [];
-  const groups: Array<ToolCallRecord | ToolCallRecord[]> = [];
-  let canvasGroup: ToolCallRecord[] = [];
+  const tcs = props.message.toolCalls
+  if (!tcs || tcs.length === 0) return []
+  const groups: Array<ToolCallRecord | ToolCallRecord[]> = []
+  let canvasGroup: ToolCallRecord[] = []
   for (const tc of tcs) {
     if (tc.tool === 'canvas' || tc.tool.startsWith('canvas_')) {
-      canvasGroup.push(tc);
+      canvasGroup.push(tc)
     } else {
-      if (canvasGroup.length > 0) { groups.push([...canvasGroup]); canvasGroup = []; }
-      groups.push(tc);
+      if (canvasGroup.length > 0) {
+        groups.push([...canvasGroup])
+        canvasGroup = []
+      }
+      groups.push(tc)
     }
   }
-  if (canvasGroup.length > 0) groups.push([...canvasGroup]);
-  return groups;
-});
+  if (canvasGroup.length > 0) groups.push([...canvasGroup])
+  return groups
+})
 
 function renderContent(text: string): string {
   const html = text
     .replace(/```(\w*)\n?([^`]+)```/g, '<pre><code>$2</code></pre>')
     .replace(/`([^`]+)`/g, '<code>$1</code>')
     .replace(/\n/g, '<br>')
-    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
-  return sanitizeHtml(html);
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+  return sanitizeHtml(html)
 }
 </script>
 
@@ -230,7 +224,7 @@ function renderContent(text: string): string {
   .assistant-bubble {
     background: #fff;
     border-radius: 12px 12px 12px 4px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   }
 }
 
@@ -258,7 +252,7 @@ function renderContent(text: string): string {
   }
 
   :deep(code) {
-    background: rgba(0,0,0,0.06);
+    background: rgba(0, 0, 0, 0.06);
     padding: 1px 4px;
     border-radius: 3px;
     font-size: 13px;
@@ -335,6 +329,8 @@ function renderContent(text: string): string {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 </style>

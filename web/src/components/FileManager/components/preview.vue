@@ -28,10 +28,10 @@
 </template>
 
 <script>
-import { ref, computed, defineComponent, onMounted, onUnmounted } from "vue";
-import PhotoSwipeLightbox from "photoswipe/lightbox";
-import MarkdownIt from "markdown-it";
-import "photoswipe/style.css";
+import { ref, computed, defineComponent, onMounted, onUnmounted } from 'vue'
+import PhotoSwipeLightbox from 'photoswipe/lightbox'
+import MarkdownIt from 'markdown-it'
+import 'photoswipe/style.css'
 
 // Reuse the same markdown-it config as the chat view
 const md = new MarkdownIt({
@@ -39,65 +39,65 @@ const md = new MarkdownIt({
   linkify: true,
   typographer: true,
   breaks: true,
-});
+})
 
 export default defineComponent({
   setup() {
-    let lightbox = null;
+    let lightbox = null
 
     // Text/code/markdown preview state
-    const textPreviewVisible = ref(false);
-    const textPreviewContent = ref("");
-    const textPreviewType = ref("text");
-    const textPreviewTitle = ref("");
+    const textPreviewVisible = ref(false)
+    const textPreviewContent = ref('')
+    const textPreviewType = ref('text')
+    const textPreviewTitle = ref('')
 
     const renderedMarkdown = computed(() => {
-      if (textPreviewType.value === "markdown" && textPreviewContent.value) {
-        return md.render(textPreviewContent.value);
+      if (textPreviewType.value === 'markdown' && textPreviewContent.value) {
+        return md.render(textPreviewContent.value)
       }
-      return "";
-    });
+      return ''
+    })
 
     onMounted(() => {
       lightbox = new PhotoSwipeLightbox({
-        gallery: "#gallery",
-        children: "a",
-        pswpModule: () => import("photoswipe"),
-      });
-      lightbox.init();
-    });
+        gallery: '#gallery',
+        children: 'a',
+        pswpModule: () => import('photoswipe'),
+      })
+      lightbox.init()
+    })
 
     /**
      * 预览图片 (PhotoSwipe lightbox)
      */
-    const openPreview = (record) => {
-      const galleryElement = document.createElement("div");
-      galleryElement.id = "gallery";
-      galleryElement.innerHTML = `<a href="${record.url}" data-pswp-width="${record.width}" data-pswp-height="${record.height}" target="_blank"></a>`;
-      document.body.appendChild(galleryElement);
-      lightbox.loadAndOpen(0);
+    const openPreview = record => {
+      const galleryElement = document.createElement('div')
+      galleryElement.id = 'gallery'
+      galleryElement.innerHTML = `<a href="${record.url}" data-pswp-width="${record.width}" data-pswp-height="${record.height}" target="_blank"></a>`
+      document.body.appendChild(galleryElement)
+      lightbox.loadAndOpen(0)
       setTimeout(() => {
-        document.body.removeChild(galleryElement);
-      }, 1000);
-    };
+        document.body.removeChild(galleryElement)
+      }, 1000)
+    }
 
     /**
      * 预览文本/代码/Markdown
      * @param {Object} params - { content, type, title }
      */
-    const openTextPreview = (params) => {
-      textPreviewContent.value = params.content;
-      textPreviewType.value = params.type;
-      textPreviewTitle.value = params.title;
-      textPreviewVisible.value = true;
-    };
+    const openTextPreview = params => {
+      textPreviewContent.value = params.content
+      textPreviewType.value = params.type
+      textPreviewTitle.value = params.title
+      textPreviewVisible.value = true
+    }
 
     onUnmounted(() => {
       if (lightbox) {
-        lightbox.destroy();
-        lightbox = null;
+        lightbox.destroy()
+        lightbox = null
       }
-    });
+    })
 
     return {
       openPreview,
@@ -107,9 +107,9 @@ export default defineComponent({
       textPreviewType,
       textPreviewTitle,
       renderedMarkdown,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>
@@ -171,7 +171,7 @@ export default defineComponent({
   padding: 16px 24px;
   background: #1e1e1e;
   color: #d4d4d4;
-  font-family: Consolas, Monaco, "Courier New", monospace;
+  font-family: Consolas, Monaco, 'Courier New', monospace;
   font-size: 13px;
   line-height: 1.6;
   border-radius: 4px;

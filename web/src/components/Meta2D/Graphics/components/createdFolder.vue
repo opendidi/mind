@@ -27,51 +27,51 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import { message } from "ant-design-vue";
-import { useCommonStore } from "@/store/modules/common";
+import { ref, watch } from 'vue'
+import { message } from 'ant-design-vue'
+import { useCommonStore } from '@/store/modules/common'
 
-const visible = ref(false);
+const visible = ref(false)
 
-const emit = defineEmits(["oks"]);
+const emit = defineEmits(['oks'])
 
-const formRef = ref(null);
+const formRef = ref(null)
 
 const model = ref({
-  name: "",
-  parent_id: "",
-});
+  name: '',
+  parent_id: '',
+})
 
 const rules = ref({
-  name: [{ required: true, message: "请输入文件夹名称" }],
-});
+  name: [{ required: true, message: '请输入文件夹名称' }],
+})
 
 watch(
   () => visible.value,
-  (val) => {
+  val => {
     if (!val) {
-      formRef.value.resetFields();
+      formRef.value.resetFields()
     }
-  }
-);
+  },
+)
 
 function onFinish() {
   formRef.value.validate().then(() => {
-    const name = model.value.name.trim();
-    if (!name) return;
-    let folders = useCommonStore().customFolders || [];
+    const name = model.value.name.trim()
+    if (!name) return
+    let folders = useCommonStore().customFolders || []
     if (folders.some((f: any) => f.name === name)) {
-      message.warning("文件夹名称已存在");
-      return;
+      message.warning('文件夹名称已存在')
+      return
     }
-    folders = [...folders, { name, items: [] }];
-    useCommonStore().setCustomFolders(folders);
-    emit("oks", folders);
-    visible.value = false;
-  });
+    folders = [...folders, { name, items: [] }]
+    useCommonStore().setCustomFolders(folders)
+    emit('oks', folders)
+    visible.value = false
+  })
 }
 
 defineExpose({
   visible,
-});
+})
 </script>

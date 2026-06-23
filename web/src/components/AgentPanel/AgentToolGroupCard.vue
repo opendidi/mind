@@ -6,25 +6,21 @@
       <span class="group-toggle">{{ expanded ? '▾' : '▸' }}</span>
     </div>
     <div v-if="expanded" class="group-body">
-      <AgentToolCard
-        v-for="tc in toolCalls"
-        :key="tc.id"
-        :tool-call="tc"
-      />
+      <AgentToolCard v-for="tc in toolCalls" :key="tc.id" :tool-call="tc" />
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref } from 'vue';
-import type { ToolCallRecord } from './AgentStreamHandler';
-import AgentToolCard from './AgentToolCard.vue';
+import { ref } from 'vue'
+import type { ToolCallRecord } from './AgentStreamHandler'
+import AgentToolCard from './AgentToolCard.vue'
 
 defineProps<{
-  toolCalls: ToolCallRecord[];
-}>();
+  toolCalls: ToolCallRecord[]
+}>()
 
-const expanded = ref(false);
+const expanded = ref(false)
 </script>
 
 <style scoped lang="less">

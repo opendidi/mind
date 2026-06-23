@@ -1,19 +1,9 @@
 <template>
   <div class="graphics">
-    <a-tabs
-      v-model:activeKey="tabsActiveKey"
-      size="small"
-      :tabBarGutter="12"
-      :centered="true"
-    >
+    <a-tabs v-model:activeKey="tabsActiveKey" size="small" :tabBarGutter="12" :centered="true">
       <a-tab-pane key="1" tab="系统组件">
         <div class="p-3">
-          <a-input
-            v-model:value="keyword"
-            placeholder="搜索"
-            @input="debouncedFilter"
-            :disabled="activeKey == 2"
-          />
+          <a-input v-model:value="keyword" placeholder="搜索" @input="debouncedFilter" :disabled="activeKey == 2" />
         </div>
         <div class="scroll">
           <a-collapse
@@ -22,7 +12,6 @@
             expand-icon-position="right"
             accordion
             ghost
-            :destroyInactivePanel="true"
           >
             <template v-for="(item, idx) in graphicGroupsList" :key="idx">
               <a-collapse-panel :forceRender="true" v-show="item.show">
@@ -43,7 +32,7 @@
                       </span>
                     </a-tooltip>
                     <span class="group-total">
-                      {{ "(" + item.list.length + ")" }}
+                      {{ '(' + item.list.length + ')' }}
                     </span>
                   </div>
                 </template>
@@ -59,26 +48,14 @@
                       <template v-if="vo.icon.indexOf('iconfont') !== -1">
                         <i :class="vo.icon"></i>
                       </template>
-                      <template
-                        v-else-if="vo.icon.indexOf('video-camera') !== -1"
-                      >
-                        <Icon
-                          :title="vo.name"
-                          :name="vo.icon"
-                          style="font-size: 30px"
-                        />
+                      <template v-else-if="vo.icon.indexOf('video-camera') !== -1">
+                        <Icon :title="vo.name" :name="vo.icon" style="font-size: 30px" />
                       </template>
                       <template v-else-if="vo.subClassName == '箭头'">
-                        <div
-                          class="flex items-center justify-center"
-                          v-html="vo.svg"
-                        ></div>
+                        <div class="flex items-center justify-center" v-html="vo.svg"></div>
                       </template>
                       <template v-else-if="vo.subClassName == '拓扑图未分类'">
-                        <div
-                          class="flex items-center justify-center"
-                          v-html="vo.svg"
-                        ></div>
+                        <div class="flex items-center justify-center" v-html="vo.svg"></div>
                       </template>
                       <template v-else-if="vo.iconFamily == 't-icon'">
                         <t-icon :name="vo.icon" />
@@ -100,10 +77,7 @@
         </div>
       </a-tab-pane>
       <a-tab-pane key="2" tab="我的组件" force-render>
-        <div
-          class="mkdir-head flex items-center pb-2"
-          @click="openCreatedFolder"
-        >
+        <div class="mkdir-head flex items-center pb-2" @click="openCreatedFolder">
           <folder-add-outlined />
           <span>新建文件夹</span>
         </div>
@@ -114,7 +88,6 @@
             expand-icon-position="right"
             accordion
             ghost
-            :destroyInactivePanel="true"
           >
             <template v-for="(vo, idx) in directoryList" :key="idx">
               <a-collapse-panel :forceRender="true">
@@ -138,24 +111,17 @@
                   <div class="bp-thumb">
                     <img v-if="item.thumbnail" :src="item.thumbnail" alt="" />
                     <template v-else>
-                      <t-icon
-                        name="image"
-                        size="28px"
-                        class="bp-placeholder-icon"
-                      />
+                      <t-icon name="image" size="28px" class="bp-placeholder-icon" />
                     </template>
                   </div>
                   <div class="bp-name" :title="item.name">
-                    {{ item.name || "未命名" }}
+                    {{ item.name || '未命名' }}
                   </div>
                   <div class="bp-time">
-                    {{ item.created_at?.slice(0, 10) || "" }}
+                    {{ item.created_at?.slice(0, 10) || '' }}
                   </div>
                   <div class="bp-card-actions" @click.stop>
-                    <a-popconfirm
-                      title="确定删除？"
-                      @confirm="onDeleteBlueprint(item)"
-                    >
+                    <a-popconfirm title="确定删除？" @confirm="onDeleteBlueprint(item)">
                       <delete-outlined class="bp-delete-btn" />
                     </a-popconfirm>
                   </div>
@@ -177,231 +143,211 @@
 </template>
 
 <script lang="ts" setup>
-import {
-  ref,
-  watch,
-  nextTick,
-  onMounted,
-  onUnmounted,
-} from "vue";
-import { message } from "ant-design-vue";
-import {
-  FolderOutlined,
-  FolderOpenOutlined,
-  FolderAddOutlined,
-  DeleteOutlined,
-} from "@ant-design/icons-vue";
-import { GRAPHIC_GROUPS as graphicGroups } from "@/utils/graphicGroups.ts";
-import { MoreModal, CreatedFolder } from "./components/index.ts";
-import { useCommonStore } from "@/store/modules/common";
-import { Icon } from "tdesign-icons-vue-next";
-import { useRouter } from "vue-router";
-import { apiBlueprintList, apiBlueprintDelete } from "@/api/blueprint";
+import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { message } from 'ant-design-vue'
+import { FolderOutlined, FolderOpenOutlined, FolderAddOutlined, DeleteOutlined } from '@ant-design/icons-vue'
+import { GRAPHIC_GROUPS as graphicGroups } from '@/utils/graphicGroups.ts'
+import { MoreModal, CreatedFolder } from './components/index.ts'
+import { useCommonStore } from '@/store/modules/common'
+import { Icon } from 'tdesign-icons-vue-next'
+import { useRouter } from 'vue-router'
+import { apiBlueprintList, apiBlueprintDelete } from '@/api/blueprint'
 
 // 原数据
-const originalGraphicGroups = graphicGroups;
+const originalGraphicGroups = graphicGroups
 
-const graphicGroupsList = ref(graphicGroups);
+const graphicGroupsList = ref(graphicGroups)
 
-const moreModalRef = ref(null);
-const createdFolderRef = ref(null);
+const moreModalRef = ref(null)
+const createdFolderRef = ref(null)
 
-const tabsActiveKey = ref("1");
+const tabsActiveKey = ref('1')
 
-const activeKey = ref(0);
-
-const directoryVisible = ref(false);
-
-// 文件夹名称
-const directoryName = ref("");
+const activeKey = ref(0)
 
 // 文件夹列表
-const directoryList = ref(useCommonStore().customFolders || []);
+const directoryList = ref(useCommonStore().customFolders || [])
 
 // 折叠key
-const directoryKey = ref("");
+const directoryKey = ref('')
 
 // 路由
-const router = useRouter();
+const router = useRouter()
 
 // 图纸列表
-const blueprintList = ref<any[]>([]);
-const blueprintLoading = ref(false);
+const blueprintList = ref<any[]>([])
+const blueprintLoading = ref(false)
 
 // 过滤值
-const keyword = ref("");
+const keyword = ref('')
 
 // 防抖定时器
-let debounceTimer: ReturnType<typeof setTimeout> | null = null;
+let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
-watch(
-  () => directoryVisible.value,
-  (bool: boolean) => {
-    if (!bool) {
-      directoryName.value = "";
-    }
-  }
-);
-
-const dragStart = (e: DragEvent | MouseEvent, elem: { name: string; data: any; icon: string; iconFamily?: string; subClassName?: string; svg?: string }) => {
-  let commonStore = useCommonStore();
+const dragStart = (
+  e: DragEvent | MouseEvent,
+  elem: { name: string; data: any; icon: string; iconFamily?: string; subClassName?: string; svg?: string },
+) => {
+  let commonStore = useCommonStore()
   if (!elem) {
-    return;
+    return
   }
-  e.stopPropagation();
+  e.stopPropagation()
   // 拖拽事件
   if (e instanceof DragEvent) {
-    commonStore.setIsSave("0");
-    e.dataTransfer?.setData("Meta2d", JSON.stringify(elem.data));
+    commonStore.setIsSave('0')
+    e.dataTransfer?.setData('Meta2d', JSON.stringify(elem.data))
   } else {
     // 支持单击添加图元。平板模式
-    meta2d.canvas.addCaches = [elem.data];
+    meta2d.canvas.addCaches = [elem.data]
   }
-};
+}
 
 function openGraphics() {
-  moreModalRef.value.visible = true;
+  moreModalRef.value.visible = true
   nextTick(() => {
-    moreModalRef.value.init();
-  });
+    moreModalRef.value.init()
+  })
 }
 
 /**
  * 显示/隐藏回调后处理左侧栏是否显示或者隐藏
  */
 function handleGraphicGroups() {
-  let graphicsKey = useCommonStore().graphics;
-  let keys = Object.keys(graphicsKey);
-  let array: any = [];
+  let graphicsKey = useCommonStore().graphics
+  let keys = Object.keys(graphicsKey)
+  let array: any = []
   Object.values(graphicsKey).map((_, idx) => {
     if (!_) {
-      array.push(keys[idx]);
+      array.push(keys[idx])
     }
-  });
-  graphicGroupsList.value.map((_) => {
+  })
+  graphicGroupsList.value.map(_ => {
     if (array.includes(_.name)) {
-      _.show = false;
+      _.show = false
     } else {
-      _.show = true;
+      _.show = true
     }
-  });
+  })
 }
 
 /**
  * 防抖筛选
  */
 function debouncedFilter() {
-  if (debounceTimer) clearTimeout(debounceTimer);
+  if (debounceTimer) clearTimeout(debounceTimer)
   debounceTimer = setTimeout(() => {
-    filterGraphicGroups();
-  }, 200);
+    filterGraphicGroups()
+  }, 200)
 }
 
 /**
  * 筛选过滤组件
  */
 function filterGraphicGroups() {
-  const key = keyword.value;
+  const key = keyword.value
   if (key) {
-    const list = originalGraphicGroups;
-    const array: typeof graphicGroups = [];
+    const list = originalGraphicGroups
+    const array: typeof graphicGroups = []
     for (let i = 0; i < list.length; i++) {
       if (list[i].name.indexOf(key) !== -1) {
         array.push({
           ...list[i],
-        });
+        })
       }
-      const foundInList = list[i].list.filter((item) => {
-        const { name } = item;
-        if (name.indexOf("http") !== -1) {
-          const decodedStr = decodeURIComponent(name);
+      const foundInList = list[i].list.filter(item => {
+        const { name } = item
+        if (name.indexOf('http') !== -1) {
+          const decodedStr = decodeURIComponent(name)
           if (decodedStr.indexOf(key) !== -1) {
-            return true;
+            return true
           }
         } else {
           if (name.indexOf(key) !== -1) {
-            return true;
+            return true
           }
         }
-        return false;
-      });
+        return false
+      })
       if (foundInList.length !== 0) {
         array.push({
           ...list[i],
           list: [...foundInList],
-        });
+        })
       }
     }
-    graphicGroupsList.value = array;
+    graphicGroupsList.value = array
   } else {
-    graphicGroupsList.value = graphicGroups;
+    graphicGroupsList.value = graphicGroups
   }
 }
 
 const openCreatedFolder = () => {
-  createdFolderRef.value.visible = true;
-};
+  createdFolderRef.value.visible = true
+}
 
 const onFolderCreated = (folders: Array<{ name: string; list: unknown[] }>) => {
-  directoryList.value = folders;
-};
+  directoryList.value = folders
+}
 
 function loadBlueprints() {
-  blueprintLoading.value = true;
+  blueprintLoading.value = true
   apiBlueprintList({ current: 1, page_size: 50 })
-    .then((res) => {
-      blueprintList.value = res.list || [];
+    .then(res => {
+      blueprintList.value = res.list || []
     })
     .catch(() => {
-      message.error("加载图纸列表失败");
+      message.error('加载图纸列表失败')
     })
     .finally(() => {
-      blueprintLoading.value = false;
-    });
+      blueprintLoading.value = false
+    })
 }
 
 function onOpenBlueprint(item: { id: string }) {
-  router.push({ path: "/", query: { id: item.id } });
+  router.push({ path: '/', query: { id: item.id } })
 }
 
 function onDeleteBlueprint(item: { id: string }) {
-  apiBlueprintDelete({ id: item.id }).then((res) => {
-    if (res.code === 200) {
-      message.success("已删除");
-      loadBlueprints();
-    } else {
-      message.error(res.message || "删除失败");
-    }
-  }).catch(() => {
-    message.error("删除失败，请重试");
-  });
+  apiBlueprintDelete({ id: item.id })
+    .then(res => {
+      if (res.code === 200) {
+        message.success('已删除')
+        loadBlueprints()
+      } else {
+        message.error(res.message || '删除失败')
+      }
+    })
+    .catch(() => {
+      message.error('删除失败，请重试')
+    })
 }
 
 watch(
   () => tabsActiveKey.value,
-  (key) => {
-    if (key === "3" && blueprintList.value.length === 0) {
-      loadBlueprints();
+  key => {
+    if (key === '3' && blueprintList.value.length === 0) {
+      loadBlueprints()
     }
-  }
-);
+  },
+)
 
 function onBlueprintDeleted() {
   // refresh list if the blueprint tab has been loaded
   if (blueprintList.value.length > 0) {
-    loadBlueprints();
+    loadBlueprints()
   }
 }
 
 onMounted(() => {
-  window.addEventListener("blueprint:deleted", onBlueprintDeleted);
-});
+  window.addEventListener('blueprint:deleted', onBlueprintDeleted)
+})
 
 onUnmounted(() => {
-  window.removeEventListener("blueprint:deleted", onBlueprintDeleted);
-});
+  window.removeEventListener('blueprint:deleted', onBlueprintDeleted)
+})
 
-handleGraphicGroups();
+handleGraphicGroups()
 </script>
 
 <style lang="less" scoped>

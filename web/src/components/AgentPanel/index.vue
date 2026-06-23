@@ -13,9 +13,7 @@
       <template v-if="stream.state.error">
         <div class="agent-error">
           <span>{{ stream.state.error }}</span>
-          <a-button size="small" type="link" @click="stream.state.error = null">
-            ✕
-          </a-button>
+          <a-button size="small" type="link" @click="stream.state.error = null"> ✕ </a-button>
         </div>
       </template>
 
@@ -43,21 +41,21 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onUnmounted } from "vue";
-import { AgentStreamHandler } from "./AgentStreamHandler";
-import AgentMessageItem from "./AgentMessageItem.vue";
-import AgentInput from "./AgentInput.vue";
-import { executeCanvasTool } from "@/utils/canvasBridge";
-import { useSelection } from "@/services/selections";
+import { ref, watch, nextTick, onUnmounted } from 'vue'
+import { AgentStreamHandler } from './AgentStreamHandler'
+import AgentMessageItem from './AgentMessageItem.vue'
+import AgentInput from './AgentInput.vue'
+import { executeCanvasTool } from '@/utils/canvasBridge'
+import { useSelection } from '@/services/selections'
 
-const visible = ref(false);
-const msgListRef = ref<HTMLElement>();
-const stream = new AgentStreamHandler();
+const visible = ref(false)
+const msgListRef = ref<HTMLElement>()
+const stream = new AgentStreamHandler()
 
 // Wire tool results to Meta2D canvas operations
 stream.onToolResult((tool, args, success, result) => {
-  executeCanvasTool(tool, args, success, result);
-});
+  executeCanvasTool(tool, args, success, result)
+})
 
 // Auto-scroll to bottom on new messages or tool calls
 watch(
@@ -65,48 +63,48 @@ watch(
   () => {
     nextTick(() => {
       if (msgListRef.value) {
-        msgListRef.value.scrollTop = msgListRef.value.scrollHeight;
+        msgListRef.value.scrollTop = msgListRef.value.scrollHeight
       }
-    });
-  }
-);
+    })
+  },
+)
 
 function handleSend(text: string, images?: string[]) {
-  stream.send(text, images);
+  stream.send(text, images)
 }
 
 function handleClose() {
-  stream.abort();
+  stream.abort()
 }
 
 onUnmounted(() => {
-  stream.abort();
-});
+  stream.abort()
+})
 
-let presetInput = '';
-const { selections } = useSelection();
+let presetInput = ''
+const { selections } = useSelection()
 
 // Auto-inject pen selection context when drawer is open
 watch(
   () => selections.pen,
-  (pen) => {
-    if (!visible.value || !pen) return;
-    presetInput = `请帮我分析这个节点: ID=${pen.id}, 类型=${pen.name || 'unknown'}, 文字="${(pen.text || '').slice(0, 100)}", 位置=(${pen.x}, ${pen.y}), 大小=${pen.width}x${pen.height}`;
+  pen => {
+    if (!visible.value || !pen) return
+    presetInput = `请帮我分析这个节点: ID=${pen.id}, 类型=${pen.name || 'unknown'}, 文字="${(pen.text || '').slice(0, 100)}", 位置=(${pen.x}, ${pen.y}), 大小=${pen.width}x${pen.height}`
   },
-);
+)
 
 function open(context?: string) {
-  visible.value = true;
+  visible.value = true
   if (context) {
-    presetInput = context;
+    presetInput = context
   }
 }
 
 function close() {
-  visible.value = false;
+  visible.value = false
 }
 
-defineExpose({ open, close, visible });
+defineExpose({ open, close, visible })
 </script>
 
 <style scoped lang="less">

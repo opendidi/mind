@@ -7,22 +7,12 @@
  * @LastEditTime: 2024-10-08 20:08:36
 -->
 <template>
-  <a-modal
-    v-model:visible="visible"
-    title="分享此项目"
-    centered
-    :footer="false"
-    :destroyOnClose="true"
-  >
+  <a-modal v-model:visible="visible" title="分享此项目" centered :footer="false" :destroyOnClose="true">
     <div class="qrcode-layer">
       <a-form ref="form" :model="model">
         <a-form-item>
           <a-input-group compact>
-            <a-input
-              v-model:value="model.url"
-              style="width: calc(100% - 88px)"
-              readOnly
-            />
+            <a-input v-model:value="model.url" style="width: calc(100% - 88px)" readOnly />
             <a-button type="primary" @click="onCopy">复制链接</a-button>
           </a-input-group>
         </a-form-item>
@@ -37,12 +27,7 @@
             :bordered="false"
           >
             <template #cover>
-              <qrcode-vue
-                :value="model.url"
-                :size="120"
-                level="H"
-                style="margin: 0 auto"
-              />
+              <qrcode-vue :value="model.url" :size="120" level="H" style="margin: 0 auto" />
             </template>
             <a-card-meta>
               <template #description>
@@ -57,36 +42,36 @@
 </template>
 
 <script>
-import { ref, defineComponent } from "vue";
-import { useRoute } from "vue-router";
-import useClipboard from "vue-clipboard3";
-import { message } from "ant-design-vue";
-import QrcodeVue from "qrcode.vue";
+import { ref, defineComponent } from 'vue'
+import { useRoute } from 'vue-router'
+import useClipboard from 'vue-clipboard3'
+import { message } from 'ant-design-vue'
+import QrcodeVue from 'qrcode.vue'
 export default defineComponent({
   components: { QrcodeVue },
   setup() {
-    const route = useRoute();
+    const route = useRoute()
 
-    const visible = ref(false);
+    const visible = ref(false)
 
-    const { toClipboard } = useClipboard();
+    const { toClipboard } = useClipboard()
 
-    const date = Date.now();
-    const args = [`id=${route.query.id || 1}`, `r=${date + ""}`];
+    const date = Date.now()
+    const args = [`id=${route.query.id || 1}`, `r=${date + ''}`]
     const model = ref({
-      url: `${window.location.href}preview?${args.join("&")}`,
-    });
+      url: `${window.location.href}preview?${args.join('&')}`,
+    })
 
     async function onCopy() {
-      await toClipboard(model.value.url);
-      message.success("复制链接成功!");
+      await toClipboard(model.value.url)
+      message.success('复制链接成功!')
     }
 
     return {
       visible,
       model,
       onCopy,
-    };
+    }
   },
-});
+})
 </script>

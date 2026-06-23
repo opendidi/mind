@@ -54,6 +54,64 @@ class TestAnalyzeBase64:
             assert 'data:image' in msg
 
 
+class TestOCR:
+    """OCR text extraction."""
+
+    def test_build_ocr_prompt_returns_valid_json(self):
+        import json
+
+        prompt = VisionHandler.build_ocr_prompt()
+        data = json.loads(prompt)
+        assert data["task"] == "ocr"
+        assert "instructions" in data
+        assert "text" in data["output_format"]
+
+    def test_parse_ocr_valid_json(self):
+        ok, result = VisionHandler._parse_ocr(
+            '{"text":"Hello World","has_text":true,"language":"en"}'
+        )
+        assert ok
+        assert result["text"] == "Hello World"
+        assert result["has_text"] is True
+        assert result["language"] == "en"
+
+    def test_parse_ocr_plain_text_fallback(self):
+        ok, result = VisionHandler._parse_ocr("纯文本输出，没有JSON格式")
+        assert ok
+        assert result["text"] == "纯文本输出，没有JSON格式"
+        assert result["has_text"] is True
+        assert result["language"] == ""
+
+    def test_parse_ocr_empty_text(self):
+        ok, result = VisionHandler._parse_ocr("")
+        assert ok
+        assert result["has_text"] is False
+
+    def test_parse_result_routes_ocr(self):
+        ok, result = VisionHandler._parse_result(
+            '{"text":"测试","has_text":true,"language":"zh"}', "ocr"
+        )
+        assert ok
+        assert result["text"] == "测试"
+
+    @patch('app.util.vision._ensure_client', return_value=True)
+    @patch('app.util.vision._vision_client')
+    def test_analyze_image_ocr_builds_correct_prompt(self, mock_client, _ensure):
+        mock_choice = MagicMock()
+        mock_choice.message.content = '{"text":"扫码结果","has_text":true,"language":"zh"}'
+        mock_client.chat.completions.create.return_value = MagicMock(
+            choices=[mock_choice]
+        )
+
+        ok, result = VisionHandler.analyze_image(
+            image_url="http://example.com/qr.png",
+            prompt=VisionHandler.build_ocr_prompt(),
+            task_type="ocr",
+        )
+        assert ok
+        assert result["text"] == "扫码结果"
+
+
 class TestAnalyzeImages:
     """Batch image analysis."""
 

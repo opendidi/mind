@@ -116,12 +116,17 @@ mode 可选值：driving(驾车) / walking(步行) / riding(骑行) / transit(�
 
 ## 思维导图格式 (```mindmap)
 
-输出标准 Markdown 无序列表，每行一项，缩进表示层级：
+用户要求生成思维导图/脑图/知识梳理时，用 ```mindmap 代码块输出，由前端 markmap 渲染。
+**不要用 canvas 工具画思维导图**，canvas 工具仅用于流程图/架构图/UML。
+
+格式：标准 Markdown 无序列表，每行一项，2空格缩进表示层级，禁止混用 Tab：
 ```mindmap
 - 根主题
-  - 子主题1
+  - 分支1
     - 细节A
-  - 子主题2
+    - 细节B
+  - 分支2
+    - 细节C
 ```
 
 ## 文件列表格式 (```files)
@@ -138,7 +143,7 @@ mode 可选值：driving(驾车) / walking(步行) / riding(骑行) / transit(�
 
 - **流程图**：矩形=步骤，菱形=判断，圆形=开始/结束，带箭头连线表示流向
 - **架构图**：矩形=组件/服务，连线=依赖/数据流
-- **思维导图**：中心主题→分支→细节，使用 mind 曲线连接
+- **思维导图**：使用 ```mindmap 代码块输出，NOT canvas 工具
 """
 
 # ── Compaction Prompt ────────────────────────────────────────────────────
@@ -359,7 +364,7 @@ class AgentSession:
         #   图片 → VisionHandler (Qwen-VL / GPT-4o 等) → 文字描述 → 注入 user message
         has_images = bool(images)
         if has_images:
-            vision_desc = self._describe_images(images)
+            vision_desc = self._describe_images(images, user_message)
             if vision_desc:
                 # Find the last user message and prepend the vision description
                 for i in range(len(messages) - 1, -1, -1):
@@ -368,6 +373,19 @@ class AgentSession:
                             f"[系统提示] 用户在此消息中附带了 {len(images)} 张图片。"
                             f"以下是图片的视觉分析结果，请基于这些信息回答用户问题：\n\n"
                             f"{vision_desc}\n\n"
+                            f"---\n用户消息：{messages[i]['content']}"
+                        )
+                        break
+            else:
+                # Vision bridge failed — tell Agent about image URLs so it can
+                # use analyze_image(image_url=...) directly as fallback.
+                image_url_list = "\n".join(f"- {url}" for url in images[:5])
+                for i in range(len(messages) - 1, -1, -1):
+                    if messages[i].get("role") == "user" and isinstance(messages[i].get("content"), str):
+                        messages[i]["content"] = (
+                            f"[系统提示] 用户在此消息中附带了 {len(images)} 张图片，"
+                            f"视觉预处理暂时不可用，你可以使用 analyze_image 工具直接分析这些图片：\n\n"
+                            f"{image_url_list}\n\n"
                             f"---\n用户消息：{messages[i]['content']}"
                         )
                         break
@@ -629,27 +647,29 @@ class AgentSession:
         return None
 
     @staticmethod
-    def _describe_images(images: list) -> str:
-        """Preprocess images through vision model → text description (vision bridge)."""
+    def _describe_images(images: list, user_message: str = "") -> str:
+        """Preprocess images through vision model — always auto-OCR.
+
+        Design intent: every uploaded image is automatically OCR'd so the
+        Agent can see the text content without the user needing to ask.
+        Falls back gracefully when no vision-capable model is configured.
+        """
         try:
             from app.util.vision import VisionHandler
 
-            prompt = json.dumps(
-                {
-                    "task": "describe",
-                    "instructions": (
-                        "请详细描述这张图片的内容。如果是图表/架构图/流程图，请描述其中的结构、节点、连接关系和文字标注。"
-                        "如果是截图/照片，请描述场景、物体、文字和关键细节。"
-                        "输出纯文本中文描述，不要用 JSON 格式。"
-                    ),
-                },
-                ensure_ascii=False,
-            )
-            ok, result = VisionHandler.analyze_images(images, prompt, task_type="describe")
-            if ok:
-                if isinstance(result, dict):
-                    return result.get("description") or result.get("raw") or str(result)
-                return str(result)
+            # Always run OCR first — extract text from every uploaded image
+            ok, result = VisionHandler.analyze_images(images, VisionHandler.build_ocr_prompt(), task_type="ocr")
+            if ok and isinstance(result, dict):
+                text = result.get("text") or ""
+                has_text = result.get("has_text", bool(text))
+                if has_text and text.strip():
+                    return f"[图片 OCR 文字提取]\n{text}"
+                # Image has no text — fall through to describe
+                if not has_text:
+                    return "[图片 OCR] 该图片中没有检测到文字"
+
+            # OCR failed (likely no vision model configured) — return None
+            # so _build_messages can inject image URLs as fallback
             return None
         except Exception:
             logging.debug("Vision bridge failed, proceeding text-only", exc_info=True)

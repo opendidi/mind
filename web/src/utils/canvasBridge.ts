@@ -72,7 +72,9 @@ function pushUndoState(meta2d: any): void {
     if (typeof meta2d.addHistory === 'function') {
       meta2d.addHistory(structuredClone(meta2d.data()))
     }
-  } catch { /* ignore */ }
+  } catch (err) {
+    console.warn('[canvasBridge] pushUndoState failed:', err)
+  }
 }
 
 /** Calculate connection anchor point on the edge of a pen, accounting for shape type. */
@@ -134,7 +136,9 @@ function notifyCanvasMutation(): void {
     if (data) {
       localStorage.setItem('meta2d', JSON.stringify(data))
     }
-  } catch { /* ignore */ }
+  } catch (err) {
+    console.warn('[canvasBridge] notifyCanvasMutation localStorage write failed:', err)
+  }
   // Dispatch custom event for Index.vue save pipeline
   window.dispatchEvent(new CustomEvent('meta2d:agent-mutation'))
 }
@@ -167,7 +171,7 @@ export function executeCanvasToolLocalStorage(
       case 'add_pen':
       case 'canvas_add_pen': {
         const r = result as Record<string, unknown> | undefined
-        const penId = (r?.pen_id || r?.penId) as string || `pen_${Date.now()}`
+        const penId = ((r?.pen_id || r?.penId) as string) || `pen_${Date.now()}`
         const penType = ((args.type as string) || 'rectangle').toLowerCase()
         const defaults = COLOR_DEFAULTS[TYPE_MAP[penType]] || COLOR_DEFAULTS.rectangle
         const pen: any = {
@@ -198,7 +202,11 @@ export function executeCanvasToolLocalStorage(
       }
       case 'clear':
       case 'canvas_clear':
-        if (args.confirm) { data.pens = []; data.lines = []; penIdMap.clear() }
+        if (args.confirm) {
+          data.pens = []
+          data.lines = []
+          penIdMap.clear()
+        }
         break
       case 'add_line':
       case 'canvas_add_line': {
@@ -237,11 +245,14 @@ export function executeCanvasToolLocalStorage(
           const penType = ((node.type as string) || 'rectangle').toLowerCase()
           const defaults = COLOR_DEFAULTS[TYPE_MAP[penType]] || COLOR_DEFAULTS.rectangle
           data.pens.push({
-            id: penId, penId,
+            id: penId,
+            penId,
             name: TYPE_MAP[penType] || 'rectangle',
             text: (node.text as string) || '',
-            x: (node.x as number) || 0, y: (node.y as number) || 0,
-            width: (node.width as number) || 120, height: (node.height as number) || 60,
+            x: (node.x as number) || 0,
+            y: (node.y as number) || 0,
+            width: (node.width as number) || 120,
+            height: (node.height as number) || 60,
             background: (node.background as string) || defaults.background,
             color: (node.color as string) || defaults.color,
             fontSize: (node.fontSize as number) || 14,
@@ -275,7 +286,8 @@ export function executeCanvasToolLocalStorage(
     }
     localStorage.setItem('meta2d', JSON.stringify(data))
     return true
-  } catch {
+  } catch (err) {
+    console.warn('[canvasBridge] executeCanvasToolLocalStorage failed:', err)
     return false
   }
 }
@@ -344,7 +356,12 @@ export async function executeCanvasTool(
   return ok
 }
 
-async function _addPen(meta2d: any, args: Record<string, unknown>, success: boolean, result: unknown): Promise<boolean> {
+async function _addPen(
+  meta2d: any,
+  args: Record<string, unknown>,
+  success: boolean,
+  result: unknown,
+): Promise<boolean> {
   if (!success) return false
 
   const r = result as Record<string, unknown> | undefined
@@ -378,14 +395,19 @@ async function _addPen(meta2d: any, args: Record<string, unknown>, success: bool
     if (penId && realId) {
       penIdMap.set(penId, realId)
     }
-  } catch {
-    // penIdMap entry will be missing — caller should handle
+    return true
+  } catch (err) {
+    console.warn('[canvasBridge] _addPen failed:', err)
+    return false
   }
-
-  return true
 }
 
-async function _addLine(meta2d: any, args: Record<string, unknown>, success: boolean, _result: unknown): Promise<boolean> {
+async function _addLine(
+  meta2d: any,
+  args: Record<string, unknown>,
+  success: boolean,
+  _result: unknown,
+): Promise<boolean> {
   if (!success) return false
 
   const fromLogical = args.from_pen as string
@@ -459,7 +481,7 @@ function _deletePen(meta2d: any, args: Record<string, unknown>, success: boolean
   }
   if (toDelete.length === 0) return false
 
-  const pens = toDelete.map((id) => meta2d.findOne(id)).filter(Boolean)
+  const pens = toDelete.map(id => meta2d.findOne(id)).filter(Boolean)
   if (pens.length === 0) {
     console.warn(`[canvasBridge] delete_pen: no pens found for ids=${toDelete.join(',')}`)
     return false
@@ -484,7 +506,12 @@ function _clear(meta2d: any, args: Record<string, unknown>, success: boolean): b
   return true
 }
 
-async function _addDiagram(meta2d: any, args: Record<string, unknown>, success: boolean, result: unknown): Promise<boolean> {
+async function _addDiagram(
+  meta2d: any,
+  args: Record<string, unknown>,
+  success: boolean,
+  result: unknown,
+): Promise<boolean> {
   if (!success) return false
 
   const r = result as Record<string, unknown> | undefined
@@ -520,7 +547,7 @@ async function _addDiagram(meta2d: any, args: Record<string, unknown>, success: 
     }
     const actualPen = await meta2d.addPen(pen)
     if (actualPen) {
-      const logicalId = node.pen_id as string || node.id as string || ''
+      const logicalId = (node.pen_id as string) || (node.id as string) || ''
       const actualId = actualPen.id || actualPen.penId || ''
       if (logicalId) logicalToActual.set(logicalId, actualId)
       if (logicalId) penIdMap.set(logicalId, actualId)
@@ -529,8 +556,8 @@ async function _addDiagram(meta2d: any, args: Record<string, unknown>, success: 
 
   // Phase 2: Create all lines (shape-aware anchors)
   for (const edge of edges) {
-    const fromLogical = edge._from_id as string || edge.from as string || ''
-    const toLogical = edge._to_id as string || edge.to as string || ''
+    const fromLogical = (edge._from_id as string) || (edge.from as string) || ''
+    const toLogical = (edge._to_id as string) || (edge.to as string) || ''
     const fromId = logicalToActual.get(fromLogical) || fromLogical
     const toId = logicalToActual.get(toLogical) || toLogical
 
@@ -623,14 +650,27 @@ function _align(meta2d: any, args: Record<string, unknown>, success: boolean): b
     const p = pens[i]
     const pw = p.width || 120
     const ph = p.height || 60
-    let x = p.x, y = p.y
+    let x = p.x,
+      y = p.y
     switch (align) {
-      case 'left': x = refX; break
-      case 'center': x = refX + refW / 2 - pw / 2; break
-      case 'right': x = refX + refW - pw; break
-      case 'top': y = refY; break
-      case 'middle': y = refY + refH / 2 - ph / 2; break
-      case 'bottom': y = refY + refH - ph; break
+      case 'left':
+        x = refX
+        break
+      case 'center':
+        x = refX + refW / 2 - pw / 2
+        break
+      case 'right':
+        x = refX + refW - pw
+        break
+      case 'top':
+        y = refY
+        break
+      case 'middle':
+        y = refY + refH / 2 - ph / 2
+        break
+      case 'bottom':
+        y = refY + refH - ph
+        break
     }
     meta2d.setValue({ id: p.id, x, y }, { render: false })
   }

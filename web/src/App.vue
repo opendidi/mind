@@ -13,7 +13,7 @@
 </template>
 
 <script setup>
-import { ref } from "vue";
-import zhCN from "ant-design-vue/es/locale/zh_CN";
-const locale = ref(zhCN);
+import { ref } from 'vue'
+import zhCN from 'ant-design-vue/es/locale/zh_CN'
+const locale = ref(zhCN)
 </script>

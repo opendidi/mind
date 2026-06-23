@@ -37,19 +37,16 @@
             <img
               :src="selectedMarker.thumb"
               class="modal-hero-img"
-              @error="(e) => { if (e.target) (e.target as HTMLImageElement).style.display = 'none' }"
+              @error="
+                e => {
+                  if (e.target) (e.target as HTMLImageElement).style.display = 'none'
+                }
+              "
             />
           </template>
           <template v-else>
             <div class="modal-hero-placeholder">
-              <svg
-                viewBox="0 0 24 24"
-                width="36"
-                height="36"
-                fill="none"
-                stroke="#94a3b8"
-                stroke-width="1.5"
-              >
+              <svg viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="#94a3b8" stroke-width="1.5">
                 <path d="M17.5 6.5h-11l-4 8h19l-4-8z" />
                 <circle cx="12" cy="16" r="3" />
               </svg>
@@ -60,43 +57,25 @@
         </div>
         <!-- 内容 -->
         <div class="modal-body">
-          <h3 class="modal-name">{{ selectedMarker.title || "未命名场景" }}</h3>
+          <h3 class="modal-name">{{ selectedMarker.title || '未命名场景' }}</h3>
           <template v-if="selectedMarker.pano_name || selectedMarker.desc">
             <div class="modal-meta">
-              <span class="meta-tag">{{ selectedMarker.pano_name ? `📁 ${selectedMarker.pano_name}` : selectedMarker.desc }}</span>
+              <span class="meta-tag">{{
+                selectedMarker.pano_name ? `📁 ${selectedMarker.pano_name}` : selectedMarker.desc
+              }}</span>
             </div>
           </template>
           <div class="modal-coord">
-            <svg
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="#7c3aed"
-              stroke-width="2"
-            >
+            <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="#7c3aed" stroke-width="2">
               <circle cx="12" cy="10" r="3" />
-              <path
-                d="M12 2a8 8 0 00-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 00-8-8z"
-              />
+              <path d="M12 2a8 8 0 00-8 8c0 5.4 8 12 8 12s8-6.6 8-12a8 8 0 00-8-8z" />
             </svg>
             <span>{{ selectedMarker.lng }}, {{ selectedMarker.lat }}</span>
           </div>
           <template v-if="selectedMarker.pano_id">
-            <a
-              :href="`/preview?id=${selectedMarker.pano_id}`"
-              target="_blank"
-              class="modal-action"
-            >
+            <a :href="`/preview?id=${selectedMarker.pano_id}`" target="_blank" class="modal-action">
               查看全景
-              <svg
-                viewBox="0 0 24 24"
-                width="16"
-                height="16"
-                fill="none"
-                stroke="currentColor"
-                stroke-width="2"
-              >
+              <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2">
                 <path d="M7 17L17 7M7 7h10v10" />
               </svg>
             </a>
@@ -108,62 +87,52 @@
 </template>
 
 <script setup lang="ts">
-import {
-  ref,
-  reactive,
-  onMounted,
-  onBeforeUnmount,
-  watch,
-  nextTick,
-} from "vue";
-import AMapLoader from "@amap/amap-jsapi-loader";
+import { ref, reactive, onMounted, onBeforeUnmount, watch, nextTick } from 'vue'
+import AMapLoader from '@amap/amap-jsapi-loader'
 
 interface MapMarker {
-  lat: number;
-  lng: number;
-  title?: string;
-  desc?: string;
-  pano_id?: string;
-  pano_name?: string;
-  thumb?: string;
+  lat: number
+  lng: number
+  title?: string
+  desc?: string
+  pano_id?: string
+  pano_name?: string
+  thumb?: string
 }
 
 const props = defineProps<{
-  title?: string;
-  center?: [number, number];
-  zoom?: number;
-  markers?: MapMarker[];
-}>();
+  title?: string
+  center?: [number, number]
+  zoom?: number
+  markers?: MapMarker[]
+}>()
 
-const containerRef = ref<HTMLElement>();
-const modalVisible = ref(false);
-const selectedMarker = ref<MapMarker | null>(null);
+const containerRef = ref<HTMLElement>()
+const modalVisible = ref(false)
+const selectedMarker = ref<MapMarker | null>(null)
 
-let _AMap: any = null;
-let amap: any = null;
-const mapMarkers: unknown[] = [];
+let _AMap: any = null
+let amap: any = null
+const mapMarkers: unknown[] = []
 
-const MAP_PLUGINS = ["AMap.MarkerClusterer", "AMap.MarkerCluster"];
+const MAP_PLUGINS = ['AMap.MarkerClusterer', 'AMap.MarkerCluster']
 
 async function initMap() {
-  if (!containerRef.value) return;
+  if (!containerRef.value) return
 
   try {
     _AMap = await AMapLoader.load({
       key: (import.meta as any).env.VITE_AMAP_KEY,
-      version: "2.0",
+      version: '2.0',
       plugins: MAP_PLUGINS,
-    });
+    })
   } catch (e) {
-    console.error("[MapCard] AMap 加载失败:", e);
-    return;
+    console.error('[MapCard] AMap 加载失败:', e)
+    return
   }
 
-  const center =
-    props.center?.[0] != null
-      ? [props.center[0], props.center[1]]
-      : [113.29, 22.81];
-  const zoom = props.zoom ?? 12;
+  const center = props.center?.[0] != null ? [props.center[0], props.center[1]] : [113.29, 22.81]
+  const zoom = props.zoom ?? 12
 
   amap = new _AMap.Map(containerRef.value, {
     resizeEnable: true,
@@ -171,102 +140,101 @@ async function initMap() {
     zoom,
     pitch: 0,
     rotation: 0,
-    mapStyle: "amap://styles/light",
+    mapStyle: 'amap://styles/light',
     zoomEnable: true,
     dragEnable: true,
     doubleClickZoom: true,
     scrollWheel: true,
     touchZoom: true,
-  });
+  })
 
-  renderMarkers();
+  renderMarkers()
 }
 
 function onMarkerClick(m: MapMarker) {
-  selectedMarker.value = m;
-  modalVisible.value = true;
+  selectedMarker.value = m
+  modalVisible.value = true
 }
 
 function zoomIn() {
-  amap?.zoomIn();
+  amap?.zoomIn()
 }
 
 function zoomOut() {
-  amap?.zoomOut();
+  amap?.zoomOut()
 }
 
 function renderMarkers() {
-  if (!_AMap || !amap || !props.markers?.length) return;
+  if (!_AMap || !amap || !props.markers?.length) return
 
-  mapMarkers.forEach((mk) => mk.setMap(null));
-  mapMarkers.length = 0;
+  mapMarkers.forEach(mk => mk.setMap(null))
+  mapMarkers.length = 0
 
-  const points: [number, number][] = [];
+  const points: [number, number][] = []
 
-  props.markers.forEach((m) => {
-    const lng = Number(m.lng);
-    const lat = Number(m.lat);
-    if (isNaN(lng) || isNaN(lat)) return;
+  props.markers.forEach(m => {
+    const lng = Number(m.lng)
+    const lat = Number(m.lat)
+    if (isNaN(lng) || isNaN(lat)) return
 
-    points.push([lng, lat]);
+    points.push([lng, lat])
 
     const marker = new _AMap.Marker({
       position: [lng, lat],
       content: `<div class="map-marker-dot"></div>`,
       offset: new _AMap.Pixel(-9, -9),
-      title: m.title || m.pano_name || "",
-    });
+      title: m.title || m.pano_name || '',
+    })
 
-    marker.on("click", () => onMarkerClick(m));
-    mapMarkers.push(marker);
-    marker.setMap(amap);
-  });
+    marker.on('click', () => onMarkerClick(m))
+    mapMarkers.push(marker)
+    marker.setMap(amap)
+  })
 
   if (points.length > 0) {
-    amap.setFitView(null, false, [80, 80, 80, 80]);
+    amap.setFitView(null, false, [80, 80, 80, 80])
   }
 }
 
 watch(
   () => props.markers,
   () => nextTick(renderMarkers),
-  { deep: true }
-);
+  { deep: true },
+)
 
-let mapInited = false;
-let observer: IntersectionObserver | null = null;
+let mapInited = false
+let observer: IntersectionObserver | null = null
 
 onMounted(() => {
-  if (!containerRef.value) return;
+  if (!containerRef.value) return
 
   // Lazy init: only load AMap (~200KB) when card enters viewport
-  const supportsIntersection =
-    typeof IntersectionObserver !== "undefined";
+  const supportsIntersection = typeof IntersectionObserver !== 'undefined'
   if (supportsIntersection) {
     observer = new IntersectionObserver(
-      (entries) => {
+      entries => {
         if (entries[0]?.isIntersecting && !mapInited) {
-          mapInited = true;
-          nextTick(initMap);
-          observer?.disconnect();
-          observer = null;
+          mapInited = true
+          nextTick(initMap)
+          observer?.disconnect()
+          observer = null
         }
       },
-      { rootMargin: "200px" } // preload when within 200px of viewport
-    );
-    observer.observe(containerRef.value);
+      { rootMargin: '200px' }, // preload when within 200px of viewport
+    )
+    observer.observe(containerRef.value)
   } else {
     // Fallback for older browsers
-    mapInited = true;
-    nextTick(initMap);
+    mapInited = true
+    nextTick(initMap)
   }
-});
+})
 
 onBeforeUnmount(() => {
-  observer?.disconnect();
-  mapMarkers.forEach((m) => m.setMap(null));
-  if (amap) amap.destroy();
-});
+  observer?.disconnect()
+  mapMarkers.forEach(m => m.setMap(null))
+  if (amap) amap.destroy()
+})
 </script>
 
 <style lang="scss" scoped>
@@ -428,7 +396,7 @@ onBeforeUnmount(() => {
   margin-bottom: 16px;
   font-size: 12px;
   color: #94a3b8;
-  font-family: "SF Mono", "Consolas", monospace;
+  font-family: 'SF Mono', 'Consolas', monospace;
 }
 
 .modal-action {
@@ -444,7 +412,9 @@ onBeforeUnmount(() => {
   background: linear-gradient(135deg, #4f46e5, #7c3aed);
   border-radius: 8px;
   text-decoration: none;
-  transition: box-shadow 0.15s, transform 0.1s;
+  transition:
+    box-shadow 0.15s,
+    transform 0.1s;
 
   &:hover {
     box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);

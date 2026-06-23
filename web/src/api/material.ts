@@ -6,7 +6,7 @@
  * @LastEditors: htang
  * @LastEditTime: 2025-08-15 10:40:55
  */
-import http from '@/utils/request';
+import http from '@/utils/request'
 
 const API = {
   lists: '/material/lists',
@@ -22,14 +22,14 @@ const API = {
  * 文件素材列表
  */
 export function apiMaterialList(params: any) {
-  return http.get(API.lists, { params });
+  return http.get(API.lists, { params })
 }
 
 /**
  * 获取所有目录数据
  */
 export function apiMaterialFolder(params: any) {
-  return http.get(API.folder, { params });
+  return http.get(API.folder, { params })
 }
 
 /**
@@ -38,7 +38,7 @@ export function apiMaterialFolder(params: any) {
 export function apiMaterialCreatedFolder(data: any) {
   return http.post(API.created, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  })
 }
 
 /**
@@ -47,7 +47,7 @@ export function apiMaterialCreatedFolder(data: any) {
 export function apiMaterialScissors(data: any) {
   return http.post(API.scissors, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  })
 }
 
 /**
@@ -56,7 +56,7 @@ export function apiMaterialScissors(data: any) {
 export function apiMaterialCopy(data: any) {
   return http.post(API.copy, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  })
 }
 
 /**
@@ -65,7 +65,7 @@ export function apiMaterialCopy(data: any) {
 export function apiMaterialDelete(data: any) {
   return http.post(API.delete, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  })
 }
 
 /**
@@ -74,5 +74,5 @@ export function apiMaterialDelete(data: any) {
 export function apiMaterialModify(data: any) {
   return http.post(API.modify, data, {
     headers: { 'Content-Type': 'multipart/form-data' },
-  });
+  })
 }

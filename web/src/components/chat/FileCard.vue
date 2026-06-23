@@ -2,7 +2,15 @@
 <template>
   <div class="file-card">
     <div class="fc-header">
-      <svg class="fc-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
+      <svg
+        class="fc-icon"
+        viewBox="0 0 24 24"
+        width="14"
+        height="14"
+        fill="none"
+        stroke="currentColor"
+        stroke-width="2"
+      >
         <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z" />
         <polyline points="14 2 14 8 20 8" />
         <line x1="16" y1="13" x2="8" y2="13" />
@@ -13,20 +21,10 @@
       <span class="fc-count">{{ files.length }}</span>
     </div>
     <div class="fc-grid">
-      <div
-        v-for="(f, idx) in files"
-        :key="idx"
-        class="fc-item"
-        @click="onClick(f)"
-      >
+      <div v-for="(f, idx) in files" :key="idx" class="fc-item" @click="onClick(f)">
         <!-- Image preview -->
         <div class="fc-thumb" v-if="isImage(f)">
-          <img
-            :src="f.url || f.thumb_path"
-            :alt="f.name"
-            @error="onImgError"
-            loading="lazy"
-          />
+          <img :src="f.url || f.thumb_path" :alt="f.name" @error="onImgError" loading="lazy" />
         </div>
         <!-- File icon for non-images -->
         <div class="fc-thumb fc-file-icon" v-else>
@@ -49,37 +47,37 @@
 <script setup lang="ts">
 defineProps<{
   files: Array<{
-    name: string;
-    url?: string;
-    thumb_path?: string;
-    type?: string;
-    extension?: string;
-    size?: number;
-  }>;
-}>();
+    name: string
+    url?: string
+    thumb_path?: string
+    type?: string
+    extension?: string
+    size?: number
+  }>
+}>()
 
-const IMG_EXTS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico']);
+const IMG_EXTS = new Set(['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'ico'])
 
 function isImage(f: any): boolean {
-  const ext = (f.extension || '').toLowerCase();
-  const type = (f.type || '').toLowerCase();
-  return IMG_EXTS.has(ext) || type === 'image' || type === 'panorama';
+  const ext = (f.extension || '').toLowerCase()
+  const type = (f.type || '').toLowerCase()
+  return IMG_EXTS.has(ext) || type === 'image' || type === 'panorama'
 }
 
 function formatSize(bytes: number): string {
-  if (!bytes) return '';
-  if (bytes < 1024) return bytes + ' B';
-  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB';
-  return (bytes / 1048576).toFixed(1) + ' MB';
+  if (!bytes) return ''
+  if (bytes < 1024) return bytes + ' B'
+  if (bytes < 1048576) return (bytes / 1024).toFixed(1) + ' KB'
+  return (bytes / 1048576).toFixed(1) + ' MB'
 }
 
 function onClick(f: any) {
-  if (f.url) window.open(f.url, '_blank', 'noopener');
+  if (f.url) window.open(f.url, '_blank', 'noopener')
 }
 
 function onImgError(e: Event) {
-  const el = e.target as HTMLElement;
-  el.style.display = 'none';
+  const el = e.target as HTMLElement
+  el.style.display = 'none'
 }
 </script>
 
@@ -132,7 +130,9 @@ function onImgError(e: Event) {
   cursor: pointer;
   border-radius: 8px;
   overflow: hidden;
-  transition: transform 0.15s, box-shadow 0.15s;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
 
   &:hover {
     transform: translateY(-2px);

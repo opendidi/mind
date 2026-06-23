@@ -18,35 +18,25 @@
     class="iframe-modal"
     :footer="false"
   >
-    <iframe
-      :src="url"
-      frameborder="0"
-      style="width: 100%; height: 400px"
-    ></iframe>
+    <iframe :src="url" frameborder="0" style="width: 100%; height: 400px"></iframe>
   </a-modal>
 </template>
 
 <script>
-import {
-  ref,
-  defineComponent,
-  onMounted,
-  watch,
-  onUnmounted,
-} from "vue";
+import { ref, defineComponent, onMounted, watch, onUnmounted } from 'vue'
 export default defineComponent({
   props: {
     width: {
       type: String,
-      default: "800px",
+      default: '800px',
     },
   },
   setup(props, { emit }) {
-    const visible = ref(false);
+    const visible = ref(false)
 
-    const title = ref("");
+    const title = ref('')
 
-    const url = ref("");
+    const url = ref('')
 
     /**
      * 初始化数据
@@ -59,7 +49,7 @@ export default defineComponent({
      *
      */
     function handleOk() {
-      visible.value = false;
+      visible.value = false
     }
 
     return {
@@ -68,12 +58,12 @@ export default defineComponent({
       handleOk,
       init,
       url,
-    };
+    }
   },
-});
+})
 </script>
 
-<style lang="less" >
+<style lang="less">
 .iframe-modal {
   .ant-modal-body {
     padding: 0;

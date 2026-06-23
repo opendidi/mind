@@ -60,70 +60,70 @@
 </template>
 
 <script setup lang="ts">
-import { ref, watch } from "vue";
-import { message } from "ant-design-vue";
-import { DeleteOutlined } from "@ant-design/icons-vue";
-import { useRouter } from "vue-router";
-import { apiBlueprintList, apiBlueprintDelete } from "@/api/blueprint";
+import { ref, watch } from 'vue'
+import { message } from 'ant-design-vue'
+import { DeleteOutlined } from '@ant-design/icons-vue'
+import { useRouter } from 'vue-router'
+import { apiBlueprintList, apiBlueprintDelete } from '@/api/blueprint'
 
-const emit = defineEmits<{ (e: 'closed'): void }>();
+const emit = defineEmits<{ (e: 'closed'): void }>()
 
-const router = useRouter();
-const visible = ref(false);
+const router = useRouter()
+const visible = ref(false)
 
-watch(visible, (val) => {
-  if (!val) emit('closed');
-});
-const dataSource = ref<any[]>([]);
+watch(visible, val => {
+  if (!val) emit('closed')
+})
+const dataSource = ref<any[]>([])
 
 const ipagination = ref({
   current: 1,
   pageSize: 8,
   total: 0,
   showTotal: (total: number) => `共 ${total} 条`,
-});
+})
 
 watch(
   () => visible.value,
-  (val) => {
-    if (val) loadList();
-  }
-);
+  val => {
+    if (val) loadList()
+  },
+)
 
 function loadList() {
-  const { current, pageSize } = ipagination.value;
+  const { current, pageSize } = ipagination.value
   apiBlueprintList({ current, page_size: pageSize }).then((res: any) => {
-    dataSource.value = res.list || [];
-    ipagination.value.current = res.current || current;
-    ipagination.value.total = res.total || 0;
-    ipagination.value.pageSize = res.page_size || pageSize;
-  });
+    dataSource.value = res.list || []
+    ipagination.value.current = res.current || current
+    ipagination.value.total = res.total || 0
+    ipagination.value.pageSize = res.page_size || pageSize
+  })
 }
 
 function onPageChange(page: number, pageSize: number) {
-  ipagination.value.current = page;
-  ipagination.value.pageSize = pageSize;
-  loadList();
+  ipagination.value.current = page
+  ipagination.value.pageSize = pageSize
+  loadList()
 }
 
 function onOpen(item: any) {
-  visible.value = false;
-  router.push({ path: "/", query: { id: item.id } });
+  visible.value = false
+  router.push({ path: '/', query: { id: item.id } })
 }
 
 function onDelete(item: any) {
   apiBlueprintDelete({ id: item.id }).then((res: any) => {
     if (res.code === 200) {
-      message.success("已删除");
-      loadList();
-      window.dispatchEvent(new CustomEvent('blueprint:deleted'));
+      message.success('已删除')
+      loadList()
+      window.dispatchEvent(new CustomEvent('blueprint:deleted'))
     } else {
-      message.error(res.message || "删除失败");
+      message.error(res.message || '删除失败')
     }
-  });
+  })
 }
 
-defineExpose({ visible });
+defineExpose({ visible })
 </script>
 
 <style lang="less" scoped>

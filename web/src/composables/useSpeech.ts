@@ -55,7 +55,10 @@ export function useSpeech() {
     stopGlobal()
     speaking.value = true
 
-    const clean = text.replace(/<\/?[^>]+(>|$)/g, '').replace(/[#*`~>\[\]|]/g, '').trim()
+    const clean = text
+      .replace(/<\/?[^>]+(>|$)/g, '')
+      .replace(/[#*`~>\[\]|]/g, '')
+      .trim()
     if (!clean) {
       speaking.value = false
       return
@@ -64,8 +67,12 @@ export function useSpeech() {
     const utter = new SpeechSynthesisUtterance(clean)
     utter.rate = 1
     utter.pitch = 1
-    utter.onend = () => { speaking.value = false }
-    utter.onerror = () => { speaking.value = false }
+    utter.onend = () => {
+      speaking.value = false
+    }
+    utter.onerror = () => {
+      speaking.value = false
+    }
 
     window.speechSynthesis.speak(utter)
   }
@@ -120,7 +127,9 @@ export function useSpeech() {
       if (err.name === 'AbortError') return
       errorMessage.value = err.message || 'TTS 生成失败'
       console.error('[TTS] ChatTTS error:', err)
-      setTimeout(() => { errorMessage.value = '' }, 3000)
+      setTimeout(() => {
+        errorMessage.value = ''
+      }, 3000)
     }
   }
 

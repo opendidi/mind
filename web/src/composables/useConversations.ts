@@ -17,7 +17,11 @@ export interface Conversation {
 
 export interface UseConversationsOptions {
   messages: Ref<ChatMessage[]>
-  currentPlan: Ref<{ goal: string; steps: { id: string; desc: string; tool: string | null; confirm: boolean; status?: string }[]; risk: string } | null>
+  currentPlan: Ref<{
+    goal: string
+    steps: { id: string; desc: string; tool: string | null; confirm: boolean; status?: string }[]
+    risk: string
+  } | null>
   agentAbort: () => void
   agentClear: () => void
   router: Router
@@ -58,10 +62,10 @@ export function useConversations(options: UseConversationsOptions): UseConversat
   let convLoadCtrl: AbortController | null = null
 
   const activeConvTitle = computed(() => {
-    const conv = conversations.value.find((c) => c.id === activeConvId.value)
+    const conv = conversations.value.find(c => c.id === activeConvId.value)
     if (conv?.title) return conv.title
     if (messages.value.length > 0) {
-      const firstUser = messages.value.find((m) => m.role === 'user')
+      const firstUser = messages.value.find(m => m.role === 'user')
       return firstUser?.text?.slice(0, 30) || '对话'
     }
     return ''
@@ -84,7 +88,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
     const seqSnapshot = saveSeq
     const msgs = [...messages.value]
     if (msgs.length === 0) return null
-    const firstUser = msgs.find((m) => m.role === 'user')
+    const firstUser = msgs.find(m => m.role === 'user')
     const title = firstUser?.text?.slice(0, 30) || '新对话'
     const id = activeConvId.value || crypto.randomUUID()
 
@@ -104,10 +108,10 @@ export function useConversations(options: UseConversationsOptions): UseConversat
       if (!route.params.id) router.replace({ name: 'chat', params: { id } })
     }
 
-    const existing = conversations.value.find((c) => c.id === id)
+    const existing = conversations.value.find(c => c.id === id)
     const present = existing?.pinned || false
     const conv: Conversation = { id, title, time: new Date().toLocaleString(), messages: msgs, pinned: present }
-    const idx = conversations.value.findIndex((c) => c.id === id)
+    const idx = conversations.value.findIndex(c => c.id === id)
     if (idx >= 0) conversations.value[idx] = conv
     else conversations.value.unshift(conv)
 
@@ -118,7 +122,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
   async function silentSave() {
     const msgs = [...messages.value]
     if (msgs.length === 0) return
-    const firstUser = msgs.find((m) => m.role === 'user')
+    const firstUser = msgs.find(m => m.role === 'user')
     const title = firstUser?.text?.slice(0, 30) || '新对话'
     const id = activeConvId.value || crypto.randomUUID()
 
@@ -134,10 +138,10 @@ export function useConversations(options: UseConversationsOptions): UseConversat
       if (!route.params.id) router.replace({ name: 'chat', params: { id } })
     }
 
-    const existing = conversations.value.find((c) => c.id === id)
+    const existing = conversations.value.find(c => c.id === id)
     const present = existing?.pinned || false
     const conv: Conversation = { id, title, time: new Date().toLocaleString(), messages: msgs, pinned: present }
-    const idx = conversations.value.findIndex((c) => c.id === id)
+    const idx = conversations.value.findIndex(c => c.id === id)
     if (idx >= 0) conversations.value[idx] = conv
     else conversations.value.unshift(conv)
   }
@@ -172,7 +176,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
   }
 
   async function onSwitchConv(id: string) {
-    const conv = conversations.value.find((c) => c.id === id)
+    const conv = conversations.value.find(c => c.id === id)
     if (!conv || conv.id === activeConvId.value) return
     agentAbort()
     if (messages.value.length > 0) await saveCurrentConv()
@@ -186,7 +190,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
       currentPlan.value = null
       router.replace({ name: 'chat' })
     }
-    conversations.value = conversations.value.filter((c) => c.id !== id)
+    conversations.value = conversations.value.filter(c => c.id !== id)
     try {
       await apiChatDelete(id)
     } catch (e: any) {
@@ -195,7 +199,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
   }
 
   function onTogglePin(convId: string) {
-    const conv = conversations.value.find((c) => c.id === convId)
+    const conv = conversations.value.find(c => c.id === convId)
     if (!conv) return
     conv.pinned = !conv.pinned
     apiChatSave({ id: convId, pinned: conv.pinned }).catch(() => message.error('置顶操作失败'))
@@ -229,8 +233,14 @@ export function useConversations(options: UseConversationsOptions): UseConversat
       for (const m of msgs) {
         if (m.role === 'user') {
           md += `**用户:** ${m.text || ''}\n\n`
-          if (m.images?.length) m.images.forEach((u, i) => { md += `![图片${i + 1}](${u})\n\n` })
-          if (m.files?.length) m.files.forEach((f) => { md += `- 附件: ${f.name}\n` })
+          if (m.images?.length)
+            m.images.forEach((u, i) => {
+              md += `![图片${i + 1}](${u})\n\n`
+            })
+          if (m.files?.length)
+            m.files.forEach(f => {
+              md += `- 附件: ${f.name}\n`
+            })
         } else if (m.role === 'agent') {
           md += `**AI:** ${m.text || ''}\n\n`
         } else if (m.role === 'tool' && m.tool) {
@@ -263,11 +273,11 @@ export function useConversations(options: UseConversationsOptions): UseConversat
         currentPlan.value = null
         agentClear()
 
-        const ids = conversations.value.map((c) => c.id)
+        const ids = conversations.value.map(c => c.id)
         conversations.value = []
 
-        const results = await Promise.allSettled(ids.map((id) => apiChatDelete(id)))
-        const failed = results.filter((r) => r.status === 'rejected').length
+        const results = await Promise.allSettled(ids.map(id => apiChatDelete(id)))
+        const failed = results.filter(r => r.status === 'rejected').length
         router.push({ name: 'chat' })
         message.success(failed === 0 ? '已清空全部历史会话' : `已清空（${failed} 个删除失败）`)
       },

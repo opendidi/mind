@@ -1,12 +1,7 @@
 <template>
   <a-button type="primary" block @click="onAddEvent">增加事件</a-button>
   <div class="event-layout">
-    <a-form
-      ref="form"
-      :data="model"
-      label-align="left"
-      :label-col="{ span: 10 }"
-    >
+    <a-form ref="form" :data="model" label-align="left" :label-col="{ span: 10 }">
       <a-collapse v-model:activeKey="activeKey" expand-icon-position="right">
         <template v-for="(vo, idx) in model" :key="idx">
           <a-collapse-panel :header="'事件 ' + (idx + 1)">
@@ -40,11 +35,7 @@
             </a-form-item>
             <template v-if="vo.action === 0">
               <a-form-item label="链接地址">
-                <a-input
-                  v-model:value="vo.value"
-                  placeholder="请输入链接地址"
-                  @blur="changeValue(vo, 'value', idx)"
-                />
+                <a-input v-model:value="vo.value" placeholder="请输入链接地址" @blur="changeValue(vo, 'value', idx)" />
               </a-form-item>
               <a-form-item label="打开方式">
                 <a-select
@@ -62,9 +53,7 @@
               <a-form-item label="消息名">
                 <a-select v-model:value="vo.value">
                   <a-select-option value="l-dialog">对话框</a-select-option>
-                  <a-select-option value="iframe-dialog">
-                    小窗展示
-                  </a-select-option>
+                  <a-select-option value="iframe-dialog"> 小窗展示 </a-select-option>
                   <a-select-option value="navigator">导航</a-select-option>
                 </a-select>
               </a-form-item>
@@ -72,19 +61,12 @@
                 <a-input v-model:value="vo.params" />
               </a-form-item>
               <a-form-item label="全景地址">
-                <a-input
-                  v-model:value="vo.panoUrl"
-                  placeholder="请输入全景图地址"
-                />
+                <a-input v-model:value="vo.panoUrl" placeholder="请输入全景图地址" />
               </a-form-item>
             </template>
             <template v-if="[8, 9, 10].includes(vo.action)">
               <a-form-item label="视频目标">
-                <a-input
-                  v-model:value="vo.params"
-                  placeholder="请输入视频目标"
-                  allowClear
-                />
+                <a-input v-model:value="vo.params" placeholder="请输入视频目标" allowClear />
               </a-form-item>
             </template>
             <template v-if="[1, 11, 12].includes(vo.action)">
@@ -105,43 +87,23 @@
                   <template v-for="(kv, i) in keysValue[idx].list" :key="i">
                     <tr>
                       <td>
-                        <a-select
-                          v-model:value="kv.key"
-                          size="small"
-                          style="width: 90px"
-                          @change="getKV(kv, idx, i)"
-                        >
-                          <a-select-option value="background"
-                            >背景颜色</a-select-option
-                          >
+                        <a-select v-model:value="kv.key" size="small" style="width: 90px" @change="getKV(kv, idx, i)">
+                          <a-select-option value="background">背景颜色</a-select-option>
                           <a-select-option value="color">背景</a-select-option>
                           <a-select-option value="text">文字</a-select-option>
                           <a-select-option value="width">宽度</a-select-option>
                           <a-select-option value="height">高度</a-select-option>
-                          <a-select-option value="visible"
-                            >显示</a-select-option
-                          >
-                          <a-select-option value="progress"
-                            >进度条</a-select-option
-                          >
+                          <a-select-option value="visible">显示</a-select-option>
+                          <a-select-option value="progress">进度条</a-select-option>
                           <a-select-option value="value">值</a-select-option>
-                          <a-select-option value="showChild"
-                            >状态</a-select-option
-                          >
+                          <a-select-option value="showChild">状态</a-select-option>
                         </a-select>
                       </td>
                       <td>
-                        <a-input
-                          v-model:value="kv.value"
-                          size="small"
-                          style="width: 90%"
-                          @change="getKV(kv, idx, i)"
-                        />
+                        <a-input v-model:value="kv.value" size="small" style="width: 90%" @change="getKV(kv, idx, i)" />
                       </td>
                       <td>
-                        <close-circle-outlined
-                          @click="onDeleteKeyValue(i, idx)"
-                        />
+                        <close-circle-outlined @click="onDeleteKeyValue(i, idx)" />
                       </td>
                     </tr>
                   </template>
@@ -150,11 +112,7 @@
             </template>
             <template v-if="[2, 3, 4].includes(vo.action)">
               <a-form-item label="动画目标">
-                <a-input
-                  v-model:value="vo.value"
-                  placeholder="请输入动画目标"
-                  allowClear
-                />
+                <a-input v-model:value="vo.value" placeholder="请输入动画目标" allowClear />
               </a-form-item>
             </template>
             <template v-if="vo.action == 5">
@@ -162,9 +120,7 @@
                 <a-button @click="openEditContainer(idx)">...</a-button>
               </a-form-item>
             </template>
-            <template
-              v-if="[0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12].includes(vo.action)"
-            >
+            <template v-if="[0, 1, 2, 3, 4, 5, 7, 8, 9, 10, 11, 12].includes(vo.action)">
               <a-form-item label="触发条件">
                 <a-select
                   v-model:value="vo.where.type"
@@ -176,17 +132,12 @@
                   <a-select-option value="comparison">关系运算</a-select-option>
                   <a-select-option value="code1">代码1</a-select-option>
                   <a-select-option value="code2">代码2</a-select-option>
-                  <a-select-option value="custom"
-                    >自定义代码判断</a-select-option
-                  >
+                  <a-select-option value="custom">自定义代码判断</a-select-option>
                 </a-select>
               </a-form-item>
               <template v-if="vo.where.type == 'comparison'">
                 <a-form-item label="属性名">
-                  <a-input
-                    v-model:value="vo.where.key"
-                    placeholder="请输入属性名"
-                  />
+                  <a-input v-model:value="vo.where.key" placeholder="请输入属性名" />
                 </a-form-item>
                 <a-form-item label="条件">
                   <a-select
@@ -214,9 +165,7 @@
             </template>
             <template v-if="vo.where.type == 'custom'">
               <a-form-item label="高优先级判断">
-                <a-button @click="onEditorEventFunc(vo.where, idx)"
-                  >...</a-button
-                >
+                <a-button @click="onEditorEventFunc(vo.where, idx)">...</a-button>
               </a-form-item>
             </template>
             <template #extra>
@@ -231,24 +180,14 @@
 </template>
 
 <script>
-import {
-  ref,
-  watch,
-  createVNode,
-  nextTick,
-  defineComponent,
-} from "vue";
-import {
-  DeleteOutlined,
-  PlusCircleOutlined,
-  CloseCircleOutlined,
-} from "@ant-design/icons-vue";
-import { ExclamationCircleOutlined } from "@ant-design/icons-vue";
-import { EventAction as eventAction } from "@/utils/index.ts";
-import { Modal } from "ant-design-vue";
-import { useSelection } from "@/services/selections";
-import EditContainer from "@/components/Meta2D/EditContainer/index.vue";
-import { EVENT_ACTION_TYPE, EVENT_ACTION_LIST } from "./config.ts";
+import { ref, watch, createVNode, nextTick, defineComponent } from 'vue'
+import { DeleteOutlined, PlusCircleOutlined, CloseCircleOutlined } from '@ant-design/icons-vue'
+import { ExclamationCircleOutlined } from '@ant-design/icons-vue'
+import { EventAction as eventAction } from '@/utils/index.ts'
+import { Modal } from 'ant-design-vue'
+import { useSelection } from '@/services/selections'
+import EditContainer from '@/components/Meta2D/EditContainer/index.vue'
+import { EVENT_ACTION_TYPE, EVENT_ACTION_LIST } from './config.ts'
 export default defineComponent({
   components: {
     DeleteOutlined,
@@ -256,32 +195,32 @@ export default defineComponent({
     PlusCircleOutlined,
     CloseCircleOutlined,
   },
-  emits: ["event", "oks"],
+  emits: ['event', 'oks'],
   setup(props, { emit }) {
-    const { selections } = useSelection();
+    const { selections } = useSelection()
 
-    const editContainerRef = ref(null);
+    const editContainerRef = ref(null)
     // 事件列表
-    const model = ref([]);
+    const model = ref([])
 
-    const index = ref(0);
+    const index = ref(0)
 
     //事件类型
-    const funs = ref(EVENT_ACTION_TYPE);
+    const funs = ref(EVENT_ACTION_TYPE)
 
     // 事件行为
-    const eventActionList = ref(EVENT_ACTION_LIST);
+    const eventActionList = ref(EVENT_ACTION_LIST)
 
-    const activeKey = ref([]);
+    const activeKey = ref([])
 
-    const keysValue = ref([]);
+    const keysValue = ref([])
 
     function onAddEvent() {
       model.value.push({
         // 事件类型
-        name: "",
+        name: '',
         // 执行动作
-        action: "",
+        action: '',
         // 触发条件
         where: {
           type: null,
@@ -289,24 +228,24 @@ export default defineComponent({
           // comparison: '',
           // value: ''
         },
-        value: "",
-      });
-      activeKey.value.push(model.value.length - 1);
-      emit("event", model.value);
+        value: '',
+      })
+      activeKey.value.push(model.value.length - 1)
+      emit('event', model.value)
     }
 
     function init(_) {
-      model.value = _;
-      let list = model.value;
+      model.value = _
+      let list = model.value
       list.map((_, i) => {
-        activeKey.value.push(i);
+        activeKey.value.push(i)
         keysValue.value.push({
           list: [],
-        });
-        let { action, value } = _;
+        })
+        let { action, value } = _
         switch (action) {
           case 0:
-            break;
+            break
           case 1:
           case 7:
           case 8:
@@ -314,24 +253,24 @@ export default defineComponent({
           case 10:
           case 11:
           case 12:
-            let keys = Object.keys(value);
+            let keys = Object.keys(value)
             Object.values(value).map((v, idx) => {
               keysValue.value[i].list.push({
                 key: keys[idx],
                 value: value[keys[idx]],
-              });
-            });
-            break;
+              })
+            })
+            break
           default:
-            break;
+            break
         }
-      });
+      })
     }
 
     function changeValue(data, key, idx) {
       switch (data.action) {
         case 0:
-          break;
+          break
         case 1:
         case 7:
         case 8:
@@ -339,62 +278,58 @@ export default defineComponent({
         case 10:
         case 11:
         case 12:
-          if (
-            [1, 7, 8, 9, 10, 11, 12].includes(data.action) &&
-            key == "action" &&
-            typeof data.value == "string"
-          ) {
+          if ([1, 7, 8, 9, 10, 11, 12].includes(data.action) && key == 'action' && typeof data.value == 'string') {
             keysValue.value.push({
               list: [],
-            });
-            model.value[idx].value = {};
+            })
+            model.value[idx].value = {}
           }
-          break;
+          break
         case 2:
-          model.value[idx].value = "";
-          break;
+          model.value[idx].value = ''
+          break
       }
-      emit("oks", model.value);
+      emit('oks', model.value)
     }
 
     /**
      * 获取触发条件值
      */
     function changeTriggerConditions(data, idx) {
-      let { type } = data.where;
+      let { type } = data.where
       let _ = {
         type,
-      };
+      }
       switch (type) {
-        case "comparison":
+        case 'comparison':
           Object.assign(_, {
-            key: "",
-            comparison: "",
-            value: "",
-          });
-          break;
-        case "code1":
+            key: '',
+            comparison: '',
+            value: '',
+          })
+          break
+        case 'code1':
           Object.assign(_, {
-            fnJs: "return true",
-          });
-          break;
-        case "code2":
+            fnJs: 'return true',
+          })
+          break
+        case 'code2':
           Object.assign(_, {
-            fnJs: "return false",
-          });
-          break;
-        case "custom":
+            fnJs: 'return false',
+          })
+          break
+        case 'custom':
           Object.assign(_, {
-            fnJs: "",
-          });
-          break;
+            fnJs: '',
+          })
+          break
         default:
           Object.assign(_, {
             type: null,
-          });
-          break;
+          })
+          break
       }
-      model.value[idx].where = _;
+      model.value[idx].where = _
     }
 
     /**
@@ -403,44 +338,40 @@ export default defineComponent({
      */
     function onDelete(idx) {
       Modal.confirm({
-        title: "删除警告",
+        title: '删除警告',
         icon: createVNode(ExclamationCircleOutlined),
-        okText: "确定",
-        cancelText: "取消",
-        content: createVNode(
-          "div",
-          { style: "color:red;" },
-          "确定删除当前事件?"
-        ),
+        okText: '确定',
+        cancelText: '取消',
+        content: createVNode('div', { style: 'color:red;' }, '确定删除当前事件?'),
         onOk() {
-          model.value.splice(idx, 1);
-          activeKey.value.splice(idx, 1);
-          keysValue.value.splice(idx, 1);
-          emit("oks", model.value);
+          model.value.splice(idx, 1)
+          activeKey.value.splice(idx, 1)
+          keysValue.value.splice(idx, 1)
+          emit('oks', model.value)
         },
-      });
+      })
     }
 
     /**
      * 打开代码编辑器
      */
     function openEditContainer(i) {
-      index.value = i;
-      editContainerRef.value.visible = true;
+      index.value = i
+      editContainerRef.value.visible = true
       nextTick(() => {
-        editContainerRef.value.init(model.value[i].value, "JavaScript", "");
-      });
+        editContainerRef.value.init(model.value[i].value, 'JavaScript', '')
+      })
     }
 
     /**
      * 获取JavaScript编辑器文本信息
      */
     function onEditorEventFunc(data, i) {
-      index.value = i;
-      editContainerRef.value.visible = true;
+      index.value = i
+      editContainerRef.value.visible = true
       nextTick(() => {
-        editContainerRef.value.init(data.fnJs, "JavaScript", "where");
-      });
+        editContainerRef.value.init(data.fnJs, 'JavaScript', 'where')
+      })
     }
 
     /**
@@ -448,36 +379,36 @@ export default defineComponent({
      * @param {String} textValue
      */
     function getEditTextValue(textValue, type) {
-      if (type !== "where") {
-        model.value[index.value]["value"] = textValue;
+      if (type !== 'where') {
+        model.value[index.value]['value'] = textValue
       } else {
         Object.assign(model.value[index.value].where, {
           fnJs: textValue,
-        });
+        })
       }
     }
 
     function addKeyValueNode(data, idx) {
       keysValue.value[idx].list.push({
-        key: "",
-        value: "",
-      });
+        key: '',
+        value: '',
+      })
     }
 
     function getKV(param, i1, i2) {
-      let lists = keysValue.value[i1].list;
-      model.value[i1].value = {};
+      let lists = keysValue.value[i1].list
+      model.value[i1].value = {}
       for (let i = 0; i < lists.length; i++) {
-        model.value[i1].value[lists[i].key] = lists[i].value;
+        model.value[i1].value[lists[i].key] = lists[i].value
       }
     }
 
     // 更新条件值
     function onUpdateWhereParams(index, value) {
       if (/^\d+$/.test(value)) {
-        model.value[index].where.value = parseInt(value, 10);
+        model.value[index].where.value = parseInt(value, 10)
       } else {
-        model.value[index].where.value = value;
+        model.value[index].where.value = value
       }
     }
 
@@ -485,30 +416,30 @@ export default defineComponent({
      * 删除keysValue数组
      */
     function onDeleteKeyValue(i, pindex) {
-      keysValue.value[pindex].list.splice(i, 1);
-      let lists = [];
+      keysValue.value[pindex].list.splice(i, 1)
+      let lists = []
       keysValue.value[pindex].list.map((_, i) => {
-        lists.push(_.key);
-      });
-      let v = Object.keys(model.value[pindex].value);
-      v.map((_) => {
+        lists.push(_.key)
+      })
+      let v = Object.keys(model.value[pindex].value)
+      v.map(_ => {
         if (!lists.includes(_)) {
-          delete model.value[pindex].value[_];
+          delete model.value[pindex].value[_]
         }
-      });
-      emit("oks", model.value);
+      })
+      emit('oks', model.value)
     }
 
     watch(
       () => selections.pen,
-      (val) => {
-        model.value = [];
-        let events = val["events"];
+      val => {
+        model.value = []
+        let events = val['events']
         if (events) {
-          init(events ? events : []);
+          init(events ? events : [])
         }
-      }
-    );
+      },
+    )
 
     return {
       model,
@@ -529,9 +460,9 @@ export default defineComponent({
       onUpdateWhereParams,
       onDeleteKeyValue,
       onEditorEventFunc,
-    };
+    }
   },
-});
+})
 </script>
 
 <style lang="less" scoped>
