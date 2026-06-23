@@ -1,5 +1,5 @@
 <template>
-  <div class="tool-card" :class="`tool-${toolCall.status}`">
+  <div class="tool-card mb-1" :class="`tool-${toolCall.status}`">
     <div class="tool-header">
       <span class="tool-status-icon">
         <span v-if="toolCall.status === 'running'">⏳</span>
@@ -11,50 +11,124 @@
     </div>
     <div class="tool-body">
       <div class="tool-args">{{ summary }}</div>
-      <div v-if="toolCall.status === 'error' && toolCall.result" class="tool-error">
-        {{ toolCall.result?.error || toolCall.result?.message || '执行失败' }}
-      </div>
+      <template v-if="toolCall.status === 'success' && mutationSummary">
+        <div class="tool-mutation">{{ mutationSummary }}</div>
+      </template>
+      <template v-if="toolCall.status === 'error' && toolCall.result">
+        <div class="tool-error">
+          {{ toolCall.result?.error || toolCall.result?.message || '执行失败' }}
+        </div>
+      </template>
     </div>
+    <template v-if="showLocate">
+      <div class="tool-footer">
+        <a-button size="small" type="link" @click="onLocateClick">📍 定位</a-button>
+      </div>
+    </template>
   </div>
 </template>
 
 <script setup lang="ts">
 import { computed } from 'vue'
+import { getCanvasMutationSummary } from '@/utils/canvasBridge'
 import type { ToolCallRecord } from './AgentStreamHandler'
 
 const props = defineProps<{
   toolCall: ToolCallRecord
 }>()
 
+const emit = defineEmits<{
+  locatePens: [ids: string[]]
+}>()
+
+const isCanvasTool = computed(() => {
+  const t = props.toolCall.tool
+  return t === 'canvas' || t.startsWith('canvas_')
+})
+
 const displayName = computed(() => {
   const { tool, args } = props.toolCall
-  if ((tool === 'canvas' || tool.startsWith('canvas_')) && args?.action) {
+  if (isCanvasTool.value && args?.action) {
     const labels: Record<string, string> = {
       add_pen: '创建图形',
       add_line: '创建连线',
+      add_diagram: '创建图表',
       update_pen: '修改图形',
       delete_pen: '删除图形',
       get_state: '查询状态',
       clear: '清空画布',
       undo: '撤销',
       redo: '重做',
+      layout_auto_arrange: '自动排列',
+      layout_align: '对齐',
     }
     return `画布 / ${labels[args.action as string] || args.action}`
   }
   return tool
 })
 
+const mutationSummary = computed(() => {
+  const { tool, args, success, result } = props.toolCall
+  if (!isCanvasTool.value) return null
+  return getCanvasMutationSummary(tool, args, success ?? false, result)
+})
+
+/** Whether to show a "locate" button for this tool result */
+const showLocate = computed(() => {
+  if (props.toolCall.status !== 'success') return false
+  if (!isCanvasTool.value) return false
+  const action = props.toolCall.args?.action as string
+  // Only for tools that create or modify visible elements
+  return ['add_pen', 'canvas_add_pen', 'add_diagram', 'canvas_add_diagram', 'update_pen', 'canvas_update_pen'].includes(
+    action || props.toolCall.tool,
+  )
+})
+
+function onLocateClick() {
+  const args = props.toolCall.args
+  const result = props.toolCall.result as Record<string, unknown> | undefined
+  const action = (args?.action as string) || props.toolCall.tool
+  const ids: string[] = []
+
+  switch (action) {
+    case 'add_pen':
+    case 'canvas_add_pen': {
+      const penId = (result?.pen_id || result?.penId) as string
+      if (penId) ids.push(penId)
+      break
+    }
+    case 'update_pen':
+    case 'canvas_update_pen': {
+      const pid = (args?.pen_id as string) || ''
+      if (pid) ids.push(pid)
+      break
+    }
+    case 'add_diagram':
+    case 'canvas_add_diagram': {
+      const diag = (result?.data as Record<string, unknown>)?.diagram as Record<string, unknown> | undefined
+      const nodes = (diag?.nodes || []) as Record<string, unknown>[]
+      for (const n of nodes) {
+        const id = (n.pen_id || n.id) as string
+        if (id) ids.push(id)
+      }
+      break
+    }
+  }
+
+  if (ids.length) emit('locatePens', ids)
+}
+
 const summary = computed(() => {
   const { tool, args } = props.toolCall
   if (!args || Object.keys(args).length === 0) return '无参数'
 
-  if (tool === 'canvas' || tool.startsWith('canvas_')) {
-    return formatCanvas(args)
+  if (isCanvasTool.value) {
+    return formatCanvas(args, props.toolCall.result)
   }
   return formatGeneric(args)
 })
 
-function formatCanvas(args: Record<string, unknown>): string {
+function formatCanvas(args: Record<string, unknown>, result: unknown): string {
   const action = args.action as string
   switch (action) {
     case 'add_pen': {
@@ -81,6 +155,13 @@ function formatCanvas(args: Record<string, unknown>): string {
     case 'delete_pen': {
       const ids = (args.pen_ids as string[]) || (args.pen_id ? [args.pen_id as string] : [])
       return `删除 ${ids.length} 个图形`
+    }
+    case 'add_diagram': {
+      const r = result as Record<string, unknown> | undefined
+      const diag = (r?.data as Record<string, unknown>)?.diagram as Record<string, unknown> | undefined
+      const nCount = ((diag?.nodes as any[]) || []).length
+      const eCount = ((diag?.edges as any[]) || []).length
+      return `${nCount} 节点, ${eCount} 连线`
     }
     case 'clear':
       return args.confirm ? '已确认清空' : '未确认'
@@ -150,9 +231,22 @@ function formatGeneric(args: Record<string, unknown>): string {
   overflow-wrap: break-word;
 }
 
+.tool-mutation {
+  margin-top: 4px;
+  font-size: 12px;
+  color: #389e0d;
+  font-weight: 500;
+}
+
 .tool-error {
   margin-top: 4px;
   font-size: 12px;
   color: #ff4d4f;
+}
+
+.tool-footer {
+  margin-top: 6px;
+  border-top: 1px solid #e8e8e8;
+  padding-top: 4px;
 }
 </style>

@@ -65,6 +65,11 @@ export function agentChat(options: AgentChatOptions): AbortController {
   })
     .then(async response => {
       if (!response.ok) {
+        // Handle rate limit with retry hint
+        if (response.status === 429) {
+          const retryAfter = response.headers.get('Retry-After') || '60'
+          throw new Error(`请求过于频繁，请 ${retryAfter} 秒后重试`)
+        }
         const err = await response.text()
         throw new Error(`Agent API error: ${response.status} ${err}`)
       }

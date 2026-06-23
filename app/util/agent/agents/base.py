@@ -63,9 +63,20 @@ class AgentBase:
         # Mark caller identity so peer queries can prevent self-query
         tool_context["_caller_agent"] = self.name
 
+        import json as _json
+
         messages = [
             {"role": "system", "content": self.system_prompt},
         ]
+        # Inject canvas context for canvas_agent
+        canvas_ctx = tool_context.get("_canvas_context")
+        if canvas_ctx:
+            messages.append(
+                {
+                    "role": "system",
+                    "content": f"## 当前画布状态\n{_json.dumps(canvas_ctx, ensure_ascii=False, indent=2)}",
+                }
+            )
         # Inject pheromone context (shared discoveries from parent DAG nodes)
         pheromone = tool_context.get("_pheromone", "")
         if pheromone:

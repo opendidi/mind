@@ -23,6 +23,8 @@ export interface ChatMessage {
   id: string
   role: 'user' | 'assistant' | 'system'
   content: string
+  /** Selection/canvas context shown as a distinct tag above user bubbles */
+  context?: string
   thinking?: string
   toolCalls?: ToolCallRecord[]
   timestamp: number
@@ -40,6 +42,9 @@ export class AgentStreamHandler {
   private _onToolResult:
     | ((tool: string, args: Record<string, unknown>, success: boolean, result: unknown) => void)
     | null = null
+
+  /** Whether any canvas-mutating tool was called in the current turn */
+  canvasChanged = false
 
   state = reactive<StreamState>({
     connected: false,
@@ -63,6 +68,7 @@ export class AgentStreamHandler {
         this.notify()
       },
       onDone: () => {
+        this.canvasChanged = false
         this.notify()
       },
     })
@@ -100,14 +106,23 @@ export class AgentStreamHandler {
 
     for (const m of msgs) {
       switch (m.role) {
-        case 'user':
+        case 'user': {
+          let content = m.text || ''
+          let context: string | undefined
+          const ctxMatch = content.match(/^\[画布上下文\]\s*(.+?)(?:\n|$)/)
+          if (ctxMatch) {
+            context = ctxMatch[1]
+            content = content.slice(ctxMatch[0].length).trimStart()
+          }
           result.push({
             id: m.id,
             role: 'user',
-            content: m.text || '',
+            content,
+            context,
             timestamp: Date.now(),
           })
           break
+        }
 
         case 'agent':
           currentAssistant = {
@@ -170,6 +185,10 @@ export class AgentStreamHandler {
 
   onToolResult(fn: (tool: string, args: Record<string, unknown>, success: boolean, result: unknown) => void) {
     this._onToolResult = fn
+  }
+
+  markCanvasChanged() {
+    this.canvasChanged = true
   }
 
   send(userMessage: string, images?: string[]) {

@@ -489,6 +489,7 @@ class AgentSession:
             task_id=task_id,
             stream=stream,
             precomputed_plan=unified_result.get("plan"),
+            canvas_context=canvas_context,
         ):
             if event[0] == "llm_response":
                 choice = event[1]

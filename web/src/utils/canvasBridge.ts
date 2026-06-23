@@ -677,3 +677,78 @@ function _align(meta2d: any, args: Record<string, unknown>, success: boolean): b
   meta2d.render()
   return true
 }
+
+/** Build a human-readable summary of canvas mutations for Agent tool feedback. */
+export function getCanvasMutationSummary(
+  tool: string,
+  args: Record<string, unknown>,
+  success: boolean,
+  result: unknown,
+): string | null {
+  if (!success) return null
+  const action = (args.action as string) || tool
+  const r = result as Record<string, unknown> | undefined
+
+  switch (action) {
+    case 'add_pen':
+    case 'canvas_add_pen': {
+      const penId = r?.pen_id || r?.penId || ''
+      const penType = (args.type as string) || 'rectangle'
+      const text = (args.text as string) || ''
+      const label = text ? `"${text.slice(0, 40)}"` : penType
+      return `已添加 ${label} (${penId})`
+    }
+    case 'add_line':
+    case 'canvas_add_line': {
+      const text = (args.text as string) || ''
+      return text ? `已添加连线 "${text.slice(0, 30)}"` : `已添加连线`
+    }
+    case 'add_diagram':
+    case 'canvas_add_diagram': {
+      const diag = (r?.data as Record<string, unknown>)?.diagram as Record<string, unknown> | undefined
+      if (!diag) return '已添加图表'
+      const nodes = (diag.nodes || []) as any[]
+      const edges = (diag.edges || []) as any[]
+      return `已添加图表: ${nodes.length} 个节点, ${edges.length} 条连线`
+    }
+    case 'update_pen':
+    case 'canvas_update_pen': {
+      const pid = (args.pen_id as string) || ''
+      const props = args.props as Record<string, unknown> | undefined
+      const keys = props ? Object.keys(props).join(', ') : ''
+      return `已更新节点 ${pid} (${keys})`
+    }
+    case 'delete_pen':
+    case 'canvas_delete_pen': {
+      const ids = (args.pen_ids as string[]) || (args.pen_id ? [args.pen_id as string] : [])
+      return `已删除 ${ids.length} 个节点`
+    }
+    case 'clear':
+    case 'canvas_clear':
+      return '已清空画布'
+    case 'undo':
+    case 'canvas_undo':
+      return '已撤销'
+    case 'redo':
+    case 'canvas_redo':
+      return '已重做'
+    case 'layout_auto_arrange': {
+      const dir = (args.direction as string) || 'vertical'
+      return `已${dir === 'vertical' ? '垂直' : '水平'}排列节点`
+    }
+    case 'layout_align': {
+      const align = (args.align as string) || 'center'
+      const label: Record<string, string> = {
+        left: '左',
+        center: '中',
+        right: '右',
+        top: '上',
+        middle: '中',
+        bottom: '下',
+      }
+      return `已${label[align] || align}对齐节点`
+    }
+    default:
+      return null
+  }
+}

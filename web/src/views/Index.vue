@@ -8,37 +8,39 @@
 -->
 <template>
   <div class="app-page">
-    <Header @openAgentPanel="onOpenAgentPanel" />
-    <div class="designer">
-      <Graphics />
-      <a-dropdown :trigger="['contextmenu']" @visibleChange="handleMenuVisibleChange">
-        <Editor />
-        <template #overlay>
-          <a-menu class="canvas-context-menu" @click="handleMenuClick">
-            <template v-for="(vo, idx) in menuLists">
-              <template v-if="vo.visible">
-                <template v-if="vo.title == 'divider'">
-                  <a-menu-divider :key="idx" />
-                </template>
-                <template v-else>
-                  <a-menu-item :disabled="vo.disabled" :key="idx" :data="vo.data" :title="vo.title">
-                    <span>{{ vo.title }}</span>
-                    <span>{{ vo.keyCode }}</span>
-                  </a-menu-item>
+    <Header @openAgentPanel="onToggleAgentPanel" />
+    <div class="app-body">
+      <div class="designer">
+        <Graphics />
+        <a-dropdown :trigger="['contextmenu']" @visibleChange="handleMenuVisibleChange">
+          <Editor />
+          <template #overlay>
+            <a-menu class="canvas-context-menu" @click="handleMenuClick">
+              <template v-for="(vo, idx) in menuLists">
+                <template v-if="vo.visible">
+                  <template v-if="vo.title == 'divider'">
+                    <a-menu-divider :key="idx" />
+                  </template>
+                  <template v-else>
+                    <a-menu-item :disabled="vo.disabled" :key="idx" :data="vo.data" :title="vo.title">
+                      <span>{{ vo.title }}</span>
+                      <span>{{ vo.keyCode }}</span>
+                    </a-menu-item>
+                  </template>
                 </template>
               </template>
-            </template>
-          </a-menu>
+            </a-menu>
+          </template>
+        </a-dropdown>
+        <template v-if="activePen && multiPen">
+          <Appearance ref="appearanceRef" />
         </template>
-      </a-dropdown>
-      <template v-if="activePen && multiPen">
-        <Appearance ref="appearanceRef" />
-      </template>
-      <template v-else>
-        <Props :data="propsData" />
-      </template>
+        <template v-else>
+          <Props :data="propsData" />
+        </template>
+      </div>
+      <AgentPanel ref="agentPanelRef" />
     </div>
-    <AgentPanel ref="agentPanelRef" />
   </div>
 </template>
 
@@ -378,8 +380,12 @@ const handleMenuClick: MenuProps['onClick'] = (e: any) => {
   save()
 }
 
-const onOpenAgentPanel = () => {
-  agentPanelRef.value.open()
+const agentPanelCollapsed = ref(false)
+const onToggleAgentPanel = () => {
+  agentPanelCollapsed.value = !agentPanelCollapsed.value
+  if (agentPanelRef.value) {
+    agentPanelRef.value.collapsed = agentPanelCollapsed.value
+  }
 }
 
 /** Right-click "Ask AI" — opens AgentPanel with selected pen context */
@@ -394,7 +400,13 @@ function onAskAi() {
     const names = pens.value.map((p: any) => p.name || 'unknown').join(', ')
     context = `选中了 ${pens.value.length} 个节点: ${names}`
   }
-  agentPanelRef.value.open(context)
+  if (agentPanelRef.value) {
+    agentPanelRef.value.collapsed = false
+    agentPanelCollapsed.value = false
+    if (context && agentPanelRef.value.setContext) {
+      agentPanelRef.value.setContext(context)
+    }
+  }
 }
 
 // Listen for Agent-triggered canvas mutations (unified pipeline)
@@ -432,10 +444,20 @@ onUnmounted(() => {
   height: 100vh;
   background: #fff;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+
+  .app-body {
+    flex: 1;
+    display: flex;
+    height: calc(100vh - 50px);
+    overflow: hidden;
+  }
 
   .designer {
     display: grid;
-    height: calc(100vh - 50px);
+    flex: 1;
+    min-width: 0;
     grid-template-columns: 200px 1fr 301px;
   }
 

@@ -52,6 +52,7 @@ class AgentEngine:
         task_id: str = "",
         stream: bool = False,
         precomputed_plan: dict = None,
+        canvas_context: dict = None,
     ) -> Generator:
         """Unified V3 chat entry point with guardrails.
 
@@ -87,6 +88,8 @@ class AgentEngine:
                 full_tools.append(dispatch_schema)
 
             tool_ctx = {"user_id": self.user_id}
+            if canvas_context:
+                tool_ctx["_canvas_context"] = canvas_context
             if redis_client:
                 tool_ctx["_redis"] = redis_client
                 tool_ctx["_task_id"] = task_id

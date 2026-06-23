@@ -422,8 +422,17 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
 
       case 'tool_result': {
         const name = data.tool as string
-        const msgId = updateLastToolMessage(name, data.success, data.result)
-        const args = msgId ? (pendingToolArgs.get(msgId) ?? {}) : {}
+        // Save args before updateLastToolMessage deletes them from pendingToolArgs
+        let args: Record<string, unknown> = {}
+        for (let i = messages.value.length - 1; i >= 0; i--) {
+          const m = messages.value[i]
+          if (m.role === 'tool' && m.tool && m.tool.success === undefined && (!m.tool.name || m.tool.name === name)) {
+            const saved = pendingToolArgs.get(m.id)
+            if (saved) args = saved
+            break
+          }
+        }
+        updateLastToolMessage(name, data.success, data.result)
         currentTool.value = ''
         options.onToolResult?.(name, args, data.success, data.result)
         break

@@ -2,8 +2,14 @@
   <div class="msg-item" :class="`msg-${message.role}`">
     <!-- User message -->
     <div v-if="message.role === 'user'" class="msg-user">
-      <div class="msg-bubble user-bubble">
-        {{ message.content }}
+      <div class="msg-user-inner">
+        <div v-if="message.context" class="user-context-tag">
+          <span class="context-icon">🎯</span>
+          <span>{{ message.context }}</span>
+        </div>
+        <div class="msg-bubble user-bubble">
+          {{ message.content }}
+        </div>
       </div>
     </div>
 
@@ -16,7 +22,11 @@
       <div v-if="message.toolCalls?.length" class="tool-calls-block">
         <template v-for="item in groupedCalls" :key="Array.isArray(item) ? item[0].id : item.id">
           <AgentToolGroupCard v-if="Array.isArray(item) && item.length > 1" :tool-calls="item" />
-          <AgentToolCard v-else :tool-call="Array.isArray(item) ? item[0] : item" />
+          <AgentToolCard
+            v-else
+            :tool-call="Array.isArray(item) ? item[0] : item"
+            @locate-pens="ids => emit('locatePens', ids)"
+          />
         </template>
       </div>
 
@@ -76,6 +86,10 @@ import RouteCard from '@/components/shared/RouteCard.vue'
 
 const props = defineProps<{
   message: ChatMessage
+}>()
+
+const emit = defineEmits<{
+  locatePens: [ids: string[]]
 }>()
 
 const { speaking: ttsSpeaking, loading: ttsLoading, speakChatTTS, stop } = useSpeech()
@@ -208,6 +222,35 @@ function renderContent(text: string): string {
 .msg-user {
   display: flex;
   justify-content: flex-end;
+
+  .msg-user-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    max-width: 85%;
+  }
+
+  .user-context-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 10px;
+    margin-bottom: 4px;
+    border-radius: 10px;
+    background: #fef3c7;
+    border: 1px solid #fcd34d;
+    font-size: 12px;
+    color: #92400e;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+
+    .context-icon {
+      font-size: 13px;
+      flex-shrink: 0;
+    }
+  }
 
   .user-bubble {
     background: #1677ff;

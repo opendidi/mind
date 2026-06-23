@@ -21,6 +21,10 @@
       </div>
     </div>
 
+    <template v-if="canvasHint">
+      <div class="canvas-hint">{{ canvasHint }}</div>
+    </template>
+
     <div class="input-row">
       <textarea
         ref="textareaRef"
@@ -79,6 +83,7 @@ import { ref, watch, nextTick } from 'vue'
 const props = defineProps<{
   disabled: boolean
   initialValue?: string
+  canvasHint?: string
 }>()
 
 const emit = defineEmits<{
@@ -267,6 +272,19 @@ function handleEnter(e: KeyboardEvent) {
         opacity: 1;
       }
     }
+  }
+
+  .canvas-hint {
+    font-size: 11px;
+    padding: 2px 8px;
+    background: #eef2ff;
+    color: #4f46e5;
+    border-radius: 4px;
+    align-self: flex-start;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
   }
 
   .input-row {

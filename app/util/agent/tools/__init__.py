@@ -54,6 +54,9 @@ def run_tool_call(
         task = tool_args.get("task", "")
         if agent_name and task:
             ctx = {**tool_context, "_pheromone": pheromone_sniff}
+            # Pass canvas context to canvas_agent so it can see pen IDs
+            if agent_name == "canvas_agent" and tool_context.get("_canvas_context"):
+                ctx["_canvas_context"] = tool_context["_canvas_context"]
 
             # Wrap event_queue to translate sub-agent tuple events → SSE-compatible dicts
             relay_queue = event_queue

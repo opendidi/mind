@@ -1,14 +1,28 @@
 <template>
-  <a-drawer
-    v-model:visible="visible"
-    title="AI 助手"
-    placement="right"
-    :width="420"
-    :closable="true"
-    :body-style="{ padding: 0, height: 'calc(100% - 55px)' }"
-    @close="handleClose"
-  >
-    <div class="agent-panel">
+  <template v-if="collapsed">
+    <!-- Collapsed: FAB to reopen -->
+    <div class="agent-fab" @click="collapsed = false" title="打开 AI 助手 (Ctrl+Shift+A)">
+      <span class="agent-fab-icon">🤖</span>
+    </div>
+  </template>
+  <template v-else>
+    <div class="agent-panel" :style="{ width: panelWidth + 'px' }">
+      <!-- Header -->
+      <div class="agent-panel-header">
+        <span class="agent-panel-title">AI 助手</span>
+        <div class="agent-panel-header-actions">
+          <template v-if="canvasStatus">
+            <span class="canvas-status-tag">{{ canvasStatus }}</span>
+          </template>
+          <a-button size="small" type="text" @click="stream.clear()" title="清空对话">
+            <DeleteOutlined />
+          </a-button>
+          <a-button size="small" type="text" @click="collapsed = true" title="收起面板">
+            <RightOutlined />
+          </a-button>
+        </div>
+      </div>
+
       <!-- Error banner -->
       <template v-if="stream.state.error">
         <div class="agent-error">
@@ -17,10 +31,19 @@
         </div>
       </template>
 
+      <!-- Canvas context hint -->
+      <template v-if="selectionHint">
+        <div class="agent-selection-hint">
+          <span class="hint-icon">🎯</span>
+          <span>{{ selectionHint }}</span>
+          <a-button size="small" type="link" @click="clearSelectionHint">清除</a-button>
+        </div>
+      </template>
+
       <!-- Messages -->
       <div ref="msgListRef" class="agent-messages">
         <template v-for="msg in stream.state.messages" :key="msg.id">
-          <AgentMessageItem :message="msg" />
+          <AgentMessageItem :message="msg" @locate-pens="onLocatePens" />
         </template>
 
         <template v-if="stream.state.loading">
@@ -34,30 +57,166 @@
 
       <!-- Input -->
       <div class="agent-input-wrap">
-        <AgentInput :disabled="stream.state.loading" :initial-value="presetInput" @send="handleSend" />
+        <AgentInput
+          :disabled="stream.state.loading"
+          :initial-value="presetInput"
+          :canvas-hint="canvasHint"
+          @send="handleSend"
+        />
       </div>
+
+      <!-- Resize handle -->
+      <div class="agent-resize-handle" @mousedown="onResizeStart"></div>
     </div>
-  </a-drawer>
+  </template>
 </template>
 
 <script setup lang="ts">
-import { ref, watch, nextTick, onUnmounted } from 'vue'
+import { ref, watch, nextTick, onMounted, onUnmounted, computed } from 'vue'
+import { DeleteOutlined, RightOutlined } from '@ant-design/icons-vue'
 import { AgentStreamHandler } from './AgentStreamHandler'
 import AgentMessageItem from './AgentMessageItem.vue'
 import AgentInput from './AgentInput.vue'
 import { executeCanvasTool } from '@/utils/canvasBridge'
 import { useSelection } from '@/services/selections'
 
-const visible = ref(false)
+const collapsed = ref(false)
+const panelWidth = ref(420)
 const msgListRef = ref<HTMLElement>()
 const stream = new AgentStreamHandler()
 
-// Wire tool results to Meta2D canvas operations
-stream.onToolResult((tool, args, success, result) => {
-  executeCanvasTool(tool, args, success, result)
+// ── Canvas tracking ──────────────────────────────────────
+const canvasPenCount = ref(0)
+const selectionHint = ref('')
+
+const canvasHint = computed(() => {
+  if (selectionHint.value) return selectionHint.value
+  if (canvasPenCount.value > 0) return `画布有 ${canvasPenCount.value} 个节点`
+  return ''
 })
 
-// Auto-scroll to bottom on new messages or tool calls
+const canvasStatus = computed(() => {
+  if (stream.state.loading) return null
+  if (canvasPenCount.value > 0) return `${canvasPenCount.value} 个节点`
+  return null
+})
+
+function updateCanvasPenCount() {
+  try {
+    const meta2d = (window as any).meta2d
+    if (meta2d) {
+      const data = meta2d.data()
+      canvasPenCount.value = data?.pens?.length || 0
+    }
+  } catch {
+    /* not on editor page */
+  }
+}
+
+// Wire tool results to Meta2D canvas operations
+stream.onToolResult(async (tool, args, success, result) => {
+  console.log('[AgentPanel] onToolResult:', { tool, args, success })
+  try {
+    const handled = await executeCanvasTool(tool, args, success, result)
+    if (handled) {
+      console.log('[AgentPanel] canvas tool executed OK, updating state')
+      stream.markCanvasChanged()
+      updateCanvasPenCount()
+    } else {
+      console.warn('[AgentPanel] canvas tool failed:', { tool, args })
+    }
+  } catch (err) {
+    console.warn('[AgentPanel] executeCanvasTool error:', err)
+  }
+})
+
+// ── Selection injection ──────────────────────────────────
+let presetInput = ''
+const { selections } = useSelection()
+
+watch(
+  () => selections.pen,
+  pen => {
+    if (collapsed.value || !pen) {
+      selectionHint.value = ''
+      return
+    }
+    const name = pen.name || '节点'
+    const text = (pen.text || '').slice(0, 30)
+    const id = (pen as any).id || ''
+    selectionHint.value = `选中: ${name} "${text}" [ID: ${id}]`
+    presetInput = ''
+  },
+)
+
+watch(
+  () => (window as any).meta2d?.active,
+  activePens => {
+    if (!activePens || activePens.length < 2) return
+    const ids = activePens.map((p: any) => p.id || p.penId).filter(Boolean).join(', ')
+    selectionHint.value = `选中 ${activePens.length} 个节点 [IDs: ${ids}]`
+  },
+)
+
+function clearSelectionHint() {
+  selectionHint.value = ''
+  presetInput = ''
+}
+
+// ── Locate pens (from tool card click) ───────────────────
+function onLocatePens(penIds: string[]) {
+  const meta2d = (window as any).meta2d
+  if (!meta2d || !penIds.length) return
+  const pens = penIds.map(id => meta2d.findOne(id)).filter(Boolean)
+  if (pens.length) {
+    meta2d.fitView(pens, 24)
+  }
+}
+
+// ── Resize ───────────────────────────────────────────────
+let resizeDragging = false
+function onResizeStart(e: MouseEvent) {
+  resizeDragging = true
+  const startX = e.clientX
+  const startW = panelWidth.value
+  const onMove = (ev: MouseEvent) => {
+    const w = startW + (startX - ev.clientX)
+    panelWidth.value = Math.max(320, Math.min(600, w))
+  }
+  const onUp = () => {
+    resizeDragging = false
+    document.removeEventListener('mousemove', onMove)
+    document.removeEventListener('mouseup', onUp)
+    document.body.style.cursor = ''
+    document.body.style.userSelect = ''
+  }
+  document.addEventListener('mousemove', onMove)
+  document.addEventListener('mouseup', onUp)
+  document.body.style.cursor = 'ew-resize'
+  document.body.style.userSelect = 'none'
+}
+
+// ── Keyboard shortcut ────────────────────────────────────
+function onKeydown(e: KeyboardEvent) {
+  if (e.ctrlKey && e.shiftKey && e.key === 'A') {
+    e.preventDefault()
+    collapsed.value = !collapsed.value
+  }
+}
+
+// ── Lifecycle ────────────────────────────────────────────
+function handleSend(text: string, images?: string[]) {
+  // Attach selection context if present
+  let fullText = text
+  const selHint = selectionHint.value
+  if (selHint) {
+    fullText = `[画布上下文] ${selHint}\n${text}`
+    clearSelectionHint()
+  }
+  stream.send(fullText, images)
+}
+
+// Auto-scroll to bottom
 watch(
   () => [stream.state.messages.length, stream.state.toolCalls.length],
   () => {
@@ -69,42 +228,25 @@ watch(
   },
 )
 
-function handleSend(text: string, images?: string[]) {
-  stream.send(text, images)
-}
-
-function handleClose() {
-  stream.abort()
-}
+onMounted(() => {
+  document.addEventListener('keydown', onKeydown)
+  updateCanvasPenCount()
+  // Monitor canvas mutations from user editing
+  window.addEventListener('meta2d:agent-mutation', updateCanvasPenCount)
+})
 
 onUnmounted(() => {
   stream.abort()
+  document.removeEventListener('keydown', onKeydown)
+  window.removeEventListener('meta2d:agent-mutation', updateCanvasPenCount)
 })
 
-let presetInput = ''
-const { selections } = useSelection()
-
-// Auto-inject pen selection context when drawer is open
-watch(
-  () => selections.pen,
-  pen => {
-    if (!visible.value || !pen) return
-    presetInput = `请帮我分析这个节点: ID=${pen.id}, 类型=${pen.name || 'unknown'}, 文字="${(pen.text || '').slice(0, 100)}", 位置=(${pen.x}, ${pen.y}), 大小=${pen.width}x${pen.height}`
-  },
-)
-
-function open(context?: string) {
-  visible.value = true
-  if (context) {
-    presetInput = context
-  }
+function setContext(text: string) {
+  presetInput = text
+  selectionHint.value = ''
 }
 
-function close() {
-  visible.value = false
-}
-
-defineExpose({ open, close, visible })
+defineExpose({ collapsed, setContext })
 </script>
 
 <style scoped lang="less">
@@ -113,6 +255,57 @@ defineExpose({ open, close, visible })
   flex-direction: column;
   height: 100%;
   background: #fafafa;
+  border-left: 1px solid #e8e8e8;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.agent-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 12px;
+  height: 40px;
+  border-bottom: 1px solid #e8e8e8;
+  background: #fff;
+  flex-shrink: 0;
+
+  .agent-panel-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #1e293b;
+  }
+
+  .agent-panel-header-actions {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+  }
+}
+
+.canvas-status-tag {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 10px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 500;
+}
+
+.agent-selection-hint {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 14px;
+  background: #fef3c7;
+  border-bottom: 1px solid #fcd34d;
+  font-size: 12px;
+  color: #92400e;
+  flex-shrink: 0;
+
+  .hint-icon {
+    font-size: 14px;
+  }
 }
 
 .agent-error {
@@ -124,6 +317,7 @@ defineExpose({ open, close, visible })
   border-bottom: 1px solid #ffccc7;
   color: #ff4d4f;
   font-size: 13px;
+  flex-shrink: 0;
 }
 
 .agent-messages {
@@ -154,6 +348,7 @@ defineExpose({ open, close, visible })
     &:nth-child(2) {
       animation-delay: 0.2s;
     }
+
     &:nth-child(3) {
       animation-delay: 0.4s;
     }
@@ -175,5 +370,51 @@ defineExpose({ open, close, visible })
   border-top: 1px solid #e8e8e8;
   padding: 12px 16px;
   background: #fff;
+  flex-shrink: 0;
+}
+
+.agent-resize-handle {
+  position: absolute;
+  left: -3px;
+  top: 0;
+  bottom: 0;
+  width: 6px;
+  cursor: ew-resize;
+  z-index: 10;
+  transition: background 0.15s;
+
+  &:hover {
+    background: rgba(#4f46e5, 0.15);
+  }
+}
+
+// Collapsed FAB
+.agent-fab {
+  position: fixed;
+  right: 16px;
+  bottom: 80px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #818cf8, #c084fc);
+  box-shadow: 0 4px 16px rgba(129, 140, 248, 0.35);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 100;
+  transition:
+    transform 0.15s,
+    box-shadow 0.15s;
+
+  &:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(129, 140, 248, 0.45);
+  }
+
+  .agent-fab-icon {
+    font-size: 20px;
+    line-height: 1;
+  }
 }
 </style>

@@ -25,6 +25,12 @@ class CanvasAgent(AgentBase):
 - 删除图形
 - 对图形进行自动布局排列和对齐
 
+## [!] 如何找到目标图形的 ID（最重要）
+系统提示中包含「当前画布状态」JSON，里面有 pens 数组和 selectedIds 数组。
+- **修改/删除已有图形**：从 selectedIds 获取选中图形的 ID，再从 pens 数组中找到对应图形的详细信息。pen_id 参数必须填 selectedIds 中的实际 ID 值（如 "abc123"），不能填 "selected" 或 "选中" 之类的描述文字。
+- **创建新图形**：不需要 pen_id，只需提供 type、x、y、text 等参数。
+- 如果 selectedIds 为空，说明用户没有选中任何图形，需要提醒用户先在画布上选中目标图形。
+
 ## 核心工具
 - canvas: 统一画布操作工具，通过 action 参数切换：
   - action="add_pen": 创建图形 (需 type, x, y, text 等)
@@ -37,7 +43,7 @@ class CanvasAgent(AgentBase):
 - layout_align: 对齐图形
 
 ## 最佳实践
-1. **先看再动**：如需确认画布现状，用 canvas(action="get_state")
+1. **先看再动**：操作前检查画布状态中的 selectedIds，确认目标图形 ID
 2. **合理布局**：流程图通常垂直排列，架构图可水平排列
 3. **间距适当**：图形之间保持 40-60px 间距
 4. **命名清晰**：图形文字应简洁明了
