@@ -134,18 +134,46 @@ stream.onToolResult(async (tool, args, success, result) => {
 let presetInput = ''
 const { selections } = useSelection()
 
+/** Build a rich context description for a single selected pen. */
+function buildPenContext(pen: any): string {
+  const parts: string[] = [
+    `ID=${pen.id}`,
+    `类型=${pen.name || 'unknown'}`,
+  ]
+  if (pen.text) parts.push(`文字="${pen.text.slice(0, 100)}"`)
+  parts.push(
+    `位置=(${pen.x}, ${pen.y})`,
+    `大小=${pen.width}x${pen.height}`,
+    `背景色=${pen.background || '默认'}`,
+    `文字色=${pen.color || '默认'}`,
+  )
+  if (pen.fontFamily) parts.push(`字体=${pen.fontFamily} ${pen.fontSize || 14}px`)
+  if (pen.fontWeight && pen.fontWeight !== 'normal') parts.push(`粗细=${pen.fontWeight}`)
+  if (pen.textAlign && pen.textAlign !== 'center') parts.push(`对齐=${pen.textAlign}`)
+  if (pen.borderRadius) parts.push(`圆角=${pen.borderRadius}px`)
+  if (pen.borderColor) parts.push(`边框色=${pen.borderColor}`)
+  if (pen.lineDash?.length) parts.push(`虚线=${pen.lineDash.join(',')}`)
+  if (pen.shadowColor) parts.push('阴影=有')
+  if (pen.gradientColors) parts.push('渐变=有')
+  if (pen.icon) parts.push(`图标=${pen.icon}`)
+  if (pen.image) parts.push('图片=有')
+  if (pen.locked) parts.push('【已锁定】')
+  if (pen.tags?.length) parts.push(`标签=${pen.tags.join(', ')}`)
+  return parts.join('，')
+}
+
 watch(
   () => selections.pen,
   pen => {
     if (collapsed.value || !pen) {
       selectionHint.value = ''
+      presetInput = ''
       return
     }
     const name = pen.name || '节点'
     const text = (pen.text || '').slice(0, 30)
     const id = (pen as any).id || ''
     selectionHint.value = `选中: ${name} "${text}" [ID: ${id}]`
-    presetInput = ''
   },
 )
 
@@ -212,6 +240,10 @@ function handleSend(text: string, images?: string[]) {
   if (selHint) {
     fullText = `[画布上下文] ${selHint}\n${text}`
     clearSelectionHint()
+  }
+  // If presetInput was used (e.g. auto-generated pen context), clear it after send
+  if (presetInput && text.includes(presetInput.slice(0, 30))) {
+    presetInput = ''
   }
   stream.send(fullText, images)
 }

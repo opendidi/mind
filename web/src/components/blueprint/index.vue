@@ -116,7 +116,7 @@ function onDelete(item: any) {
     if (res.code === 200) {
       message.success('已删除')
       loadList()
-      window.dispatchEvent(new CustomEvent('blueprint:deleted'))
+      window.dispatchEvent(new CustomEvent('blueprint:deleted', { detail: { id: item.id } }))
     } else {
       message.error(res.message || '删除失败')
     }

@@ -1,37 +1,33 @@
 # -*- coding: UTF-8 -*-
-"""Agent tools for mind — canvas operations, blueprint management, layout, file search, code generation."""
+"""Agent tools for mind — canvas operations, layout, canvas properties, viewport control."""
 
-import json
-import logging
-import os
-import re
-import tempfile
 import uuid
-from html.parser import HTMLParser
 
-import requests
-
-from app.package.module.blueprint_mysql import BlueprintMysqlHandler
 from app.util.tool_registry import ToolRegistry
-from app.util.vision import VisionHandler
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Canvas Tools — unified single tool with action parameter
 # ══════════════════════════════════════════════════════════════════════════════
 
-_pen_counter = 0
+def _new_pen_id() -> str:
+    """Generate a unique pen ID using UUID4 (12 hex chars = 48 bits random)."""
+    return uuid.uuid4().hex[:12]
 
 
-def _next_pen_id():
-    global _pen_counter
-    _pen_counter += 1
-    return f"pen_{_pen_counter}"
+def _resolve_pen_ids(args: dict) -> list:
+    """Extract pen_ids from args, supporting single pen_id or list of pen_ids."""
+    pen_ids = args.get("pen_ids", [])
+    if not pen_ids and args.get("pen_id"):
+        pen_ids = [args.get("pen_id")]
+    return pen_ids
 
 
 @ToolRegistry.register(
     "canvas",
-    "画布操作。action: add_pen(创建图形), add_line(连线), add_diagram(批量生成图表), "
-    "update_pen(修改), delete_pen(删除), clear(清空), undo(撤销), redo(重做), get_state(查看状态)",
+    "画布操作。action: add_pen(创建图形), add_line(连线), add_diagram(批量图表), "
+    "update_pen(修改,支持批量的updates), delete_pen(删除), clear(清空), undo(撤销), redo(重做), "
+    "get_state(查看), lock(锁定), unlock(解锁), toggle_visibility(显隐), duplicate(复制), "
+    "move_pen(批量移动), group(组合), ungroup(取消组合)",
     {
         "type": "object",
         "properties": {
@@ -47,6 +43,13 @@ def _next_pen_id():
                     "undo",
                     "redo",
                     "get_state",
+                    "lock",
+                    "unlock",
+                    "toggle_visibility",
+                    "duplicate",
+                    "move_pen",
+                    "group",
+                    "ungroup",
                 ],
                 "description": "操作类型。add_diagram用于批量创建完整图表(流程图/架构图/思维导图)",
             },
@@ -65,6 +68,37 @@ def _next_pen_id():
             "fontSize": {"type": "number", "description": "[add_pen]文字大小(px)"},
             "borderWidth": {"type": "number", "description": "[add_pen]边框宽度(px)"},
             "borderColor": {"type": "string", "description": "[add_pen]边框颜色(#RRGGBB)"},
+            "borderRadius": {"type": "number", "description": "[add_pen]圆角半径(px)"},
+            "lineDash": {
+                "type": "array", "items": {"type": "number"},
+                "description": "[add_pen]虚线模式,如[5,3]表示5px实线+3px空白",
+            },
+            "globalAlpha": {"type": "number", "description": "[add_pen]透明度(0-1)"},
+            "shadowColor": {"type": "string", "description": "[add_pen]阴影颜色(#RRGGBB)"},
+            "shadowBlur": {"type": "number", "description": "[add_pen]阴影模糊半径(px)"},
+            "shadowOffsetX": {"type": "number", "description": "[add_pen]阴影X偏移(px)"},
+            "shadowOffsetY": {"type": "number", "description": "[add_pen]阴影Y偏移(px)"},
+            "gradientColors": {"type": "string", "description": "[add_pen]渐变填充色,JSON数组如'[\"#ff0000\",\"#0000ff\"]'"},
+            "fontFamily": {"type": "string", "description": "[add_pen]字体家族"},
+            "fontWeight": {"type": "string", "description": "[add_pen]字体粗细(normal/bold/100-900)"},
+            "fontStyle": {"type": "string", "description": "[add_pen]字体样式(normal/italic)"},
+            "textAlign": {"type": "string", "description": "[add_pen]文字水平对齐(left/center/right)"},
+            "textBaseline": {"type": "string", "description": "[add_pen]文字垂直对齐(top/middle/bottom)"},
+            "icon": {"type": "string", "description": "[add_pen]图标unicode或名称(如'\\ue600')"},
+            "iconFamily": {"type": "string", "description": "[add_pen]图标字体家族"},
+            "iconSize": {"type": "number", "description": "[add_pen]图标大小(px)"},
+            "iconColor": {"type": "string", "description": "[add_pen]图标颜色(#RRGGBB)"},
+            "image": {"type": "string", "description": "[add_pen]图片URL"},
+            "paddingTop": {"type": "number", "description": "[add_pen]上内边距(px)"},
+            "paddingBottom": {"type": "number", "description": "[add_pen]下内边距(px)"},
+            "paddingLeft": {"type": "number", "description": "[add_pen]左内边距(px)"},
+            "paddingRight": {"type": "number", "description": "[add_pen]右内边距(px)"},
+            "visible": {"type": "boolean", "description": "[add_pen]是否可见"},
+            "locked": {"type": "number", "description": "[add_pen]锁定状态:0=正常,1=禁编辑,2=禁移动"},
+            "tags": {
+                "type": "array", "items": {"type": "string"},
+                "description": "[add_pen]标签列表",
+            },
             # add_line params
             "from_pen": {"type": "string", "description": "[add_line/add_diagram.edges]起始节点ID"},
             "to_pen": {"type": "string", "description": "[add_line/add_diagram.edges]目标节点ID"},
@@ -108,6 +142,17 @@ def _next_pen_id():
             "props": {"type": "object", "description": '[update_pen]要修改的属性键值对,如{"x":100,"text":"新文字"}'},
             # clear param
             "confirm": {"type": "boolean", "description": "[clear]确认清空画布"},
+            # lock / unlock / visibility params
+            "visible": {"type": "boolean", "description": "[toggle_visibility]是否可见"},
+            # duplicate params
+            "offset_x": {"type": "number", "description": "[duplicate]复制后的X偏移(px)", "default": 30},
+            "offset_y": {"type": "number", "description": "[duplicate]复制后的Y偏移(px)", "default": 30},
+            # move_pen params
+            "moves": {
+                "type": "array",
+                "items": {"type": "object", "properties": {"pen_id": {"type": "string"}, "x": {"type": "number"}, "y": {"type": "number"}}},
+                "description": "[move_pen]批量移动列表,每项含pen_id/x/y",
+            },
         },
         "required": ["action"],
     },
@@ -115,7 +160,7 @@ def _next_pen_id():
 def _tool_canvas(args):
     action = args.get("action", "")
     if action == "add_pen":
-        pen_id = _next_pen_id()
+        pen_id = _new_pen_id()
         pen_type = args.get("type", "rectangle")
         text = args.get("text", "")
         x, y = args.get("x", 0), args.get("y", 0)
@@ -153,9 +198,7 @@ def _tool_canvas(args):
             "message": f"已更新图形 {pen_id}：{props_desc}",
         }
     elif action == "delete_pen":
-        pen_ids = args.get("pen_ids", [])
-        if not pen_ids and args.get("pen_id"):
-            pen_ids = [args.get("pen_id")]
+        pen_ids = _resolve_pen_ids(args)
         if not pen_ids:
             return {"success": False, "error": "pen_id 或 pen_ids 不能为空，请指定要删除的图形ID"}
         return {
@@ -182,7 +225,7 @@ def _tool_canvas(args):
         node_summaries = []
         for node in nodes:
             logical_id = node.get("id", "")
-            pen_id = _next_pen_id()
+            pen_id = _new_pen_id()
             node["pen_id"] = pen_id
             if logical_id:
                 id_map[logical_id] = pen_id
@@ -203,9 +246,77 @@ def _tool_canvas(args):
             "message": "查看系统提示中的 canvas_context 获取完整画布状态",
             "tool_hint": "use canvas_context in system prompt for current canvas state",
         }
+    elif action == "lock":
+        pen_ids = _resolve_pen_ids(args)
+        if not pen_ids:
+            return {"success": False, "error": "pen_id 或 pen_ids 不能为空"}
+        return {
+            "success": True,
+            "data": {"pen_ids": pen_ids, "locked": 2},
+            "message": f"已锁定 {len(pen_ids)} 个图形：{', '.join(pen_ids)}",
+        }
+    elif action == "unlock":
+        pen_ids = _resolve_pen_ids(args)
+        if not pen_ids:
+            return {"success": False, "error": "pen_id 或 pen_ids 不能为空"}
+        return {
+            "success": True,
+            "data": {"pen_ids": pen_ids, "locked": False},
+            "message": f"已解锁 {len(pen_ids)} 个图形：{', '.join(pen_ids)}",
+        }
+    elif action == "toggle_visibility":
+        pen_ids = _resolve_pen_ids(args)
+        if not pen_ids:
+            return {"success": False, "error": "pen_id 或 pen_ids 不能为空"}
+        visible = args.get("visible", False)
+        label = "显示" if visible else "隐藏"
+        return {
+            "success": True,
+            "data": {"pen_ids": pen_ids, "visible": visible},
+            "message": f"已{label} {len(pen_ids)} 个图形：{', '.join(pen_ids)}",
+        }
+    elif action == "duplicate":
+        pen_ids = _resolve_pen_ids(args)
+        if not pen_ids:
+            return {"success": False, "error": "pen_id 或 pen_ids 不能为空"}
+        ox = args.get("offset_x", 30)
+        oy = args.get("offset_y", 30)
+        new_ids = [_new_pen_id() for _ in pen_ids]
+        return {
+            "success": True,
+            "data": {"original_ids": pen_ids, "new_ids": new_ids, "offset_x": ox, "offset_y": oy},
+            "message": f"已复制 {len(pen_ids)} 个图形，新ID：{', '.join(new_ids)}，偏移({ox}, {oy})",
+        }
+    elif action == "move_pen":
+        moves = args.get("moves", [])
+        if not moves:
+            return {"success": False, "error": "moves 不能为空，格式: [{\"pen_id\": \"...\", \"x\": 100, \"y\": 200}]"}
+        return {
+            "success": True,
+            "data": {"moves": moves},
+            "message": f"已移动 {len(moves)} 个图形",
+        }
+    elif action == "group":
+        pen_ids = _resolve_pen_ids(args)
+        if len(pen_ids) < 2:
+            return {"success": False, "error": "至少需要两个图形才能组合"}
+        return {
+            "success": True,
+            "data": {"pen_ids": pen_ids},
+            "message": f"已组合 {len(pen_ids)} 个图形：{', '.join(pen_ids)}",
+        }
+    elif action == "ungroup":
+        pen_id = args.get("pen_id", "")
+        if not pen_id:
+            return {"success": False, "error": "pen_id 不能为空"}
+        return {
+            "success": True,
+            "data": {"pen_id": pen_id},
+            "message": f"已取消组合：{pen_id}",
+        }
     return {
         "success": False,
-        "error": f"未知的 action: {action}，支持: add_pen/add_line/add_diagram/update_pen/delete_pen/clear/undo/redo/get_state",
+        "error": f"未知的 action: {action}，支持: add_pen/add_line/add_diagram/update_pen/delete_pen/clear/undo/redo/get_state/lock/unlock/toggle_visibility/duplicate/move_pen/group/ungroup",
     }
 
 
@@ -257,3 +368,60 @@ def _tool_layout_auto_arrange(args):
 )
 def _tool_layout_align(args):
     return {"success": True, "data": args, "message": f"已按{args.get('align')}对齐"}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Canvas Props Tool
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@ToolRegistry.register(
+    "canvas_props",
+    "设置画布级属性：背景色/图片、网格、标尺等。",
+    {
+        "type": "object",
+        "properties": {
+            "background": {"type": "string", "description": "画布背景颜色(#RRGGBB)"},
+            "bkImage": {"type": "string", "description": "画布背景图片URL"},
+            "grid": {"type": "boolean", "description": "是否显示网格"},
+            "gridColor": {"type": "string", "description": "网格颜色(#RRGGBB)"},
+            "gridSize": {"type": "number", "description": "网格大小(px)"},
+            "rule": {"type": "boolean", "description": "是否显示标尺"},
+            "ruleColor": {"type": "string", "description": "标尺颜色(#RRGGBB)"},
+            "color": {"type": "string", "description": "画布默认文字颜色"},
+            "penBackground": {"type": "string", "description": "画布默认图形背景色"},
+        },
+        "required": [],
+    },
+)
+def _tool_canvas_props(args):
+    props_desc = ", ".join(f"{k}={v}" for k, v in args.items())
+    return {
+        "success": True,
+        "data": args,
+        "message": f"画布属性已更新：{props_desc}",
+    }
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Fit View Tool
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@ToolRegistry.register(
+    "fit_view",
+    "自适应视口——将所有图形缩放到适合视窗的大小。",
+    {
+        "type": "object",
+        "properties": {
+            "fit": {"type": "boolean", "description": "是否自适应(true=fitView, false=还原100%)", "default": True},
+            "padding": {"type": "number", "description": "内边距(px)", "default": 24},
+        },
+        "required": [],
+    },
+)
+def _tool_fit_view(args):
+    fit = args.get("fit", True)
+    padding = args.get("padding", 24)
+    label = "自适应视口" if fit else "还原100%"
+    return {"success": True, "data": {"fit": fit, "padding": padding}, "message": f"已{label}，内边距{padding}px"}

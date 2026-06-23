@@ -46,7 +46,7 @@
 
 <script lang="ts" setup>
 import { ref, nextTick, onMounted, onUnmounted } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import type { MenuProps } from 'ant-design-vue'
 import Header from '@/components/Meta2D/Header/index.vue'
 import Graphics from '@/components/Meta2D/Graphics/index.vue'
@@ -59,9 +59,10 @@ import { LOCK_STATE_DATA as lockState, PEN_TYPE as PenType } from '@/utils/index
 import GET_IMAGE_PATH from '@/utils/graphicGroups.ts'
 import { useSelection } from '@/services/selections'
 import { useCommonStore, useCommonStoreWithOut } from '@/store/modules/common'
-import { apiBlueprintFind } from '@/api/blueprint'
+import { apiBlueprintFind, apiBlueprintModify } from '@/api/blueprint'
 
 const route = useRoute()
+const router = useRouter()
 
 const { selections } = useSelection()
 
@@ -80,11 +81,10 @@ const pens = ref([])
 let timer: any
 
 const propsData = ref({})
+let backendTimer: ReturnType<typeof setTimeout> | undefined
 
 function save() {
-  if (timer) {
-    clearTimeout(timer)
-  }
+  if (timer) clearTimeout(timer)
   timer = setTimeout(() => {
     const data: any = meta2d.data()
     useCommonStoreWithOut().setTopology(meta2d)
@@ -93,6 +93,19 @@ function save() {
     localStorage.setItem('meta2d', JSON.stringify(data))
     timer = undefined
     commonStore.setIsSave('0')
+
+    // Auto-sync pens to backend if a blueprint is loaded
+    const bpId = route.query.id as string | undefined
+    if (bpId && data.pens) {
+      if (backendTimer) clearTimeout(backendTimer)
+      backendTimer = setTimeout(() => {
+        const pensJson = JSON.stringify(data.pens)
+        apiBlueprintModify({ id: bpId, pens: pensJson }).catch(() => {
+          /* silent — user can always manually save */
+        })
+        backendTimer = undefined
+      }, 5000)
+    }
   }, 500)
 }
 
@@ -414,9 +427,31 @@ function onAgentMutation() {
   useCommonStoreWithOut().setIsSave('0')
 }
 
+/** Handle blueprint deletion — if the deleted blueprint is the currently open one, reset the editor. */
+function onBlueprintDeleted(e: CustomEvent<{ id: string }>) {
+  const deletedId = e.detail?.id
+  if (!deletedId || deletedId !== route.query.id) return
+
+  // Clear canvas
+  const data = meta2d.data()
+  if (data?.pens?.length > 0) {
+    meta2d.delete(data.pens)
+  }
+  meta2d.render()
+
+  // Remove query param without full page reload
+  router.replace({ path: '/', query: {} })
+
+  // Clear localStorage so cross-tab sync doesn't restore deleted data
+  localStorage.removeItem('meta2d')
+
+  message.warning('当前图纸已被删除，已清空画布')
+}
+
 onMounted(() => {
   onInit()
   window.addEventListener('meta2d:agent-mutation', onAgentMutation)
+  window.addEventListener('blueprint:deleted', onBlueprintDeleted as EventListener)
 })
 
 onUnmounted(() => {
@@ -436,6 +471,7 @@ onUnmounted(() => {
     meta2d.off(event)
   })
   window.removeEventListener('meta2d:agent-mutation', onAgentMutation)
+  window.removeEventListener('blueprint:deleted', onBlueprintDeleted as EventListener)
 })
 </script>
 

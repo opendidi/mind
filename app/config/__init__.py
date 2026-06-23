@@ -24,6 +24,7 @@ db_config = {
     "passwd": os.environ.get("DB_PASSWORD", ""),
     "port": int(os.environ.get("DB_PORT", 3306)),
     "db": os.environ.get("DB_NAME", "mind"),
+    "charset": "utf8mb4",
     "cursorclass": pymysql.cursors.DictCursor,
 }
 
