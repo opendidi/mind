@@ -96,9 +96,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
-import { CloseOutlined, SendOutlined, PaperClipOutlined, FileTextOutlined } from '@ant-design/icons-vue'
+import { ref, computed, nextTick } from 'vue'
+import { CloseOutlined, SendOutlined, PaperClipOutlined, FileTextOutlined, SmileOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
+import data from '@emoji-mart/data'
+import Picker from 'emoji-mart-vue-fast'
 import type { QuoteInfo, ChatFile } from '@/composables/useAgentChat'
 import { useAttachments } from '@/composables/useAttachments'
 import { apiChatUploadFile } from '@/api/chat'
@@ -134,6 +136,9 @@ interface DocAttach {
   failed: boolean
 }
 const docAttachments = ref<DocAttach[]>([])
+
+// Emoji picker
+const showEmoji = ref(false)
 
 async function onDocFileChange(e: Event) {
   const input = e.target as HTMLInputElement
@@ -185,6 +190,23 @@ function onTextareaInput() {
   if (!el) return
   el.style.height = 'auto'
   el.style.height = Math.min(el.scrollHeight, 160) + 'px'
+}
+
+function onEmojiSelect(emoji: { native: string }) {
+  const el = textareaRef.value
+  if (!el) return
+  const start = el.selectionStart
+  const end = el.selectionEnd
+  const before = inputText.value.slice(0, start)
+  const after = inputText.value.slice(end)
+  inputText.value = before + emoji.native + after
+  showEmoji.value = false
+  nextTick(() => {
+    el.focus()
+    const pos = start + emoji.native.length
+    el.selectionStart = pos
+    el.selectionEnd = pos
+  })
 }
 
 const hasReadyImages = computed(() => attachments.value.some(a => !a.uploading && !a.failed && a.url))
