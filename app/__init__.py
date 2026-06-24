@@ -138,4 +138,26 @@ def create_app():
         return None
 
     register_blueprints(app)
+
+    # ── SPA fallback for HTML5 history mode ──────────────────────────────
+    # In production, Flask serves the built frontend. All non-API routes
+    # return index.html so Vue Router can handle client-side routing.
+    @app.route('/', defaults={'path': ''})
+    @app.route('/<path:path>')
+    def serve_spa(path):
+        # API routes are handled by blueprints — never intercept them
+        if path.startswith('v1/'):
+            from flask import abort
+            abort(404)
+        import os as _os
+        from flask import send_from_directory
+        static_dir = _os.path.join(app.root_path, 'static')
+        file_path = _os.path.join(static_dir, path)
+        if path and _os.path.isfile(file_path):
+            return send_from_directory(static_dir, path)
+        index_path = _os.path.join(static_dir, 'index.html')
+        if _os.path.isfile(index_path):
+            return send_from_directory(static_dir, 'index.html')
+        return {'code': 404, 'message': 'Not found'}, 404
+
     return app

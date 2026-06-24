@@ -112,21 +112,31 @@ import hashlib
 
 MAX_TOOL_RESULT_CHARS = 800
 
+# Fields that should never be truncated (error info, IDs, etc.)
+_PRESERVE_KEYS = frozenset({"error", "pen_id", "id", "ids", "message", "cause", "suggestion", "pen_ids", "node_ids"})
+
 
 def truncate_tool_result(result: dict, max_chars: int = MAX_TOOL_RESULT_CHARS) -> dict:
-    """Truncate a tool result dict to prevent context bloat."""
+    """Truncate a tool result dict to prevent context bloat.
+
+    Error fields and IDs are never truncated (Manus-inspired: preserve
+    failure traces so the model can learn from them).
+    """
     truncated = {}
     for k, v in result.items():
+        if k in _PRESERVE_KEYS:
+            truncated[k] = v
+            continue
+
         if isinstance(v, str) and len(v) > max_chars:
             truncated[k] = v[:max_chars] + f"…(截断/{len(v)}字符)"
-        elif isinstance(v, list) and len(v) > 5:
-            truncated[k] = v[:3] + [f"…(共{len(v)}项/已截断)"]
+        elif isinstance(v, list) and len(v) > 8:
+            truncated[k] = v[:5] + [f"…(共{len(v)}项/已截断)"]
         elif isinstance(v, dict):
             s = _json.dumps(v, ensure_ascii=False, default=lambda o: f"<{type(o).__name__}>")
             if len(s) > max_chars:
-                truncated[k] = {"_truncated": True, "preview": s[:max_chars]}
+                truncated[k] = {"_truncated": True, "preview": s[:max_chars], "total_chars": len(s)}
             else:
-                # Round-trip through JSON to strip non-serializable values (e.g. bound methods)
                 truncated[k] = _json.loads(s)
         else:
             truncated[k] = v

@@ -57,9 +57,8 @@ export default defineComponent({
     const { toClipboard } = useClipboard()
 
     const date = Date.now()
-    const args = [`id=${route.query.id || 1}`, `r=${date + ''}`]
     const model = ref({
-      url: `${window.location.href}preview?${args.join('&')}`,
+      url: `${window.location.origin}/preview/${route.params.id || 1}?r=${date}`,
     })
 
     async function onCopy() {

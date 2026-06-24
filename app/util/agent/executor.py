@@ -142,6 +142,43 @@ class BaseExecutor:
 
     # ── Tool Execution ───────────────────────────────────────────────────
 
+    def _overflow_store(self, full_text: str, label: str = "") -> str | None:
+        """Store large tool result in Redis to prevent context bloat.
+
+        Manus-inspired: file system as extended context.
+        Returns a reference key that downstream tools can use to retrieve the data.
+        """
+        redis_client = self.tool_context.get("_redis")
+        if not redis_client:
+            return None
+        try:
+            import hashlib
+            import random
+
+            suffix = hashlib.md5(full_text[:200].encode()).hexdigest()[:8]
+            key = f"overflow:{self.tool_context.get('_task_id', 'unknown')}:{suffix}:{random.randint(0, 9999)}"
+            redis_client.setex(key, 1800, full_text)  # 30 min TTL
+            label_str = f" ({label})" if label else ""
+            return f"[数据已存档: {key}, 大小={len(full_text)}字符{label_str}。如需详细内容请告知系统。]"
+        except Exception:
+            return None
+
+    def _overflow_truncated_result(self, original: dict, truncated: dict) -> dict:
+        """Post-process truncation: store full values that were truncated, replace with refs."""
+        result = dict(truncated)
+        overflow_keys = []
+        for k, v in result.items():
+            if isinstance(v, str) and "…(截断/" in v:
+                full = original.get(k)
+                if full and isinstance(full, str):
+                    ref = self._overflow_store(full, k)
+                    if ref:
+                        result[k] = ref
+                        overflow_keys.append(k)
+        if overflow_keys:
+            result["_overflow_keys"] = overflow_keys
+        return result
+
     def _run_simple_tool(self, tc_name: str, tool_args: dict, tc_id: str) -> dict:
         if self.tracer:
             tool_sid = self.tracer.start_span(f"tool:{tc_name}", input=tool_args)
@@ -174,6 +211,7 @@ class BaseExecutor:
         self._tool_call_count += 1
 
         truncated = _truncate_tool_result(result)
+        truncated = self._overflow_truncated_result(result, truncated)
         self.messages.append(
             {"role": "tool", "tool_call_id": tc_id, "content": json.dumps(truncated, ensure_ascii=False)}
         )
@@ -229,6 +267,7 @@ class BaseExecutor:
             event_queue.put(("tool_result", tc_name, result.get("success", False), result, node_id))
 
         truncated = _truncate_tool_result(result)
+        truncated = self._overflow_truncated_result(result, truncated)
         messages.append({"role": "tool", "tool_call_id": tc_id, "content": json.dumps(truncated, ensure_ascii=False)})
 
         if self.shared_context is not None:
@@ -276,7 +315,7 @@ class BaseExecutor:
                     {
                         "role": "user",
                         "content": (
-                            "web_search 需要 keyword 参数。请从用户的问题中提取搜索关键词，重新调用 web_search。"
+                            "[!] web_search 需要 keyword 参数。请从用户的问题中提取搜索关键词，重新调用。"
                             '例如用户问"有什么新闻"，keyword 应填 "新闻" 或 "今日新闻"。不要传空参数。'
                         ),
                     }
@@ -286,16 +325,21 @@ class BaseExecutor:
                     {
                         "role": "user",
                         "content": (
-                            "搜索工具暂时不可用。请直接用你自身的知识回答用户的问题，不需要再尝试搜索。直接给出文字回复即可。"
+                            "[!] 搜索工具暂时不可用。请直接用你自身的知识回答用户的问题，不需要再尝试搜索。直接给出文字回复即可。"
                         ),
                     }
                 )
         else:
+            # 错误保留原则（Manus-inspired）：保留失败详情在上下文中，
+            # 让模型观察错误模式自我修正，而非仅靠外部 reflexion 分析。
+            tc_names = ", ".join(sorted(failed_names))
             self.messages.append(
                 {
                     "role": "user",
                     "content": (
-                        f"上一步工具执行失败了。请分析错误原因，尝试用不同的参数或方法重试。（第 {retries}/{MAX_REFLECT_RETRIES} 次重试）"
+                        f"[!] 工具 {tc_names} 执行失败（第 {retries}/{MAX_REFLECT_RETRIES} 次重试）\n"
+                        f"请分析错误原因，尝试用不同的参数或方法重试。不要重复相同的失败调用。\n"
+                        f"如果多次重试仍失败，请告知用户具体原因并建议替代方案。"
                     ),
                 }
             )

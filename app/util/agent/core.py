@@ -147,10 +147,28 @@ mode 可选值：driving(驾车) / walking(步行) / riding(骑行) / transit(�
 """
 
 # ── Compaction Prompt ────────────────────────────────────────────────────
+# Manus-inspired: structured schema replaces free-form summarization.
+# Preserves recoverable information (file names, node IDs, decisions) so
+# the agent can re-derive context rather than losing it permanently.
 
-COMPACT_PROMPT = """将以下对话历史压缩为关键要点摘要（中文，不超过 500 字）。
-保留：用户做了什么操作、工具调用结果、重要数据和当前状态。
-丢弃：闲聊、重复内容、纯确认性回复。
+COMPACT_PROMPT = """将以下对话历史压缩为结构化 JSON 摘要。
+
+输出格式（严格 JSON，不要包含 markdown 代码块标记）:
+{
+  "summary": "一段话总结（中文，不超过 300 字）",
+  "key_decisions": ["决定1", "决定2"],
+  "entities_modified": ["被修改的文件/节点/蓝图 ID"],
+  "current_state": "当前状态描述（一句话）",
+  "user_goal": "用户的目标是什么",
+  "errors_encountered": ["错误1", "错误2"]
+}
+
+规则:
+- summary: 只保留操作性内容，丢弃闲聊和纯确认
+- key_decisions: 用户或助手做出的重要选择
+- entities_modified: 被创建/修改/删除的文件名、节点ID、蓝图名等（不超过 10 个）
+- errors_encountered: 如果遇到失败，保留错误摘要（以便后续避免重复错误）；无错误则填 []
+- 仅输出 JSON，不要包含任何其他文字
 
 对话历史:
 """
@@ -172,6 +190,7 @@ class AgentSession:
         self.history: list = []
         self.created_at = time.time()
         self._compact_summary: str = ""
+        self._recent_errors: list = []
 
     def _compact_history(self, llm_client, model: str = AGENT_DEFAULT_MODEL):
         """LLM-driven context compaction."""
@@ -216,37 +235,74 @@ class AgentSession:
             from app.util.agent.cache import llm_cache_get, llm_cache_set
 
             cached = llm_cache_get("compact_history", cache_inputs)
-            if cached:
-                summary = cached
-            else:
+            raw_json = cached
+            if not raw_json:
                 resp = llm_client.chat.completions.create(
                     model=model,
                     messages=[{"role": "user", "content": COMPACT_PROMPT + compact_text[:3000]}],
                     temperature=0.1,
-                    max_tokens=400,
+                    max_tokens=600,
                     timeout=15,
                 )
-                summary = resp.choices[0].message.content or ""
-                if summary.strip():
-                    llm_cache_set("compact_history", cache_inputs, summary.strip())
-            if summary.strip():
-                prev = self._compact_summary
-                if prev:
-                    merged = f"{prev}\n---\n{summary.strip()}"
+                raw_json = resp.choices[0].message.content or ""
+                if raw_json.strip():
+                    llm_cache_set("compact_history", cache_inputs, raw_json.strip())
+
+            if not raw_json.strip():
+                return
+
+            # Parse structured JSON; fall back to plain text on parse failure
+            structured = {"summary": raw_json.strip()}
+            try:
+                from app.util.agent.helpers import extract_json as _extract_json
+                json_text = _extract_json(raw_json)
+                if json_text:
+                    structured = json.loads(json_text)
+            except Exception:
+                pass
+
+            summary_text = structured.get("summary", "") or raw_json.strip()
+            errors = structured.get("errors_encountered", []) or []
+            entities = structured.get("entities_modified", []) or []
+            decisions = structured.get("key_decisions", []) or []
+            state = structured.get("current_state", "")
+
+            # Build enriched summary
+            parts = [summary_text]
+            if errors:
+                parts.append(f"曾遇到错误: {', '.join(errors[:5])}")
+            if entities:
+                parts.append(f"涉及: {', '.join(entities[:10])}")
+            if state:
+                parts.append(f"状态: {state}")
+
+            merged_text = " | ".join(parts)
+
+            prev = self._compact_summary
+            if prev:
+                # Merge with previous, preserving recent errors
+                merged = f"{prev}\n---\n{merged_text}"
+                if len(merged) > 2000:
+                    merged = f"...(较早已省略)\n{merged_text}"
                     if len(merged) > 2000:
-                        merged = f"...(较早对话已省略)\n{summary.strip()}"
-                        if len(merged) > 2000:
-                            merged = merged[-2000:]
-                    self._compact_summary = merged
-                else:
-                    self._compact_summary = summary.strip()
-                self.history = recent_msgs
-                logging.info(
-                    "Context compacted: %d msgs → summary (%d chars), kept %d recent",
-                    len(old_msgs),
-                    len(self._compact_summary),
-                    len(recent_msgs),
-                )
+                        merged = merged[-2000:]
+                self._compact_summary = merged
+            else:
+                self._compact_summary = merged_text
+
+            # Store recent errors for plan feedback
+            if errors and hasattr(self, '_recent_errors'):
+                self._recent_errors = (self._recent_errors or []) + errors[-5:]
+
+            self.history = recent_msgs
+            logging.info(
+                "Context compacted: %d msgs → structured summary (%d chars, %d errors, %d entities), kept %d recent",
+                len(old_msgs),
+                len(self._compact_summary),
+                len(errors),
+                len(entities),
+                len(recent_msgs),
+            )
         except Exception:
             logging.warning("Compaction LLM call failed, falling back to truncation", exc_info=True)
             self.history = recent_msgs

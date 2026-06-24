@@ -305,7 +305,7 @@ function loadBlueprints() {
 }
 
 function onOpenBlueprint(item: { id: string }) {
-  router.push({ path: '/', query: { id: item.id } })
+  router.push({ path: '/' + item.id })
 }
 
 function onDeleteBlueprint(item: { id: string }) {

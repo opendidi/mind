@@ -396,10 +396,13 @@ function onInit(dataValue: any) {
   })
 
   Object.assign(options, meta2d.getOptions())
+  // Meta2D stores grid/rule as strings '0'/'1', switch expects boolean
+  options.grid = options.grid === '1' || options.grid === true
+  options.rule = options.rule === '1' || options.rule === true
 }
 
 onMounted(() => {
-  onInit(meta2d.data())
+  if (window.meta2d) onInit(window.meta2d.data())
   window.addEventListener('meta2d:dataLoaded', onMeta2dDataLoaded)
 })
 
@@ -414,7 +417,7 @@ function onMeta2dDataLoaded() {
 // 新建图纸时同步清空表单（路由 id 被清除）
 const route = useRoute()
 watch(
-  () => route.query.id,
+  () => route.params.id,
   val => {
     if (!val && window.meta2d) onInit(window.meta2d.data())
   },

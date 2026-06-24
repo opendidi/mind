@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, watch } from 'vue'
 import { useRoute } from 'vue-router'
 import { provideCanvas } from '@/composables/useCanvas'
 import { message } from 'ant-design-vue'
@@ -25,39 +25,52 @@ import { sequencePens, sequencePensbyCtx } from '@meta2d/sequence-diagram'
 import { formPens } from '@meta2d/form-diagram'
 import { ftaPens, ftaPensbyCtx, ftaAnchors } from '@meta2d/fta-diagram'
 import { Meta2d, register, registerAnchors, registerCanvasDraw } from '@meta2d/core'
-import { CollapseChildPlugin } from 'mind-plugins-collapse'
+import type { Pen } from '@meta2d/core'
 import { useCommonStoreWithOut } from '@/store/modules/common'
 import { removeOriginalData } from '@/utils/meta-storage'
 import '@/assets/js/assets.le5lecdn.com_2d_canvas2svg.js'
 import '@/assets/js/arrows.js'
 import '@/assets/js/rg.js'
 import { MetaPlugin } from '@/utils/plugin'
-import { mindBoxPlugin } from '@meta2d/plugin-mind-core'
 import { useSelection } from '@/services/selections'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
 
 const { select } = useSelection()
+const commonStore = useCommonStoreWithOut()
 
 let onStorageChange: ((e: StorageEvent) => void) | null = null
+let resizeObserver: ResizeObserver | null = null
+let meta2d: Meta2d | null = null
 
 const route = useRoute()
 
 function loadBlueprint(id: string) {
-  const meta2d = (window as any).meta2d
   if (!meta2d) return
   apiBlueprintFind({ id })
     .then((res: any) => {
       if (res?.data) {
         const bp = res.data
-        const canvasData: any = { name: bp.name || '', pens: bp.pens || [], lines: [] }
-        if (bp.background) canvasData.background = bp.background
-        if (bp.grid !== undefined) canvasData.grid = bp.grid
-        if (bp.gridColor) canvasData.gridColor = bp.gridColor
-        if (bp.gridSize) canvasData.gridSize = bp.gridSize
-        if (bp.rule !== undefined) canvasData.rule = bp.rule
-        if (bp.ruleColor) canvasData.ruleColor = bp.ruleColor
-        if (!canvasData.locked) canvasData.locked = 0
-        meta2d.open(canvasData)
+        meta2d.open({
+          pens: bp.pens || [],
+          name: bp.name || '',
+          color: bp.color || '',
+          penBackground: bp.penBackground || '',
+          background: bp.background || '',
+          bkImage: bp.bkImage || '',
+          grid: bp.grid === '1' || bp.grid === true || undefined,
+          gridColor: bp.gridColor || '',
+          gridSize: bp.gridSize || '',
+          gridRotate: bp.gridRotate || '',
+          rule: bp.rule === '1' || bp.rule === true || undefined,
+          ruleColor: bp.ruleColor || '',
+          initJs: bp.initJs || '',
+          https: bp.https || [],
+          thumbnail: bp.thumbnail || '',
+          locked: 0,
+        })
+        meta2d.store.data.fromArrow = ''
+        meta2d.store.data.toArrow = 'triangleSolid'
+        meta2d.fitView(true, 24)
         window.dispatchEvent(new CustomEvent('meta2d:dataLoaded'))
       } else {
         console.warn('[Editor] loadBlueprint: empty data for id=' + id)
@@ -79,7 +92,7 @@ onMounted(() => {
   } else {
     meta2dOptions['rule'] = true
   }
-  const meta2d = new Meta2d('meta2d', meta2dOptions)
+  meta2d = new Meta2d('meta2d', meta2dOptions)
   provideCanvas(meta2d)
   window.dispatchEvent(new CustomEvent('meta2d:ready'))
 
@@ -129,6 +142,15 @@ onMounted(() => {
   }
   window.addEventListener('storage', onStorageChange)
 
+  // Auto-resize canvas when container size changes (e.g. chat panel toggle)
+  const container = document.getElementById('meta2d')
+  if (container) {
+    resizeObserver = new ResizeObserver(() => {
+      if (meta2d?.canvas) meta2d.resize()
+    })
+    resizeObserver.observe(container)
+  }
+
   meta2d.on('active', active)
   meta2d.on('inactive', inactive)
 
@@ -140,7 +162,7 @@ onMounted(() => {
         let dataList = typeof raw === 'string' ? JSON.parse(raw) : raw
         let hasUpdate = false
         dataList.forEach((item: any) => {
-          if (item['dot'] == 0) {
+          if (item['dot'] === 0) {
             item['id'] = `a${item['dot']}`
           } else {
             item['id'] = item['dot']
@@ -151,7 +173,7 @@ onMounted(() => {
           } else {
             item['text'] = item['value']
           }
-          if (item['id'] == 6) {
+          if (item['id'] === 6) {
             item['progress'] = item['value'] / 10
           }
           meta2d.setValue({ ...item }, { render: false })
@@ -162,9 +184,9 @@ onMounted(() => {
           // Sync to localStorage so data persists across refresh
           localStorage.setItem('meta2d', JSON.stringify(meta2d.data()))
           // Store variable data for binding UI (updates store + localStorage)
-          useCommonStoreWithOut().setVariableData(dataList)
+          commonStore.setVariableData(dataList)
           // Mark save state as dirty
-          useCommonStoreWithOut().setIsSave('0')
+          commonStore.setIsSave('0')
         }
       }
     }
@@ -174,7 +196,7 @@ onMounted(() => {
 
 // 监听路由变化，切换图纸
 watch(
-  () => route.query.id,
+  () => route.params.id,
   newId => {
     if (newId && typeof newId === 'string') {
       loadBlueprint(newId)
@@ -201,10 +223,12 @@ function initPlugin() {
 
 onUnmounted(() => {
   if (onStorageChange) window.removeEventListener('storage', onStorageChange)
-  meta2d.destroy()
-  // 取消订阅
-  meta2d.off('active', active)
-  meta2d.off('inactive', inactive)
+  if (resizeObserver) resizeObserver.disconnect()
+  if (meta2d) {
+    meta2d.off('active', active)
+    meta2d.off('inactive', inactive)
+    meta2d.destroy()
+  }
   // 删除原始数据
   removeOriginalData()
 })

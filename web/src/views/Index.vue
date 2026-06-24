@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-09-11 08:50:37
  * @LastEditors: htang
- * @LastEditTime: 2026-06-18 11:15:56
+ * @LastEditTime: 2026-06-24 14:37:31
 -->
 <template>
   <div class="app-page">
@@ -60,6 +60,19 @@ import GET_IMAGE_PATH from '@/utils/graphicGroups.ts'
 import { useSelection } from '@/services/selections'
 import { useCommonStore, useCommonStoreWithOut } from '@/store/modules/common'
 import { apiBlueprintFind, apiBlueprintModify } from '@/api/blueprint'
+import type { Meta2d } from '@meta2d/core'
+
+// Editor 子组件的 onMounted 先于本组件的任何事件回调执行，
+// 故回调中访问 meta2d 时实例一定存在。
+// Proxy 确保每次属性访问都透传至 window.meta2d，而非捕获 setup 时的 undefined。
+const meta2d = new Proxy({} as Meta2d, {
+  get(_t, prop) {
+    const m = (window as any).meta2d
+    if (!m) return undefined
+    const v = m[prop]
+    return typeof v === 'function' ? v.bind(m) : v
+  },
+})
 
 const route = useRoute()
 const router = useRouter()
@@ -95,7 +108,7 @@ function save() {
     commonStore.setIsSave('0')
 
     // Auto-sync pens to backend if a blueprint is loaded
-    const bpId = route.query.id as string | undefined
+    const bpId = route.params.id as string | undefined
     if (bpId && data.pens) {
       if (backendTimer) clearTimeout(backendTimer)
       backendTimer = setTimeout(() => {
@@ -113,24 +126,25 @@ function save() {
  * 初始化监听事件
  */
 async function onInit() {
-  const id = route.query.id
+  const id = route.params.id
   if (id) {
     try {
-      const res = await apiBlueprintFind({ id: route.query.id })
+      const res = await apiBlueprintFind({ id: route.params.id })
       const blueprint = res?.data
-      if (blueprint?.pens?.length > 0) {
+      if (blueprint && typeof blueprint === 'object') {
+        const pens = Array.isArray(blueprint.pens) ? blueprint.pens : []
         meta2d.open({
-          pens: blueprint.pens || [],
+          pens,
           name: blueprint.name || '',
           color: blueprint.color || '',
           penBackground: blueprint.penBackground || '',
           background: blueprint.background || '',
           bkImage: blueprint.bkImage || '',
-          grid: blueprint.grid || '0',
+          grid: blueprint.grid === '1' || blueprint.grid === true || undefined,
           gridColor: blueprint.gridColor || '',
           gridSize: blueprint.gridSize || '',
           gridRotate: blueprint.gridRotate || '',
-          rule: blueprint.rule || '0',
+          rule: blueprint.rule === '1' || blueprint.rule === true || undefined,
           ruleColor: blueprint.ruleColor || '',
           initJs: blueprint.initJs || '',
           https: blueprint.https || [],
@@ -139,7 +153,10 @@ async function onInit() {
         })
         meta2d.store.data.fromArrow = ''
         meta2d.store.data.toArrow = 'triangleSolid'
-        meta2d.fitView(true, 24)
+        if (pens.length > 0) {
+          meta2d.fitView(true, 24)
+        }
+        window.dispatchEvent(new CustomEvent('meta2d:dataLoaded'))
       }
     } catch (err) {
       console.error('[Index] onInit load blueprint failed:', err)
@@ -406,9 +423,9 @@ function onAskAi() {
   const { pen } = selections
   let context = ''
   if (pen) {
-    context = `选中节点: ID=${pen.id}, 类型=${pen.name || 'unknown'}, 文字="${
-      pen.text || ''
-    }", 位置=(${pen.x}, ${pen.y}), 大小=${pen.width}x${pen.height}`
+    context = `选中节点: ID=${pen.id}, 类型=${pen.name || 'unknown'}, 文字="${pen.text || ''}", 位置=(${pen.x}, ${
+      pen.y
+    }), 大小=${pen.width}x${pen.height}`
   } else if (pens.value.length > 0) {
     const names = pens.value.map((p: any) => p.name || 'unknown').join(', ')
     context = `选中了 ${pens.value.length} 个节点: ${names}`
@@ -430,7 +447,7 @@ function onAgentMutation() {
 /** Handle blueprint deletion — if the deleted blueprint is the currently open one, reset the editor. */
 function onBlueprintDeleted(e: CustomEvent<{ id: string }>) {
   const deletedId = e.detail?.id
-  if (!deletedId || deletedId !== route.query.id) return
+  if (!deletedId || deletedId !== route.params.id) return
 
   // Clear canvas
   const data = meta2d.data()
@@ -440,7 +457,7 @@ function onBlueprintDeleted(e: CustomEvent<{ id: string }>) {
   meta2d.render()
 
   // Remove query param without full page reload
-  router.replace({ path: '/', query: {} })
+  router.replace({ path: '/' })
 
   // Clear localStorage so cross-tab sync doesn't restore deleted data
   localStorage.removeItem('meta2d')

@@ -314,7 +314,6 @@ import { useCommonStoreWithOut } from '@/store/modules/common'
 import { apiBlueprintAdd, apiBlueprintModify } from '@/api/blueprint'
 import { apiChatUploadFile } from '@/api/chat'
 import FileManager from '@/components/FileManager/index.vue'
-import { UrlParamsManager } from '@/utils/urlParamsManager'
 
 const emit = defineEmits(['openAgentPanel'])
 
@@ -324,6 +323,14 @@ const route = useRoute()
 const fileManagerRef = ref(null)
 const shareModalRef = ref(null)
 
+const currentId = ref<string>((route.params.id as string) || '')
+// 监听路由变换（从蓝图列表切换到另一张图纸时）同步 id
+watch(
+  () => route.params.id,
+  newId => {
+    if (newId && typeof newId === 'string') currentId.value = newId
+  },
+)
 const data = ref({})
 
 const isOnDrawLine = ref(false)
@@ -482,7 +489,8 @@ const changeToArrow = (value: string) => {
 }
 
 const createBluePrint = () => {
-  UrlParamsManager.clearParams('')
+  currentId.value = ''
+  router.replace({ path: '/' })
   meta2d.open({
     name: '',
     pens: [],
@@ -491,11 +499,9 @@ const createBluePrint = () => {
     color: '',
     penBackground: '',
     bkImage: '',
-    grid: '0',
     gridColor: '',
     gridSize: '',
     gridRotate: '',
-    rule: '0',
     ruleColor: '',
     initJs: '',
     https: [],
@@ -505,6 +511,7 @@ const createBluePrint = () => {
   meta2d.store.data.fromArrow = ''
   meta2d.store.data.toArrow = 'triangleSolid'
   localStorage.removeItem('meta2d')
+  window.dispatchEvent(new CustomEvent('meta2d:dataLoaded'))
 }
 
 const downloadJson = () => {
@@ -658,11 +665,8 @@ async function onView() {
   if (!savedId) return
   // 跳转到预览页面
   router.push({
-    path: '/preview',
-    query: {
-      r: Date.now() + '',
-      id: savedId,
-    },
+    path: '/preview/' + savedId,
+    query: { r: Date.now() + '' },
   })
 }
 
@@ -686,73 +690,66 @@ function onSave(flag: boolean): Promise<string | false> | boolean {
     if (typeof params.https !== 'string') params.https = JSON.stringify(params.https) || ''
     if (typeof params.pens !== 'string') params.pens = JSON.stringify(params.pens) || ''
 
-    // 先保存（不含缩略图），保存成功后再异步生成缩略图
-    params.thumbnail = ''
+    // 先截图 → 上传 → 获取缩略图URL，再保存
+    return generateThumbnail().then(thumbnailUrl => {
+      params.thumbnail = thumbnailUrl
 
-    if (!route.query['id']) {
-      return apiBlueprintAdd(params)
-        .then(res => {
-          commonStore.setIsSave('1')
-          message.success('保存成功')
-          UrlParamsManager.setParams({ id: res.id })
-          canvasData['id'] = res.id
-          // 异步更新缩略图
-          generateThumbnail(thumbnailUrl => {
-            if (thumbnailUrl) {
-              apiBlueprintModify({ id: res.id, thumbnail: thumbnailUrl })
-            }
+      if (!currentId.value) {
+        return apiBlueprintAdd(params)
+          .then(res => {
+            currentId.value = res.id
+            commonStore.setIsSave('1')
+            message.success('保存成功')
+            router.replace({ path: '/' + res.id })
+            canvasData['id'] = res.id
+            return res.id as string
           })
-          return res.id as string
-        })
-        .catch(err => {
-          message.error('保存失败，请重试')
-          console.error('[onSave] add blueprint failed:', err)
-          return false
-        })
-    } else {
-      params.id = route.query['id']
-      return apiBlueprintModify(params)
-        .then(() => {
-          commonStore.setIsSave('1')
-          message.success('保存成功')
-          // 异步更新缩略图
-          generateThumbnail(thumbnailUrl => {
-            if (thumbnailUrl) {
-              apiBlueprintModify({ id: params.id, thumbnail: thumbnailUrl })
-            }
+          .catch(err => {
+            message.error('保存失败，请重试')
+            console.error('[onSave] add blueprint failed:', err)
+            return false
           })
-          return params.id as string
-        })
-        .catch(err => {
-          message.error('保存失败，请重试')
-          console.error('[onSave] modify blueprint failed:', err)
-          return false
-        })
-    }
+      } else {
+        params.id = currentId.value
+        return apiBlueprintModify(params)
+          .then(() => {
+            commonStore.setIsSave('1')
+            message.success('保存成功')
+            return params.id as string
+          })
+          .catch(err => {
+            message.error('保存失败，请重试')
+            console.error('[onSave] modify blueprint failed:', err)
+            return false
+          })
+      }
+    })
   }
   return true
 }
 
-function generateThumbnail(callback: (url: string) => void) {
-  try {
-    meta2d.toPng(
-      20,
-      async (blob: Blob | null) => {
-        if (!blob) return callback('')
-        try {
-          const file = new File([blob], `thumb_${Date.now()}.png`, { type: 'image/png' })
-          const result = await apiChatUploadFile(file)
-          callback(result?.url || '')
-        } catch {
-          callback('')
-        }
-      },
-      false,
-      400,
-    )
-  } catch {
-    callback('')
-  }
+function generateThumbnail(): Promise<string> {
+  return new Promise(resolve => {
+    try {
+      meta2d.toPng(
+        20,
+        async (blob: Blob | null) => {
+          if (!blob) return resolve('')
+          try {
+            const file = new File([blob], `thumb_${Date.now()}.png`, { type: 'image/png' })
+            const result = await apiChatUploadFile(file)
+            resolve(result?.url || '')
+          } catch {
+            resolve('')
+          }
+        },
+        false,
+        400,
+      )
+    } catch {
+      resolve('')
+    }
+  })
 }
 
 /**

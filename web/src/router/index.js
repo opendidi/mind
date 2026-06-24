@@ -6,7 +6,7 @@
  * @LastEditors: htang
  * @LastEditTime: 2026-06-18 09:32:44
  */
-import { createRouter, createWebHashHistory } from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 import Layout from '@/layout/index.vue';
 
 const routes = [
@@ -16,9 +16,10 @@ const routes = [
     redirect: '/',
     children: [
       { path: '/', component: () => import('@/views/Index.vue'), meta: { title: 'Mind' } },
-      { path: '/preview', component: () => import('@/views/Preview.vue'), meta: { title: '预览' } },
+      { path: '/preview/:id', component: () => import('@/views/Preview.vue'), meta: { title: '预览' } },
       { path: '/chat/:id?', name: 'chat', component: () => import('@/views/chat/index.vue'), meta: { title: 'AI 对话' } },
       { path: '/profile', name: 'profile', component: () => import('@/views/user/profile.vue'), meta: { title: '个人中心' } },
+      { path: '/:id', component: () => import('@/views/Index.vue'), meta: { title: 'Mind' } },
     ],
   },
   { path: '/login', name: 'login', component: () => import('@/views/user/login.vue'), meta: { title: '登录' } },
@@ -26,7 +27,7 @@ const routes = [
 ];
 
 const router = createRouter({
-  history: createWebHashHistory(),
+  history: createWebHistory(),
   routes,
 });
 

@@ -239,6 +239,31 @@ class DAGExecutor(BaseExecutor):
             state.running.add(n.id)
         return ready
 
+    def _build_progress_prompt(self, state: ExecutionState, current_node_id: str = "") -> str:
+        """Build a todo-style progress tracker for injection into LLM context.
+
+        Manus-inspired: a continuously updated todo list pushes the global objective
+        into the model's recent attention span, combating lost-in-the-middle drift.
+        """
+        lines = ["## 当前任务进度"]
+        for node in state.plan.nodes:
+            nid = node.id
+            desc = node.desc
+            if nid in state.completed:
+                lines.append(f"- [x] {desc}")
+            elif nid == current_node_id:
+                lines.append(f"- [ ] **{desc}** ← 当前步骤")
+            elif nid in state.failed:
+                lines.append(f"- [!] {desc} (失败)")
+            elif nid in state.running:
+                lines.append(f"- [ ] {desc} (进行中)")
+            else:
+                lines.append(f"- [ ] {desc}")
+        total = len(state.plan.nodes)
+        done = len(state.completed)
+        lines.append(f"\n进度: {done}/{total} 已完成")
+        return "\n".join(lines)
+
     def _execute_parallel(self, nodes: list, state: ExecutionState) -> Generator:
         pool = _dag_pool.get()
         split = next((i for i, m in enumerate(self.messages) if m.get("role") != "system"), 0)
@@ -324,8 +349,9 @@ class DAGExecutor(BaseExecutor):
             step_sid = self.tracer.start_span(f"step:{node.id}", input={"desc": node.desc, "tool_hint": node.tool_hint})
 
         ctx_hint = self.shared_context.sniff()
+        progress = self._build_progress_prompt(state, node.id)
         instruction = (
-            f"{ctx_hint}现在执行计划步骤: {node.desc}\n请仅执行这一步需要的工具调用，完成后简要用文字描述结果。"
+            f"{progress}\n\n{ctx_hint}现在执行计划步骤: {node.desc}\n请仅执行这一步需要的工具调用，完成后简要用文字描述结果。"
         )
         msgs.append({"role": "user", "content": instruction})
 
@@ -390,13 +416,16 @@ class DAGExecutor(BaseExecutor):
                             if reflection.get("recovery") == "retry" and retries < MAX_REFLECT_RETRIES:
                                 retries += 1
                                 adjusted = reflection.get("adjusted_args") or {}
+                                raw_error = result.get("error", "") or _json.dumps(result, ensure_ascii=False)
                                 msgs.append(
                                     {
                                         "role": "user",
                                         "content": (
-                                            f"上一步失败了。原因: {reflection.get('cause', '未知')}\n"
-                                            f"建议: {reflection.get('suggestion', '请重试')}\n"
-                                            f"调整参数: {json.dumps(adjusted, ensure_ascii=False) if adjusted else '自行判断'}"
+                                            f"[!] 工具 {tc_name} 执行失败（第 {retries}/{MAX_REFLECT_RETRIES} 次重试）\n"
+                                            f"错误信息: {raw_error[:500]}\n"
+                                            f"原因分析: {reflection.get('cause', '未知')}\n"
+                                            f"修复建议: {reflection.get('suggestion', '请重试')}\n"
+                                            f"调整参数: {_json.dumps(adjusted, ensure_ascii=False) if adjusted else '请自行判断并调整参数，不要重复相同的错误参数'}"
                                         ),
                                     }
                                 )
