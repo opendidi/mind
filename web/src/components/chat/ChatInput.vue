@@ -80,6 +80,22 @@
             <FileTextOutlined />
           </a-button>
         </a-tooltip>
+        <!-- Emoji picker button -->
+        <a-popover
+          v-model:open="showEmoji"
+          trigger="click"
+          placement="top"
+          :overlayStyle="{ padding: 0 }"
+        >
+          <template #content>
+            <Picker :data="data" @select="onEmojiSelect" />
+          </template>
+          <a-tooltip title="表情">
+            <a-button type="text" class="tool-btn" :disabled="loading">
+              <SmileOutlined />
+            </a-button>
+          </a-tooltip>
+        </a-popover>
         <template v-if="loading">
           <a-button type="primary" danger @click="$emit('abort')" class="abort-btn" title="停止生成">
             <CloseOutlined />
