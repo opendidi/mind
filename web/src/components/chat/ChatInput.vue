@@ -88,7 +88,7 @@
           :overlayStyle="{ padding: 0 }"
         >
           <template #content>
-            <Picker :data="data" @select="onEmojiSelect" />
+            <Picker :data="emojiIndex" @select="onEmojiSelect" />
           </template>
           <a-tooltip title="表情">
             <a-button type="text" class="tool-btn" :disabled="loading">
@@ -115,8 +115,9 @@
 import { ref, computed, nextTick } from 'vue'
 import { CloseOutlined, SendOutlined, PaperClipOutlined, FileTextOutlined, SmileOutlined } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
-import data from '@emoji-mart/data'
-import Picker from 'emoji-mart-vue-fast'
+import data from 'emoji-mart-vue-fast/data/all.json'
+import { Picker, EmojiIndex } from 'emoji-mart-vue-fast/src'
+import 'emoji-mart-vue-fast/css/emoji-mart.css'
 import type { QuoteInfo, ChatFile } from '@/composables/useAgentChat'
 import { useAttachments } from '@/composables/useAttachments'
 import { apiChatUploadFile } from '@/api/chat'
@@ -154,6 +155,7 @@ interface DocAttach {
 const docAttachments = ref<DocAttach[]>([])
 
 // Emoji picker
+const emojiIndex = new EmojiIndex(data)
 const showEmoji = ref(false)
 
 async function onDocFileChange(e: Event) {
