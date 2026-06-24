@@ -12,6 +12,7 @@
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",
     "@ant-design/icons-vue": "^7.0.0",
+    "@emoji-mart/data": "^1.2.1",
     "@meta2d/activity-diagram": "^1.0.0",
     "@meta2d/chart-diagram": "^1.0.3",
     "@meta2d/class-diagram": "^1.0.0",
