@@ -231,6 +231,9 @@ importers:
       echarts:
         specifier: ^6.1.0
         version: 6.1.0
+      emoji-mart-vue-fast:
+        specifier: ^15.0.5
+        version: 15.0.5(vue@3.5.18(typescript@5.9.2))
       file-saver:
         specifier: ^2.0.5
         version: 2.0.5
@@ -1281,6 +1284,11 @@ packages:
 
   electron-to-chromium@1.5.375:
     resolution: {integrity: sha512-ZWP5eB4BVPW/ZYo9252hQZHZ5XavtsTgpbhcmMmRwymavC5AsLWQWBPaKMeNd2LW0KGby5HPXvj7+sr4ta5j/Q==}
+
+  emoji-mart-vue-fast@15.0.5:
+    resolution: {integrity: sha512-wnxLor8ggpqshoOPwIc33MdOC3A1XFeDLgUwYLPtNPL8VeAtXJAVrnFq1CN5PeCYAFoLo4IufHQZ9CfHD4IZiw==}
+    peerDependencies:
+      vue: '>2.0.0'
 
   encoding-sniffer@0.2.1:
     resolution: {integrity: sha512-5gvq20T6vfpekVtqrYQsSCFZ1wEg5+wW0/QaZMWkFr6BqD3NfKs0rLCx4rrVlSWJeZb5NBJgVLswK/w2MWU+Gw==}
@@ -3415,6 +3423,12 @@ snapshots:
       zrender: 6.1.0
 
   electron-to-chromium@1.5.375: {}
+
+  emoji-mart-vue-fast@15.0.5(vue@3.5.18(typescript@5.9.2)):
+    dependencies:
+      '@babel/runtime': 7.29.7
+      core-js: 3.45.0
+      vue: 3.5.18(typescript@5.9.2)
 
   encoding-sniffer@0.2.1:
     dependencies:
