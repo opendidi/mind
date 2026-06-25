@@ -6,7 +6,7 @@ import logging
 import time
 
 from app.config import AGENT_DEFAULT_MODEL
-from app.util.agent.constants import LONG_TERM_TTL, SHORT_TERM_TTL
+from app.util.agent.constants import LONG_TERM_TTL, PROJECT_MAX_ENTRIES, PROJECT_MAX_RECALL, PROJECT_MEMORY_TTL, SHORT_TERM_TTL
 
 MAX_SHORT_SUMMARY_CHARS = 600
 MAX_LONG_ENTRIES = 50  # max long-term entries per user
@@ -53,6 +53,15 @@ class MemoryManager:
     @staticmethod
     def _long_entry_key(user_id: str, session_id: str) -> str:
         return f"mem:long:{user_id}:{session_id}"
+
+    @staticmethod
+    def _project_index_key(user_id: str) -> str:
+        """Project memory index — cross-session persistent knowledge."""
+        return f"mem:project:{user_id}"
+
+    @staticmethod
+    def _project_entry_key(user_id: str, proj_key: str) -> str:
+        return f"mem:project:{user_id}:{proj_key}"
 
     # ── Public API ───────────────────────────────────────────────────────
 
@@ -187,6 +196,144 @@ class MemoryManager:
             r.setex(key, SHORT_TERM_TTL, json.dumps(existing, ensure_ascii=False))
         except Exception:
             pass
+
+    # ── Project Memory ────────────────────────────────────────────────────
+
+    def remember_project(
+        self, user_id: str, proj_key: str, content: str, tags: list = None, metadata: dict = None
+    ) -> dict:
+        """存储项目级记忆 — 跨会话持久化的用户偏好、规范、约束、历史决策。
+
+        与会话记忆不同，项目记忆是累积式的知识库，随使用增加而丰富。
+        """
+        r = self._get_redis(db=5)
+        if not r:
+            return {}
+
+        entry = {
+            "proj_key": proj_key,
+            "content": content[:MAX_SHORT_SUMMARY_CHARS],
+            "tags": (tags or [])[:10],
+            "metadata": metadata or {},
+            "stored_at": int(time.time()),
+        }
+
+        try:
+            entry_key = self._project_entry_key(user_id, proj_key)
+            r.setex(entry_key, PROJECT_MEMORY_TTL, json.dumps(entry, ensure_ascii=False))
+            index_key = self._project_index_key(user_id)
+            r.zadd(index_key, {proj_key: time.time()})
+            r.expire(index_key, PROJECT_MEMORY_TTL)
+
+            # Trim old entries
+            count = r.zcard(index_key)
+            if count > PROJECT_MAX_ENTRIES:
+                to_remove = count - PROJECT_MAX_ENTRIES
+                oldest = r.zrange(index_key, 0, to_remove - 1)
+                for pk in oldest:
+                    r.delete(self._project_entry_key(user_id, pk))
+                r.zremrangebyrank(index_key, 0, to_remove - 1)
+
+            logging.debug("Project memory stored: %s -> %s", user_id, proj_key)
+            return entry
+        except Exception:
+            logging.debug("Project memory store failed for %s/%s", user_id, proj_key)
+            return {}
+
+    def recall_project(self, user_id: str, query: str = "", limit: int = PROJECT_MAX_RECALL) -> "MemoryContext":
+        """检索项目级记忆。
+
+        按查询相关性排序，返回最相关的项目知识条目。
+        当 query 为空时，返回最近的项目记忆。
+        """
+        r = self._get_redis(db=5)
+        if not r:
+            return MemoryContext("", [])
+
+        items = []
+        try:
+            index_key = self._project_index_key(user_id)
+            if not r.exists(index_key):
+                return MemoryContext("", [])
+
+            proj_keys = r.zrange(index_key, -limit * 2, -1)  # most recent 2x for filtering
+            for pk in reversed(proj_keys):
+                raw = r.get(self._project_entry_key(user_id, pk))
+                if not raw:
+                    continue
+                try:
+                    data = json.loads(raw)
+                    relevance = self._compute_relevance(data, query)
+                    if relevance > 0 or not query:
+                        items.append(
+                            {
+                                "source": "project",
+                                "summary": data.get("content", ""),
+                                "topics": data.get("tags", []),
+                                "proj_key": data.get("proj_key", pk),
+                                "metadata": data.get("metadata", {}),
+                                "freshness": "project",
+                                "relevance": relevance,
+                            }
+                        )
+                except (json.JSONDecodeError, TypeError):
+                    continue
+
+            items.sort(key=lambda x: (x.get("relevance", 0), x.get("stored_at", 0)), reverse=True)
+            items = items[:limit]
+        except Exception:
+            logging.debug("Project memory recall failed for %s", user_id)
+
+        prompt = self._format_project_prompt(items)
+        return MemoryContext(prompt, items)
+
+    def forget_project(self, user_id: str, proj_key: str = None):
+        """清除项目记忆。指定 proj_key 则删除单条，否则清除全部。"""
+        r = self._get_redis(db=5)
+        if not r:
+            return
+        try:
+            if proj_key:
+                r.delete(self._project_entry_key(user_id, proj_key))
+                r.zrem(self._project_index_key(user_id), proj_key)
+            else:
+                index_key = self._project_index_key(user_id)
+                members = r.zrange(index_key, 0, -1)
+                for pk in members:
+                    r.delete(self._project_entry_key(user_id, pk))
+                r.delete(index_key)
+        except Exception:
+            pass
+
+    @staticmethod
+    def _format_project_prompt(items: list) -> str:
+        """格式化项目记忆条目为 prompt 注入文本。"""
+        if not items:
+            return ""
+        seen = set()
+        unique = []
+        for item in items:
+            s = item.get("summary", "")
+            if s and s not in seen:
+                seen.add(s)
+                unique.append(item)
+        if not unique:
+            return ""
+
+        parts = ["## 项目知识"]
+        for i, item in enumerate(unique[:PROJECT_MAX_RECALL], 1):
+            key = item.get("proj_key", "")
+            parts.append(f"{i}. [{key}] {item.get('summary', '')}")
+        return "\n".join(parts) + "\n"
+
+    def merge_into_prompt(self, project_ctx: "MemoryContext", short_term_ctx: "MemoryContext") -> str:
+        """合并项目记忆和会话记忆为统一的 prompt 注入文本。"""
+        parts = []
+        if project_ctx and project_ctx.prompt:
+            parts.append(project_ctx.prompt)
+        if short_term_ctx and short_term_ctx.prompt:
+            parts.append(short_term_ctx.prompt)
+        return "\n".join(parts)
 
     # ── Internal: summary generation ─────────────────────────────────────
 

@@ -64,6 +64,7 @@ class BaseExecutor:
 
         self._tool_call_count = 0
         self.shared_context = None  # set by DAGExecutor / pheromone system
+        self._critic_hints = ""  # quality requirements injected by CriticAgent
 
     # ── Guard hook ───────────────────────────────────────────────────────
 
@@ -419,6 +420,11 @@ class AgentExecutor:
     @property
     def tool_call_count(self):
         return self._dag.tool_call_count
+
+    def set_critic_hints(self, hints: str):
+        """注入 CriticAgent 的质量要求到 DAGExecutor 的节点指令中。"""
+        if hasattr(self._dag, '_critic_hints'):
+            self._dag._critic_hints = hints
 
     @classmethod
     def reset_guard(cls, session_id: str):

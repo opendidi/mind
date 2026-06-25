@@ -1,13 +1,29 @@
 # -*- coding: UTF-8 -*-
-"""Agent Reflexion — closed-loop self-correction beyond simple retry."""
+"""Agent Reflexion — closed-loop self-correction beyond simple retry.
+
+Phase 1: 新增 STRATEGY 反射类型 — 发现当前计划不合理时，直接重新规划。
+"""
 
 import json
 import logging
 from dataclasses import dataclass, field
+from enum import Enum
 
 from app.config import AGENT_DEFAULT_MODEL
-from app.util.agent.constants import MAX_LOOP_REPEAT, MAX_REFLECT_RETRIES
+from app.util.agent.constants import (
+    MAX_LOOP_REPEAT,
+    MAX_REFLECT_RETRIES,
+    MAX_STRATEGIC_RETRIES,
+    STRATEGIC_REFLECT_TIMEOUT,
+)
 from app.util.agent.helpers import extract_json
+
+
+class ReflectionType(Enum):
+    """反射类型。"""
+    ERROR = "error"       # 工具调用失败，需要重试
+    QUALITY = "quality"   # 结果质量不达标，需要补充
+    STRATEGY = "strategy"  # 整体方案不合理，需要重新规划
 
 REFLECT_PROMPT = """你是故障诊断专家。一个工具执行失败了，分析原因并提出恢复方案。
 
@@ -69,6 +85,39 @@ GOAL_CHECK_PROMPT = """你是目标验证专家。判断当前步骤是否达成
 }}
 
 若只完成了部分目标，next_action=supplement 表示需要补充操作。
+"""
+
+REFLECT_STRATEGY_PROMPT = """你是任务策略专家。执行计划整体出现了问题，请分析原因并重新设计计划结构。
+
+## 输入
+- 目标: {goal}
+- 原始计划模式: {plan_mode}
+- 已完成步骤: {completed_steps}
+- 失败步骤: {failed_steps}
+- 批评意见: {critic_feedback}
+- 当前状态摘要: {state_summary}
+
+## 输出格式（严格 JSON）
+{{
+  "root_cause": "根本原因分析（一句话）",
+  "should_restructure": true/false,
+  "restructured_plan": {{
+    "mode": "dag",
+    "goal": "修改后的目标（如需调整）",
+    "risk": "low|medium|high",
+    "nodes": [
+      {{"id": "s1", "desc": "步骤描述", "tool_hint": "tool_name", "depends_on": []}}
+    ]
+  }},
+  "changes_made": ["变化描述1", "变化描述2"],
+  "confidence": 0.0-1.0
+}}
+
+## 规则
+- should_restructure=true: 当前计划需要根本性重构
+- 重构时应保留已完成步骤的成果
+- 避免重复已知会失败的操作
+- 新的计划应更简单、更直接
 """
 
 
@@ -219,6 +268,58 @@ class AgentReflexion:
                 except json.JSONDecodeError:
                     pass
         return {"achieved": True, "gap": "", "next_action": "完成"}
+
+    def analyze_strategy(
+        self,
+        goal: str,
+        plan_mode: str = "dag",
+        completed_steps: list = None,
+        failed_steps: list = None,
+        critic_feedback: str = "",
+        state_summary: str = "",
+    ) -> dict:
+        """Phase 1: 战略级反射 — 判断整体计划是否需要重构。
+
+        当 CriticAgent 发现执行结果不合格，或多个节点连续失败时，
+        调用此方法判断是否需要彻底重新规划（而非继续重试）。
+
+        Returns:
+            dict with keys: root_cause, should_restructure, restructured_plan, changes_made, confidence
+        """
+        if not self.llm:
+            return {
+                "root_cause": "LLM 不可用",
+                "should_restructure": False,
+                "restructured_plan": None,
+                "changes_made": [],
+                "confidence": 0.0,
+            }
+
+        prompt = REFLECT_STRATEGY_PROMPT.format(
+            goal=goal,
+            plan_mode=plan_mode,
+            completed_steps=json.dumps(completed_steps or [], ensure_ascii=False),
+            failed_steps=json.dumps(failed_steps or [], ensure_ascii=False),
+            critic_feedback=critic_feedback[:1000],
+            state_summary=state_summary[:500],
+        )
+
+        raw = self._call_reflect_llm(prompt, timeout=STRATEGIC_REFLECT_TIMEOUT)
+        if raw:
+            text = self._extract_json(raw)
+            if text:
+                try:
+                    return json.loads(text)
+                except json.JSONDecodeError:
+                    logging.warning("Reflexion: strategy analysis JSON parse failed")
+
+        return {
+            "root_cause": "分析失败",
+            "should_restructure": False,
+            "restructured_plan": None,
+            "changes_made": [],
+            "confidence": 0.0,
+        }
 
     def verify_overall_goal(self, goal: str, completed_results: list[str], failed_results: list[str]) -> dict:
         if not failed_results:

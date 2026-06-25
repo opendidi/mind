@@ -5,8 +5,11 @@ DAG 节点间的"信息素"共享层：
 - 每步工具执行成功后，自动提取关键发现
 - 后续节点的 ReAct 提示词自动注入已发现的信息
 - 避免每个节点重复探索相同的上下文
+- Redis 持久化：跨会话恢复 pheromone 状态
 """
 
+import json
+import logging
 import time
 from collections import OrderedDict
 
@@ -34,16 +37,19 @@ class SharedContext:
 
     每个节点执行前从黑板"嗅探"已知信息；
     每个工具执行成功后向黑板"沉积"新发现。
+    支持 Redis 持久化以跨会话恢复上下文。
     """
 
-    def __init__(self, max_entries: int = 20):
+    def __init__(self, max_entries: int = 20, redis_client=None, task_id: str = ""):
         self._facts: OrderedDict = OrderedDict()
         self._max = max_entries
+        self._redis = redis_client
+        self._task_id = task_id
 
     def deposit(self, key: str, value, source_node: str = "", source_tool: str = ""):
-        """存入一条发现。若 key 已存在则跳过（先到先得）。"""
-        import logging
-
+        """存入一条发现。若 key 已存在则跳过（先到先得）。
+        同时持久化到 Redis（若可用）以支持跨会话恢复。
+        """
         if key in self._facts:
             return
         if len(self._facts) >= self._max:
@@ -56,6 +62,53 @@ class SharedContext:
             "source_tool": source_tool,
             "ts": time.time(),
         }
+
+        # ── Redis 持久化 ──
+        if self._redis and self._task_id:
+            try:
+                redis_key = f"pheromone:{self._task_id}"
+                self._redis.hset(
+                    redis_key,
+                    key,
+                    json.dumps(
+                        {"value": value, "source_node": source_node, "source_tool": source_tool, "ts": time.time()},
+                        ensure_ascii=False,
+                        default=str,
+                    ),
+                )
+                self._redis.expire(redis_key, 1800)  # 30 min TTL
+            except Exception:
+                logging.debug("Pheromone Redis persist failed for key=%s", key)
+
+    def restore_from_redis(self, task_id: str = ""):
+        """从 Redis 恢复 pheromone 状态（跨会话连续性）。"""
+        if not self._redis:
+            return
+        target_id = task_id or self._task_id
+        if not target_id:
+            return
+        try:
+            redis_key = f"pheromone:{target_id}"
+            raw = self._redis.hgetall(redis_key)
+            if not raw:
+                return
+            for key_bytes, val_json in raw.items():
+                key = key_bytes.decode() if isinstance(key_bytes, bytes) else key_bytes
+                if key in self._facts:
+                    continue  # 内存中已有，不覆盖
+                try:
+                    data = json.loads(val_json)
+                    self._facts[key] = {
+                        "value": data.get("value", ""),
+                        "source_node": data.get("source_node", ""),
+                        "source_tool": data.get("source_tool", ""),
+                        "ts": data.get("ts", time.time()),
+                    }
+                except (json.JSONDecodeError, TypeError):
+                    continue
+            logging.debug("Pheromone restored %d facts from Redis for task=%s", len(raw), target_id)
+        except Exception:
+            logging.debug("Pheromone restore from Redis failed for task=%s", target_id)
 
     _SNIFF_MAX_LEN = 1200
 

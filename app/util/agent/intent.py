@@ -300,6 +300,7 @@ def unified_intent_and_plan(
     history: list = None,
     model: str = AGENT_DEFAULT_MODEL,
     plan_feedback_hints: str = "",
+    world_state: dict = None,
 ) -> dict:
     """Single LLM call for intent classification + domain detection + DAG plan generation.
 
@@ -310,6 +311,7 @@ def unified_intent_and_plan(
         model: LLM model name.
         plan_feedback_hints: Optional feedback text from prior plan executions
                              to inject into the planner prompt (Plan-Feedback 闭环).
+        world_state: Optional WorldState dict for context-aware planning.
 
     Returns dict: {intent, domains, has_write, plan: {mode, goal?, nodes?, risk?}}
     Falls back to keyword matching on LLM failure.
@@ -322,6 +324,22 @@ def unified_intent_and_plan(
 
     # Build messages for single LLM call with optional feedback injection
     system_prompt = _build_planner_prompt(plan_feedback_hints)
+
+    # Inject world state context if provided (Phase 0)
+    if world_state:
+        state_lines = ["## 当前世界状态"]
+        state_lines.append(f"- 目标: {world_state.get('goal', '') or world_state.get('working_goal', '')}")
+        state_lines.append(f"- 画布图形数: {world_state.get('pen_count', 0)}")
+        state_lines.append(f"- 当前蓝图: {world_state.get('current_blueprint_id', '') or '无'}")
+        recent_files = world_state.get('recent_files', [])
+        if recent_files:
+            state_lines.append(f"- 最近文件: {', '.join(f.get('name', '') for f in recent_files[:3])}")
+        if world_state.get('completed'):
+            state_lines.append(f"- 已完成: {', '.join(world_state['completed'][:5])}")
+        if world_state.get('pending'):
+            state_lines.append(f"- 待处理: {', '.join(world_state['pending'][:5])}")
+        system_prompt += "\n\n" + "\n".join(state_lines)
+
     msgs = [{"role": "system", "content": system_prompt}]
     if history:
         msgs.extend(history[-6:])

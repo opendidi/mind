@@ -20,6 +20,49 @@ from .agents import AgentBase, BlueprintAgent, CanvasAgent, CodeAgent, FileAgent
 # ── Circuit / Fallback / Adaptive / Reflexion ─────────────────────────────
 from .circuit import circuit_allow, circuit_record
 
+# ── State Management (Phase 0) ──────────────────────────────────────────
+try:
+    from .state import WorldState
+except ImportError:
+    WorldState = None  # type: ignore[assignment]
+
+try:
+    from .state_store import StateStore
+except ImportError:
+    StateStore = None  # type: ignore[assignment]
+
+try:
+    from .state_reducer import StateMutation, StateReducer
+except ImportError:
+    StateReducer = None  # type: ignore[assignment]
+    StateMutation = None  # type: ignore[assignment]
+
+try:
+    from .state_snapshot import SnapshotManager, StateSnapshot
+except ImportError:
+    SnapshotManager = None  # type: ignore[assignment]
+    StateSnapshot = None  # type: ignore[assignment]
+
+# ── Critic Agent (Phase 0) ──────────────────────────────────────────────
+try:
+    from .critic_agent import CriticAgent, CriticReview
+except ImportError:
+    CriticAgent = None  # type: ignore[assignment]
+    CriticReview = None  # type: ignore[assignment]
+
+# ── Routers (Phase 1) ───────────────────────────────────────────────────
+try:
+    from .tool_router import ToolRouter, ToolRouting
+except ImportError:
+    ToolRouter = None  # type: ignore[assignment]
+    ToolRouting = None  # type: ignore[assignment]
+
+try:
+    from .model_router import ModelRouter, ModelRoute
+except ImportError:
+    ModelRouter = None  # type: ignore[assignment]
+    ModelRoute = None  # type: ignore[assignment]
+
 # ── Core ──────────────────────────────────────────────────────────────────
 from .core import AgentSession
 from .dispatcher import AgentDispatcher
@@ -123,6 +166,13 @@ def __getattr__(name):
         "agent_pheromone": "pheromone",
         "agent_tts": "tts",
         "agent_evaluator": "evaluator",
+        "agent_state": "state",
+        "agent_state_store": "state_store",
+        "agent_state_reducer": "state_reducer",
+        "agent_state_snapshot": "state_snapshot",
+        "agent_critic": "critic_agent",
+        "agent_tool_router": "tool_router",
+        "agent_model_router": "model_router",
     }
     if name in _LEGACY_MAP:
         warnings.warn(

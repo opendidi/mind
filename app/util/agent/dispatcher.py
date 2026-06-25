@@ -205,3 +205,155 @@ class AgentDispatcher:
         finally:
             if acquired:
                 _dispatch_semaphore.release()
+
+    # ── Multi-Agent Negotiation (Phase 2) ─────────────────────────────────
+
+    def negotiate(
+        self,
+        llm_client,
+        task: str,
+        proposing_agents: list = None,
+        tool_context: dict = None,
+        model: str = AGENT_DEFAULT_MODEL,
+        rounds: int = None,
+        tracer=None,
+    ) -> dict:
+        """Phase 2: 多 Agent 协商 — 多方案评审、冲突解决、最优解选择。
+
+        流程：
+            1. 每个 Agent 独立提出方案
+            2. 互相评审（每个 Agent 评审其他 Agent 的方案）
+            3. 投票选最优方案
+            4. 最多 rounds 轮
+
+        Args:
+            llm_client: LLM 客户端
+            task: 任务描述
+            proposing_agents: 参与协商的 Agent 名列表，默认所有已注册 Agent
+            tool_context: 工具上下文
+            model: LLM 模型
+            rounds: 最多协商轮数
+            tracer: 追踪器
+
+        Returns:
+            dict: {consensus, result, agent_votes, rounds_completed}
+        """
+        from app.util.agent.constants import CONSENSUS_THRESHOLD, NEGOTIATION_ROUNDS, NEGOTIATION_TIMEOUT
+
+        max_rounds = rounds or NEGOTIATION_ROUNDS
+        agent_names = proposing_agents or self.agent_names
+        if not agent_names:
+            return {"consensus": False, "result": "无可用的协商 Agent", "agent_votes": {}, "rounds_completed": 0}
+
+        if len(agent_names) < 2:
+            # 单个 Agent 无需协商，直接委托
+            result = self.dispatch(llm_client, agent_names[0], task, tool_context or {}, model, tracer, None, False)
+            return {
+                "consensus": True,
+                "result": result.get("result", ""),
+                "agent_votes": {agent_names[0]: 1.0},
+                "rounds_completed": 1,
+            }
+
+        proposals: dict = {}  # {agent_name: proposal_text}
+        votes: dict = {}  # {agent_name: score}
+
+        for round_num in range(1, max_rounds + 1):
+            logging.info("Negotiation round %d/%d for task: %s", round_num, max_rounds, task[:80])
+
+            # 1. 各 Agent 提出/修订方案
+            for agent_name in agent_names:
+                if round_num == 1:
+                    # 首轮：每个 Agent 独立提出方案
+                    propose_prompt = (
+                        f"请针对以下任务提出你的解决方案（简洁、可执行）：\n\n{task}\n\n"
+                        f"请直接给出方案，不需要询问更多信息。"
+                    )
+                    result = self.dispatch(
+                        llm_client, agent_name, propose_prompt, tool_context or {}, model, tracer, None, False
+                    )
+                    if result.get("success"):
+                        proposals[agent_name] = result.get("result", "")
+                else:
+                    # 后续轮：基于他人评审修订方案
+                    other_proposals = {k: v for k, v in proposals.items() if k != agent_name}
+                    critique_text = "\n\n".join(f"Agent {k} 的方案:\n{v[:500]}" for k, v in other_proposals.items())
+                    revise_prompt = (
+                        f"任务: {task}\n\n你的原始方案:\n{proposals.get(agent_name, '')[:500]}\n\n"
+                        f"其他 Agent 的方案:\n{critique_text}\n\n"
+                        f"请综合考虑各方案优点，修订你的方案（简洁、可执行）。"
+                    )
+                    result = self.dispatch(
+                        llm_client, agent_name, revise_prompt, tool_context or {}, model, tracer, None, False
+                    )
+                    if result.get("success"):
+                        proposals[agent_name] = result.get("result", "")
+
+            # 2. 互相评审 + 投票
+            for voter_name in agent_names:
+                total_score = 0.0
+                candidates = [n for n in agent_names if n != voter_name]
+                if not candidates:
+                    continue
+                for candidate in candidates:
+                    candidate_proposal = proposals.get(candidate, "")
+                    if not candidate_proposal:
+                        continue
+                    critique_prompt = (
+                        f"任务: {task}\n\n候选方案 (Agent {candidate}):\n{candidate_proposal[:800]}\n\n"
+                        f'请评分（0.0-1.0）并简要点评。输出 JSON: {{"score": 0.0-1.0, "comment": "点评"}}'
+                    )
+                    peer_result = self.handle_peer_query(
+                        llm_client, voter_name, critique_prompt, tool_context or {}, model, tracer
+                    )
+                    if peer_result.get("success"):
+                        try:
+                            critique_data = json.loads(
+                                extract_json(peer_result.get("result", "{}")) or "{}"
+                            )
+                            total_score += float(critique_data.get("score", 0.5))
+                        except (json.JSONDecodeError, ValueError, TypeError):
+                            total_score += 0.5
+
+                # 归一化
+                score = total_score / max(len(candidates), 1)
+                votes[voter_name] = votes.get(voter_name, 0.0) + score
+
+            # 3. 检查共识
+            max_score = max(votes.values()) if votes else 0
+            consensus_agent = max(votes, key=votes.get) if votes else None
+
+            if max_score >= CONSENSUS_THRESHOLD and consensus_agent:
+                logging.info(
+                    "Negotiation: consensus reached at round %d — %s (score=%.2f)",
+                    round_num,
+                    consensus_agent,
+                    max_score,
+                )
+                return {
+                    "consensus": True,
+                    "result": proposals.get(consensus_agent, ""),
+                    "agent_votes": votes,
+                    "rounds_completed": round_num,
+                    "winning_agent": consensus_agent,
+                }
+
+        # 未达共识 — 返回得分最高的方案
+        best_agent = max(votes, key=votes.get) if votes else (agent_names[0] if agent_names else None)
+        return {
+            "consensus": False,
+            "result": proposals.get(best_agent, "") if best_agent else "",
+            "agent_votes": votes,
+            "rounds_completed": max_rounds,
+            "winning_agent": best_agent,
+        }
+
+
+# Import for negotiation JSON extraction
+def extract_json(text: str) -> str | None:
+    """Extract JSON from text (simple bracket matching)."""
+    import re
+    if not text:
+        return None
+    match = re.search(r'\{[^{}]*\}', text, re.DOTALL)
+    return match.group(0) if match else None

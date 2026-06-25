@@ -88,7 +88,7 @@
           :overlayStyle="{ padding: 0 }"
         >
           <template #content>
-            <Picker :data="emojiIndex" @select="onEmojiSelect" />
+            <Picker :data="emojiIndex" native @select="onEmojiSelect" />
           </template>
           <a-tooltip title="表情">
             <a-button type="text" class="tool-btn" :disabled="loading">
@@ -210,18 +210,21 @@ function onTextareaInput() {
   el.style.height = Math.min(el.scrollHeight, 160) + 'px'
 }
 
-function onEmojiSelect(emoji: { native: string }) {
+function onEmojiSelect(emoji: { native?: string; id?: string; colons?: string }) {
   const el = textareaRef.value
   if (!el) return
+  // 防御：优先取 native，降级用 colons (:smile:)，最后用 id
+  const emojiText = emoji.native || emoji.colons || (emoji.id ? `:${emoji.id}:` : '')
+  if (!emojiText) return
   const start = el.selectionStart
   const end = el.selectionEnd
   const before = inputText.value.slice(0, start)
   const after = inputText.value.slice(end)
-  inputText.value = before + emoji.native + after
+  inputText.value = before + emojiText + after
   showEmoji.value = false
   nextTick(() => {
     el.focus()
-    const pos = start + emoji.native.length
+    const pos = start + emojiText.length
     el.selectionStart = pos
     el.selectionEnd = pos
   })
@@ -514,6 +517,7 @@ $text-muted: #94a3b8;
       font-size: 14px;
       line-height: 1.5;
       font-family: inherit;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', system-ui, sans-serif;
       color: #1e293b;
 
       &::placeholder {

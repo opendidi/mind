@@ -109,21 +109,28 @@ mind/
 │       ├── llm_client.py                   # LLM 客户端 — 懒加载单例 + 多级 Fallback
 │       ├── vision.py                        # 视觉分析（DeepSeek Vision）
 │       ├── search/                          # 搜索引擎（Bing + DuckDuckGo fallback）
-│       ├── agent/                           # Agent 系统核心包（27 子模块，六层架构）
+│       ├── agent/                           # Agent 系统核心包（32 模块，Agent OS 架构）
 │       │   ├── __init__.py                  # 包初始化，重导出关键类
 │       │   ├── core.py                      # AgentSession — 消息构建、视觉桥接、会话管理
-│       │   ├── engine.py                    # AgentEngine — 统一执行入口，模式路由
+│       │   ├── engine.py                    # AgentEngine — 统一执行入口，集成 State/Critic/Router
 │       │   ├── guard.py                     # InputGuard / ToolGuard / OutputGuard 三级安全
-│       │   ├── intent.py                    # 意图分类 + 统一意图规划（单次 LLM 调用）
+│       │   ├── intent.py                    # 意图分类 + 统一意图规划（支持 WorldState 上下文）
 │       │   ├── router.py                    # 意图 → Skill 路由
 │       │   ├── planner.py                   # 任务规划器
-│       │   ├── executor.py                  # BaseExecutor / AgentExecutor（工具执行 + 护栏）
-│       │   ├── dag.py                       # DAGExecutor — 拓扑排序 + 并行执行
-│       │   ├── dispatcher.py                # 子 Agent 调度器（canvas/blueprint/file/code）
-│       │   ├── tools.py                     # 工具注册表 + 17 个业务工具
-│       │   ├── memory.py                    # 长期记忆管理（跨会话）
-│       │   ├── reflexion.py                 # AgentReflexion — 工具失败自纠正（retry/skip/escalate）
-│       │   ├── pheromone.py                 # 信息素黑板 — 跨节点共享发现
+│       │   ├── executor.py                  # BaseExecutor / AgentExecutor（工具执行 + 护栏 + Critic 提示）
+│       │   ├── dag.py                       # DAGExecutor — 拓扑排序 + 并行 + StateDAGNode 条件分支
+│       │   ├── dispatcher.py                # 子 Agent 调度 + 多 Agent 协商（negotiate）
+│       │   ├── tools.py                     # 工具注册表 + 21 个业务工具
+│       │   ├── memory.py                    # 4 层记忆（工作/短期/长期/项目）+ Project Memory
+│       │   ├── reflexion.py                 # AgentReflexion — retry/skip/escalate/strategy 四级
+│       │   ├── state.py           🆕        # WorldState — 统一 Agent 世界状态模型
+│       │   ├── state_store.py     🆕        # StateStore — Redis 持久化 + 版本管理
+│       │   ├── state_reducer.py   🆕        # StateReducer — 状态合并 + 冲突解决
+│       │   ├── state_snapshot.py  🆕        # SnapshotManager — 快照/回滚/diff
+│       │   ├── critic_agent.py    🆕        # CriticAgent — 独立四维质量审查
+│       │   ├── tool_router.py     🆕        # ToolRouter — 意图→工具集过滤（减少 40-60% prompt）
+│       │   ├── model_router.py    🆕        # ModelRouter — 任务→模型路由（cheap/balanced/quality）
+│       │   ├── pheromone.py                 # 信息素黑板 — 跨节点共享发现（Redis 持久化）
 │       │   ├── plan_eval.py                 # Plan-Feedback 闭环 — 执行后评分 → 历史教训
 │       │   ├── cache.py                     # 工具结果缓存 + LLM 确定性缓存（Redis）
 │       │   ├── circuit.py                   # Circuit Breaker — LLM 熔断保护
@@ -134,7 +141,7 @@ mind/
 │       │   ├── observability.py             # HealthChecker + MetricsCollector + Token 预算
 │       │   ├── adaptive.py                  # 自适应重规划
 │       │   ├── helpers.py                   # JSON 修复、Token 估算、工具函数
-│       │   ├── constants.py                 # 共享常量（重试次数、消息限制等）
+│       │   ├── constants.py                 # 共享常量（37 个配置项）
 │       │   ├── skills.py                    # Skill 注册表（渐进式提示词注入）
 │       │   ├── mcp.py                       # MCP 协议封装
 │       │   ├── evaluator.py                 # 输出质量评估
@@ -479,27 +486,51 @@ pnpm dev:web
 
 ## Agent 架构
 
-Agent 系统采用六层架构，**基础层完整复刻 + 业务层重新设计** 策略。
+Agent 系统已演进到 **Agent OS 级别**，具备统一状态管理、项目认知、独立审查、战略反思、多 Agent 协作等完整能力。
 
-### 架构层次
+### 架构等级：Level 5 — Agent Operating System
 
 ```
-用户输入 → InputGuard → Intent 分类 → Domain Skill 注入
+Level 1  Basic Chatbot      LLM + 对话记忆
+Level 2  ReAct Agent         LLM + 工具调用循环
+Level 3  Multi-Agent         多 Agent + 任务委派
+Level 4  Agent Runtime       DAG + 规划 + 反思 + 长期记忆
+Level 5  Agent OS  ← 当前    状态管理 + 项目认知 + 独立审查 + 战略反思 + 多 Agent 协作
+```
+
+### 架构层次（v2.0 — 优化后）
+
+```
+用户输入 → InputGuard
                 ↓
-        Plan 生成（统一 LLM 调用，含 Plan-Feedback 闭环）
+        StateManager.load()  ← 加载用户世界状态
+                ↓
+        ToolRouter.route()   ← 按领域过滤工具集（减少 prompt 40-60%）
+        ModelRouter.route()  ← 按任务复杂度选模型（cheap/balanced/quality）
+                ↓
+        SnapshotManager.snapshot("pre_execution")
+                ↓
+        Intent 分类 → Domain Skill 注入
+                ↓
+        Plan 生成（统一 LLM 调用 + WorldState 上下文 + Plan-Feedback 闭环）
                 ↓
         AgentEngine 路由
         ├── simple 模式 → BaseExecutor（单轮 ReAct 循环）
-        └── dag 模式    → DAGExecutor（拓扑排序 + 并行执行）
+        └── dag 模式    → DAGExecutor（拓扑排序 + 并行执行 + 条件分支）
                 ↓
         Tool 执行（ToolGuard 护栏 + Circuit Breaker 熔断）
                 ↓
-        Reflexion 自纠正 → Pheromone 信息素沉积
+        Reflexion 自纠正 → Pheromone 信息素沉积（Redis 持久化）
                 ↓
-        OutputGuard → SSE 流式输出 → 会话记忆持久化
+        CriticAgent.review()  ← 独立质量审查（正确性/完整性/一致性/安全性）
+                ↓
+        StateManager.save()   ← 持久化世界状态
+        SnapshotManager.snapshot("post_execution")
+                ↓
+        OutputGuard → SSE 流式输出 → 会话记忆 + 项目记忆持久化
 ```
 
-### 工具集（17 个）
+### 工具集（21 个）
 
 | 域 | 工具 | 说明 |
 |----|------|------|
@@ -533,20 +564,67 @@ Agent 系统采用六层架构，**基础层完整复刻 + 业务层重新设计
 
 | 特性 | 说明 |
 |------|------|
+| **🆕 WorldState 状态管理** | 统一 Agent 世界状态模型，JSON 序列化，乐观锁版本控制，所有模块共享 |
+| **🆕 StateStore + 快照** | Redis 持久化状态 + 版本快照/回滚/diff，支持时间旅行调试 |
+| **🆕 StateReducer** | 并行 DAG 节点的确定性状态合并 + 冲突检测 |
+| **🆕 Project Memory** | 跨会话项目级记忆（用户偏好/技术栈约束/历史决策），4 层记忆体系 |
+| **🆕 Critic Agent** | 独立质量审查 Agent，正确性/完整性/一致性/安全性四维评估 |
+| **🆕 ToolRouter** | 意图→工具集路由，prompt 中 tool schema 数量减少 40-60% |
+| **🆕 ModelRouter** | 任务类型→模型路由，cheap/balanced/quality 三档成本优化 |
+| **🆕 Strategic Reflexion** | 战略级反思 — 发现计划不合理时直接重规划（非继续重试） |
+| **🆕 StateDAGNode** | 条件分支 DAG 节点，支持前置条件/后置条件/条件边 |
+| **🆕 Multi-Agent Negotiation** | 多 Agent propose→critique→consensus 协商机制 |
+| **🆕 Pheromone Redis 持久化** | 信息素黑板跨会话恢复，DAG 节点失败后可恢复上下文 |
 | **统一意图规划** | 单次 LLM 调用同时完成意图分类 + 领域检测 + DAG 计划生成 |
 | **DAG 并行执行** | 无依赖步骤同时执行，拓扑排序调度，信息素跨节点传递 |
-| **AgentReflexion** | 工具失败自动分析原因，retry/skip/escalate 三级纠正策略 |
-| **Pheromone 黑板** | 跨节点共享已发现的信息（如搜索结果），避免重复查询 |
+| **AgentReflexion** | 工具失败自动分析原因，retry/skip/escalate + strategy 四级纠正 |
 | **Plan-Feedback 闭环** | 执行后评分 → 历史教训存储 → 下次规划时自动注入提示 |
-| **Circuit Breaker** | LLM 连续失败 5 次自动熔断，30 秒冷却后半开探测 |
+| **Circuit Breaker** | LLM 连续失败自动熔断，冷却后半开探测 |
 | **多级 Fallback** | 主 LLM 故障时透明切换到备用模型（最多 3 级） |
-| **LLM 确定性缓存** | Redis 缓存 `compact_history` 和 `unified_intent` 结果（5 分钟 TTL） |
+| **LLM 确定性缓存** | Redis 缓存 `compact_history` 和 `unified_intent` 结果 |
 | **Context Compaction** | LLM 驱动对话历史压缩，超长上下文自动摘要 |
-| **Streaming SSE** | 逐 Token + 工具调用实时流式输出，包含完整执行计划追踪 |
-| **Tracing** | Span 树调用链追踪，每请求一个 trace ID |
+| **Streaming SSE** | 逐 Token + 工具调用实时流式输出，含完整执行计划追踪 |
+| **Tracing + Token 预算** | Span 树调用链追踪 + 实时 Token 消耗监控 |
 | **Redis 降级** | Redis 不可用时自动切换为内存模式，不影响核心功能 |
-| **Token 预算追踪** | 实时监控 LLM Token 消耗，防止超限 |
 | **三级安全护栏** | InputGuard（注入检测）+ ToolGuard（调用频率限制）+ OutputGuard（响应清洗） |
+
+### 记忆体系
+
+```
+Memory
+├── Working Memory   (进程内存)        当前会话上下文，LLM 驱动的上下文压缩
+├── Short-Term       (Redis, TTL 1h)   最近会话摘要 + 话题标签
+├── Long-Term        (Redis, TTL 30d)  历史会话索引，关键词匹配检索
+└── Project 🆕       (Redis, TTL 30d)  跨会话项目知识（偏好/规范/约束/决策）
+```
+
+### 新增模块职责
+
+| 模块 | 文件 | 职责 |
+|------|------|------|
+| **State** | `state.py` | `WorldState` — 画布/蓝图/文件/任务/风险/置信度统一模型 |
+| **StateStore** | `state_store.py` | Redis key: `state:current:{user_id}`，`state:snapshot:{user_id}:{version}` |
+| **StateReducer** | `state_reducer.py` | 确定性状态合并（set/merge/append/increment/delete_key）+ 乐观锁冲突检测 |
+| **Snapshot** | `state_snapshot.py` | 执行前后快照、diff 变更追踪、版本回滚 |
+| **Critic** | `critic_agent.py` | 独立 LLM 审查：正确性/完整性/一致性/安全性，输出 CriticReview |
+| **ToolRouter** | `tool_router.py` | 领域→工具集映射（6 领域），关键词扩展，缓存友好 |
+| **ModelRouter** | `model_router.py` | 10 种任务类型 → cheap/balanced/quality 三档模型选择 |
+
+### 与业界框架对比
+
+| 能力 | MIND (v2.0) | LangGraph | CrewAI | AutoGen |
+|------|:----------:|:---------:|:------:|:-------:|
+| DAG 并行执行 | ✅ | ✅ | ❌ | ❌ |
+| 统一状态管理 | ✅ 🆕 | ✅ | ❌ | ❌ |
+| 独立 Critic Agent | ✅ 🆕 | ❌ | ❌ | ❌ |
+| 工具路由 | ✅ 🆕 | ❌ | ❌ | ❌ |
+| 模型路由 | ✅ 🆕 | ❌ | ❌ | ❌ |
+| 项目级记忆 | ✅ 🆕 | ❌ | ❌ | ❌ |
+| 战略反思 | ✅ 🆕 | ❌ | ❌ | ❌ |
+| 多 Agent 协商 | ✅ 🆕 | ❌ | ✅ | ✅ |
+| 状态快照/回滚 | ✅ 🆕 | ✅ | ❌ | ❌ |
+| 熔断 + Fallback | ✅ | ❌ | ❌ | ❌ |
+| MCP 协议 | ✅ | ❌ | ❌ | ❌ |
 
 ---
 
@@ -640,10 +718,11 @@ Docker Desktop → Settings → Docker Engine，添加 mirror：
 ```powershell
 # 首次构建（含 PyTorch，约 3~5 分钟）
 docker compose up -d --build
-
-# 之后修改代码只需
-docker compose up -d --build
 ```
+
+> **日常开发**：改 Python 代码只需 `docker compose restart app`（2 秒生效），不需要 rebuild。
+> 代码通过 volume 挂载（`./app:/app/app`），修改实时同步。
+> 只有改 `Dockerfile` 或 `requirements.txt` 时才需要 `docker compose up -d --build`。
 
 ### 4. 前端开发（另开终端）
 
@@ -662,11 +741,12 @@ pnpm dev:web
 # ── 容器管理 ────────────────────────────────────────
 docker compose ps                     # 查看容器状态
 docker compose down                   # 停止并删除容器
-docker compose restart                # 重启容器
+docker compose restart app            # 修改 Python 代码后重启（2 秒，推荐）
 docker compose down -v                # 停止并清空数据卷（慎用）
 
 # ── 启动 & 重建 ─────────────────────────────────────
-docker compose up -d --build          # 代码改动后重新构建+启动
+docker compose up -d --build          # 改 Dockerfile/requirements.txt 后才需要（约 3-5 分钟）
+docker compose up -d                  # 首次启动或改 .env 后重启
 docker compose build --no-cache       # 强制无缓存重建
 
 # ── 查看日志 ────────────────────────────────────────

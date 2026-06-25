@@ -44,6 +44,39 @@ class DAGNode:
 
 
 @dataclass
+class StateDAGNode(DAGNode):
+    """Phase 2: State-aware DAGNode — 支持前置条件、后置条件、条件分支。
+
+    向后兼容 DAGNode，所有新字段默认为空/无操作。
+    """
+
+    preconditions: dict = field(default_factory=dict)  # {state_path: expected_value}
+    postconditions: dict = field(default_factory=dict)  # {state_path: expected_value_after}
+    conditional_edges: dict = field(default_factory=dict)  # {state_path: {value: next_node_id}}
+    retry_on_state_mismatch: bool = False
+
+    def check_preconditions(self, world_state_dict: dict) -> bool:
+        """验证前置条件是否满足。"""
+        if not self.preconditions:
+            return True
+        for path, expected in self.preconditions.items():
+            actual = world_state_dict.get(path)
+            if actual != expected:
+                return False
+        return True
+
+    def get_conditional_target(self, world_state_dict: dict) -> str | None:
+        """根据条件边决定下一个节点。"""
+        if not self.conditional_edges:
+            return None
+        for path, mapping in self.conditional_edges.items():
+            actual = world_state_dict.get(path)
+            if actual in mapping:
+                return mapping[actual]
+        return None
+
+
+@dataclass
 class DAGPlan:
     mode: str = "simple"
     goal: str = ""
@@ -142,10 +175,14 @@ class DAGExecutor(BaseExecutor):
             session_id=(task_id or user_id),
         )
         self.hooks = hooks or []
-        self.shared_context = SharedContext()
+        self.shared_context = SharedContext(
+            redis_client=redis_client, task_id=task_id
+        )
         self._replan_used = False
         self._reflection_count = 0
         self._dag_start_ts = 0.0
+        self._critic_hints = ""  # 质量要求，由 CriticAgent 注入
+        self._world_state = None  # WorldState 引用，由 engine 注入
         from app.util.agent.reflexion import AgentReflexion
 
         self.reflexion = AgentReflexion(llm_client, model)
@@ -154,12 +191,17 @@ class DAGExecutor(BaseExecutor):
     def tool_call_count(self):
         return self._tool_call_count
 
+    def _get_state(self):
+        """返回最近的 ExecutionState（供 CriticAgent 审查使用）。"""
+        return getattr(self, '_last_execution_state', None)
+
     def execute(self, plan: DAGPlan) -> Generator:
         if plan.mode == "simple" or not plan.nodes:
             yield from self._execute_simple()
             return
 
         state = ExecutionState.from_plan(plan)
+        self._last_execution_state = state  # 保存引用供 CriticAgent 使用
         self._replan_used = False
 
         yield (
@@ -353,6 +395,9 @@ class DAGExecutor(BaseExecutor):
         instruction = (
             f"{progress}\n\n{ctx_hint}现在执行计划步骤: {node.desc}\n请仅执行这一步需要的工具调用，完成后简要用文字描述结果。"
         )
+        # ── Critic 质量提示注入 ──
+        if self._critic_hints:
+            instruction += f"\n\n{self._critic_hints}"
         msgs.append({"role": "user", "content": instruction})
 
         loop_counter = defaultdict(int)
