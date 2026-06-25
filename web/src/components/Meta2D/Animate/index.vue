@@ -66,15 +66,7 @@
           />
         </a-form-item>
         <a-form-item label="动画颜色">
-          <t-color-picker
-            class="w-full"
-            v-model="model.animateColor"
-            :show-primary-color-preview="false"
-            format="CSS"
-            :color-modes="['monochrome']"
-            @change="changeValue('animateColor')"
-            clearable
-          />
+          <ColorPicker v-model="model.animateColor" @change="changeValue('animateColor')" />
         </a-form-item>
         <a-form-item label="动画速度">
           <a-slider
@@ -128,17 +120,19 @@ import { CaretRightOutlined, PauseOutlined, CloseOutlined } from '@ant-design/ic
 import { animateType } from '@/utils/defaultConfig.ts'
 import { useSelection } from '@/services/selections'
 import FramesDrawer from '@/components/Meta2D/Frames/index.vue'
-import { ColorPicker } from 'tdesign-vue-next'
+import { useCanvas } from '@/composables/useCanvas'
+import ColorPicker from '@/components/shared/ColorPicker.vue'
 export default defineComponent({
   components: {
     CaretRightOutlined,
     PauseOutlined,
     CloseOutlined,
     FramesDrawer,
-    't-color-picker': ColorPicker,
+    ColorPicker,
   },
   emits: ['onChange'],
   setup(props, { emit }) {
+    const meta2d = useCanvas()
     const { selections } = useSelection()
     const framesDrawerRef = ref(null)
     const model = ref({

@@ -1,0 +1,10 @@
+<template>
+  <t-color-picker
+    class="w-full"
+    :show-primary-color-preview="false"
+    format="CSS"
+    :color-modes="['monochrome']"
+    clearable
+    v-bind="$attrs"
+  />
+</template>

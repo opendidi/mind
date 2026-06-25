@@ -19,12 +19,14 @@
 
 <script lang="ts">
 import { ref, defineComponent, watch, nextTick } from 'vue'
+import { useCanvas } from '@/composables/useCanvas'
 import FileProps from '@/components/Meta2D/FileProps/index.vue'
 import PenProps from '@/components/Meta2D/PenProps/index.vue'
 import { useSelection, SelectionMode } from '@/services/selections'
 export default defineComponent({
   components: { FileProps, PenProps },
   setup(props) {
+    const meta2d = useCanvas()
     const filePropsRef = ref(null)
     const { selections } = useSelection()
 

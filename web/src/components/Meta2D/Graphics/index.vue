@@ -3,7 +3,12 @@
     <a-tabs v-model:activeKey="tabsActiveKey" size="small" :tabBarGutter="12" :centered="true">
       <a-tab-pane key="1" tab="系统组件">
         <div class="p-3">
-          <a-input v-model:value="keyword" placeholder="搜索" @input="debouncedFilter" :disabled="activeKey == 2" />
+          <a-input
+            v-model:value="keyword"
+            @input="debouncedFilter"
+            :disabled="activeKey == 2"
+            placeholder="输入关键词搜索"
+          />
         </div>
         <div class="scroll">
           <a-collapse
@@ -144,6 +149,7 @@
 
 <script lang="ts" setup>
 import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { useCanvas } from '@/composables/useCanvas'
 import { message } from 'ant-design-vue'
 import { FolderOutlined, FolderOpenOutlined, FolderAddOutlined, DeleteOutlined } from '@ant-design/icons-vue'
 import { GRAPHIC_GROUPS as graphicGroups } from '@/utils/graphicGroups.ts'
@@ -152,6 +158,8 @@ import { useCommonStore } from '@/store/modules/common'
 import { Icon } from 'tdesign-icons-vue-next'
 import { useRouter } from 'vue-router'
 import { apiBlueprintList, apiBlueprintDelete } from '@/api/blueprint'
+
+const meta2d = useCanvas()
 
 // 原数据
 const originalGraphicGroups = graphicGroups

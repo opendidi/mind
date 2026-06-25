@@ -54,7 +54,7 @@
 
     <!-- Hidden file inputs -->
     <input ref="imgInputRef" type="file" accept="image/*" multiple hidden @change="onFileChange" />
-    <input ref="docInputRef" type="file" accept=".docx,.xlsx,.xls,.txt,.json" hidden @change="onDocFileChange" />
+    <input ref="docInputRef" type="file" accept=".docx,.xlsx,.xls,.txt,.md,.json" hidden @change="onDocFileChange" />
 
     <!-- Input box -->
     <div class="input-inner">
@@ -75,7 +75,7 @@
           </a-button>
         </a-tooltip>
         <!-- Document upload button -->
-        <a-tooltip title="上传文档 (.docx/.xlsx/.txt/.json)">
+        <a-tooltip title="上传文档 (.docx/.xlsx/.xls/.txt/.md/.json)">
           <a-button type="text" class="tool-btn" :disabled="loading" @click="docInputRef?.click()">
             <FileTextOutlined />
           </a-button>

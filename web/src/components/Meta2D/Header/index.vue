@@ -306,6 +306,7 @@
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref, watch, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { useCanvas } from '@/composables/useCanvas'
 import { Pen, PenType, deepClone } from '@meta2d/core'
 import FileSaver from 'file-saver'
 import { message } from 'ant-design-vue'
@@ -316,6 +317,8 @@ import { apiChatUploadFile } from '@/api/chat'
 import FileManager from '@/components/FileManager/index.vue'
 
 const emit = defineEmits(['openAgentPanel'])
+
+const meta2d = useCanvas()
 
 const router = useRouter()
 const route = useRoute()

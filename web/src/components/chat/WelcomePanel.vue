@@ -4,7 +4,7 @@
     <div class="welcome-logo">
       <i class="icon-ds block ds-big"></i>
     </div>
-    <div class="welcome-title">我是小M，你的智能图形助手</div>
+    <div class="welcome-title">我是 J.A.R.V.I.S.，你的智能图形助手</div>
     <div class="welcome-subtitle">可以帮你创建和编辑图形、管理蓝图、生成思维导图，随时问我任何问题</div>
     <div class="suggestion-cards">
       <template v-for="sg in suggestions" :key="sg.label">

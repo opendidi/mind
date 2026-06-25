@@ -4,7 +4,7 @@
  * @Author: htang
  * @Date: 2023-11-07 19:56:27
  * @LastEditors: htang
- * @LastEditTime: 2024-10-09 14:59:20
+ * @LastEditTime: 2026-06-25 14:22:26
 -->
 <template>
   <div id="meta2d"></div>
@@ -154,12 +154,24 @@ onMounted(() => {
   meta2d.on('active', active)
   meta2d.on('inactive', inactive)
 
-  meta2d.socketFn = (message, context) => {
-    if (message) {
-      let info = typeof message === 'string' ? JSON.parse(message) : message
-      if (info.data['data']) {
-        let raw = info.data['data']
-        let dataList = typeof raw === 'string' ? JSON.parse(raw) : raw
+  meta2d.socketFn = (message: unknown, _context: unknown) => {
+    if (!message) return true
+    let info: Record<string, unknown> | undefined
+    try {
+      info = typeof message === 'string' ? JSON.parse(message) : (message as Record<string, unknown>)
+    } catch {
+      return true
+    }
+    if (info && typeof info === 'object' && 'data' in info) {
+      const payload = info.data as Record<string, unknown> | undefined
+      if (payload && payload['data']) {
+        let dataList: unknown[]
+        try {
+          const raw = payload['data']
+          dataList = typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown[])
+        } catch {
+          return true
+        }
         let hasUpdate = false
         dataList.forEach((item: any) => {
           if (item['dot'] === 0) {

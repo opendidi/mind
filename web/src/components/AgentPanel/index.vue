@@ -80,7 +80,7 @@ import AgentInput from './AgentInput.vue'
 import { executeCanvasTool } from '@/utils/canvasBridge'
 import { useSelection } from '@/services/selections'
 
-const collapsed = ref(false)
+const collapsed = ref(true)
 const panelWidth = ref(420)
 const msgListRef = ref<HTMLElement>()
 const stream = new AgentStreamHandler()

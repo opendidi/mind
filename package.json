@@ -26,6 +26,7 @@
     "axios": "^1.7.7",
     "dotenv": "^16.4.5",
     "echarts": "^6.1.0",
+    "emoji-mart-vue-fast": "^15.0.5",
     "file-saver": "^2.0.5",
     "less": "^4.2.0",
     "less-loader": "^11.1.3",

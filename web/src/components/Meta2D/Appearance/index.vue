@@ -45,8 +45,10 @@
 
 <script>
 import { ref, defineComponent } from 'vue'
+import { useCanvas } from '@/composables/useCanvas'
 export default defineComponent({
   setup() {
+    const meta2d = useCanvas()
     const pens = ref([])
 
     const tags = ref(1)

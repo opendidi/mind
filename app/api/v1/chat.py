@@ -85,12 +85,12 @@ def upload_file():
         return jsonify({"code": 400, "message": "文件名为空"}), 400
 
     ext = os.path.splitext(file.filename)[1].lower()
-    if ext not in (".docx", ".xlsx", ".xls", ".txt", ".json", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"):
+    if ext not in (".docx", ".xlsx", ".xls", ".txt", ".md", ".json", ".png", ".jpg", ".jpeg", ".gif", ".webp", ".svg"):
         return (
             jsonify(
                 {
                     "code": 400,
-                    "message": "仅支持 .docx / .xlsx / .xls / .txt / .json / .png / .jpg / .gif / .webp / .svg 格式",
+                    "message": "仅支持 .docx / .xlsx / .xls / .txt / .md / .json / .png / .jpg / .gif / .webp / .svg 格式",
                 }
             ),
             400,

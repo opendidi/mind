@@ -6,6 +6,7 @@
  * @LastEditors: htang
  * @LastEditTime: 2023-09-21 14:03:55
  */
+// DEMO DATA — replace with real device hierarchy from backend in production
 export const TREE_LIST = [
   {
     children: [

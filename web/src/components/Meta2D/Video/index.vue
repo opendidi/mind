@@ -54,6 +54,7 @@
 
 <script>
 import { ref, watch, defineComponent } from 'vue'
+import { useCanvas } from '@/composables/useCanvas'
 import { CaretRightOutlined, PauseOutlined, CloseOutlined } from '@ant-design/icons-vue'
 export default defineComponent({
   components: {
@@ -62,6 +63,7 @@ export default defineComponent({
     CloseOutlined,
   },
   setup(props, { emit }) {
+    const meta2d = useCanvas()
     const animateKey = 1
 
     const model = ref({

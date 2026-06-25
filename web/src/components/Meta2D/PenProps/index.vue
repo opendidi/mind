@@ -64,15 +64,7 @@
                   <a-input-number v-model:value="pen.progress" @change="changeValue('progress')" style="width: 100%" />
                 </a-form-item>
                 <a-form-item label="进度颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.progressColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('progressColor')"
-                    clearable
-                  />
+                  <ColorPicker v-model="pen.progressColor" @change="changeValue('progressColor')" />
                 </a-form-item>
                 <a-form-item label="垂直进度">
                   <a-switch v-model:checked="pen.verticalProgress" @change="changeValue('verticalProgress')" />
@@ -123,48 +115,16 @@
                   />
                 </a-form-item>
                 <a-form-item label="边框颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.borderColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('borderColor')"
-                    clearable
-                  />
+                  <ColorPicker v-model="pen.borderColor" @change="changeValue('borderColor')" />
                 </a-form-item>
                 <a-form-item label="背景颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.background"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('background')"
-                    clearable
-                  />
+                  <ColorPicker v-model="pen.background" @change="changeValue('background')" />
                 </a-form-item>
                 <a-form-item label="字体颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.color"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('color')"
-                    clearable
-                  />
+                  <ColorPicker v-model="pen.color" @change="changeValue('color')" />
                 </a-form-item>
                 <a-form-item label="阴影颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.shadowColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('shadowColor')"
-                    clearable
-                  />
+                  <ColorPicker v-model="pen.shadowColor" @change="changeValue('shadowColor')" />
                 </a-form-item>
                 <a-form-item label="边框圆角">
                   <a-input-number
@@ -208,15 +168,7 @@
                   />
                 </a-form-item>
                 <a-form-item label="文字颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.textColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('textColor')"
-                    clearable
-                  />
+                  <ColorPicker v-model="pen.textColor" @change="changeValue('textColor')" />
                 </a-form-item>
                 <a-form-item label="倾斜">
                   <a-select v-model:value="pen.fontStyle" @change="changeValue('fontStyle')">
@@ -231,26 +183,10 @@
                   </a-select>
                 </a-form-item>
                 <a-form-item label="浮动文字颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.hoverTextColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('hoverTextColor')"
-                    clearable
-                  />
+                  <ColorPicker v-model="pen.hoverTextColor" @change="changeValue('hoverTextColor')" />
                 </a-form-item>
                 <a-form-item label="背景颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="pen.textBackground"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="changeValue('textBackground')"
-                    clearable
-                  />
+                  <ColorPicker v-model="pen.textBackground" @change="changeValue('textBackground')" />
                 </a-form-item>
                 <a-form-item label="水平对齐">
                   <a-select v-model:value="pen.textAlign" @change="changeValue('textAlign')">
@@ -417,37 +353,26 @@
   </div>
 </template>
 
-<script lang="ts">
-import { defineComponent } from 'vue'
-import { CloseOutlined } from '@ant-design/icons-vue'
+
+<script lang="ts" setup>
+import { ref, watch, nextTick } from 'vue'
+import { CloseOutlined, FolderOpenOutlined } from '@ant-design/icons-vue'
+import { useCanvas } from '@/composables/useCanvas'
+import ColorPicker from '@/components/shared/ColorPicker.vue'
 import DataValueLayout from '@/components/Meta2D/DataValue/index.vue'
 import CommonModal from '@/components/Meta2D/CommonModal/index.vue'
 import IframeModal from '@/components/Meta2D/IframeModal/index.vue'
 import EditContainer from '@/components/Meta2D/EditContainer/index.vue'
-import { ColorPicker } from 'tdesign-vue-next'
-export default defineComponent({
-  components: {
-    DataValueLayout,
-    CloseOutlined,
-    EditContainer,
-    CommonModal,
-    IframeModal,
-    't-color-picker': ColorPicker,
-  },
-})
-</script>
-
-<script lang="ts" setup>
-import { ref, watch, nextTick } from 'vue'
 import { useSelection } from '@/services/selections'
 import EventFunc from '@/components/Meta2D/Event/index.vue'
 import Animate from '@/components/Meta2D/Animate/index.vue'
 import VideoComputed from '@/components/Meta2D/Video/index.vue'
 import { useCommonStore } from '@/store/modules/common'
 import FileManager from '@/components/FileManager/index.vue'
-import { FolderOpenOutlined } from '@ant-design/icons-vue'
 
 import { CONFIG_LINE_DASH as configLineDash } from '@/utils/config-line'
+
+const meta2d = useCanvas()
 
 const { selections } = useSelection()
 
@@ -554,6 +479,9 @@ watch(
   (newVal: any) => {
     if (newVal) {
       getPen()
+    } else {
+      registeredHandlers.forEach(({ name, fn }) => meta2d.off(name, fn))
+      registeredHandlers.length = 0
     }
   },
   { immediate: true },
@@ -586,7 +514,6 @@ watch(
   },
 )
 
-// Debounced render helper
 let _renderTimer: ReturnType<typeof setTimeout> | null = null
 function debouncedRender() {
   if (_renderTimer) clearTimeout(_renderTimer)

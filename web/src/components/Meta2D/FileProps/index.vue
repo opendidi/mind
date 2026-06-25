@@ -14,37 +14,13 @@
             <a-collapse-panel :key="2" :forceRender="true" header="画布">
               <a-form label-align="left" :label-col="{ span: 10 }">
                 <a-form-item label="默认颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="options.color"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="onChangeOptions('color', options.color)"
-                    clearable
-                  />
+                  <ColorPicker v-model="options.color" @change="onChangeOptions('color', options.color)" />
                 </a-form-item>
                 <a-form-item label="画笔填充颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="data.penBackground"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="onChangeData('penBackground', data.penBackground)"
-                    clearable
-                  />
+                  <ColorPicker v-model="data.penBackground" @change="onChangeData('penBackground', data.penBackground)" />
                 </a-form-item>
                 <a-form-item label="背景颜色" name="background">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="data.background"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="onChangeData('background', data.background)"
-                    clearable
-                  />
+                  <ColorPicker v-model="data.background" @change="onChangeData('background', data.background)" />
                 </a-form-item>
                 <a-form-item label="背景图片">
                   <a-button type="primary" block @click="openFileManager()"> 获取背景图片 </a-button>
@@ -60,15 +36,7 @@
                   <a-switch v-model:checked="options.grid" @change="onChangeData('grid', options.grid)" />
                 </a-form-item>
                 <a-form-item label="网格颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="options.gridColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="onChangeData('gridColor', options.gridColor)"
-                    clearable
-                  />
+                  <ColorPicker v-model="options.gridColor" @change="onChangeData('gridColor', options.gridColor)" />
                 </a-form-item>
                 <a-form-item label="网格大小">
                   <a-input-number
@@ -90,15 +58,7 @@
                   <a-switch v-model:checked="options.rule" @change="onChangeData('rule', options.rule)" />
                 </a-form-item>
                 <a-form-item label="标尺颜色">
-                  <t-color-picker
-                    class="w-full"
-                    v-model="options.ruleColor"
-                    :show-primary-color-preview="false"
-                    format="CSS"
-                    :color-modes="['monochrome']"
-                    @change="onChangeData('ruleColor', options.ruleColor)"
-                    clearable
-                  />
+                  <ColorPicker v-model="options.ruleColor" @change="onChangeData('ruleColor', options.ruleColor)" />
                 </a-form-item>
                 <a-form-item label="初始化JS">
                   <a-button @click="openEditContainer">...</a-button>
@@ -247,11 +207,9 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { ColorPicker } from 'tdesign-vue-next'
 import { Icon } from 'tdesign-icons-vue-next'
 export default defineComponent({
   components: {
-    't-color-picker': ColorPicker,
     Icon,
   },
 })
@@ -259,6 +217,8 @@ export default defineComponent({
 
 <script lang="ts" setup>
 import { onMounted, onUnmounted, ref, nextTick, reactive, watch, computed } from 'vue'
+import { useCanvas } from '@/composables/useCanvas'
+import ColorPicker from '@/components/shared/ColorPicker.vue'
 import { useRoute } from 'vue-router'
 import { message } from 'ant-design-vue'
 import FileManager from '@/components/FileManager/index.vue'
@@ -266,6 +226,7 @@ import EditContainer from '@/components/Meta2D/EditContainer/index.vue'
 import { useCommonStore } from '@/store/modules/common'
 
 const commonStore = useCommonStore()
+const meta2d = useCanvas()
 const fileManagerRef = ref(null)
 const editContainerRef = ref(null)
 

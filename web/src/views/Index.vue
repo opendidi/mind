@@ -410,7 +410,7 @@ const handleMenuClick: MenuProps['onClick'] = (e: any) => {
   save()
 }
 
-const agentPanelCollapsed = ref(false)
+const agentPanelCollapsed = ref(true)
 const onToggleAgentPanel = () => {
   agentPanelCollapsed.value = !agentPanelCollapsed.value
   if (agentPanelRef.value) {

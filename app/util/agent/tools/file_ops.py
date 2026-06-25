@@ -27,7 +27,7 @@ from app.util.vision import VisionHandler
         "type": "object",
         "properties": {
             "keyword": {"type": "string", "description": "文件名关键词"},
-            "type": {"type": "string", "description": "文件类型筛选: image/svg/document"},
+            "type": {"type": "string", "description": "文件类型筛选: image/svg/document/text"},
             "limit": {"type": "integer", "description": "返回数量", "default": 20},
         },
         "required": [],
