@@ -22,6 +22,12 @@
 - 🔒 **三种模式** — 编辑 / 预览 / 锁定
 - 📏 **标尺与网格** — 辅助精确定位
 - ⌨️ **键盘快捷键** — Delete 删除、Ctrl+C/V/A/D 复制粘贴全选复制、方向键微调、Escape 取消选中
+- 🎬 **动画与帧** — 帧编辑器 + 动画时间线，支持序列帧动画、过渡动效
+- 📊 **数据绑定** — 图形属性与外部数据源绑定（HTTP/WebSocket/MQTT），支持实时变量替换
+- 🎥 **视频笔触** — 视频播放器覆层，支持画布内视频嵌入
+- 🖼️ **事件系统** — 图形级事件/动作绑定（click、dblclick、hover 等触发器 + 执行动作）
+- 🎯 **样式面板** — 统一属性编辑（填充/边框/阴影/渐变/文字/透明度） + 100ms 渲染防抖
+- 🎨 **颜色选择器** — TDesign ColorPicker，支持 CSS 格式 + 单色模式
 
 ### 图表类型
 
@@ -54,6 +60,19 @@
 - 📐 **自动排版** — AI 驱动的图形排列和对齐
 - 🔧 **工具调用可视化** — 实时展示 Agent 的工具调用、思考过程和执行计划
 - 💬 **双入口对话** — 全屏聊天页（`/chat`）+ 编辑器侧边栏 AgentPanel
+- 🌐 **在线翻译** — 消息内联翻译（Argos 本地引擎 + LLM 回退，支持 40+ 语言）
+- 🔊 **语音朗读** — Web Speech API（浏览器内置）+ ChatTTS（后端高质量合成）双引擎
+- 📎 **文件上传** — 聊天中上传图片/文件作为对话上下文
+- 💬 **消息引用** — 回复时引用历史消息，显示引用卡片
+- ✏️ **消息编辑** — 已发送消息支持二次编辑和重新发送
+- 🔍 **消息搜索** — 会话内消息内容搜索
+- 📌 **会话置顶** — 重要会话固定到列表顶部
+- 📥 **会话导出** — 导出为 JSON（完整数据）/ Markdown（可读文本）
+- 😀 **Emoji 选择器** — @emoji-mart/data 表情面板，快速插入表情
+- 🗺️ **地图卡片** — AMap 地图渲染卡片，支持路线规划展示
+- 📈 **图表卡片** — ECharts 图表内联渲染（折线/柱状/饼图/雷达等）
+- 🧠 **思维导图卡片** — markmap 思维导图内联渲染
+- 🖼️ **画布预览** — AgentPanel 中内联显示画布操作结果
 
 ---
 
@@ -88,13 +107,14 @@ mind/
 │   │   ├── __init__.py                     # 环境变量配置（DB / Redis / LLM / MinIO / TTS）
 │   │   └── protocol.py                     # API 协议常量和状态码
 │   ├── api/v1/
-│   │   ├── __init__.py                     # 注册所有蓝图（auth, material, categories, blueprint, agent, chat）
+│   │   ├── __init__.py                     # 注册所有蓝图（auth, material, categories, blueprint, agent, chat, translate）
 │   │   ├── agent.py                        # Agent SSE 流式对话 + MCP JSON-RPC + TTS + Health
 │   │   ├── auth.py                         # 认证（登录、注册、刷新 Token）
 │   │   ├── chat.py                         # 会话管理 CRUD + 反馈
 │   │   ├── blueprint.py                    # 蓝图 CRUD
 │   │   ├── material.py                     # 素材管理 CRUD
-│   │   └── categories.py                   # 分类
+│   │   ├── categories.py                   # 分类
+│   │   └── translate.py                    # 翻译文本 + 语言列表
 │   ├── package/module/                     # MySQL 数据访问层
 │   │   ├── connect.py                      # 连接管理
 │   │   ├── user_mysql.py                   # 用户 CRUD
@@ -108,7 +128,10 @@ mind/
 │   └── util/
 │       ├── llm_client.py                   # LLM 客户端 — 懒加载单例 + 多级 Fallback
 │       ├── vision.py                        # 视觉分析（DeepSeek Vision）
-│       ├── search/                          # 搜索引擎（Bing + DuckDuckGo fallback）
+│       ├── search/                          # 搜索引擎（Bing + DuckDuckGo + SerpAPI + Local Scraper + LLM Summary，5 引擎多策略）
+│       ├── translate/                       # 翻译引擎（Argos Translate 本地 + LLM 回退 + TTL 缓存）
+│       │   ├── __init__.py                  # TranslationEngine + 缓存层
+│       │   └── models.py                    # 语言代码/检测/目标语言推断
 │       ├── agent/                           # Agent 系统核心包（32 模块，Agent OS 架构）
 │       │   ├── __init__.py                  # 包初始化，重导出关键类
 │       │   ├── core.py                      # AgentSession — 消息构建、视觉桥接、会话管理
@@ -120,7 +143,7 @@ mind/
 │       │   ├── executor.py                  # BaseExecutor / AgentExecutor（工具执行 + 护栏 + Critic 提示）
 │       │   ├── dag.py                       # DAGExecutor — 拓扑排序 + 并行 + StateDAGNode 条件分支
 │       │   ├── dispatcher.py                # 子 Agent 调度 + 多 Agent 协商（negotiate）
-│       │   ├── tools.py                     # 工具注册表 + 21 个业务工具
+│       │   ├── tools.py                     # 工具注册表 + 21 个业务工具（新路径: tools/ 子目录）
 │       │   ├── memory.py                    # 4 层记忆（工作/短期/长期/项目）+ Project Memory
 │       │   ├── reflexion.py                 # AgentReflexion — retry/skip/escalate/strategy 四级
 │       │   ├── state.py           🆕        # WorldState — 统一 Agent 世界状态模型
@@ -151,7 +174,17 @@ mind/
 │       │   │   ├── blueprint_skill.py       # 蓝图管理知识
 │       │   │   ├── mindmap_skill.py         # 思维导图知识
 │       │   │   ├── file_skill.py            # 文件管理知识
-│       │   │   └── code_skill.py            # 代码生成知识
+│       │   │   ├── code_skill.py            # 代码生成知识
+│       │   │   └── translate_skill.py       # 翻译技能知识
+│       │   ├── tools/                       # 工具函数（7 个模块，按域拆分）
+│       │   │   ├── __init__.py               # 工具注册触发点
+│       │   │   ├── canvas.py                 # Canvas 工具 (add/update/delete pen/line)
+│       │   │   ├── blueprint.py              # Blueprint 工具 (list/load/save/search/export)
+│       │   │   ├── file_ops.py               # 文件工具 (search/upload/delete/folder/rename)
+│       │   │   ├── web.py                    # Web 工具 (search/fetch)
+│       │   │   ├── geo.py                    # 地理工具 (geocode/route)
+│       │   │   ├── code.py                   # 代码工具 (generate)
+│       │   │   └── translate.py              # 翻译工具 (translate_text)
 │       │   ├── agents/                      # 子 Agent
 │       │   │   ├── base.py                  # AgentBase（ReAct 循环基类）
 │       │   │   ├── canvas_agent.py          # CanvasAgent — 画布操作
@@ -195,12 +228,13 @@ mind/
 │   │   │   │   ├── AgentToolGroupCard.vue   # 工具调用分组
 │   │   │   │   └── AgentStreamHandler.ts    # SSE 事件流处理
 │   │   │   ├── chat/                        # 全屏聊天组件
-│   │   │   │   ├── ChatInput.vue            # 消息输入栏（文本/文件/语音/引用）
-│   │   │   │   ├── ChatSidebar.vue          # 左侧会话列表（CRUD、搜索、Pin、导出）
-│   │   │   │   ├── MsgRow.vue               # 消息行（支持 Markdown、代码块复制、图表卡片）
-│   │   │   │   ├── MsgContextMenu.vue       # 右键菜单（复制/删除/反馈）
+│   │   │   │   ├── ChatInput.vue            # 消息输入栏（文本/文件/语音/引用/翻译/表情）
+│   │   │   │   ├── ChatSidebar.vue          # 左侧会话列表（CRUD、搜索、Pin、导出 JSON/MD）
+│   │   │   │   ├── MsgRow.vue               # 消息行（支持 Markdown、代码块复制、图表卡片、语音朗读、消息编辑、右键菜单）
+│   │   │   │   ├── MsgContextMenu.vue       # 右键菜单（复制/删除/引用/编辑/翻译/语音朗读/反馈）
 │   │   │   │   ├── MsgReferenceCard.vue     # 引用消息卡片
 │   │   │   │   ├── ReferencePanel.vue       # 引用附件面板
+│   │   │   │   ├── TranslatePopover.vue     # 消息内联翻译弹窗（语言切换 + 朗读 + 复制）
 │   │   │   │   ├── WelcomePanel.vue         # 空状态欢迎词
 │   │   │   │   ├── ThinkCard.vue            # 思考过程卡片（可折叠）
 │   │   │   │   ├── PlanCard.vue             # Agent 执行计划卡片
@@ -210,24 +244,28 @@ mind/
 │   │   │   │   └── MindMapCard.vue          # markmap 思维导图卡片
 │   │   │   ├── FileManager/                 # 文件/素材管理器（含预览/重命名/上传子组件）
 │   │   │   ├── blueprint/                   # 蓝图弹窗（缩略图列表 + 打开/删除）
-│   │   │   └── shared/                      # 共享组件（MapCard, RouteCard）
+│   │   │   └── shared/                      # 共享组件
+│   │   │       ├── ColorPicker.vue           # TDesign 颜色选择器封装
+│   │   │       ├── MapCard.vue               # AMap 高德地图卡片
+│   │   │       └── RouteCard.vue             # 路线规划卡片
 │   │   ├── composables/                     # Vue Composables（10 个）
-│   │   │   ├── useAgentChat.ts              # Agent SSE 流式聊天核心逻辑
-│   │   │   ├── useConversations.ts          # 会话 CRUD、Pin、分页、路由同步
+│   │   │   ├── useAgentChat.ts              # Agent SSE 流式聊天核心逻辑 + 消息编辑
+│   │   │   ├── useConversations.ts          # 会话 CRUD、Pin、分页、路由同步、导出 JSON/MD
 │   │   │   ├── useCanvas.ts                 # Meta2D 画布实例 provide/inject
-│   │   │   ├── useSpeech.ts                 # TTS 语音合成（Web Speech API + ChatTTS）
+│   │   │   ├── useSpeech.ts                 # TTS 语音合成（Web Speech API 即时 + ChatTTS 高质量，双引擎自动选择）
 │   │   │   ├── useKeyboardShortcuts.ts      # 全局键盘快捷键
 │   │   │   ├── useScrollToBottom.ts         # 聊天列表自动滚底
-│   │   │   ├── useAttachments.ts            # 文件附件管理
+│   │   │   ├── useAttachments.ts            # 文件附件管理（上传/预览/移除）
 │   │   │   ├── useAuthCaptcha.ts            # 图形验证码
-│   │   │   ├── useMessageSelect.ts          # 消息多选（引用）
+│   │   │   ├── useMessageSelect.ts          # 消息多选（引用/删除多选）
 │   │   │   └── useTheme.ts                  # 暗色/亮色主题切换
-│   │   ├── api/                             # API 客户端（5 个模块）
+│   │   ├── api/                             # API 客户端（6 个模块）
 │   │   │   ├── agent.ts                     # Agent SSE + TTS
 │   │   │   ├── chat.ts                      # 会话 CRUD + 反馈 + 文件上传
 │   │   │   ├── user.ts                      # 认证（登录/注册/Token 刷新/个人中心）
 │   │   │   ├── blueprint.ts                 # 蓝图 CRUD
-│   │   │   └── material.ts                  # 素材 CRUD
+│   │   │   ├── material.ts                  # 素材 CRUD
+│   │   │   └── translate.ts                 # 翻译文本 + 语言列表
 │   │   ├── store/
 │   │   │   └── modules/user.ts              # Pinia 用户状态（Token、登录/退出、个人信息）
 │   │   ├── router/
@@ -476,6 +514,66 @@ pnpm dev:web
 | `POST` | `/v1/material/copy` | 复制 |
 | `POST` | `/v1/material/scissors` | 移动 |
 
+### 翻译
+
+| 方法 | 路径 | 说明 |
+|------|------|------|
+| `POST` | `/v1/translate/translate` | 翻译文本（可选 source_lang/target_lang/style） |
+| `GET` | `/v1/translate/languages` | 获取支持的语言列表 + 引擎状态 |
+
+**翻译引擎架构：**
+
+```
+请求 → TranslationEngine.translate()
+        ├── 命中缓存（TTL 30min, 最多 256 条） → 返回 :cached
+        ├── Argos Translate（本地引擎，已安装的语言对） → 快速免费
+        └── LLM Fallback（DeepSeek，未安装或特殊风格） → 全覆盖 + 三种风格
+```
+
+| 特性 | 说明 |
+|------|------|
+| **语言检测** | CJK 字符集比例启发式（>30% 阈值），与前端统一 |
+| **风格** | `general`（通用）、`formal`（正式）、`technical`（技术文档） |
+| **缓存** | MD5 哈希键，TTL 30 分钟，最多 256 条，满时淘汰最旧条目 |
+| **引擎** | Argos Translate（免费本地）为主，LLM 回退（DeepSeek） |
+
+**翻译入口（三处统一管道）：**
+
+| 入口 | 方式 | 场景 |
+|------|------|------|
+| API 端点 | `POST /v1/translate/translate` | HTTP 直接调用 |
+| Agent 工具 | `translate_text` 工具 | Agent 对话中翻译 |
+| 消息内联 | TranslatePopover 组件 | 右键消息 → 翻译 |
+
+### 搜索引擎
+
+| 引擎 | 类型 | 说明 |
+|------|------|------|
+| Bing | 主引擎 | Microsoft Bing Web Search API |
+| DDGS | 回退 | DuckDuckGo 匿名搜索（免费，无 API Key） |
+| Baidu | 中文 | 中文搜索优先 |
+| Exa | 语义 | Exa AI 语义搜索（可选配置） |
+| SearXNG | 聚合 | 自托管元搜索引擎（可选配置） |
+
+**多策略链：**
+
+```
+web_search(query)
+  ├── Race 竞速（auto 模式）  → 所有引擎并行，先到先得，全局 8s 超时
+  ├── 顺序回退（指定引擎）     → 主引擎失败自动切换下一个
+  ├── 跨引擎去重               → 短时间窗内合并、去重、BM25 排序
+  ├── 关键词降级               → 长查询全失败时拆成短词重试
+  ├── 过期缓存兜底             → 引擎全挂时返回 30 分钟内旧缓存（stale 标记）
+  ├── 领域路由               → 代码 → GitHub/SO，学术 → Scholar，百科 → Wikipedia
+  └── 深度搜索               → basic 返回摘要，deep 自动抓取全文
+```
+
+| 特性 | 说明 |
+|------|------|
+| **缓存** | Redis TTL 5 分钟，引擎全挂时过期缓存兜底 |
+| **监控** | 成功率滑动窗口 + 引擎降级 + 自动告警 |
+| **排序** | BM25 算法 + 去重 + 统一格式化 |
+
 ### 分类
 
 | 方法 | 路径 | 说明 |
@@ -548,8 +646,13 @@ Level 5  Agent OS  ← 当前    状态管理 + 项目认知 + 独立审查 + �
 | | `blueprint_export` | 导出为 PNG/SVG/JSON |
 | **Layout** | `layout_auto_arrange` | 自动排列（水平/垂直/网格） |
 | | `layout_align` | 对齐图形（左/右/居中/上/下） |
-| **辅助** | `file_search` | 搜索素材文件 |
-| | `code_generate` | 生成 JavaScript/JSON 代码 |
+| **Web** | `web_search` | 网络搜索（5 引擎多策略链，含缓存/排序/监控） |
+| | `web_fetch` | 抓取网页内容并提取正文 |
+| **Geo** | `geo_geocode` | 地理编码（地址→坐标） |
+| | `geo_route` | 路线规划（驾车/步行/公交） |
+| **翻译** | `translate_text` | 翻译文本（Argos 本地 + LLM 回退，三种风格） |
+| **文件** | `file_search` / `file_upload` / `file_delete` / `file_folder_create` / `file_rename` | 素材文件 CRUD |
+| **代码** | `code_generate` | 生成 JavaScript/JSON 代码 |
 
 ### 子 Agent
 
@@ -646,9 +749,12 @@ useAuthCaptcha → useConversations → useAgentChat → useScrollToBottom
 ### 关键设计
 
 - **CanvasManager** — 通过 `provide/inject` 模式管理 Meta2D 实例，支持多画布场景扩展
-- **canvasBridge** — 聊天与画布双向通信：选中图形 → 对话上下文，Agent 创建图形 → 画布实时更新
+- **canvasBridge** — 聊天与画布双向通信桥：Agent 工具调用结果 → `notifyCanvasMutation()` → Meta2D API 操作 → localStorage 同步 + dirty 标记 + 自定义事件派发
 - **流式保存** — `onStreamTick` 做增量保存，`onDone` 做最终提交，避免会话丢失
+- **双引擎 TTS** — Web Speech API 即时语音（浏览器内置，零延迟）+ ChatTTS 高质量合成（后端 API），全局单例播放，新播放自动停止旧播放
+- **翻译管道** — 三入口统一：API 端点 / Agent 工具 / 消息内联弹窗，共享 TranslationEngine + TTL 缓存
 - **代码块复制** — 消息中的代码块自动渲染为暗色主题代码卡片，支持一键复制
+- **Token 自动刷新** — Axios 拦截器处理 401 → 并发请求排队等待刷新 → 自动重放
 
 ---
 
