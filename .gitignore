@@ -37,5 +37,8 @@ web/src/components.d.ts
 # TTS cache (generated audio files)
 data/tts_cache/
 
+# Local OCR models (auto-downloaded)
+models/ocr/
+
 # Superpowers brainstorming sessions
 .superpowers/

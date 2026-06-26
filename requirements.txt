@@ -21,6 +21,8 @@ torch>=2.0.0
 DBUtils>=3.0
 # 翻译引擎
 argostranslate>=1.9
+# 本地 OCR（Vision LLM 不可用时的离线 fallback）
+rapidocr-onnxruntime>=1.3
 # 测试
 pytest>=8.0
 pytest-timeout>=2.0

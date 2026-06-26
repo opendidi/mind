@@ -10,6 +10,7 @@ LastEditTime: 2025-08-15 10:17:31
 # -*- coding: UTF-8 -*-
 
 import os
+import pathlib as _pathlib
 
 import pymysql
 import pymysql.cursors
@@ -73,6 +74,15 @@ app_url = os.environ.get("APP_URL", "http://localhost:3100")
 
 # 高德地图 Web API Key
 AMAP_KEY = os.environ.get("AMAP_KEY", "")
+
+# ══════════════════════════════════════════════════════════════════════════════
+# OCR — 本地 OCR 模型路径（Vision LLM 不可用时的离线 fallback）
+# ══════════════════════════════════════════════════════════════════════════════
+_BASE_DIR = _pathlib.Path(__file__).resolve().parent.parent.parent  # mind/
+OCR_MODEL_DIR = os.environ.get(
+    "OCR_MODEL_DIR",
+    str(_BASE_DIR / "models" / "ocr"),
+)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TTS (Text-to-Speech) — ChatTTS 配置
