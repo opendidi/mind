@@ -103,8 +103,8 @@
             <template v-if="Array.isArray(item) && item.length > 1">
               <details class="tool-group-details">
                 <summary class="tool-group-summary">
-                  <span class="tool-group-label"> 🔧 工具调用 ({{ item.length }}) </span>
-                  <span class="tool-group-chevron">▾</span>
+                  <span class="tg-label">工具调用 ({{ item.length }})</span>
+                  <svg class="tg-chevron" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
                 </summary>
                 <div class="tool-group-body">
                   <template v-for="m in item" :key="m.id">
@@ -753,9 +753,8 @@ onBeforeUnmount(() => {
   height: 100vh;
   width: 100vw;
   background: var(--color-bg, $bg);
-  font-family:
-    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC', 'Microsoft YaHei',
-    sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
+    'Microsoft YaHei', sans-serif;
   overflow: hidden;
 }
 
@@ -1124,9 +1123,7 @@ onBeforeUnmount(() => {
   justify-content: center;
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s;
   z-index: 10;
 
   &:hover {
@@ -1143,9 +1140,7 @@ onBeforeUnmount(() => {
 
 .fab-fade-enter-active,
 .fab-fade-leave-active {
-  transition:
-    opacity 0.2s,
-    transform 0.2s;
+  transition: opacity 0.2s, transform 0.2s;
 }
 
 .fab-fade-enter-from,
@@ -1178,49 +1173,55 @@ onBeforeUnmount(() => {
 
 // Collapsible tool group (consecutive tool calls)
 .tool-group-details {
-  border: 1px solid #e2e8f0;
-  border-radius: 10px;
-  background: #fafafa;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
   overflow: hidden;
-  margin-bottom: 16px;
-  content-visibility: auto;
-  contain-intrinsic-size: auto 80px;
+  margin-bottom: 14px;
 
   &[open] {
-    border-color: #d4d4d8;
+    border-color: #d1d5db;
   }
 
   .tool-group-summary {
     display: flex;
     align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
+    justify-content: space-between;
+    padding: 6px 10px;
     cursor: pointer;
     user-select: none;
     font-size: 12px;
-    color: #71717a;
+    color: #9ca3af;
     list-style: none;
 
-    &:hover {
-      background: #f4f4f5;
+    &::-webkit-details-marker {
+      display: none;
     }
+  }
 
-    .tool-group-chevron {
-      margin-left: auto;
-      font-size: 10px;
+  .tg-label {
+    font-size: 11.5px;
+    color: #6b7280;
+  }
+
+  .tg-chevron {
+    color: #c4c8cf;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+    .tool-group-details[open] & {
+      transform: rotate(180deg);
     }
   }
 
   .tool-group-body {
-    padding: 12px;
-    border-top: 1px solid #e4e4e7;
+    padding: 4px 8px 6px;
+    border-top: 1px solid #f3f4f6;
 
     :deep(.msg-row) {
-      margin-bottom: 8px;
+      margin-bottom: 4px;
     }
 
     :deep(.msg-row:last-child) {
-      margin-bottom: 4px;
+      margin-bottom: 2px;
     }
   }
 }
@@ -1275,9 +1276,7 @@ onBeforeUnmount(() => {
   cursor: pointer;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
   z-index: 20;
-  transition:
-    transform 0.15s,
-    box-shadow 0.15s;
+  transition: transform 0.15s, box-shadow 0.15s;
 
   &:hover {
     transform: scale(1.05);

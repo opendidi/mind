@@ -16,6 +16,7 @@
  */
 import { defineConfig, ConfigEnv, loadEnv } from 'vite';
 import vue from '@vitejs/plugin-vue';
+import UnoCSS from 'unocss/vite';
 import Components from 'unplugin-vue-components/vite';
 import { AntDesignVueResolver } from 'unplugin-vue-components/resolvers';
 import { OUTPUT_DIR } from './build/constant';
@@ -42,6 +43,7 @@ export default ({ command, mode }: ConfigEnv) => {
     root,
     plugins: [
       vue(),
+      UnoCSS(),
       Components({
         resolvers: [
           AntDesignVueResolver({

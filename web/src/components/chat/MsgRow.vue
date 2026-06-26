@@ -179,28 +179,33 @@
       <template v-if="selectable">
         <a-checkbox class="msg-check" :checked="selected" @change="$emit('toggleSelect', message.id)" />
       </template>
-      <div class="msg-avatar tool-av">🔧</div>
       <div class="msg-content">
-        <div class="tool-card" :class="{ expanded: toolExpanded }">
+        <div
+          class="tool-card"
+          :class="{
+            'tool-ok': message.tool.success === true,
+            'tool-fail': message.tool.success === false,
+            expanded: toolExpanded,
+          }"
+        >
           <div class="tool-header" @click="onToggleTool">
-            <span class="tool-icon">{{ toolIcon }}</span>
             <span class="tool-name">{{ message.tool.name }}</span>
             <template v-if="message.tool.success === undefined">
-              <span class="tool-badge pending">执行中</span>
+              <span class="tool-status pending">执行中</span>
             </template>
             <template v-else-if="message.tool.success">
-              <span class="tool-badge ok">完成</span>
+              <span class="tool-status ok">完成</span>
             </template>
             <template v-else>
-              <span class="tool-badge fail">失败</span>
+              <span class="tool-status fail">失败</span>
             </template>
             <template v-if="message.tool.result !== undefined">
-              <span class="tool-expand-icon">{{ toolExpanded ? '▾' : '▸' }}</span>
+              <svg class="tool-chevron" :class="{ rotated: toolExpanded }" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
             </template>
           </div>
           <template v-if="toolExpanded && message.tool.result !== undefined">
-            <div class="tool-detail">
-              <pre class="tool-result" :class="{ fail: !message.tool.success }">{{ formattedToolResult }}</pre>
+            <div class="tool-body">
+              <pre class="tool-result" :class="{ fail: message.tool.success === false }">{{ formattedToolResult }}</pre>
             </div>
           </template>
         </div>
@@ -393,15 +398,6 @@ watch(
     fbState.value = val || ''
   },
 )
-
-const toolIcon = computed(() => {
-  const name = props.message.tool?.name || ''
-  if (name.includes('canvas')) return '▦'
-  if (name.includes('file') || name.includes('excel')) return '▤'
-  if (name.includes('blueprint')) return '▥'
-  if (name.includes('search')) return '⌕'
-  return '◆'
-})
 
 function onToggleTool() {
   if (props.message.tool?.result !== undefined) {
@@ -681,6 +677,7 @@ onBeforeUnmount(() => {
 </script>
 
 <style lang="scss" scoped>
+@use 'sass:color';
 @use '@/assets/styles/variables.scss' as *;
 
 .icon-ds {
@@ -742,21 +739,11 @@ onBeforeUnmount(() => {
       background: linear-gradient(135deg, $primary, #7c3aed);
       color: #fff;
     }
-    &.tool-av {
-      background: #fef3c7;
-      color: #d97706;
-      font-size: 14px;
-    }
   }
 
   .msg-content {
     max-width: 75%;
     min-width: 0;
-  }
-
-  &.tool-row .msg-content {
-    max-width: 92%;
-    flex: 1;
   }
 
   .msg-bubble {
@@ -977,73 +964,85 @@ onBeforeUnmount(() => {
   }
 }
 
+.tool-row {
+  margin-bottom: 4px;
+
+  .msg-content {
+    max-width: 100%;
+    flex: 1;
+  }
+}
+
 .tool-card {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
-  padding: 6px 10px;
-  font-size: 12px;
+  border: 1px solid #e5e7eb;
+  border-radius: 6px;
+  overflow: hidden;
+
+  &.tool-ok {
+    border-color: #e5e7eb;
+  }
+  &.tool-fail {
+    border-color: #fca5a5;
+  }
+
   .tool-header {
     display: flex;
     align-items: center;
-    gap: 6px;
+    gap: 8px;
+    padding: 5px 10px;
     cursor: pointer;
     user-select: none;
+    transition: background 0.1s;
+
+    &:hover {
+      background: #f9fafb;
+    }
   }
-  .tool-icon {
-    font-size: 13px;
-    color: #64748b;
-    flex-shrink: 0;
-  }
+
   .tool-name {
+    flex: 1;
+    font-size: 11.5px;
+    color: #6b7280;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+  }
+
+  .tool-status {
+    font-size: 10.5px;
     font-weight: 500;
-    color: #475569;
-    font-family: 'Fira Code', 'Consolas', monospace;
-    font-size: 11px;
+    flex-shrink: 0;
+
+    &.pending { color: #9ca3af; }
+    &.ok { color: #9ca3af; }
+    &.fail { color: #ef4444; }
   }
-  .tool-badge {
-    font-size: 10px;
-    padding: 0 6px;
-    border-radius: 6px;
-    font-weight: 500;
-    line-height: 18px;
-    &.pending {
-      background: #dbeafe;
-      color: #1e40af;
-    }
-    &.ok {
-      background: #d1fae5;
-      color: #065f46;
-    }
-    &.fail {
-      background: #fee2e2;
-      color: #991b1b;
-    }
+
+  .tool-chevron {
+    color: #d1d5db;
+    flex-shrink: 0;
+    transition: transform 0.15s;
+    &.rotated { transform: rotate(180deg); }
   }
-  .tool-expand-icon {
-    margin-left: auto;
-    font-size: 10px;
-    color: #94a3b8;
+
+  .tool-body {
+    border-top: 1px solid #f3f4f6;
   }
-  .tool-detail {
-    margin-top: 6px;
-    padding-top: 6px;
-    border-top: 1px solid #e2e8f0;
-  }
+
   .tool-result {
     margin: 0;
-    padding: 8px;
-    border-radius: 6px;
+    padding: 6px 10px;
+    border-radius: 0;
     font-size: 11px;
     line-height: 1.5;
     white-space: pre-wrap;
     word-break: break-all;
-    max-height: 180px;
+    max-height: 160px;
     overflow-y: auto;
-    background: #f1f5f9;
-    color: #334155;
+    background: #fafafa;
+    color: #6b7280;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+
     &.fail {
-      background: #fef2f2;
+      background: #fef5f5;
       color: #991b1b;
     }
   }
@@ -1249,7 +1248,7 @@ onBeforeUnmount(() => {
   background: var(--color-surface, #fff);
   color: var(--color-text, #1e293b);
   &:focus {
-    border-color: darken($primary, 8%);
+    border-color: color.adjust($primary, $lightness: -8%);
   }
 }
 .msg-edit-hint {

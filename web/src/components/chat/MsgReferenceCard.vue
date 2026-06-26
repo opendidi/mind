@@ -1,8 +1,8 @@
 <!-- MsgReferenceCard — DeepSeek-style search citation display -->
 <template>
   <div v-if="references && references.length > 0" class="msg-refs mb-2">
-    <!-- Header -->
-    <div class="refs-header" @click="expanded = !expanded">
+    <!-- Header: click opens right-side ReferencePanel, chevron toggles inline expand -->
+    <div class="refs-header" @click="emit('selectRefs', references)">
       <div class="refs-header-left">
         <svg
           class="refs-globe-icon"
@@ -32,6 +32,7 @@
         fill="none"
         stroke="currentColor"
         stroke-width="2"
+        @click.stop="expanded = !expanded"
       >
         <path d="M6 9l6 6 6-6" />
       </svg>
@@ -83,13 +84,17 @@ defineProps<{
   references?: Array<{ title?: string; url: string; snippet?: string; domain?: string }>
 }>()
 
-const expanded = ref(true)
+const emit = defineEmits<{
+  selectRefs: [refs: Array<{ title?: string; url: string; snippet?: string; domain?: string }>]
+}>()
+
+const expanded = ref(false)
 const openIdx = ref(-1)
 </script>
 
 <style lang="scss" scoped>
 .msg-refs {
-  margin: 8px 12px 0 0;
+  margin: 8px 0 12px 0;
   padding: 0;
   border-radius: 10px;
   background: #fafafa;
