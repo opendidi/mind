@@ -8,7 +8,9 @@
       </template>
       <div class="msg-avatar user">U</div>
       <MsgContextMenu
+        show-translate
         @copy="emit('copy', message.text || '')"
+        @translate="onShowTranslate"
         @quote="emit('quoteMsg', message.id)"
         @delete="emit('delete', message.id)"
       >
@@ -79,7 +81,9 @@
         <i class="icon-ds block ds-small"></i>
       </div>
       <MsgContextMenu
+        show-translate
         @copy="emit('copy', message.text || '')"
+        @translate="onShowTranslate"
         @quote="emit('quoteMsg', message.id)"
         @delete="emit('delete', message.id)"
       >
@@ -251,6 +255,11 @@
             <CopyOutlined />
             <span>复制</span>
           </span>
+          <span class="toolbar-divider"></span>
+          <span class="toolbar-btn" @click.stop="onTranslateSelection">
+            <TranslationOutlined />
+            <span>翻译</span>
+          </span>
           <template v-if="ttsSupported">
             <span class="toolbar-divider"></span>
             <span class="toolbar-btn" @click.stop="onSpeakSelection">
@@ -262,6 +271,21 @@
       </template>
     </transition>
   </Teleport>
+
+  <template v-if="tlPos">
+    <TranslatePopover
+      :x="tlPos.x"
+      :y="tlPos.y"
+      :loading="tlLoading"
+      :error="tlError"
+      :translated="tlResult"
+      :engine="tlEngine"
+      :source-lang="tlSrcLang"
+      :target-lang="tlTgtLang"
+      @close="onCloseTranslate"
+      @change-target="onChangeTargetLang"
+    />
+  </template>
 </template>
 
 <script setup lang="ts">
@@ -275,6 +299,7 @@ import {
   FileTextOutlined,
   SoundOutlined,
   PauseCircleFilled,
+  TranslationOutlined,
 } from '@ant-design/icons-vue'
 import type { ChatMessage } from '@/composables/useAgentChat'
 import { useSpeech } from '@/composables/useSpeech'
@@ -283,6 +308,7 @@ import MindMapCard from './MindMapCard.vue'
 import MapCard from '@/components/shared/MapCard.vue'
 import RouteCard from '@/components/shared/RouteCard.vue'
 import CanvasPreview from './CanvasPreview.vue'
+import TranslatePopover from './TranslatePopover.vue'
 import ThinkCard from './ThinkCard.vue'
 import MsgContextMenu from './MsgContextMenu.vue'
 import MsgReferenceCard from './MsgReferenceCard.vue'
@@ -540,6 +566,90 @@ function onSpeakSelection() {
   if (text) speak(text)
   quoteVisible.value = false
 }
+
+function onTranslateSelection() {
+  quoteVisible.value = false
+  onShowTranslate()
+}
+
+// ── Translation ───────────────────────────────────────────
+const tlLoading = ref(false)
+const tlError = ref('')
+const tlResult = ref('')
+const tlEngine = ref('')
+const tlSrcLang = ref('')
+const tlTgtLang = ref('zh')
+const tlPos = ref<{ x: number; y: number } | null>(null)
+let tlText = ''
+
+function detectTextLang(text: string): string {
+  // Count CJK characters
+  const cjk = (text.match(/[一-鿿㐀-䶿]/g) || []).length
+  const total = text.replace(/\s/g, '').length
+  return cjk > total * 0.3 ? 'zh' : 'en'
+}
+
+async function onTranslate(targetLang?: string) {
+  const text = window.getSelection()?.toString().trim()
+  if (!text) return
+  tlText = text
+  const target = targetLang || (detectTextLang(text) === 'zh' ? 'en' : 'zh')
+  tlLoading.value = true
+  tlError.value = ''
+  tlResult.value = ''
+  try {
+    const { translateText } = await import('@/api/translate')
+    const res = await translateText({ text, target_lang: target, source_lang: 'auto' })
+    tlResult.value = res.translated
+    tlEngine.value = res.engine
+    tlSrcLang.value = res.source_lang
+    tlTgtLang.value = res.target_lang
+  } catch (e: any) {
+    tlError.value = e.message || '翻译失败'
+  } finally {
+    tlLoading.value = false
+  }
+}
+
+function onShowTranslate() {
+  const sel = window.getSelection()
+  if (sel?.rangeCount) {
+    const rect = sel.getRangeAt(0).getBoundingClientRect()
+    tlPos.value = { x: rect.left + rect.width / 2 - 170, y: rect.bottom }
+    onTranslate()
+  }
+}
+
+async function onChangeTargetLang(lang: string) {
+  tlTgtLang.value = lang
+  tlLoading.value = true
+  tlError.value = ''
+  tlResult.value = ''
+  try {
+    const { translateText } = await import('@/api/translate')
+    const res = await translateText({ text: tlText, target_lang: lang, source_lang: 'auto' })
+    tlResult.value = res.translated
+    tlEngine.value = res.engine
+    tlSrcLang.value = res.source_lang
+    tlTgtLang.value = res.target_lang
+  } catch (e: any) {
+    tlError.value = e.message || '翻译失败'
+  } finally {
+    tlLoading.value = false
+  }
+}
+
+function onCloseTranslate() {
+  tlPos.value = null
+  tlText = ''
+  tlLoading.value = false
+  tlError.value = ''
+  tlResult.value = ''
+  tlEngine.value = ''
+  tlSrcLang.value = ''
+}
+
+// ── End Translation ───────────────────────────────────────
 
 onMounted(() => {
   document.addEventListener('click', hideContextMenu)

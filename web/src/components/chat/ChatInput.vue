@@ -2,59 +2,87 @@
 <template>
   <div class="input-area">
     <!-- Quote preview -->
-    <div v-if="quotedText" class="quote-bar">
-      <span class="quote-label">
-        {{ quotedText.role === 'user' ? '你' : 'AI' }}
-      </span>
-      <span class="quote-preview">{{ quotedText.text }}</span>
-      <a-button type="text" size="small" class="quote-close" @click="$emit('removeQuote')">
-        <CloseOutlined />
-      </a-button>
-    </div>
+    <template v-if="quotedText">
+      <div class="quote-bar">
+        <span class="quote-label">
+          {{ quotedText.role === 'user' ? '你' : 'AI' }}
+        </span>
+        <span class="quote-preview">{{ quotedText.text }}</span>
+        <a-button type="text" size="small" class="quote-close" @click="$emit('removeQuote')">
+          <CloseOutlined />
+        </a-button>
+      </div>
+    </template>
 
     <!-- Image attachment previews -->
-    <div v-if="attachments.length > 0" class="attach-preview-row">
-      <div
-        v-for="(att, idx) in attachments"
-        :key="'img-' + idx"
-        class="attach-thumb"
-        :class="{ uploading: att.uploading, failed: att.failed }"
-      >
-        <img v-if="!att.failed" :src="att.preview" :alt="att.name" />
-        <span v-else class="attach-fail-icon">!</span>
-        <span v-if="att.uploading" class="attach-spin" />
-        <span class="attach-remove" @click="onRemoveAttachment(idx)">&times;</span>
+    <template v-if="attachments.length > 0">
+      <div class="attach-preview-row">
+        <template v-for="(att, idx) in attachments" :key="'img-' + idx">
+          <div class="attach-thumb" :class="{ uploading: att.uploading, failed: att.failed }">
+            <template v-if="!att.failed">
+              <img :src="att.preview" :alt="att.name" />
+            </template>
+            <template v-else>
+              <span class="attach-fail-icon">!</span>
+            </template>
+            <template v-if="att.uploading">
+              <span class="attach-spin" />
+            </template>
+            <span class="attach-remove" @click="onRemoveAttachment(idx)">&times;</span>
+          </div>
+        </template>
       </div>
-    </div>
+    </template>
 
     <!-- Document attachment previews -->
-    <div v-if="docAttachments.length > 0" class="attach-preview-row">
-      <div
-        v-for="(doc, idx) in docAttachments"
-        :key="'doc-' + idx"
-        class="doc-attach"
-        :class="{ uploading: doc.uploading, failed: doc.failed }"
-      >
-        <FileTextOutlined class="doc-icon" />
-        <span class="doc-name">{{ doc.name }}</span>
-        <span v-if="doc.uploading" class="attach-spin" />
-        <span v-else-if="!doc.failed" class="doc-ok">&#10003;</span>
-        <span class="attach-remove" @click="onRemoveDoc(idx)">&times;</span>
+    <template v-if="docAttachments.length > 0">
+      <div class="attach-preview-row">
+        <template v-for="(doc, idx) in docAttachments" :key="'doc-' + idx">
+          <div class="doc-attach" :class="{ uploading: doc.uploading, failed: doc.failed }">
+            <FileTextOutlined class="doc-icon" />
+            <span class="doc-name">{{ doc.name }}</span>
+            <template v-if="doc.uploading">
+              <span class="attach-spin" />
+            </template>
+            <template v-else-if="!doc.failed">
+              <span class="doc-ok">&#10003;</span>
+            </template>
+            <span class="attach-remove" @click="onRemoveDoc(idx)">&times;</span>
+          </div>
+        </template>
       </div>
-    </div>
+    </template>
 
     <!-- Model selection -->
-    <div v-if="modelList.length > 0" class="model-row">
-      <template v-for="(item, idx) in modelList" :key="item.id">
-        <span class="model-chip" :class="{ active: modelIdx === idx }" @click="$emit('update:modelIdx', idx)">
-          {{ item.id }}
-        </span>
-      </template>
-    </div>
+    <template v-if="modelList.length > 0">
+      <div class="model-row">
+        <template v-for="(item, idx) in modelList" :key="item.id">
+          <span class="model-chip" :class="{ active: modelIdx === idx }" @click="$emit('update:modelIdx', idx)">
+            {{ item.id }}
+          </span>
+        </template>
+      </div>
+    </template>
 
     <!-- Hidden file inputs -->
     <input ref="imgInputRef" type="file" accept="image/*" multiple hidden @change="onFileChange" />
     <input ref="docInputRef" type="file" accept=".docx,.xlsx,.xls,.txt,.md,.json" hidden @change="onDocFileChange" />
+
+    <!-- Translate bar -->
+    <template v-if="translateMode">
+      <div class="translate-bar">
+        <span class="tb-icon"><TranslationOutlined /></span>
+        <span class="tb-label">翻译为</span>
+        <a-select v-model:value="translateTarget" size="small" style="width: 110px" class="tb-select">
+          <template v-for="l in quickLangs" :key="l.code">
+            <a-select-option :value="l.code">{{ l.label }}</a-select-option>
+          </template>
+        </a-select>
+        <a-button type="text" size="small" class="tb-close" @click="translateMode = false">
+          <CloseOutlined />
+        </a-button>
+      </div>
+    </template>
 
     <!-- Input box -->
     <div class="input-inner">
@@ -63,7 +91,9 @@
         v-model="inputText"
         rows="1"
         @input="onTextareaInput"
-        placeholder="输入你的问题，Enter 发送，Shift+Enter 换行"
+        :placeholder="
+          translateMode ? '输入要翻译的内容，Enter 发送翻译请求' : '输入你的问题，Enter 发送，Shift+Enter 换行'
+        "
         :disabled="loading"
         @keydown="onKeydown"
       />
@@ -81,12 +111,7 @@
           </a-button>
         </a-tooltip>
         <!-- Emoji picker button -->
-        <a-popover
-          v-model:open="showEmoji"
-          trigger="click"
-          placement="top"
-          :overlayStyle="{ padding: 0 }"
-        >
+        <a-popover v-model:open="showEmoji" trigger="click" placement="top" :overlayStyle="{ padding: 0 }">
           <template #content>
             <Picker :data="emojiIndex" native @select="onEmojiSelect" />
           </template>
@@ -96,6 +121,18 @@
             </a-button>
           </a-tooltip>
         </a-popover>
+        <!-- Translate toggle button -->
+        <a-tooltip :title="translateMode ? '退出翻译' : '翻译'">
+          <a-button
+            type="text"
+            class="tool-btn"
+            :class="{ active: translateMode }"
+            :disabled="loading"
+            @click="translateMode = !translateMode"
+          >
+            <TranslationOutlined />
+          </a-button>
+        </a-tooltip>
         <template v-if="loading">
           <a-button type="primary" danger @click="$emit('abort')" class="abort-btn" title="停止生成">
             <CloseOutlined />
@@ -112,8 +149,15 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed, nextTick } from 'vue'
-import { CloseOutlined, SendOutlined, PaperClipOutlined, FileTextOutlined, SmileOutlined } from '@ant-design/icons-vue'
+import { ref, computed, nextTick, watch } from 'vue'
+import {
+  CloseOutlined,
+  SendOutlined,
+  PaperClipOutlined,
+  FileTextOutlined,
+  SmileOutlined,
+  TranslationOutlined,
+} from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import data from 'emoji-mart-vue-fast/data/all.json'
 import { Picker, EmojiIndex } from 'emoji-mart-vue-fast/src'
@@ -121,6 +165,36 @@ import 'emoji-mart-vue-fast/css/emoji-mart.css'
 import type { QuoteInfo, ChatFile } from '@/composables/useAgentChat'
 import { useAttachments } from '@/composables/useAttachments'
 import { apiChatUploadFile } from '@/api/chat'
+
+const quickLangs = [
+  { code: 'zh', label: '中文' },
+  { code: 'en', label: 'English' },
+  { code: 'ja', label: '日本語' },
+  { code: 'ko', label: '한국어' },
+  { code: 'fr', label: 'Français' },
+  { code: 'de', label: 'Deutsch' },
+  { code: 'es', label: 'Español' },
+]
+
+const langLabels: Record<string, string> = {
+  zh: '中文',
+  en: '英语',
+  ja: '日语',
+  ko: '韩语',
+  fr: '法语',
+  de: '德语',
+  es: '西班牙语',
+  pt: '葡萄牙语',
+  it: '意大利语',
+  ru: '俄语',
+  ar: '阿拉伯语',
+}
+
+function detectTextLang(text: string): string {
+  const cjk = (text.match(/[一-鿿㐀-䶿]/g) || []).length
+  const total = text.replace(/\s/g, '').length
+  return cjk > total * 0.3 ? 'zh' : 'en'
+}
 
 const props = defineProps<{
   loading: boolean
@@ -157,6 +231,27 @@ const docAttachments = ref<DocAttach[]>([])
 // Emoji picker
 const emojiIndex = new EmojiIndex(data)
 const showEmoji = ref(false)
+
+// Translate mode
+const translateMode = ref(false)
+const translateTarget = ref('en')
+
+// Auto-detect target language when translate mode opens
+watch(translateMode, val => {
+  if (val && inputText.value.trim()) {
+    translateTarget.value = detectTextLang(inputText.value) === 'zh' ? 'en' : 'zh'
+  }
+})
+
+function onSendTranslate() {
+  const text = inputText.value.trim()
+  if (!text) return
+  const targetLabel = langLabels[translateTarget.value] || translateTarget.value
+  const prompt = `请将以下内容翻译成${targetLabel}：\n\n${text}`
+  inputText.value = ''
+  if (textareaRef.value) textareaRef.value.style.height = ''
+  emit('send', prompt, [], [], [], undefined)
+}
 
 async function onDocFileChange(e: Event) {
   const input = e.target as HTMLInputElement
@@ -199,7 +294,11 @@ function onRemoveDoc(idx: number) {
 function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
     e.preventDefault()
-    onSend()
+    if (translateMode.value) {
+      onSendTranslate()
+    } else {
+      onSend()
+    }
   }
 }
 
@@ -484,6 +583,43 @@ $text-muted: #94a3b8;
     }
   }
 
+  .translate-bar {
+    max-width: 1024px;
+    margin: 0 auto 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    background: linear-gradient(135deg, #eef2ff, #f5f3ff);
+    border: 1px solid rgba($primary, 0.15);
+    border-radius: 10px;
+
+    .tb-icon {
+      font-size: 15px;
+      color: $primary;
+      display: flex;
+    }
+    .tb-label {
+      font-size: 13px;
+      color: $primary;
+      font-weight: 500;
+    }
+    .tb-select {
+      :deep(.ant-select-selector) {
+        border-radius: 6px !important;
+      }
+    }
+    .tb-close {
+      display: flex;
+      margin-left: 2px;
+      align-items: center;
+      color: $text-muted;
+      &:hover {
+        color: #dc2626;
+      }
+    }
+  }
+
   .input-inner {
     max-width: 1024px;
     margin: 0 auto;
@@ -494,9 +630,7 @@ $text-muted: #94a3b8;
     border: 1px solid $border;
     border-radius: 16px;
     padding: 8px 12px 8px 16px;
-    transition:
-      border-color 0.2s,
-      box-shadow 0.2s;
+    transition: border-color 0.2s, box-shadow 0.2s;
 
     &:focus-within {
       border-color: $primary;
@@ -517,7 +651,8 @@ $text-muted: #94a3b8;
       font-size: 14px;
       line-height: 1.5;
       font-family: inherit;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Segoe UI Emoji', 'Apple Color Emoji', 'Noto Color Emoji', system-ui, sans-serif;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Segoe UI Emoji', 'Apple Color Emoji',
+        'Noto Color Emoji', system-ui, sans-serif;
       color: #1e293b;
 
       &::placeholder {
@@ -543,15 +678,17 @@ $text-muted: #94a3b8;
       color: $text-muted;
       border: none;
       font-size: 18px;
-      transition:
-        color 0.15s,
-        background 0.15s;
+      transition: color 0.15s, background 0.15s;
       &:hover:not(:disabled) {
         color: $primary;
         background: rgba($primary, 0.06);
       }
       &:disabled {
         color: #d1d5db;
+      }
+      &.active {
+        color: $primary;
+        background: rgba($primary, 0.1);
       }
     }
 

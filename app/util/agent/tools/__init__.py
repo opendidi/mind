@@ -16,6 +16,7 @@ from . import canvas  # noqa: F401  — canvas + layout tools
 from . import code  # noqa: F401  — code_generate
 from . import file_ops  # noqa: F401  — file search + document analysis
 from . import geo  # noqa: F401  — geocode + regeocode
+from . import translate  # noqa: F401  — translate_text
 from . import web  # noqa: F401  — web_fetch + analyze_image
 
 # Re-export _require for backward compat (used by engine_chain.py)

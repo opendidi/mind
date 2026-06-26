@@ -15,6 +15,7 @@ from app.api.v1.blueprint import blueprint_api
 from app.api.v1.categories import categories_api
 from app.api.v1.chat import chat_api
 from app.api.v1.material import material_api
+from app.api.v1.translate import translate_api
 
 
 def create_v1():
@@ -25,4 +26,5 @@ def create_v1():
     bp_v1.register_blueprint(blueprint_api, url_prefix="/blueprint")
     bp_v1.register_blueprint(agent_api, url_prefix="/agent")
     bp_v1.register_blueprint(chat_api, url_prefix="/chat")
+    bp_v1.register_blueprint(translate_api, url_prefix="/translate")
     return bp_v1

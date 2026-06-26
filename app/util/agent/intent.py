@@ -94,6 +94,11 @@ _TOOL_KEYWORDS = _WRITE_KEYWORDS + [
     "导出",
     "保存",
     "加载",
+    "翻译",
+    "译成",
+    "英译中",
+    "中译英",
+    "translate",
 ]
 
 
@@ -199,6 +204,11 @@ _DOMAIN_KEYWORDS = {
         "生成代码",
         "写代码",
         "JavaScript",
+    ],
+    "translate": [
+        "翻译",
+        "译成",
+        "translate",
     ],
 }
 

@@ -10,6 +10,7 @@ from app.util.agent.skills.canvas_skill import CANVAS_SKILL
 from app.util.agent.skills.code_skill import CODE_SKILL
 from app.util.agent.skills.file_skill import FILE_SKILL
 from app.util.agent.skills.mindmap_skill import MINDMAP_SKILL
+from app.util.agent.skills.translate_skill import TRANSLATE_SKILL
 
 __all__ = [
     "CANVAS_SKILL",
@@ -17,6 +18,7 @@ __all__ = [
     "FILE_SKILL",
     "MINDMAP_SKILL",
     "CODE_SKILL",
+    "TRANSLATE_SKILL",
     "get_skills_for_intent",
 ]
 
@@ -27,6 +29,7 @@ CORE_SKILL_MAP = {
     "file": lambda: FILE_SKILL,
     "mindmap": lambda: MINDMAP_SKILL,
     "code": lambda: CODE_SKILL,
+    "translate": lambda: TRANSLATE_SKILL,
 }
 
 # Tier 2: Context-aware snippets
