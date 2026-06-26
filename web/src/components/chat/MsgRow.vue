@@ -88,8 +88,17 @@
         @delete="emit('delete', message.id)"
       >
         <div class="msg-content" @contextmenu="onContextMenu">
-          <ThinkCard v-if="message.thinking" :content="message.thinking" :thinking="!message.text" />
-          <div class="msg-bubble assistant">
+          <!-- Phase 1: Deep thinking / reasoning -->
+          <ThinkCard
+            v-if="message.thinking"
+            :content="message.thinking"
+            :thinking="!message.text"
+            :duration="message.thinkingDuration"
+          />
+          <!-- Phase 2: Search results / citations -->
+          <MsgReferenceCard :references="message.references" @selectRefs="refs => $emit('selectRefs', refs)" />
+          <!-- Phase 3: Final answer with inline citations -->
+          <div class="msg-bubble assistant mt-2">
             <template v-for="(seg, si) in messageSegments" :key="si">
               <template v-if="seg.type === 'text' && seg.content.trim()">
                 <div class="md-body" v-html="renderSegMd(seg.content)" />
@@ -125,7 +134,6 @@
               </template>
             </template>
           </div>
-          <MsgReferenceCard :references="message.references" @selectRefs="refs => $emit('selectRefs', refs)" />
           <div class="msg-actions">
             <span class="msg-copy" title="复制" @click="$emit('copy', message.text || '')"><CopyOutlined /></span>
             <span
@@ -510,7 +518,19 @@ function onCopyCode(code: string, si: number) {
 
 function renderSegMd(text: string): string {
   if (!text.trim()) return ''
-  return props.renderMd(text)
+  const html = props.renderMd(text)
+  return styleCitations(html)
+}
+
+/** Wrap [N] citation markers in styled superscript, skipping code blocks. */
+function styleCitations(html: string): string {
+  const parts = html.split(/(<pre[\s\S]*?<\/pre>|<code[\s\S]*?<\/code>)/g)
+  return parts
+    .map((part, i) => {
+      if (i % 2 === 1) return part
+      return part.replace(/\[(\d+)\]/g, '<sup class="cite-num">[$1]</sup>')
+    })
+    .join('')
 }
 
 // ── TTS ──
@@ -913,9 +933,7 @@ onBeforeUnmount(() => {
     overflow: hidden;
     border: 2px solid rgba($primary, 0.1);
     cursor: pointer;
-    transition:
-      transform 0.15s,
-      border-color 0.15s;
+    transition: transform 0.15s, border-color 0.15s;
     img {
       width: 100%;
       height: 100%;
@@ -1095,14 +1113,9 @@ onBeforeUnmount(() => {
   padding: 4px 6px;
   background: #fff;
   border-radius: 10px;
-  box-shadow:
-    0 4px 20px rgba(79, 70, 229, 0.12),
-    0 2px 8px rgba(0, 0, 0, 0.06),
-    0 0 0 0.5px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
   transform: none;
-  transition:
-    box-shadow 0.2s,
-    transform 0.15s;
+  transition: box-shadow 0.2s, transform 0.15s;
   user-select: none;
 
   .toolbar-btn {
@@ -1186,6 +1199,32 @@ onBeforeUnmount(() => {
 .lightbox-fade-enter-from,
 .lightbox-fade-leave-to {
   opacity: 0;
+}
+
+// ── Inline citations [1] [2] ────────────────────────────
+:deep(.cite-num) {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  margin: 0 1px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+  color: #4f46e5;
+  background: #eef2ff;
+  border: 1px solid #e0e7ff;
+  border-radius: 8px;
+  cursor: pointer;
+  vertical-align: super;
+  transition: background 0.12s, border-color 0.12s;
+
+  &:hover {
+    background: #ddd6fe;
+    border-color: #c4b5fd;
+  }
 }
 
 // ── Message editing ──────────────────────────────────────

@@ -38,6 +38,7 @@ export interface ChatMessage {
   quote?: QuoteInfo
   tool?: ToolInfo
   thinking?: string
+  thinkingDuration?: number
   timestamp?: string
   feedback?: 'liked' | 'disliked'
   references?: Array<{ title?: string; url: string; snippet?: string; domain?: string }>
@@ -242,6 +243,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   const pendingToolArgs = new Map<string, Record<string, unknown>>()
   let pendingToolCount = 0
   let pendingRefs: Array<{ title?: string; url: string; snippet?: string; domain?: string }> | null = null
+  let thinkingStartTime = 0
 
 
   function addMessage(role: ChatMessage['role'], text: string) {
@@ -378,7 +380,9 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
           }
           if (currentThinking.value.trim()) {
             newMsg.thinking = currentThinking.value.trim()
+            newMsg.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
             currentThinking.value = ''
+            thinkingStartTime = 0
           }
           if (pendingRefs) {
             newMsg.references = pendingRefs
@@ -415,7 +419,9 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
           }
           if (currentThinking.value.trim()) {
             newMsg.thinking = currentThinking.value.trim()
+            newMsg.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
             currentThinking.value = ''
+            thinkingStartTime = 0
           }
           if (pendingRefs) {
             newMsg.references = pendingRefs
@@ -430,6 +436,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
 
       // ── Thinking ──
       case 'thinking':
+        if (!currentThinking.value) thinkingStartTime = Date.now()
         currentThinking.value += (data.text || data.content || '')
         thinkingText.value = data.text || data.content || ''
         break
@@ -526,6 +533,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         currentTool.value = ''
         thinkingText.value = ''
         currentThinking.value = ''
+        thinkingStartTime = 0
         plan.value = null
         options.onError?.(data.message)
         options.onStreamTick?.()
@@ -655,6 +663,8 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     streamDisconnected.value = false
     currentTool.value = ''
     thinkingText.value = ''
+    currentThinking.value = ''
+    thinkingStartTime = 0
     pendingToolArgs.clear()
     pendingToolCount = 0
     pendingRefs = null
@@ -707,6 +717,8 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     plan.value = null
     currentTool.value = ''
     thinkingText.value = ''
+    currentThinking.value = ''
+    thinkingStartTime = 0
     traceId.value = null
     streamDisconnected.value = false
     msgIdCounter = 0
