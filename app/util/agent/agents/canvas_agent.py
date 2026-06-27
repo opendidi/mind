@@ -6,6 +6,7 @@ from app.util.agent.tools import TOOL_SCHEMAS
 
 CANVAS_TOOLS = [
     "canvas",
+    "canvas_check_empty",
     "layout_auto_arrange",
     "layout_align",
     "blueprint_save",
@@ -35,20 +36,23 @@ class CanvasAgent(AgentBase):
 - canvas: 统一画布操作工具，通过 action 参数切换：
   - action="add_pen": 创建图形 (需 type, x, y, text 等)
   - action="add_line": 创建连线 (需 from_pen, to_pen 等)
+  - action="add_diagram": 批量创建完整图表 (推荐用于流程图/架构图/思维导图)
   - action="update_pen": 修改图形 (需 pen_id, props)
   - action="delete_pen": 删除图形 (需 pen_id 或 pen_ids)
   - action="get_state": 获取画布状态
   - action="undo"/"redo"/"clear": 撤销/重做/清空
+- canvas_check_empty: 线程安全检查画布是否为空（推荐替代 canvas_get_state）
 - layout_auto_arrange: 自动排版
 - layout_align: 对齐图形
 
 ## 最佳实践
-1. **先看再动**：操作前检查画布状态中的 selectedIds，确认目标图形 ID
-2. **合理布局**：流程图通常垂直排列，架构图可水平排列
-3. **间距适当**：图形之间保持 40-60px 间距
-4. **命名清晰**：图形文字应简洁明了
-5. **完成后必须保存**：绘制/编辑完成后调用 blueprint_save 保存为图纸，根据内容生成有意义的名称（如"用户登录流程图"、"微服务架构图"等）
-6. **完成后报告**：操作完成后简要描述做了什么，并告知已保存的图纸名称
+1. **[!!] 直接绘制，不要过度检查**：用户要求画图时，直接用 add_diagram 创建图表。如果画布状态不可用（canvas_available=false），跳过查询，直接绘制。
+2. **[!] 先清空后绘制**：绘制完整图表前，先调用 canvas(action="clear", confirm=true) 清空画布，确保从空白开始
+3. **合理布局**：流程图通常垂直排列，架构图可水平排列
+4. **间距适当**：图形之间保持 40-60px 间距，大模块宽高 240x140，子组件 180x80
+5. **命名清晰**：图形文字应简洁明了，中英文均可（如"感知模块\nPerception"）
+6. **完成后必须保存**：绘制/编辑完成后调用 blueprint_save 保存为图纸
+7. **完成后报告**：操作完成后简要描述做了什么，并告知已保存的图纸名称
 
 ## 坐标系统
 - 画布原点(0,0)在左上角

@@ -720,10 +720,21 @@ function onSave(flag: boolean): Promise<string | false> | boolean {
             message.success('保存成功')
             return params.id as string
           })
-          .catch(err => {
-            message.error('保存失败，请重试')
-            console.error('[onSave] modify blueprint failed:', err)
-            return false
+          .catch(async err => {
+            // Modify may fail if blueprint was externally deleted — fallback to create
+            currentId.value = ''
+            try {
+              const addRes = await apiBlueprintAdd(params)
+              currentId.value = addRes.id
+              commonStore.setIsSave('1')
+              message.success('已保存为新图纸')
+              router.replace({ path: '/' + addRes.id })
+              return addRes.id as string
+            } catch {
+              message.error('保存失败，请重试')
+              console.error('[onSave] modify → add fallback failed:', err)
+              return false
+            }
           })
       }
     })
@@ -915,11 +926,22 @@ onMounted(() => {
       if (meta2d) onMeta2dReady()
     }, 2000)
   }
+  // Listen for external blueprint deletion — reset currentId so next save creates a new blueprint
+  window.addEventListener('blueprint:deleted', onBlueprintDeleted)
 })
 
 onUnmounted(() => {
   if (meta2d) meta2d.off('scale', scaleSubscriber)
+  window.removeEventListener('blueprint:deleted', onBlueprintDeleted)
 })
+
+function onBlueprintDeleted(e: Event) {
+  const detail = (e as CustomEvent).detail as { id: string } | undefined
+  if (detail && detail.id === currentId.value) {
+    currentId.value = ''
+    router.replace({ path: '/' })
+  }
+}
 </script>
 
 <style lang="less" scoped>

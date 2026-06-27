@@ -92,16 +92,3 @@ TTS_CACHE_DIR = os.environ.get("TTS_CACHE_DIR", os.path.join(os.path.dirname(__f
 TTS_VOICE_SEED = int(os.environ.get("TTS_VOICE_SEED", 42))
 TTS_MAX_TEXT_LENGTH = int(os.environ.get("TTS_MAX_TEXT_LENGTH", 5000))
 
-# ══════════════════════════════════════════════════════════════════════════════
-# API Security Monitor — api_guard.py 配置
-# ══════════════════════════════════════════════════════════════════════════════
-SECURITY_MONITOR_ENABLED = os.environ.get("SECURITY_MONITOR_ENABLED", "true").lower() == "true"
-# 认证失败阈值 → 触发撞库封锁
-SECURITY_AUTH_FAILURE_MAX = int(os.environ.get("SECURITY_AUTH_FAILURE_MAX", 10))
-SECURITY_AUTH_FAILURE_WINDOW = int(os.environ.get("SECURITY_AUTH_FAILURE_WINDOW", 60))
-# 短窗口突发阈值 → 触发高频封锁
-SECURITY_BURST_MAX = int(os.environ.get("SECURITY_BURST_MAX", 30))
-SECURITY_BURST_WINDOW = int(os.environ.get("SECURITY_BURST_WINDOW", 5))
-# ID 遍历探测阈值
-SECURITY_ID_PROBE_MAX = int(os.environ.get("SECURITY_ID_PROBE_MAX", 15))
-SECURITY_ID_PROBE_WINDOW = int(os.environ.get("SECURITY_ID_PROBE_WINDOW", 60))

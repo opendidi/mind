@@ -10,6 +10,7 @@ _CANVAS_SKILL = """## 画布编辑能力
 - canvas(action="update_pen", pen_id="...", props={...}): 修改图形属性（位置、大小、颜色、文字等）
 - canvas(action="delete_pen", pen_id="..." 或 pen_ids=[...]): 删除图形
 - canvas(action="get_state"): 查看画布状态
+- canvas_check_empty: 线程安全检查画布是否为空（推荐优先使用）
 - canvas(action="undo"/"redo"): 撤销/重做
 - canvas(action="clear", confirm=true): 清空画布
 - 布局排版：layout_auto_arrange、layout_align

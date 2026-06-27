@@ -37,6 +37,7 @@ class ToolRouter:
     DOMAIN_TOOL_MAP: ClassVar[dict] = {
         "canvas": [
             "canvas",
+            "canvas_check_empty",
             "layout_auto_arrange",
             "layout_align",
             "canvas_props",

@@ -137,17 +137,6 @@ def create_app():
 
         return None
 
-    # ── API Security Monitor (before-request) ──────────────────────────
-    from app.util.api_guard import before_request_security, after_request_security
-
-    @app.before_request
-    def security_monitor():
-        return before_request_security()
-
-    @app.after_request
-    def security_audit(response):
-        return after_request_security(response)
-
     register_blueprints(app)
 
     # ── SPA fallback for HTML5 history mode ──────────────────────────────

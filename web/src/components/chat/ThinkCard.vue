@@ -71,11 +71,11 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 
 const props = defineProps<{
   content: string
-  thinking?: boolean
+  thinking?: boolean    // true = still generating (live), false = complete
   duration?: number
   startExpanded?: boolean
 }>()
@@ -85,6 +85,20 @@ const expanded = ref(props.startExpanded ?? props.thinking ?? false)
 function toggle() {
   expanded.value = !expanded.value
 }
+
+// Auto-collapse when thinking completes (DeepSeek-R1 style: collapse gray box → show green answer)
+watch(
+  () => props.thinking,
+  (newVal, oldVal) => {
+    if (oldVal === true && newVal === false) {
+      // Thinking just finished — auto-collapse to reveal answer below
+      expanded.value = false
+    } else if (newVal === true) {
+      // Thinking started — auto-expand
+      expanded.value = true
+    }
+  },
+)
 
 const stepCount = computed(() => {
   if (!props.content) return 0

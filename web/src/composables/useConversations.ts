@@ -90,7 +90,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
     if (msgs.length === 0) return null
     const firstUser = msgs.find(m => m.role === 'user')
     const title = firstUser?.text?.slice(0, 30) || '新对话'
-    const id = activeConvId.value || crypto.randomUUID()
+    const id = activeConvId.value || crypto.randomUUID().replace(/-/g, '')
 
     if (seqSnapshot !== saveSeq) return null
 
@@ -124,7 +124,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
     if (msgs.length === 0) return
     const firstUser = msgs.find(m => m.role === 'user')
     const title = firstUser?.text?.slice(0, 30) || '新对话'
-    const id = activeConvId.value || crypto.randomUUID()
+    const id = activeConvId.value || crypto.randomUUID().replace(/-/g, '')
 
     try {
       await apiChatSave({ id, title, messages: msgs })

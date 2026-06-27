@@ -88,17 +88,17 @@
         @delete="emit('delete', message.id)"
       >
         <div class="msg-content" @contextmenu="onContextMenu">
-          <!-- Phase 1: Deep thinking / reasoning -->
+          <!-- Phase 1: Deep thinking / reasoning (DeepSeek-R1 style) -->
           <ThinkCard
             v-if="message.thinking"
             :content="message.thinking"
-            :thinking="!message.text"
+            :thinking="message.thinkingActive === true"
             :duration="message.thinkingDuration"
           />
           <!-- Phase 2: Search results / citations -->
           <MsgReferenceCard :references="message.references" @selectRefs="refs => $emit('selectRefs', refs)" />
           <!-- Phase 3: Final answer with inline citations -->
-          <div class="msg-bubble assistant mt-2">
+          <div class="msg-bubble assistant mt-2" :class="{ 'is-streaming': streaming }">
             <template v-for="(seg, si) in messageSegments" :key="si">
               <template v-if="seg.type === 'text' && seg.content.trim()">
                 <div class="md-body" v-html="renderSegMd(seg.content)" />
@@ -331,6 +331,7 @@ const props = defineProps<{
   renderMd: (text: string) => string
   selectable?: boolean
   selected?: boolean
+  streaming?: boolean
 }>()
 
 const emit = defineEmits<{

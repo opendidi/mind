@@ -38,6 +38,7 @@ export interface ChatMessage {
   quote?: QuoteInfo
   tool?: ToolInfo
   thinking?: string
+  thinkingActive?: boolean  // true during live streaming, false once done
   thinkingDuration?: number
   timestamp?: string
   feedback?: 'liked' | 'disliked'
@@ -360,6 +361,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         if (!text) break
         const last = messages.value[messages.value.length - 1]
         if (last && last.role === 'agent' && last.text !== undefined) {
+          // Append to existing answer
           last.text += text
           // Merge any pending refs from later tool calls (e.g. 2nd web_search)
           if (pendingRefs) {
@@ -371,18 +373,24 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
             }
             pendingRefs = null
           }
+        } else if (last && last.role === 'agent' && last.thinkingActive) {
+          // Thinking was streaming live — finalize it and start answer text
+          last.thinkingActive = false
+          last.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
+          last.text = text
+          thinkingStartTime = 0
+          currentThinking.value = ''
+          if (pendingRefs) {
+            last.references = pendingRefs
+            pendingRefs = null
+          }
         } else {
+          // Fresh answer message (no thinking phase)
           const newMsg: ChatMessage = {
             id: `msg-${++msgIdCounter}`,
             role: 'agent',
             text,
             timestamp: new Date().toLocaleTimeString(),
-          }
-          if (currentThinking.value.trim()) {
-            newMsg.thinking = currentThinking.value.trim()
-            newMsg.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
-            currentThinking.value = ''
-            thinkingStartTime = 0
           }
           if (pendingRefs) {
             newMsg.references = pendingRefs
@@ -391,7 +399,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
           messages.value.push(newMsg)
         }
         thinkingText.value = ''
-        // Auto-save every 10 tokens during streaming
         break
       }
 
@@ -400,7 +407,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         const lastMsg = messages.value[messages.value.length - 1]
         if (lastMsg && lastMsg.role === 'agent' && lastMsg.text) {
           lastMsg.text = msgText || lastMsg.text
-          // Merge any pending refs (from later tool calls in the same turn)
           if (pendingRefs) {
             const existing = (lastMsg.references || []) as any[]
             const seen = new Set(existing.map((r: any) => r.url))
@@ -410,18 +416,22 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
             }
             pendingRefs = null
           }
+        } else if (lastMsg && lastMsg.role === 'agent' && lastMsg.thinkingActive) {
+          lastMsg.thinkingActive = false
+          lastMsg.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
+          lastMsg.text = msgText
+          thinkingStartTime = 0
+          currentThinking.value = ''
+          if (pendingRefs) {
+            lastMsg.references = pendingRefs
+            pendingRefs = null
+          }
         } else {
           const newMsg: ChatMessage = {
             id: `msg-${++msgIdCounter}`,
             role: 'agent',
             text: msgText,
             timestamp: new Date().toLocaleTimeString(),
-          }
-          if (currentThinking.value.trim()) {
-            newMsg.thinking = currentThinking.value.trim()
-            newMsg.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
-            currentThinking.value = ''
-            thinkingStartTime = 0
           }
           if (pendingRefs) {
             newMsg.references = pendingRefs
@@ -434,11 +444,28 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         break
       }
 
-      // ── Thinking ──
+      // ── Thinking (DeepSeek-R1 style: live streaming gray box) ──
       case 'thinking':
         if (!currentThinking.value) thinkingStartTime = Date.now()
-        currentThinking.value += (data.text || data.content || '')
-        thinkingText.value = data.text || data.content || ''
+        const thinkChunk = data.text || data.content || ''
+        currentThinking.value += thinkChunk
+        thinkingText.value = thinkChunk
+
+        // Show thinking in real-time: create or update a live thinking message
+        const lastMsgForThink = messages.value[messages.value.length - 1]
+        if (lastMsgForThink && lastMsgForThink.role === 'agent' && lastMsgForThink.thinkingActive) {
+          // Append to existing live thinking message
+          lastMsgForThink.thinking = currentThinking.value
+        } else {
+          // Create new live thinking message (no answer text yet)
+          messages.value.push({
+            id: `msg-${++msgIdCounter}`,
+            role: 'agent',
+            thinking: currentThinking.value,
+            thinkingActive: true,
+            timestamp: new Date().toLocaleTimeString(),
+          })
+        }
         break
 
       // ── Tool calls ──
@@ -531,6 +558,15 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         loading.value = false
         connected.value = false
         currentTool.value = ''
+        // Finalize any live thinking message
+        for (let i = messages.value.length - 1; i >= 0; i--) {
+          const m = messages.value[i]
+          if (m.role === 'agent' && m.thinkingActive) {
+            m.thinkingActive = false
+            m.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
+            break
+          }
+        }
         thinkingText.value = ''
         currentThinking.value = ''
         thinkingStartTime = 0
@@ -590,6 +626,14 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       // ── Done (handled in onComplete) ──
       case 'done':
         pendingRefs = null
+        // Finalize any live thinking message without answer text (edge case)
+        const lastDone = messages.value[messages.value.length - 1]
+        if (lastDone && lastDone.role === 'agent' && lastDone.thinkingActive) {
+          lastDone.thinkingActive = false
+          lastDone.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
+          thinkingStartTime = 0
+          currentThinking.value = ''
+        }
         break
 
       // ── Passthrough ──
@@ -663,6 +707,13 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     streamDisconnected.value = false
     currentTool.value = ''
     thinkingText.value = ''
+    // Finalize any live thinking message
+    const last = messages.value[messages.value.length - 1]
+    if (last && last.role === 'agent' && last.thinkingActive) {
+      last.thinkingActive = false
+      last.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
+      if (!last.text) last.text = '（已中断）'
+    }
     currentThinking.value = ''
     thinkingStartTime = 0
     pendingToolArgs.clear()

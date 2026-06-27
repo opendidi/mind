@@ -6,6 +6,7 @@ This package re-exports the shared run_tool_call() and TOOL_SCHEMAS
 from the previous monolithic tools.py, so existing importers work unchanged.
 """
 
+import json
 import logging
 
 from app.util.tool_registry import ToolRegistry
@@ -63,13 +64,14 @@ def run_tool_call(
             relay_queue = event_queue
             if event_queue is not None:
                 import queue as _queue
+                import threading as _threading
 
                 relay_queue = _queue.Queue()
 
                 worker_ready = _threading.Event()
 
                 def _relay_worker():
-                    """Forward sub-agent events to main SSE queue with translation."""
+                    """Forward sub-agent events to main event queue — preserves tuple format."""
                     worker_ready.set()  # signal readiness before entering loop
                     while True:
                         try:
@@ -80,23 +82,16 @@ def run_tool_call(
                             break
                         kind = evt[0]
                         if kind == "token":
-                            event_queue.put({"type": "sub_agent_token", "data": {"agent": agent_name, "text": evt[1]}})
+                            event_queue.put(("token", evt[1]))
                         elif kind == "tool_call":
-                            event_queue.put({"type": "tool_call", "data": {"tool": evt[1], "args": evt[2]}})
+                            event_queue.put(("tool_call", evt[1], evt[2]))
                         elif kind == "tool_result":
                             safe_result = evt[3]
                             try:
                                 json.dumps(safe_result)
                             except (TypeError, ValueError):
                                 safe_result = str(safe_result)
-                            event_queue.put(
-                                {
-                                    "type": "tool_result",
-                                    "data": {"tool": evt[1], "success": evt[2], "result": safe_result},
-                                }
-                            )
-
-                import threading as _threading
+                            event_queue.put(("tool_result", evt[1], evt[2], safe_result))
 
                 relay_thread = _threading.Thread(target=_relay_worker, daemon=True)
                 relay_thread.start()
@@ -104,7 +99,7 @@ def run_tool_call(
 
             # Signal sub-agent start to frontend
             if event_queue is not None:
-                event_queue.put({"type": "sub_agent_start", "data": {"agent": agent_name, "task": task[:200]}})
+                event_queue.put(("sub_agent_start", {"agent": agent_name, "task": task[:200]}))
 
             result = dispatcher.dispatch(
                 llm_client,
@@ -119,9 +114,7 @@ def run_tool_call(
 
             # Signal sub-agent end + stop relay
             if event_queue is not None:
-                event_queue.put(
-                    {"type": "sub_agent_end", "data": {"agent": agent_name, "success": result.get("success", False)}}
-                )
+                event_queue.put(("sub_agent_end", {"agent": agent_name, "success": result.get("success", False)}))
                 relay_queue.put(None)  # sentinel to stop relay thread
                 relay_thread.join(timeout=2)
 
