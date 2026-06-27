@@ -64,6 +64,7 @@
     "postcss-nested": "^6.0.1",
     "sass-embedded": "^1.100.0",
     "typescript": "^5.0.2",
+    "unocss": "^0.58.9",
     "vite": "^4.4.2",
     "vue-tsc": "^1.8.3"
   }
