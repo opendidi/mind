@@ -4,7 +4,6 @@
 import json
 import logging
 import queue
-import time
 from collections import defaultdict
 
 from app.config import AGENT_DEFAULT_MODEL, LLM_TIMEOUT
