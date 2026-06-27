@@ -11,6 +11,7 @@ from flask import Blueprint, g, jsonify, make_response, request
 from app.package.module.user_mysql import UserMysqlHandler
 from app.plugin.auth import create_access_token, create_refresh_token, decode_token
 from app.plugin.auth.utils import generate_captcha_image, generate_captcha_text
+from app.util.api_guard import record_auth_failure
 from app.util.decorators import token_required
 from app.util.error_codes import ErrorCode
 from app.util.redis_utils import get_redis
@@ -109,6 +110,7 @@ def login():
     # Verify captcha (one-time use, fetched from Redis)
     stored_text = _captcha_get(captcha_id)
     if not stored_text or captcha_text.upper() != stored_text:
+        record_auth_failure()
         return (
             jsonify(
                 {
@@ -137,6 +139,7 @@ def login():
 
     success, result = UserMysqlHandler.verify_user(username, password)
     if not success:
+        record_auth_failure()
         return (
             jsonify({"code": 400, "error_code": ErrorCode.AUTH_INVALID_CREDENTIALS, "message": result, "data": None}),
             400,
@@ -190,6 +193,7 @@ def register():
     # Verify captcha (one-time use, fetched from Redis)
     stored_text = _captcha_get(captcha_id)
     if not stored_text or captcha_text.upper() != stored_text:
+        record_auth_failure()
         return (
             jsonify(
                 {
