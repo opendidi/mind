@@ -159,6 +159,8 @@ def _resolve_pen_ids(args: dict) -> list:
 )
 def _tool_canvas(args):
     action = args.get("action", "")
+    if not action:
+        return {"success": False, "error": "缺少必填参数: action，请指定画布操作类型。支持: add_pen/add_line/add_diagram/update_pen/delete_pen/clear/undo/redo/get_state/lock/unlock/toggle_visibility/duplicate/move_pen/group/ungroup"}
     if action == "add_pen":
         pen_id = _new_pen_id()
         pen_type = args.get("type", "rectangle")
