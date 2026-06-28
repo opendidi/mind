@@ -113,7 +113,7 @@
         <!-- Emoji picker button -->
         <a-popover v-model:open="showEmoji" trigger="click" placement="top" :overlayStyle="{ padding: 0 }">
           <template #content>
-            <Picker :data="emojiIndex" native @select="onEmojiSelect" />
+            <Picker :data="emojiIndex" @select="onEmojiSelect" />
           </template>
           <a-tooltip title="表情">
             <a-button type="text" class="tool-btn" :disabled="loading">
@@ -650,7 +650,6 @@ $text-muted: #94a3b8;
       padding: 7px 0;
       font-size: 14px;
       line-height: 1.5;
-      font-family: inherit;
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Segoe UI Emoji', 'Apple Color Emoji',
         'Noto Color Emoji', system-ui, sans-serif;
       color: #1e293b;

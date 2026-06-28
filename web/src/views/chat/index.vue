@@ -774,7 +774,7 @@ onBeforeUnmount(() => {
   width: 100vw;
   background: var(--color-bg, $bg);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
-    'Microsoft YaHei', sans-serif;
+    'Microsoft YaHei', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   overflow: hidden;
 }
 
