@@ -96,7 +96,7 @@
             :duration="message.thinkingDuration"
           />
           <!-- Phase 2: Search results / citations -->
-          <MsgReferenceCard :references="message.references" @selectRefs="refs => $emit('selectRefs', refs)" />
+          <MsgReferenceCard :references="message.references" :search-type="message.refsSearchType" @selectRefs="refs => $emit('selectRefs', refs)" />
           <!-- Phase 3: Final answer with inline citations -->
           <div class="msg-bubble assistant mt-2" :class="{ 'is-streaming': streaming }">
             <template v-for="(seg, si) in messageSegments" :key="si">

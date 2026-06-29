@@ -37,11 +37,12 @@ BASE_PROMPT = """你是"J.A.R.V.I.S."，一个智能助手，专注于帮助用�
 | 意图类型 | 示例 | 处理方式 |
 |---------|------|---------|
 | **实时信息查询** | "有什么新闻""今天天气怎么样""最新XX是什么" | 用 web_search 搜索后总结回答。必须提供 keyword 参数（从用户问题中提取关键词）。例如问"有什么新闻"→ `web_search(keyword="今日新闻", search_type="news", timelimit="w")`。 |
+| **图片搜索** | "帮我找XX的图片""搜一下XX照片/壁纸""XX长什么样" | 用 web_search(search_type="image") 搜索图片。返回图片URL、缩略图、来源等信息。例如问"找日落的图片"→ `web_search(keyword="sunset", search_type="image", max_results=10)`。 |
 | **闲聊/知识问答** | "解释机器学习""推荐一本书""Python 怎么学" | **直接用自身知识回复**，不调用工具。这类常识性问题不需要搜索。 |
 | **图形查看** | "画布上有什么""当前有哪些节点" | 用 canvas_check_empty 查看后回复。如果状态不可用，坦诚告知用户无法获取画布信息 |
 | **图形编辑** | "画一个流程图""删除那个矩形" | **[!!] 必须直接调用工具完成操作。不要先查询状态再决定——直接清空画布，然后绘制。如果 canvas_context 不可用，跳过查询，立即用 add_diagram 创建图表。** |
 
-[!] 判断标准：时效性问题（新闻/天气/最新）→ 搜索；常识知识 → 直接回答；图形相关 → 对应工具。
+[!] 判断标准：时效性问题（新闻/天气/最新）→ 搜索；搜图/找照片 → 图片搜索；常识知识 → 直接回答；图形相关 → 对应工具。
 
 ## [!!] 核心铁律（图形操作时）
 
@@ -563,9 +564,9 @@ class AgentSession:
                     yield evt
                     # ── References event: extract search/fetch results for citation display ──
                     if event[0] == "tool_result":
-                        refs = self._extract_references(event[1], event[2], event[3])
-                        if refs:
-                            yield {"type": "references", "data": {"references": refs}}
+                        refs_data = self._extract_references(event[1], event[2], event[3])
+                        if refs_data:
+                            yield {"type": "references", "data": refs_data}
 
         # Persist session memory
         self._persist_session()
@@ -645,11 +646,13 @@ class AgentSession:
         return title[:200]
 
     @staticmethod
-    def _extract_references(tool_name: str, success: bool, result) -> list | None:
+    def _extract_references(tool_name: str, success: bool, result) -> dict | None:
         """Extract citation references from web_search / web_fetch tool results.
 
-        Returns a list of {title, url, snippet, domain} dicts, or None if
-        no references can be extracted.
+        Returns a dict with keys:
+          - references: list of {title, url, snippet, domain, image?}
+          - search_type: "web" | "news" | "image"
+        or None if no references can be extracted.
         """
         import re
 
@@ -658,6 +661,8 @@ class AgentSession:
         data = result.get("data") or result
         if not isinstance(data, dict):
             return None
+
+        search_type = (result.get("meta", {}) or {}).get("search_type", "web")
 
         if tool_name == "web_search":
             results = data.get("results", [])
@@ -680,30 +685,37 @@ class AgentSession:
                         title = AgentSession._clean_title(raw_title, url)
                 else:
                     title = AgentSession._clean_title(r.get("title", ""), url)
-                refs.append(
-                    {
-                        "title": title,
-                        "url": url,
-                        "snippet": (r.get("snippet", "") or "")[:300],
-                        "domain": r.get("domain", "") or AgentSession._extract_domain(url),
-                    }
-                )
+                ref_item = {
+                    "title": title,
+                    "url": url,
+                    "snippet": (r.get("snippet", "") or "")[:300],
+                    "domain": r.get("domain", "") or AgentSession._extract_domain(url),
+                }
+                # Image search: include thumbnail URL for gallery display
+                if search_type == "image":
+                    img = r.get("image") or ""
+                    if img:
+                        ref_item["image"] = img
+                refs.append(ref_item)
                 if len(refs) >= 10:
                     break
-            return refs if refs else None
+            return {"references": refs, "search_type": search_type} if refs else None
 
         elif tool_name == "web_fetch":
             url = data.get("url", "")
             if not url:
                 return None
-            return [
-                {
-                    "title": AgentSession._clean_title(data.get("title", ""), url),
-                    "url": url,
-                    "snippet": (data.get("content", "") or "")[:300],
-                    "domain": AgentSession._extract_domain(url),
-                }
-            ]
+            return {
+                "references": [
+                    {
+                        "title": AgentSession._clean_title(data.get("title", ""), url),
+                        "url": url,
+                        "snippet": (data.get("content", "") or "")[:300],
+                        "domain": AgentSession._extract_domain(url),
+                    }
+                ],
+                "search_type": "web",
+            }
 
         return None
 

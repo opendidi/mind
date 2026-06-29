@@ -42,7 +42,8 @@ export interface ChatMessage {
   thinkingDuration?: number
   timestamp?: string
   feedback?: 'liked' | 'disliked'
-  references?: Array<{ title?: string; url: string; snippet?: string; domain?: string }>
+  references?: Array<{ title?: string; url: string; snippet?: string; domain?: string; image?: string }>
+  refsSearchType?: string  // "web" | "news" | "image" — controls reference card display mode
 }
 
 export interface ToolCallRecord {
@@ -243,7 +244,8 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   let _lastUserFiles: ChatFile[] | undefined = undefined
   const pendingToolArgs = new Map<string, Record<string, unknown>>()
   let pendingToolCount = 0
-  let pendingRefs: Array<{ title?: string; url: string; snippet?: string; domain?: string }> | null = null
+  let pendingRefs: Array<{ title?: string; url: string; snippet?: string; domain?: string; image?: string }> | null = null
+  let pendingRefsSearchType: string | null = null
   let thinkingStartTime = 0
 
 
@@ -371,7 +373,9 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
             if (newRefs.length > 0) {
               last.references = [...existing, ...newRefs]
             }
+            if (pendingRefsSearchType) last.refsSearchType = pendingRefsSearchType
             pendingRefs = null
+            pendingRefsSearchType = null
           }
         } else if (last && last.role === 'agent' && last.thinkingActive) {
           // Thinking was streaming live — finalize it and start answer text
@@ -382,7 +386,9 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
           currentThinking.value = ''
           if (pendingRefs) {
             last.references = pendingRefs
+            if (pendingRefsSearchType) last.refsSearchType = pendingRefsSearchType
             pendingRefs = null
+            pendingRefsSearchType = null
           }
         } else {
           // Fresh answer message (no thinking phase)
@@ -394,7 +400,9 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
           }
           if (pendingRefs) {
             newMsg.references = pendingRefs
+            if (pendingRefsSearchType) newMsg.refsSearchType = pendingRefsSearchType
             pendingRefs = null
+            pendingRefsSearchType = null
           }
           messages.value.push(newMsg)
         }
@@ -414,7 +422,9 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
             if (newRefs.length > 0) {
               lastMsg.references = [...existing, ...newRefs]
             }
+            if (pendingRefsSearchType) lastMsg.refsSearchType = pendingRefsSearchType
             pendingRefs = null
+            pendingRefsSearchType = null
           }
         } else if (lastMsg && lastMsg.role === 'agent' && lastMsg.thinkingActive) {
           lastMsg.thinkingActive = false
@@ -424,7 +434,9 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
           currentThinking.value = ''
           if (pendingRefs) {
             lastMsg.references = pendingRefs
+            if (pendingRefsSearchType) lastMsg.refsSearchType = pendingRefsSearchType
             pendingRefs = null
+            pendingRefsSearchType = null
           }
         } else {
           const newMsg: ChatMessage = {
@@ -435,7 +447,9 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
           }
           if (pendingRefs) {
             newMsg.references = pendingRefs
+            if (pendingRefsSearchType) newMsg.refsSearchType = pendingRefsSearchType
             pendingRefs = null
+            pendingRefsSearchType = null
           }
           messages.value.push(newMsg)
         }
@@ -555,6 +569,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         addMessage('error', data.message)
         flushPendingTools()
         pendingRefs = null
+        pendingRefsSearchType = null
         loading.value = false
         connected.value = false
         currentTool.value = ''
@@ -580,7 +595,8 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       // them when the next agent message (token/message) is created.
       // Multiple web_search calls within one turn → MERGE refs, don't overwrite.
       case 'references': {
-        const refs = (data.references || data.refs || []) as Array<{ title?: string; url: string; snippet?: string; domain?: string }>
+        const refs = (data.references || data.refs || []) as Array<{ title?: string; url: string; snippet?: string; domain?: string; image?: string }>
+        const searchType = (data.search_type || 'web') as string
         if (refs.length > 0) {
           // Try the last message: if it's an agent msg from THIS turn, merge refs
           const last = messages.value[messages.value.length - 1]
@@ -592,6 +608,10 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
             if (newRefs.length > 0) {
               last.references = [...existing, ...newRefs]
             }
+            // Keep image search type if set
+            if (searchType === 'image') {
+              last.refsSearchType = searchType
+            }
           } else {
             // No agent message yet — accumulate in buffer
             if (pendingRefs) {
@@ -599,6 +619,10 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
               pendingRefs = [...pendingRefs, ...refs.filter(r => !seen.has(r.url))]
             } else {
               pendingRefs = refs
+            }
+            // Buffer search_type too
+            if (searchType === 'image' && !pendingRefsSearchType) {
+              pendingRefsSearchType = searchType
             }
           }
         }
@@ -626,6 +650,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       // ── Done (handled in onComplete) ──
       case 'done':
         pendingRefs = null
+        pendingRefsSearchType = null
         // Finalize any live thinking message without answer text (edge case)
         const lastDone = messages.value[messages.value.length - 1]
         if (lastDone && lastDone.role === 'agent' && lastDone.thinkingActive) {
@@ -676,6 +701,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     toolCalls.value = []
     traceId.value = null
     pendingRefs = null
+    pendingRefsSearchType = null
 
     abortCtrl = agentChat({
       userMessage: apiText,
@@ -719,6 +745,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     pendingToolArgs.clear()
     pendingToolCount = 0
     pendingRefs = null
+    pendingRefsSearchType = null
   }
 
   function retry() {
