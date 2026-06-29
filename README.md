@@ -1,5 +1,7 @@
 # Mind — AI 智能工作台
 
+> ⚠️ **声明**：本项目谨用于学习用途，不提供任何担保，请勿用于生产环境。
+
 集成 AI Agent 系统的智能工作台，支持自然语言对话完成**画布绘图、蓝图管理、思维导图、文件分析、数据可视化、地图路线规划、互联网搜索、图片搜索、翻译**等任务。基于 [Meta2D](https://github.com/le5le-com/meta2d.js) 渲染 2D 图形，支持流程图、架构图、UML 等 8 种图表类型。
 
 **当前版本：** 0.0.2 | **在线预览：** [opendidi.github.io/mind](https://opendidi.github.io/mind)

@@ -23,6 +23,11 @@
               </template>
             </a-dropdown>
           </span>
+          <span class="tp-style-btns">
+            <template v-for="s in styleOptions" :key="s.key">
+              <button class="tp-style-btn" :class="{ active: (props.style || 'general') === s.key }" @click="emit('changeStyle', s.key)">{{ s.label }}</button>
+            </template>
+          </span>
           <span class="tp-engine" :class="engine">{{ engine }}</span>
           <span class="tp-close" @click="$emit('close')">✕</span>
         </div>
@@ -62,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, onMounted, onBeforeUnmount } from 'vue'
 import { CopyOutlined, CaretDownFilled, SoundOutlined, PauseCircleFilled } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useSpeech } from '@/composables/useSpeech'
@@ -76,12 +81,27 @@ const props = defineProps<{
   engine: string
   sourceLang: string
   targetLang: string
+  style?: string
 }>()
 
 const emit = defineEmits<{
   close: []
   changeTarget: [lang: string]
+  changeStyle: [style: string]
 }>()
+
+const styleOptions = [
+  { key: 'general', label: '通用' },
+  { key: 'formal', label: '正式' },
+  { key: 'technical', label: '技术' },
+]
+
+function onKeydown(e: KeyboardEvent) {
+  if (e.key === 'Escape') emit('close')
+}
+
+onMounted(() => document.addEventListener('keydown', onKeydown))
+onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
 
 const langLabels: Record<string, string> = {
   zh: '中文',
@@ -120,10 +140,16 @@ function onSwap() {
   emit('changeTarget', props.sourceLang)
 }
 
-const popoverStyle = computed(() => ({
-  left: `${props.x}px`,
-  top: `${props.y + 8}px`,
-}))
+const popoverStyle = computed(() => {
+  const w = Math.min(380, window.innerWidth - 32)
+  let left = props.x
+  if (left + w > window.innerWidth - 16) left = window.innerWidth - w - 16
+  if (left < 16) left = 16
+  return {
+    left: `${left}px`,
+    top: `${Math.min(props.y + 8, window.innerHeight - 260)}px`,
+  }
+})
 
 function copyResult() {
   navigator.clipboard.writeText(props.translated).then(() => {
@@ -145,7 +171,8 @@ function speakResult() {
 
 .translate-popover {
   position: fixed;
-  width: 340px;
+  width: 100%;
+  max-width: 380px;
   background: #fff;
   border-radius: 10px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
@@ -201,6 +228,35 @@ function speakResult() {
   }
   &.llm {
     background: #6366f1;
+  }
+}
+
+.tp-style-btns {
+  display: flex;
+  gap: 2px;
+  margin-left: auto;
+  margin-right: 4px;
+}
+
+.tp-style-btn {
+  border: none;
+  background: transparent;
+  font-size: 11px;
+  color: #94a3b8;
+  padding: 2px 6px;
+  border-radius: 3px;
+  cursor: pointer;
+  transition: all 0.12s;
+  font-family: inherit;
+
+  &:hover {
+    background: #f1f5f9;
+    color: #64748b;
+  }
+  &.active {
+    background: #eef2ff;
+    color: #6366f1;
+    font-weight: 500;
   }
 }
 

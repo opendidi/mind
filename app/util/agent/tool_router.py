@@ -60,6 +60,8 @@ class ToolRouter:
         "mindmap": [],  # mindmap 使用 markdown 文本，不需要工具
         "code": ["code_generate"],
         "map": ["geocode", "regeocode"],
+        "translate": ["translate_text"],
+        "travel": ["geocode", "regeocode"],
         "general": [],  # 通用意图
     }
 
@@ -81,6 +83,9 @@ class ToolRouter:
         "搜索一下": ["web_search"],
         "查一下": ["web_search"],
         "新闻": ["web_search"],
+        "翻译": ["translate_text"],
+        "译成": ["translate_text"],
+        "翻译成": ["translate_text"],
         "图片": ["analyze_image"],
         "照片": ["analyze_image"],
         "图像": ["analyze_image"],
@@ -102,6 +107,14 @@ class ToolRouter:
         "保存蓝图": ["blueprint_save"],
         "加载蓝图": ["blueprint_load"],
         "导出": ["blueprint_export"],
+        # 旅游/地名
+        "旅游": ["geocode", "regeocode"],
+        "旅行": ["geocode", "regeocode"],
+        "景点": ["geocode", "regeocode"],
+        "攻略": ["web_search"],
+        "好玩": ["web_search"],
+        "美食": ["web_search"],
+        "特色": ["web_search"],
     }
 
     def __init__(self, max_tool_schemas: int = MAX_TOOL_SCHEMAS):
@@ -216,4 +229,6 @@ class ToolRouter:
             return "当前为文件操作场景，请使用文件搜索、文档解析工具。"
         if "code" in domains:
             return "当前为代码生成场景，请输出可直接使用的代码。"
+        if "travel" in domains:
+            return "当前为旅游/地名探索场景，请搜索相关信息并用思维导图结构化输出。"
         return ""

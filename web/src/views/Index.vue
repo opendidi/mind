@@ -13,7 +13,7 @@
       <div class="designer">
         <Graphics />
         <a-dropdown :trigger="['contextmenu']" @visibleChange="handleMenuVisibleChange">
-          <Editor />
+          <Editor @canvas-change="save" />
           <template #overlay>
             <a-menu class="canvas-context-menu" @click="handleMenuClick">
               <template v-for="(vo, idx) in menuLists">
@@ -47,7 +47,7 @@
 <script lang="ts" setup>
 import { ref, nextTick, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import type { MenuProps } from 'ant-design-vue'
+import { message, type MenuProps } from 'ant-design-vue'
 import Header from '@/components/Meta2D/Header/index.vue'
 import Graphics from '@/components/Meta2D/Graphics/index.vue'
 import Editor from '@/components/Meta2D/Editor/index.vue'
@@ -56,23 +56,12 @@ import Appearance from '@/components/Meta2D/Appearance/index.vue'
 import AgentPanel from '@/components/AgentPanel/index.vue'
 import { MENUS as menus } from '@/utils/config-contentmenu.ts'
 import { LOCK_STATE_DATA as lockState, PEN_TYPE as PenType } from '@/utils/index'
-import GET_IMAGE_PATH from '@/utils/graphicGroups.ts'
 import { useSelection } from '@/services/selections'
 import { useCommonStore, useCommonStoreWithOut } from '@/store/modules/common'
-import { apiBlueprintFind, apiBlueprintModify } from '@/api/blueprint'
-import type { Meta2d } from '@meta2d/core'
+import { apiBlueprintModify } from '@/api/blueprint'
+import { useCanvas } from '@/composables/useCanvas'
 
-// Editor 子组件的 onMounted 先于本组件的任何事件回调执行，
-// 故回调中访问 meta2d 时实例一定存在。
-// Proxy 确保每次属性访问都透传至 window.meta2d，而非捕获 setup 时的 undefined。
-const meta2d = new Proxy({} as Meta2d, {
-  get(_t, prop) {
-    const m = (window as any).meta2d
-    if (!m) return undefined
-    const v = m[prop]
-    return typeof v === 'function' ? v.bind(m) : v
-  },
-})
+const meta2d = useCanvas()
 
 const route = useRoute()
 const router = useRouter()
@@ -120,115 +109,6 @@ function save() {
       }, 5000)
     }
   }, 500)
-}
-
-/**
- * 初始化监听事件
- */
-async function onInit() {
-  const id = route.params.id
-  if (id) {
-    try {
-      const res = await apiBlueprintFind({ id: route.params.id })
-      const blueprint = res?.data
-      if (blueprint && typeof blueprint === 'object') {
-        const pens = Array.isArray(blueprint.pens) ? blueprint.pens : []
-        meta2d.open({
-          pens,
-          name: blueprint.name || '',
-          color: blueprint.color || '',
-          penBackground: blueprint.penBackground || '',
-          background: blueprint.background || '',
-          bkImage: blueprint.bkImage || '',
-          grid: blueprint.grid === '1' || blueprint.grid === true || undefined,
-          gridColor: blueprint.gridColor || '',
-          gridSize: blueprint.gridSize || '',
-          gridRotate: blueprint.gridRotate || '',
-          rule: blueprint.rule === '1' || blueprint.rule === true || undefined,
-          ruleColor: blueprint.ruleColor || '',
-          initJs: blueprint.initJs || '',
-          https: blueprint.https || [],
-          thumbnail: blueprint.thumbnail || '',
-          locked: 0,
-        })
-        meta2d.store.data.fromArrow = ''
-        meta2d.store.data.toArrow = 'triangleSolid'
-        if (pens.length > 0) {
-          meta2d.fitView(true, 24)
-        }
-        window.dispatchEvent(new CustomEvent('meta2d:dataLoaded'))
-      }
-    } catch (err) {
-      console.error('[Index] onInit load blueprint failed:', err)
-      message.error('图纸加载失败')
-    }
-  }
-  // 参考: https://doc.le5le.com/document/138387361#%E6%80%BB%E7%BB%93
-  // 缩放画布
-  meta2d.on('scale', save)
-  // 添加一个/多个画笔
-  meta2d.on('add', save)
-  // 打开新文件
-  meta2d.on('opened', save)
-  // 撤销后
-  meta2d.on('undo', save)
-  // 恢复后
-  meta2d.on('redo', save)
-  // 删除
-  meta2d.on('delete', save)
-  // 画笔大小改变
-  meta2d.on('resizePens', save)
-  // 画笔被旋转
-  meta2d.on('rotatePens', save)
-  // 移动画笔结束
-  meta2d.on('translatePens', save)
-
-  // 记录是否有选中多个图元
-  meta2d.on('active', (args: any) => {
-    pens.value = args
-    if (args.length >= 1) {
-      activePen.value = true
-    }
-    if (args.length > 1) {
-      multiPen.value = true
-      nextTick(() => {
-        appearanceRef.value?.init(pens.value)
-      })
-    } else {
-      multiPen.value = false
-    }
-    if (args.length === 1) {
-      const [pen] = args
-      if (pen.type !== undefined) {
-        menuLists.value.forEach((item: any) => {
-          switch (pen.type) {
-            case 0:
-              // 节点
-              if (item.data === 'node') item.visible = false
-              if (item.data === 'line' || item.data === 'penType') item.visible = true
-              break
-            case 1:
-              // 连线
-              if (item.data === 'node' || item.data === 'penType') item.visible = true
-              if (item.data === 'line') item.visible = false
-              break
-          }
-        })
-      }
-    }
-  })
-  // 清空高亮画笔
-  meta2d.on('inactive', () => {
-    activePen.value = false
-    multiPen.value = false
-    pens.value = []
-  })
-
-  GET_IMAGE_PATH('rotate', 'rotate.cur').then((rotateCursor: string) => {
-    meta2d.setOptions({
-      rotateCursor,
-    })
-  })
 }
 
 /**
@@ -444,47 +324,60 @@ function onAgentMutation() {
   useCommonStoreWithOut().setIsSave('0')
 }
 
-/** Handle blueprint deletion — if the deleted blueprint is the currently open one, reset the editor. */
+/** Handle blueprint deletion — reset route and localStorage (canvas clearing is handled by Editor). */
 function onBlueprintDeleted(e: CustomEvent<{ id: string }>) {
   const deletedId = e.detail?.id
   if (!deletedId || deletedId !== route.params.id) return
-
-  // Clear canvas
-  const data = meta2d.data()
-  if (data?.pens?.length > 0) {
-    meta2d.delete(data.pens)
-  }
-  meta2d.render()
-
-  // Remove query param without full page reload
   router.replace({ path: '/' })
-
-  // Clear localStorage so cross-tab sync doesn't restore deleted data
   localStorage.removeItem('meta2d')
-
   message.warning('当前图纸已被删除，已清空画布')
 }
 
 onMounted(() => {
-  onInit()
+  // Active/inactive for selection UI state (save events are bound by Editor)
+  meta2d.on('active', (args: any) => {
+    pens.value = args
+    if (args.length >= 1) {
+      activePen.value = true
+    }
+    if (args.length > 1) {
+      multiPen.value = true
+      nextTick(() => {
+        appearanceRef.value?.init(pens.value)
+      })
+    } else {
+      multiPen.value = false
+    }
+    if (args.length === 1) {
+      const [pen] = args
+      if (pen.type !== undefined) {
+        menuLists.value.forEach((item: any) => {
+          switch (pen.type) {
+            case 0:
+              if (item.data === 'node') item.visible = false
+              if (item.data === 'line' || item.data === 'penType') item.visible = true
+              break
+            case 1:
+              if (item.data === 'node' || item.data === 'penType') item.visible = true
+              if (item.data === 'line') item.visible = false
+              break
+          }
+        })
+      }
+    }
+  })
+  meta2d.on('inactive', () => {
+    activePen.value = false
+    multiPen.value = false
+    pens.value = []
+  })
+
   window.addEventListener('meta2d:agent-mutation', onAgentMutation)
   window.addEventListener('blueprint:deleted', onBlueprintDeleted as EventListener)
 })
 
 onUnmounted(() => {
-  ;[
-    'scale',
-    'add',
-    'opened',
-    'undo',
-    'redo',
-    'delete',
-    'resizePens',
-    'rotatePens',
-    'translatePens',
-    'active',
-    'inactive',
-  ].forEach(event => {
+  ;['active', 'inactive'].forEach(event => {
     meta2d.off(event)
   })
   window.removeEventListener('meta2d:agent-mutation', onAgentMutation)

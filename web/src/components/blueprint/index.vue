@@ -108,7 +108,7 @@ function onPageChange(page: number, pageSize: number) {
 
 function onOpen(item: any) {
   visible.value = false
-  router.push({ path: '/', query: { id: item.id } })
+  router.push({ path: '/' + item.id })
 }
 
 function onDelete(item: any) {

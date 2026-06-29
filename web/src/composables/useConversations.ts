@@ -17,11 +17,7 @@ export interface Conversation {
 
 export interface UseConversationsOptions {
   messages: Ref<ChatMessage[]>
-  currentPlan: Ref<{
-    goal: string
-    steps: { id: string; desc: string; tool: string | null; confirm: boolean; status?: string }[]
-    risk: string
-  } | null>
+  clearPlan: () => void
   agentAbort: () => void
   agentClear: () => void
   router: Router
@@ -49,8 +45,17 @@ export interface UseConversationsReturn {
   loadConversationList: (reset?: boolean) => Promise<void>
 }
 
+function formatConvTime(raw: string | undefined): string {
+  if (!raw) return ''
+  try {
+    return new Date(raw).toLocaleString()
+  } catch {
+    return raw
+  }
+}
+
 export function useConversations(options: UseConversationsOptions): UseConversationsReturn {
-  const { messages, currentPlan, agentAbort, agentClear, router, route, onBeforeSwitch, onLoaded } = options
+  const { messages, clearPlan, agentAbort, agentClear, router, route, onBeforeSwitch, onLoaded } = options
 
   const conversations = ref<Conversation[]>([])
   const activeConvId = ref('')
@@ -150,10 +155,10 @@ export function useConversations(options: UseConversationsOptions): UseConversat
     try {
       const res = await apiChatList({ limit: convPageSize, offset: reset ? 0 : convPageOffset.value })
       if (res?.code === 200 && res.data) {
-        const mapped = res.data.map((r: { id: string; title: string; time: string; pinned?: boolean }) => ({
+        const mapped = res.data.map((r: Record<string, any>) => ({
           id: r.id,
           title: r.title || '',
-          time: r.time || '',
+          time: formatConvTime(r.updated_at || r.created_at),
           messages: [],
           pinned: r.pinned || false,
         }))
@@ -187,7 +192,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
     if (activeConvId.value === id) {
       activeConvId.value = ''
       messages.value = []
-      currentPlan.value = null
+      clearPlan()
       router.replace({ name: 'chat' })
     }
     conversations.value = conversations.value.filter(c => c.id !== id)
@@ -270,7 +275,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
         saveSeq++
         activeConvId.value = ''
         messages.value = []
-        currentPlan.value = null
+        clearPlan()
         agentClear()
 
         const ids = conversations.value.map(c => c.id)
@@ -295,7 +300,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
       if (oldId && messages.value.length > 0) await saveCurrentConv()
       if (newId) {
         messages.value = []
-        currentPlan.value = null
+        clearPlan()
         switchingConv.value = true
         const ctrl = new AbortController()
         convLoadCtrl = ctrl
@@ -318,7 +323,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
       } else {
         activeConvId.value = ''
         messages.value = []
-        currentPlan.value = null
+        clearPlan()
       }
     },
     { immediate: true },

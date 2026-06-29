@@ -585,7 +585,7 @@ const {
   loadConversationList,
 } = useConversations({
   messages,
-  currentPlan,
+  clearPlan: () => { plan.value = null },
   agentAbort,
   agentClear,
   router,
