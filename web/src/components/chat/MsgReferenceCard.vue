@@ -312,9 +312,9 @@ const previewRef = ref<{ title?: string; url: string; image?: string; domain?: s
 
 .refs-gallery {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-  gap: 8px;
-  padding: 8px 12px 12px 12px;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 6px;
+  padding: 6px 10px 10px 10px;
   border-top: 1px solid #f0f0f0;
 }
 
@@ -360,14 +360,12 @@ const previewRef = ref<{ title?: string; url: string; image?: string; domain?: s
 }
 
 .gallery-title {
-  font-size: 11px;
+  font-size: 10px;
   color: #374151;
   line-height: 1.3;
   overflow: hidden;
   text-overflow: ellipsis;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
+  white-space: nowrap;
   padding: 0 2px;
 }
 

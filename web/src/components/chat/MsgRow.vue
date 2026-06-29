@@ -96,7 +96,11 @@
             :duration="message.thinkingDuration"
           />
           <!-- Phase 2: Search results / citations -->
-          <MsgReferenceCard :references="message.references" :search-type="message.refsSearchType" @selectRefs="refs => $emit('selectRefs', refs)" />
+          <MsgReferenceCard
+            :references="message.references"
+            :search-type="message.refsSearchType"
+            @selectRefs="refs => $emit('selectRefs', refs)"
+          />
           <!-- Phase 3: Final answer with inline citations -->
           <div class="msg-bubble assistant mt-2" :class="{ 'is-streaming': streaming }">
             <template v-for="(seg, si) in messageSegments" :key="si">
@@ -163,9 +167,9 @@
               </span>
             </template>
             <template v-if="!selectable">
-              <span class="msg-select-trigger" title="选择" @click="$emit('startSelect', message.id)"
-                ><CheckSquareOutlined
-              /></span>
+              <span class="msg-select-trigger" title="选择" @click="$emit('startSelect', message.id)">
+                <CheckSquareOutlined />
+              </span>
             </template>
           </div>
         </div>
@@ -200,7 +204,18 @@
               <span class="tool-status fail">失败</span>
             </template>
             <template v-if="message.tool.result !== undefined">
-              <svg class="tool-chevron" :class="{ rotated: toolExpanded }" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              <svg
+                class="tool-chevron"
+                :class="{ rotated: toolExpanded }"
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
             </template>
           </div>
           <template v-if="toolExpanded && message.tool.result !== undefined">
@@ -1012,16 +1027,24 @@ onBeforeUnmount(() => {
     font-weight: 500;
     flex-shrink: 0;
 
-    &.pending { color: #9ca3af; }
-    &.ok { color: #9ca3af; }
-    &.fail { color: #ef4444; }
+    &.pending {
+      color: #9ca3af;
+    }
+    &.ok {
+      color: #9ca3af;
+    }
+    &.fail {
+      color: #ef4444;
+    }
   }
 
   .tool-chevron {
     color: #d1d5db;
     flex-shrink: 0;
     transition: transform 0.15s;
-    &.rotated { transform: rotate(180deg); }
+    &.rotated {
+      transform: rotate(180deg);
+    }
   }
 
   .tool-body {
