@@ -51,6 +51,9 @@
           <a-button class="header-icon-btn" size="small" type="text" @click="onNewChat" title="新建对话">
             <PlusOutlined />
           </a-button>
+          <a-button class="header-icon-btn" size="small" type="text" @click="showOutline = !showOutline" title="大纲">
+            <OrderedListOutlined />
+          </a-button>
           <a-button class="header-icon-btn" size="small" type="text" @click="openFileManager" title="文件管理">
             <FolderOpenOutlined />
           </a-button>
@@ -218,6 +221,15 @@
       />
     </main>
 
+    <!-- Outline popover (teleports to body, overlays on top) -->
+    <ChatOutline
+      :visible="showOutline"
+      :messages="messages"
+      :loading="loading"
+      :msg-list-ref="msgListRef"
+      @close="showOutline = false"
+    />
+
     <!-- Canvas preview panel (shown when agent modified canvas) -->
     <template v-if="showCanvasPreview">
       <aside class="canvas-preview-panel">
@@ -232,7 +244,7 @@
       </aside>
     </template>
 
-    <!-- Canvas preview toggle (when hidden but changes exist) -->
+    <!-- Canvas preview toggle FAB (when hidden but changes exist) -->
     <transition name="fab-fade">
       <template v-if="!showCanvasPreview && hasCanvasChanges">
         <div class="canvas-preview-fab" @click="showCanvasPreview = true" title="查看画布修改">
@@ -258,6 +270,7 @@ import {
   CloseOutlined,
   FolderOpenOutlined,
   PlusOutlined,
+  OrderedListOutlined,
 } from '@ant-design/icons-vue'
 import { useRouter, useRoute } from 'vue-router'
 import MarkdownIt from 'markdown-it'
@@ -276,6 +289,7 @@ import MsgRow from '@/components/chat/MsgRow.vue'
 import WelcomePanel from '@/components/chat/WelcomePanel.vue'
 import FileManager from '@/components/FileManager/index.vue'
 import ReferencePanel from '@/components/chat/ReferencePanel.vue'
+import ChatOutline from '@/components/chat/ChatOutline.vue'
 
 const md = new MarkdownIt({
   html: false,
@@ -397,6 +411,7 @@ const CANVAS_TOOLS = [
 ]
 const hasCanvasChanges = ref(false)
 const showCanvasPreview = ref(false)
+const showOutline = ref(false)
 const previewIframe = ref<HTMLIFrameElement>()
 const previewUrl = `${window.location.origin}${window.location.pathname}#/preview`
 
