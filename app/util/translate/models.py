@@ -65,6 +65,22 @@ LANG_NAMES_CN: dict[str, str] = {
     "th": "泰语",
     "id": "印尼语",
     "hi": "印地语",
+    "he": "希伯来语",
+    "sv": "瑞典语",
+    "da": "丹麦语",
+    "fi": "芬兰语",
+    "nb": "挪威语",
+    "cs": "捷克语",
+    "ro": "罗马尼亚语",
+    "uk": "乌克兰语",
+    "el": "希腊语",
+    "hu": "匈牙利语",
+    "bg": "保加利亚语",
+    "sk": "斯洛伐克语",
+    "lt": "立陶宛语",
+    "lv": "拉脱维亚语",
+    "et": "爱沙尼亚语",
+    "sl": "斯洛文尼亚语",
 }
 
 STYLE_LABELS: dict[str, str] = {
@@ -94,7 +110,7 @@ def _build_supported_pairs() -> set[tuple[str, str]]:
 
 # CJK character range covering Basic + Extension A blocks
 _CJK_RE = re.compile(r"[一-鿿㐀-䶿]")
-_JAPANESE_RE = re.compile(r"[぀-ゟ゠-ヿ]")
+_JAPANESE_RE = re.compile(r"[ぁ-ゟァ-ヿｦ-ﾟ]")
 _KOREAN_RE = re.compile(r"[가-힯]")
 
 

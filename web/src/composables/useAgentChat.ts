@@ -38,10 +38,12 @@ export interface ChatMessage {
   quote?: QuoteInfo
   tool?: ToolInfo
   thinking?: string
+  thinkingActive?: boolean  // true during live streaming, false once done
   thinkingDuration?: number
   timestamp?: string
   feedback?: 'liked' | 'disliked'
-  references?: Array<{ title?: string; url: string; snippet?: string; domain?: string }>
+  references?: Array<{ title?: string; url: string; snippet?: string; domain?: string; image?: string }>
+  refsSearchType?: string  // "web" | "news" | "image" — controls reference card display mode
 }
 
 export interface ToolCallRecord {
@@ -242,7 +244,8 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
   let _lastUserFiles: ChatFile[] | undefined = undefined
   const pendingToolArgs = new Map<string, Record<string, unknown>>()
   let pendingToolCount = 0
-  let pendingRefs: Array<{ title?: string; url: string; snippet?: string; domain?: string }> | null = null
+  let pendingRefs: Array<{ title?: string; url: string; snippet?: string; domain?: string; image?: string }> | null = null
+  let pendingRefsSearchType: string | null = null
   let thinkingStartTime = 0
 
 
@@ -360,6 +363,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         if (!text) break
         const last = messages.value[messages.value.length - 1]
         if (last && last.role === 'agent' && last.text !== undefined) {
+          // Append to existing answer
           last.text += text
           // Merge any pending refs from later tool calls (e.g. 2nd web_search)
           if (pendingRefs) {
@@ -369,29 +373,40 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
             if (newRefs.length > 0) {
               last.references = [...existing, ...newRefs]
             }
+            if (pendingRefsSearchType) last.refsSearchType = pendingRefsSearchType
             pendingRefs = null
+            pendingRefsSearchType = null
+          }
+        } else if (last && last.role === 'agent' && last.thinkingActive) {
+          // Thinking was streaming live — finalize it and start answer text
+          last.thinkingActive = false
+          last.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
+          last.text = text
+          thinkingStartTime = 0
+          currentThinking.value = ''
+          if (pendingRefs) {
+            last.references = pendingRefs
+            if (pendingRefsSearchType) last.refsSearchType = pendingRefsSearchType
+            pendingRefs = null
+            pendingRefsSearchType = null
           }
         } else {
+          // Fresh answer message (no thinking phase)
           const newMsg: ChatMessage = {
             id: `msg-${++msgIdCounter}`,
             role: 'agent',
             text,
             timestamp: new Date().toLocaleTimeString(),
           }
-          if (currentThinking.value.trim()) {
-            newMsg.thinking = currentThinking.value.trim()
-            newMsg.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
-            currentThinking.value = ''
-            thinkingStartTime = 0
-          }
           if (pendingRefs) {
             newMsg.references = pendingRefs
+            if (pendingRefsSearchType) newMsg.refsSearchType = pendingRefsSearchType
             pendingRefs = null
+            pendingRefsSearchType = null
           }
           messages.value.push(newMsg)
         }
         thinkingText.value = ''
-        // Auto-save every 10 tokens during streaming
         break
       }
 
@@ -400,7 +415,6 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         const lastMsg = messages.value[messages.value.length - 1]
         if (lastMsg && lastMsg.role === 'agent' && lastMsg.text) {
           lastMsg.text = msgText || lastMsg.text
-          // Merge any pending refs (from later tool calls in the same turn)
           if (pendingRefs) {
             const existing = (lastMsg.references || []) as any[]
             const seen = new Set(existing.map((r: any) => r.url))
@@ -408,7 +422,21 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
             if (newRefs.length > 0) {
               lastMsg.references = [...existing, ...newRefs]
             }
+            if (pendingRefsSearchType) lastMsg.refsSearchType = pendingRefsSearchType
             pendingRefs = null
+            pendingRefsSearchType = null
+          }
+        } else if (lastMsg && lastMsg.role === 'agent' && lastMsg.thinkingActive) {
+          lastMsg.thinkingActive = false
+          lastMsg.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
+          lastMsg.text = msgText
+          thinkingStartTime = 0
+          currentThinking.value = ''
+          if (pendingRefs) {
+            lastMsg.references = pendingRefs
+            if (pendingRefsSearchType) lastMsg.refsSearchType = pendingRefsSearchType
+            pendingRefs = null
+            pendingRefsSearchType = null
           }
         } else {
           const newMsg: ChatMessage = {
@@ -417,15 +445,11 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
             text: msgText,
             timestamp: new Date().toLocaleTimeString(),
           }
-          if (currentThinking.value.trim()) {
-            newMsg.thinking = currentThinking.value.trim()
-            newMsg.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
-            currentThinking.value = ''
-            thinkingStartTime = 0
-          }
           if (pendingRefs) {
             newMsg.references = pendingRefs
+            if (pendingRefsSearchType) newMsg.refsSearchType = pendingRefsSearchType
             pendingRefs = null
+            pendingRefsSearchType = null
           }
           messages.value.push(newMsg)
         }
@@ -434,11 +458,28 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         break
       }
 
-      // ── Thinking ──
+      // ── Thinking (DeepSeek-R1 style: live streaming gray box) ──
       case 'thinking':
         if (!currentThinking.value) thinkingStartTime = Date.now()
-        currentThinking.value += (data.text || data.content || '')
-        thinkingText.value = data.text || data.content || ''
+        const thinkChunk = data.text || data.content || ''
+        currentThinking.value += thinkChunk
+        thinkingText.value = thinkChunk
+
+        // Show thinking in real-time: create or update a live thinking message
+        const lastMsgForThink = messages.value[messages.value.length - 1]
+        if (lastMsgForThink && lastMsgForThink.role === 'agent' && lastMsgForThink.thinkingActive) {
+          // Append to existing live thinking message
+          lastMsgForThink.thinking = currentThinking.value
+        } else {
+          // Create new live thinking message (no answer text yet)
+          messages.value.push({
+            id: `msg-${++msgIdCounter}`,
+            role: 'agent',
+            thinking: currentThinking.value,
+            thinkingActive: true,
+            timestamp: new Date().toLocaleTimeString(),
+          })
+        }
         break
 
       // ── Tool calls ──
@@ -528,9 +569,19 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
         addMessage('error', data.message)
         flushPendingTools()
         pendingRefs = null
+        pendingRefsSearchType = null
         loading.value = false
         connected.value = false
         currentTool.value = ''
+        // Finalize any live thinking message
+        for (let i = messages.value.length - 1; i >= 0; i--) {
+          const m = messages.value[i]
+          if (m.role === 'agent' && m.thinkingActive) {
+            m.thinkingActive = false
+            m.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
+            break
+          }
+        }
         thinkingText.value = ''
         currentThinking.value = ''
         thinkingStartTime = 0
@@ -544,7 +595,8 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       // them when the next agent message (token/message) is created.
       // Multiple web_search calls within one turn → MERGE refs, don't overwrite.
       case 'references': {
-        const refs = (data.references || data.refs || []) as Array<{ title?: string; url: string; snippet?: string; domain?: string }>
+        const refs = (data.references || data.refs || []) as Array<{ title?: string; url: string; snippet?: string; domain?: string; image?: string }>
+        const searchType = (data.search_type || 'web') as string
         if (refs.length > 0) {
           // Try the last message: if it's an agent msg from THIS turn, merge refs
           const last = messages.value[messages.value.length - 1]
@@ -556,6 +608,10 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
             if (newRefs.length > 0) {
               last.references = [...existing, ...newRefs]
             }
+            // Keep image search type if set
+            if (searchType === 'image') {
+              last.refsSearchType = searchType
+            }
           } else {
             // No agent message yet — accumulate in buffer
             if (pendingRefs) {
@@ -563,6 +619,10 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
               pendingRefs = [...pendingRefs, ...refs.filter(r => !seen.has(r.url))]
             } else {
               pendingRefs = refs
+            }
+            // Buffer search_type too
+            if (searchType === 'image' && !pendingRefsSearchType) {
+              pendingRefsSearchType = searchType
             }
           }
         }
@@ -590,6 +650,15 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       // ── Done (handled in onComplete) ──
       case 'done':
         pendingRefs = null
+        pendingRefsSearchType = null
+        // Finalize any live thinking message without answer text (edge case)
+        const lastDone = messages.value[messages.value.length - 1]
+        if (lastDone && lastDone.role === 'agent' && lastDone.thinkingActive) {
+          lastDone.thinkingActive = false
+          lastDone.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
+          thinkingStartTime = 0
+          currentThinking.value = ''
+        }
         break
 
       // ── Passthrough ──
@@ -632,6 +701,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     toolCalls.value = []
     traceId.value = null
     pendingRefs = null
+    pendingRefsSearchType = null
 
     abortCtrl = agentChat({
       userMessage: apiText,
@@ -663,11 +733,19 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
     streamDisconnected.value = false
     currentTool.value = ''
     thinkingText.value = ''
+    // Finalize any live thinking message
+    const last = messages.value[messages.value.length - 1]
+    if (last && last.role === 'agent' && last.thinkingActive) {
+      last.thinkingActive = false
+      last.thinkingDuration = thinkingStartTime ? Date.now() - thinkingStartTime : undefined
+      if (!last.text) last.text = '（已中断）'
+    }
     currentThinking.value = ''
     thinkingStartTime = 0
     pendingToolArgs.clear()
     pendingToolCount = 0
     pendingRefs = null
+    pendingRefsSearchType = null
   }
 
   function retry() {

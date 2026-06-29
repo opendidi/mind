@@ -321,6 +321,7 @@ export function executeCanvasToolLocalStorage(
         break
       case 'get_state':
       case 'canvas_get_state':
+      case 'canvas_check_empty':
         break
     }
     localStorage.setItem('meta2d', JSON.stringify(data))
@@ -376,6 +377,7 @@ export async function executeCanvasTool(
         break
       case 'get_state':
       case 'canvas_get_state':
+      case 'canvas_check_empty':
         return true
       case 'add_diagram':
       case 'canvas_add_diagram':

@@ -10,7 +10,7 @@
       <MsgContextMenu
         show-translate
         @copy="emit('copy', message.text || '')"
-        @translate="onShowTranslate"
+        @translate="tl.showPopover"
         @quote="emit('quoteMsg', message.id)"
         @delete="emit('delete', message.id)"
       >
@@ -48,24 +48,13 @@
           <div v-else class="msg-bubble user" @dblclick="startEdit" :title="selectable ? '' : '双击编辑'">
             {{ message.text }}
           </div>
-          <div v-if="!isEditing" class="msg-actions">
-            <span class="msg-copy" title="复制" @click="$emit('copy', message.text || '')"><CopyOutlined /></span>
-            <span
-              class="msg-quote-btn"
-              title="引用"
-              @click="$emit('quote', { text: message.text || '', msgId: message.id, role: 'user' })"
-            >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 17L4 12l5-5" />
-                <path d="M4 12h10a6 6 0 010 12" />
-              </svg>
-            </span>
-            <template v-if="!selectable">
-              <span class="msg-select-trigger" title="选择" @click="$emit('startSelect', message.id)">
-                <CheckSquareOutlined />
-              </span>
-            </template>
-          </div>
+          <MsgActions
+            v-if="!isEditing"
+            :selectable="selectable"
+            @copy="$emit('copy', message.text || '')"
+            @quote="$emit('quote', { text: message.text || '', msgId: message.id, role: 'user' })"
+            @start-select="$emit('startSelect', message.id)"
+          />
         </div>
       </MsgContextMenu>
     </div>
@@ -83,22 +72,26 @@
       <MsgContextMenu
         show-translate
         @copy="emit('copy', message.text || '')"
-        @translate="onShowTranslate"
+        @translate="tl.showPopover"
         @quote="emit('quoteMsg', message.id)"
         @delete="emit('delete', message.id)"
       >
         <div class="msg-content" @contextmenu="onContextMenu">
-          <!-- Phase 1: Deep thinking / reasoning -->
+          <!-- Phase 1: Deep thinking / reasoning (DeepSeek-R1 style) -->
           <ThinkCard
             v-if="message.thinking"
             :content="message.thinking"
-            :thinking="!message.text"
+            :thinking="message.thinkingActive === true"
             :duration="message.thinkingDuration"
           />
           <!-- Phase 2: Search results / citations -->
-          <MsgReferenceCard :references="message.references" @selectRefs="refs => $emit('selectRefs', refs)" />
+          <MsgReferenceCard
+            :references="message.references"
+            :search-type="message.refsSearchType"
+            @selectRefs="refs => $emit('selectRefs', refs)"
+          />
           <!-- Phase 3: Final answer with inline citations -->
-          <div class="msg-bubble assistant mt-2">
+          <div class="msg-bubble assistant mt-2" :class="{ 'is-streaming': streaming }">
             <template v-for="(seg, si) in messageSegments" :key="si">
               <template v-if="seg.type === 'text' && seg.content.trim()">
                 <div class="md-body" v-html="renderSegMd(seg.content)" />
@@ -129,45 +122,26 @@
                       <span>{{ codeCopiedId === `code-${si}` ? '已复制' : '复制代码' }}</span>
                     </span>
                   </div>
-                  <pre class="code-body"><code>{{ seg.content }}</code></pre>
+                  <pre class="code-body">
+                    <code>{{ seg.content }}</code>
+                  </pre>
                 </div>
               </template>
             </template>
           </div>
-          <div class="msg-actions">
-            <span class="msg-copy" title="复制" @click="$emit('copy', message.text || '')"><CopyOutlined /></span>
-            <span
-              class="msg-quote-btn"
-              title="引用"
-              style="transform: scaleX(-1)"
-              @click="$emit('quote', { text: message.text || '', msgId: message.id, role: 'agent' })"
-            >
-              <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M9 17L4 12l5-5" />
-                <path d="M4 12h10a6 6 0 010 12" />
-              </svg>
-            </span>
-            <span class="msg-feedback" :class="fbClass">
-              <span class="fb-btn" title="有帮助" @click="onFeedBack('liked')"><LikeOutlined /></span>
-              <span class="fb-btn" title="无帮助" @click="onFeedBack('disliked')"><DislikeOutlined /></span>
-            </span>
-            <template v-if="ttsSupported">
-              <span
-                class="msg-speak"
-                :class="{ active: ttsSpeaking }"
-                :title="ttsSpeaking ? '停止朗读' : '朗读'"
-                @click="onToggleSpeak"
-              >
-                <template v-if="!ttsSpeaking"><SoundOutlined /></template>
-                <template v-else><PauseCircleFilled /></template>
-              </span>
-            </template>
-            <template v-if="!selectable">
-              <span class="msg-select-trigger" title="选择" @click="$emit('startSelect', message.id)"
-                ><CheckSquareOutlined
-              /></span>
-            </template>
-          </div>
+          <MsgActions
+            flip-quote
+            show-feedback
+            :feedback-class="fbClass"
+            :show-tts="ttsSupported"
+            :tts-speaking="ttsSpeaking"
+            :selectable="selectable"
+            @copy="$emit('copy', message.text || '')"
+            @quote="$emit('quote', { text: message.text || '', msgId: message.id, role: 'agent' })"
+            @feedback="onFeedBack"
+            @toggle-speak="onToggleSpeak"
+            @start-select="$emit('startSelect', message.id)"
+          />
         </div>
       </MsgContextMenu>
     </div>
@@ -200,7 +174,18 @@
               <span class="tool-status fail">失败</span>
             </template>
             <template v-if="message.tool.result !== undefined">
-              <svg class="tool-chevron" :class="{ rotated: toolExpanded }" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 9l6 6 6-6"/></svg>
+              <svg
+                class="tool-chevron"
+                :class="{ rotated: toolExpanded }"
+                viewBox="0 0 24 24"
+                width="12"
+                height="12"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="2"
+              >
+                <path d="M6 9l6 6 6-6" />
+              </svg>
             </template>
           </div>
           <template v-if="toolExpanded && message.tool.result !== undefined">
@@ -233,87 +218,40 @@
     </div>
   </template>
 
-  <!-- Image preview lightbox -->
-  <Teleport to="body">
-    <transition name="lightbox-fade">
-      <div v-if="previewSrc" class="lightbox-overlay" @click="previewSrc = ''">
-        <img :src="previewSrc" class="lightbox-img" @click.stop />
-        <span class="lightbox-close" @click="previewSrc = ''">✕</span>
-      </div>
-    </transition>
-  </Teleport>
+  <ImageViewer :src="previewSrc" @close="previewSrc = ''" />
 
-  <!-- Text selection floating toolbar -->
-  <Teleport to="body">
-    <transition name="quote-fade">
-      <template v-if="quoteVisible">
-        <div class="selection-toolbar" :style="{ left: `${quotePos.x}px`, top: `${quotePos.y}px` }">
-          <span class="toolbar-btn" @click.stop="onQuoteSelection">
-            <svg
-              viewBox="0 0 24 24"
-              width="14"
-              height="14"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="2"
-              style="transform: scale(-1, -1)"
-            >
-              <path d="M9 17L4 12l5-5" />
-              <path d="M4 12h10a6 6 0 010 12" />
-            </svg>
-            <span>引用</span>
-          </span>
-          <span class="toolbar-divider"></span>
-          <span class="toolbar-btn" @click.stop="onCopySelection">
-            <CopyOutlined />
-            <span>复制</span>
-          </span>
-          <span class="toolbar-divider"></span>
-          <span class="toolbar-btn" @click.stop="onTranslateSelection">
-            <TranslationOutlined />
-            <span>翻译</span>
-          </span>
-          <template v-if="ttsSupported">
-            <span class="toolbar-divider"></span>
-            <span class="toolbar-btn" @click.stop="onSpeakSelection">
-              <SoundOutlined />
-              <span>朗读</span>
-            </span>
-          </template>
-        </div>
-      </template>
-    </transition>
-  </Teleport>
+  <SelectionToolbar
+    :x="quotePos.x"
+    :y="quotePos.y"
+    :visible="quoteVisible"
+    :tts-supported="ttsSupported"
+    @copy="onCopySelection"
+    @quote="onQuoteSelection"
+    @translate="onTranslateSelection"
+    @speak="onSpeakSelection"
+  />
 
-  <template v-if="tlPos">
+  <template v-if="tl.pos.value">
     <TranslatePopover
-      :x="tlPos.x"
-      :y="tlPos.y"
-      :loading="tlLoading"
-      :error="tlError"
-      :translated="tlResult"
-      :engine="tlEngine"
-      :source-lang="tlSrcLang"
-      :target-lang="tlTgtLang"
-      @close="onCloseTranslate"
-      @change-target="onChangeTargetLang"
+      :x="tl.pos.value.x"
+      :y="tl.pos.value.y"
+      :loading="tl.loading.value"
+      :error="tl.error.value"
+      :translated="tl.result.value"
+      :engine="tl.engine.value"
+      :source-lang="tl.srcLang.value"
+      :target-lang="tl.tgtLang.value"
+      :style="tl.style.value"
+      @close="tl.close"
+      @change-target="tl.changeTarget"
+      @change-style="tl.changeStyle"
     />
   </template>
 </template>
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue'
-import {
-  CopyOutlined,
-  CheckSquareOutlined,
-  LikeOutlined,
-  DislikeOutlined,
-  ReloadOutlined,
-  FileTextOutlined,
-  SoundOutlined,
-  PauseCircleFilled,
-  TranslationOutlined,
-} from '@ant-design/icons-vue'
+import { CopyOutlined, ReloadOutlined, FileTextOutlined } from '@ant-design/icons-vue'
 import type { ChatMessage } from '@/composables/useAgentChat'
 import { useSpeech } from '@/composables/useSpeech'
 import FileCard from './FileCard.vue'
@@ -323,14 +261,21 @@ import RouteCard from '@/components/shared/RouteCard.vue'
 import CanvasPreview from './CanvasPreview.vue'
 import TranslatePopover from './TranslatePopover.vue'
 import ThinkCard from './ThinkCard.vue'
+import { useTranslate } from '@/composables/useTranslate'
+import { parseMessageSegments } from '@/utils/messageSegments'
+import type { MsgSegment } from '@/utils/messageSegments'
 import MsgContextMenu from './MsgContextMenu.vue'
 import MsgReferenceCard from './MsgReferenceCard.vue'
+import SelectionToolbar from './SelectionToolbar.vue'
+import ImageViewer from './ImageViewer.vue'
+import MsgActions from './MsgActions.vue'
 
 const props = defineProps<{
   message: ChatMessage
   renderMd: (text: string) => string
   selectable?: boolean
   selected?: boolean
+  streaming?: boolean
 }>()
 
 const emit = defineEmits<{
@@ -454,50 +399,7 @@ function onFeedBack(type: string) {
   emit('feedback', props.message.id, fbState.value)
 }
 
-// ── Message segments (mindmap / map / route / code detection) ──
-
-const BLOCK_RE = /```(\w*)\s*\n?([\s\S]*?)```/g
-
-type BlockType = 'mindmap' | 'map' | 'route' | 'files'
-
-interface MsgSegment {
-  type: 'text' | BlockType | 'code'
-  content?: string
-  data?: any
-  language?: string
-}
-
-const messageSegments = computed(() => {
-  const text = props.message.text || ''
-  BLOCK_RE.lastIndex = 0
-  const segments: MsgSegment[] = []
-  let lastIndex = 0
-  let match: RegExpExecArray | null
-  while ((match = BLOCK_RE.exec(text)) !== null) {
-    if (match.index > lastIndex) {
-      segments.push({ type: 'text', content: text.slice(lastIndex, match.index) })
-    }
-    const blockType = match[1]
-    const blockContent = match[2].trim()
-    if (blockType === 'mindmap') {
-      segments.push({ type: 'mindmap', content: blockContent })
-    } else if (blockType === 'map' || blockType === 'route' || blockType === 'files') {
-      try {
-        const data = JSON.parse(blockContent)
-        segments.push({ type: blockType as BlockType, data })
-      } catch {
-        segments.push({ type: 'code', language: blockType, content: blockContent })
-      }
-    } else {
-      segments.push({ type: 'code', language: blockType, content: blockContent })
-    }
-    lastIndex = match.index + match[0].length
-  }
-  if (lastIndex < text.length) {
-    segments.push({ type: 'text', content: text.slice(lastIndex) })
-  }
-  return segments.length > 0 ? segments : [{ type: 'text', content: text }]
-})
+const messageSegments = computed(() => parseMessageSegments(props.message.text || ''))
 
 // ── Code block copy ─────────────────────────────────────────
 
@@ -585,87 +487,11 @@ function onSpeakSelection() {
 
 function onTranslateSelection() {
   quoteVisible.value = false
-  onShowTranslate()
+  tl.showPopover()
 }
 
 // ── Translation ───────────────────────────────────────────
-const tlLoading = ref(false)
-const tlError = ref('')
-const tlResult = ref('')
-const tlEngine = ref('')
-const tlSrcLang = ref('')
-const tlTgtLang = ref('zh')
-const tlPos = ref<{ x: number; y: number } | null>(null)
-let tlText = ''
-
-function detectTextLang(text: string): string {
-  // Count CJK characters
-  const cjk = (text.match(/[一-鿿㐀-䶿]/g) || []).length
-  const total = text.replace(/\s/g, '').length
-  return cjk > total * 0.3 ? 'zh' : 'en'
-}
-
-async function onTranslate(targetLang?: string) {
-  const text = window.getSelection()?.toString().trim()
-  if (!text) return
-  tlText = text
-  const target = targetLang || (detectTextLang(text) === 'zh' ? 'en' : 'zh')
-  tlLoading.value = true
-  tlError.value = ''
-  tlResult.value = ''
-  try {
-    const { translateText } = await import('@/api/translate')
-    const res = await translateText({ text, target_lang: target, source_lang: 'auto' })
-    tlResult.value = res.translated
-    tlEngine.value = res.engine
-    tlSrcLang.value = res.source_lang
-    tlTgtLang.value = res.target_lang
-  } catch (e: any) {
-    tlError.value = e.message || '翻译失败'
-  } finally {
-    tlLoading.value = false
-  }
-}
-
-function onShowTranslate() {
-  const sel = window.getSelection()
-  if (sel?.rangeCount) {
-    const rect = sel.getRangeAt(0).getBoundingClientRect()
-    tlPos.value = { x: rect.left + rect.width / 2 - 170, y: rect.bottom }
-    onTranslate()
-  }
-}
-
-async function onChangeTargetLang(lang: string) {
-  tlTgtLang.value = lang
-  tlLoading.value = true
-  tlError.value = ''
-  tlResult.value = ''
-  try {
-    const { translateText } = await import('@/api/translate')
-    const res = await translateText({ text: tlText, target_lang: lang, source_lang: 'auto' })
-    tlResult.value = res.translated
-    tlEngine.value = res.engine
-    tlSrcLang.value = res.source_lang
-    tlTgtLang.value = res.target_lang
-  } catch (e: any) {
-    tlError.value = e.message || '翻译失败'
-  } finally {
-    tlLoading.value = false
-  }
-}
-
-function onCloseTranslate() {
-  tlPos.value = null
-  tlText = ''
-  tlLoading.value = false
-  tlError.value = ''
-  tlResult.value = ''
-  tlEngine.value = ''
-  tlSrcLang.value = ''
-}
-
-// ── End Translation ───────────────────────────────────────
+const tl = useTranslate(props.message.text || '', props.message.id)
 
 onMounted(() => {
   document.addEventListener('click', hideContextMenu)
@@ -768,83 +594,6 @@ onBeforeUnmount(() => {
     }
   }
 
-  .msg-actions {
-    display: flex;
-    align-items: center;
-    gap: 2px;
-    margin-top: 4px;
-  }
-
-  .msg-copy,
-  .msg-quote-btn,
-  .msg-select-trigger {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 6px;
-    font-size: 12px;
-    color: $text-muted;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.15s;
-    opacity: 0;
-    &:hover {
-      color: $primary;
-      background: #f1f5f9;
-    }
-  }
-
-  .msg-speak {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 6px;
-    font-size: 12px;
-    color: $text-muted;
-    cursor: pointer;
-    border-radius: 4px;
-    transition: all 0.15s;
-    opacity: 0;
-    &:hover {
-      color: $primary;
-      background: #f1f5f9;
-    }
-    &.active {
-      opacity: 1;
-      color: $primary;
-      background: #eef2ff;
-    }
-  }
-
-  .msg-feedback {
-    display: inline-flex;
-    align-items: center;
-    gap: 2px;
-    opacity: 0;
-    .fb-btn {
-      display: inline-flex;
-      align-items: center;
-      padding: 3px 5px;
-      font-size: 12px;
-      color: $text-muted;
-      cursor: pointer;
-      border-radius: 4px;
-      transition: all 0.15s;
-      &:hover {
-        color: $primary;
-        background: #f1f5f9;
-      }
-    }
-    &.liked,
-    &.disliked {
-      opacity: 1;
-    }
-    &.liked .fb-btn:first-child {
-      color: $primary;
-    }
-    &.disliked .fb-btn:last-child {
-      color: #dc2626;
-    }
-  }
-
   .msg-retry {
     display: inline-flex;
     align-items: center;
@@ -864,11 +613,11 @@ onBeforeUnmount(() => {
     }
   }
 
-  &:hover .msg-copy,
-  &:hover .msg-speak,
-  &:hover .msg-feedback,
-  &:hover .msg-select-trigger,
-  &:hover .msg-quote-btn {
+  &:hover :deep(.msg-copy),
+  &:hover :deep(.msg-speak),
+  &:hover :deep(.msg-feedback),
+  &:hover :deep(.msg-select-trigger),
+  &:hover :deep(.msg-quote-btn) {
     opacity: 1;
   }
 }
@@ -1011,16 +760,24 @@ onBeforeUnmount(() => {
     font-weight: 500;
     flex-shrink: 0;
 
-    &.pending { color: #9ca3af; }
-    &.ok { color: #9ca3af; }
-    &.fail { color: #ef4444; }
+    &.pending {
+      color: #9ca3af;
+    }
+    &.ok {
+      color: #9ca3af;
+    }
+    &.fail {
+      color: #ef4444;
+    }
   }
 
   .tool-chevron {
     color: #d1d5db;
     flex-shrink: 0;
     transition: transform 0.15s;
-    &.rotated { transform: rotate(180deg); }
+    &.rotated {
+      transform: rotate(180deg);
+    }
   }
 
   .tool-body {
@@ -1100,104 +857,6 @@ onBeforeUnmount(() => {
       white-space: pre;
     }
   }
-}
-
-// ── Text selection floating toolbar ──
-
-.selection-toolbar {
-  position: fixed;
-  z-index: 999;
-  display: flex;
-  align-items: center;
-  padding: 4px 6px;
-  background: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 20px rgba(79, 70, 229, 0.12), 0 2px 8px rgba(0, 0, 0, 0.06), 0 0 0 0.5px rgba(0, 0, 0, 0.06);
-  transform: none;
-  transition: box-shadow 0.2s, transform 0.15s;
-  user-select: none;
-
-  .toolbar-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-    padding: 4px 10px;
-    font-size: 13px;
-    font-weight: 500;
-    color: #333;
-    cursor: pointer;
-    border-radius: 6px;
-    transition: background 0.12s;
-    &:hover {
-      background: rgba(79, 70, 229, 0.06);
-    }
-    &:active {
-      transform: scale(0.96);
-    }
-  }
-  .toolbar-divider {
-    width: 1px;
-    height: 18px;
-    background: #e2e8f0;
-    margin: 0 2px;
-  }
-}
-
-.quote-fade-enter-active,
-.quote-fade-leave-active {
-  transition: opacity 0.12s ease;
-}
-.quote-fade-enter-from,
-.quote-fade-leave-to {
-  opacity: 0;
-}
-
-// ── Image preview lightbox ──
-
-.lightbox-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 2000;
-  background: rgba(0, 0, 0, 0.72);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  .lightbox-img {
-    max-width: 90vw;
-    max-height: 90vh;
-    border-radius: 8px;
-    box-shadow: 0 8px 40px rgba(0, 0, 0, 0.3);
-    cursor: default;
-  }
-  .lightbox-close {
-    position: absolute;
-    top: 16px;
-    right: 20px;
-    width: 36px;
-    height: 36px;
-    border-radius: 50%;
-    background: rgba(255, 255, 255, 0.15);
-    color: #fff;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 18px;
-    cursor: pointer;
-    transition: background 0.15s;
-    &:hover {
-      background: rgba(255, 255, 255, 0.25);
-    }
-  }
-}
-
-.lightbox-fade-enter-active,
-.lightbox-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-.lightbox-fade-enter-from,
-.lightbox-fade-leave-to {
-  opacity: 0;
 }
 
 // ── Inline citations [1] [2] ────────────────────────────

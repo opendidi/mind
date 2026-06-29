@@ -3,7 +3,7 @@
 Adapted from pypano for mind project."""
 
 import atexit as _atexit
-import json
+import json as _json
 import logging
 import queue
 import time
@@ -446,8 +446,8 @@ class DAGExecutor(BaseExecutor):
                     tool_retry = False
                     for tc_name, tc_id, tc_args_str in tool_calls_received:
                         try:
-                            tool_args = json.loads(tc_args_str)
-                        except json.JSONDecodeError:
+                            tool_args = _json.loads(tc_args_str)
+                        except _json.JSONDecodeError:
                             tool_args = {}
 
                         lk = _loop_key(tc_name, tool_args)
@@ -505,8 +505,8 @@ class DAGExecutor(BaseExecutor):
         search_missing_keyword = False
         for tc_name, tc_id, tc_args_str in tool_calls:
             try:
-                tool_args = json.loads(tc_args_str)
-            except json.JSONDecodeError:
+                tool_args = _json.loads(tc_args_str)
+            except _json.JSONDecodeError:
                 tool_args = {}
 
             lk = _loop_key(tc_name, tool_args)

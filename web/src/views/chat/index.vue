@@ -112,6 +112,7 @@
                       :message="m"
                       :renderMd="renderMd"
                       :selectable="selectMode"
+                      :streaming="isStreamingMsg(m)"
                       :selected="selectedIds.has(m.id)"
                       @copy="copyText"
                       @toggleSelect="onToggleSelect"
@@ -134,6 +135,7 @@
                 :message="Array.isArray(item) ? item[0] : item"
                 :renderMd="renderMd"
                 :selectable="selectMode"
+                :streaming="isStreamingMsg(Array.isArray(item) ? item[0] : item)"
                 :selected="selectedIds.has(Array.isArray(item) ? item[0].id : item.id)"
                 @copy="copyText"
                 @toggleSelect="onToggleSelect"
@@ -149,22 +151,11 @@
             </template>
           </template>
 
-          <!-- Loading animation -->
-          <template v-if="loading || switchingConv">
-            <div class="msg-row assistant">
-              <div class="msg-avatar ai thinking">
-                <i class="icon-ds block ds-small"></i>
-              </div>
-              <div class="msg-content">
-                <div class="thinking-bubble">
-                  <span class="think-text">{{ loadingStatus }}</span>
-                  <span class="think-dots">
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                    <span class="dot"></span>
-                  </span>
-                </div>
-              </div>
+          <!-- Minimal streaming indicator (only when no messages being actively streamed) -->
+          <template v-if="(loading || switchingConv) && !hasLiveThinking && !hasStreamingText">
+            <div class="msg-row loading-indicator">
+              <div class="load-dot-pulse" />
+              <span class="load-label">{{ loadingStatus }}</span>
             </div>
           </template>
         </div>
@@ -458,6 +449,35 @@ const loadingStatus = computed(() => {
   return 'AI 思考中'
 })
 
+// Whether there's a live thinking message currently being streamed (DeepSeek-R1 style)
+const hasLiveThinking = computed(() => {
+  if (!loading.value) return false
+  const msgs = messages.value
+  if (msgs.length === 0) return false
+  const last = msgs[msgs.length - 1]
+  return last.role === 'agent' && last.thinkingActive === true
+})
+
+// Whether answer text is actively being streamed (tokens arriving in real-time)
+const hasStreamingText = computed(() => {
+  if (!loading.value) return false
+  const msgs = messages.value
+  if (msgs.length === 0) return false
+  const last = msgs[msgs.length - 1]
+  // Agent message with text content (not just thinking) while still loading
+  return last.role === 'agent' && typeof last.text === 'string' && last.text.length > 0
+})
+
+// Check if a specific message is the one currently being streamed
+function isStreamingMsg(msg: ChatMessage): boolean {
+  if (!loading.value) return false
+  const msgs = messages.value
+  if (msgs.length === 0) return false
+  // Only the last message can be streaming
+  const last = msgs[msgs.length - 1]
+  return msg.id === last.id && last.role === 'agent' && typeof last.text === 'string'
+}
+
 // Group consecutive tool messages into collapsible blocks
 const groupedMessages = computed(() => {
   const result: Array<ChatMessage | ChatMessage[]> = []
@@ -565,7 +585,7 @@ const {
   loadConversationList,
 } = useConversations({
   messages,
-  currentPlan,
+  clearPlan: () => { plan.value = null },
   agentAbort,
   agentClear,
   router,
@@ -754,7 +774,7 @@ onBeforeUnmount(() => {
   width: 100vw;
   background: var(--color-bg, $bg);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'PingFang SC',
-    'Microsoft YaHei', sans-serif;
+    'Microsoft YaHei', 'Apple Color Emoji', 'Segoe UI Emoji', 'Noto Color Emoji', sans-serif;
   overflow: hidden;
 }
 
@@ -1041,72 +1061,48 @@ onBeforeUnmount(() => {
   }
 }
 
-.msg-avatar.ai.thinking {
-  animation: avatar-glow 2s ease-in-out infinite;
-}
-
-@keyframes avatar-glow {
-  0%,
-  100% {
-    box-shadow: 0 0 0 0 rgba(129, 140, 248, 0.4);
-  }
-
-  50% {
-    box-shadow: 0 0 0 8px rgba(129, 140, 248, 0);
-  }
-}
-
-.thinking-bubble {
-  background: #f8fafc;
-  padding: 12px 18px;
-  border-radius: 16px;
-  border-bottom-left-radius: 4px;
-  border: 1px solid #e2e8f0;
-  display: inline-flex;
+// ── Minimal streaming indicator (replaces bulky thinking-bubble) ──
+.loading-indicator {
+  display: flex;
   align-items: center;
   gap: 10px;
+  padding: 8px 0;
 
-  .think-text {
-    font-size: 13px;
-    color: #64748b;
-    font-weight: 500;
-  }
-
-  .think-dots {
-    display: inline-flex;
-    align-items: center;
-    gap: 4px;
-  }
-
-  .dot {
-    width: 6px;
-    height: 6px;
+  .load-dot-pulse {
+    width: 8px;
+    height: 8px;
     border-radius: 50%;
-    background: #94a3b8;
-    animation: dot-pulse 1.4s infinite both;
+    background: #a78bfa;
+    animation: load-pulse 1.4s ease-in-out infinite;
+    flex-shrink: 0;
+  }
 
-    &:nth-child(2) {
-      animation-delay: 0.2s;
-    }
-
-    &:nth-child(3) {
-      animation-delay: 0.4s;
-    }
+  .load-label {
+    font-size: 12.5px;
+    color: #9ca3af;
+    font-weight: 400;
   }
 }
 
-@keyframes dot-pulse {
-  0%,
-  80%,
-  100% {
-    transform: scale(0.5);
-    opacity: 0.3;
-  }
+@keyframes load-pulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50%      { opacity: 1;   transform: scale(1.2); }
+}
 
-  40% {
-    transform: scale(1);
-    opacity: 1;
+// ── Streaming answer cursor (blinking ▍ at end of text) ──
+:deep(.msg-bubble.assistant.is-streaming) {
+  position: relative;
+  &::after {
+    content: '▍';
+    color: #7c3aed;
+    animation: cursor-blink 0.8s step-end infinite;
+    margin-left: 1px;
   }
+}
+
+@keyframes cursor-blink {
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0; }
 }
 
 .scroll-fab {

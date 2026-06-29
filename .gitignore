@@ -42,3 +42,4 @@ models/ocr/
 
 # Superpowers brainstorming sessions
 .superpowers/
+deepseek_markdown_*.md

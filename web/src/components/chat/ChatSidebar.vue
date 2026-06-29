@@ -23,7 +23,9 @@
 
     <div class="sidebar-search">
       <a-input v-model:value="searchText" placeholder="搜索对话..." size="small" allow-clear>
-        <template #prefix><SearchOutlined /></template>
+        <template #prefix>
+          <SearchOutlined />
+        </template>
       </a-input>
     </div>
 
@@ -32,7 +34,7 @@
         <div class="conv-item" :class="{ active: conv.id === activeConvId }" @click="$emit('select', conv.id)">
           <div class="conv-title">{{ conv.title || '新对话' }}</div>
           <div class="conv-meta">
-            <span class="conv-time">{{ conv.time }}</span>
+            <span class="conv-time">{{ conv.time || '未知时间' }}</span>
             <div class="conv-item-actions">
               <a-button
                 type="text"
@@ -45,15 +47,26 @@
                 <PushpinOutlined v-else />
               </a-button>
               <a-dropdown :trigger="['click']" placement="bottomRight">
-                <a-button type="text" size="small" class="conv-more-btn" @click.stop><MoreOutlined /></a-button>
+                <a-button type="text" size="small" class="conv-more-btn" @click.stop>
+                  <MoreOutlined />
+                </a-button>
                 <template #overlay>
                   <a-menu @click="({ key }) => onMenuAction(key as string, conv.id)">
-                    <a-menu-item key="export-json"><ExportOutlined /> 导出 JSON</a-menu-item>
-                    <a-menu-item key="export-md"><ExportOutlined /> 导出 Markdown</a-menu-item>
+                    <a-menu-item key="export-json">
+                      <ExportOutlined />
+                      导出 JSON
+                    </a-menu-item>
+                    <a-menu-item key="export-md">
+                      <ExportOutlined />
+                      导出 Markdown
+                    </a-menu-item>
                     <a-menu-divider />
-                    <a-menu-item key="delete"
-                      ><span class="menu-delete"><DeleteOutlined /> 删除</span></a-menu-item
-                    >
+                    <a-menu-item key="delete">
+                      <span class="menu-delete">
+                        <DeleteOutlined />
+                        删除
+                      </span>
+                    </a-menu-item>
                   </a-menu>
                 </template>
               </a-dropdown>
@@ -175,9 +188,7 @@ function onMenuAction(key: string, convId: string) {
   border-right: 1px solid $border;
   display: flex;
   flex-direction: column;
-  transition:
-    width 0.25s ease,
-    min-width 0.25s ease;
+  transition: width 0.25s ease, min-width 0.25s ease;
   overflow: hidden;
 
   &.collapsed {

@@ -1,7 +1,7 @@
 :root {
   --font-family:
     '-apple-system', 'BlinkMacSystemFont', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei UI', ' Microsoft YaHei',
-    'Source Han Sans CN', 'sans-serif', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol';
+    'Source Han Sans CN', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji', 'sans-serif';
   --font-size: 13px;
   --color: #595959;
   --color-title: #262626;

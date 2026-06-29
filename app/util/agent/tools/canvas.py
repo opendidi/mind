@@ -159,6 +159,8 @@ def _resolve_pen_ids(args: dict) -> list:
 )
 def _tool_canvas(args):
     action = args.get("action", "")
+    if not action:
+        return {"success": False, "error": "缺少必填参数: action，请指定画布操作类型。支持: add_pen/add_line/add_diagram/update_pen/delete_pen/clear/undo/redo/get_state/lock/unlock/toggle_visibility/duplicate/move_pen/group/ungroup"}
     if action == "add_pen":
         pen_id = _new_pen_id()
         pen_type = args.get("type", "rectangle")
@@ -241,10 +243,26 @@ def _tool_canvas(args):
             "message": f"已生成包含 {len(nodes)} 个节点（{', '.join(node_summaries)}）和 {len(edges)} 条连线的图表",
         }
     elif action == "get_state":
+        ctx = args.get("_canvas_context") or {}
+        pens = ctx.get("pens", [])
+        lines = ctx.get("lines", [])
+        if not ctx:
+            return {
+                "success": True,
+                "data": {"pens": [], "lines": [], "empty": True, "canvas_available": False},
+                "message": "无法获取画布状态（用户可能不在画布页面），画布视为空。不要再查询——直接调用 canvas(action='clear', confirm=true) 清空画布，然后用 add_diagram 创建图表。",
+                "hint": "canvas_context not available — skip checking, just clear and draw",
+            }
         return {
             "success": True,
-            "message": "查看系统提示中的 canvas_context 获取完整画布状态",
-            "tool_hint": "use canvas_context in system prompt for current canvas state",
+            "data": {
+                "pens": [{"pen_id": p.get("id", p.get("penId", "")), "type": p.get("name", p.get("type", "rectangle")), "text": p.get("text", ""), "x": p.get("x", 0), "y": p.get("y", 0)} for p in pens],
+                "lines": [{"from": l.get("fromPen", l.get("source", "")), "to": l.get("toPen", l.get("connectTo", "")), "text": l.get("text", "")} for l in lines],
+                "pen_count": len(pens),
+                "line_count": len(lines),
+                "empty": len(pens) == 0 and len(lines) == 0,
+            },
+            "message": f"画布当前有 {len(pens)} 个图形和 {len(lines)} 条连线。如需重新绘制，先调用 canvas(action='clear', confirm=true) 清空。" if (pens or lines) else "画布当前为空，可以开始绘制",
         }
     elif action == "lock":
         pen_ids = _resolve_pen_ids(args)
@@ -425,3 +443,49 @@ def _tool_fit_view(args):
     padding = args.get("padding", 24)
     label = "自适应视口" if fit else "还原100%"
     return {"success": True, "data": {"fit": fit, "padding": padding}, "message": f"已{label}，内边距{padding}px"}
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Canvas Check Empty Tool — thread-safe canvas state check
+# ══════════════════════════════════════════════════════════════════════════════
+
+
+@ToolRegistry.register(
+    "canvas_check_empty",
+    "检查画布是否为空（线程安全，不依赖 canvas_get_state）。"
+    "如果无法获取画布状态（用户不在画布页面），返回 empty=true 并提示假设画布为空继续操作。"
+    "绘制前应发送确认消息给用户询问是否覆盖已有内容。",
+    {
+        "type": "object",
+        "properties": {},
+        "required": [],
+    },
+)
+def _tool_canvas_check_empty(args):
+    ctx = args.get("_canvas_context") or {}
+    pens = ctx.get("pens", [])
+    lines = ctx.get("lines", [])
+
+    if not ctx:
+        return {
+            "success": True,
+            "data": {"empty": True, "pen_count": 0, "line_count": 0, "canvas_available": False},
+            "message": "无法获取画布状态（用户可能不在画布页面），假设画布为空。不要再查询状态——立即调用 canvas(action='clear', confirm=true) 清空画布，然后用 add_diagram 绘制图表。绘制完成后用 blueprint_save 保存。",
+        }
+
+    empty = len(pens) == 0 and len(lines) == 0
+    if empty:
+        msg = "画布当前为空，可以自由绘制。"
+    else:
+        msg = f"画布当前有 {len(pens)} 个图形和 {len(lines)} 条连线。调用 canvas(action='clear', confirm=true) 清空后绘制即可。"
+
+    return {
+        "success": True,
+        "data": {
+            "empty": empty,
+            "pen_count": len(pens),
+            "line_count": len(lines),
+            "canvas_available": True,
+        },
+        "message": msg,
+    }

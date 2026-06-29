@@ -36,6 +36,8 @@ def find():
     if id == None or id == "":
         return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, "ID不能为空")
     data = BlueprintMysqlHandler.find(id, g.user_id)
+    if data is False or data is None:
+        return ProtocolBuilder.build_response({}, StatusCode.NOT_FOUND, "图纸不存在或已删除")
     return ProtocolBuilder.build_response(data)
 
 
@@ -102,27 +104,18 @@ def modify():
         id = data.get("id", "")
         if not id:
             return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, "ID不能为空")
-        ok = BlueprintMysqlHandler.modify(
-            id,
-            g.user_id,
-            **{
-                "name": data.get("name", ""),
-                "color": data.get("color", ""),
-                "penBackground": data.get("penBackground", ""),
-                "background": data.get("background", ""),
-                "bkImage": data.get("bkImage", ""),
-                "grid": data.get("grid", ""),
-                "gridColor": data.get("gridColor", ""),
-                "gridSize": data.get("gridSize", ""),
-                "gridRotate": data.get("gridRotate", ""),
-                "rule": data.get("rule", ""),
-                "ruleColor": data.get("ruleColor", ""),
-                "initJs": data.get("initJs", ""),
-                "pens": data.get("pens", ""),
-                "https": data.get("https", ""),
-                "thumbnail": data.get("thumbnail", ""),
-            },
-        )
+
+        # Only include fields that were explicitly sent — avoid overwriting
+        # unmentioned fields (e.g. "name") with empty strings.
+        updatable = [
+            "name", "color", "penBackground", "background", "bkImage",
+            "grid", "gridColor", "gridSize", "gridRotate", "rule",
+            "ruleColor", "initJs", "pens", "https", "thumbnail",
+        ]
+        fields = {k: data[k] for k in updatable if k in data}
+        if not fields:
+            return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, "无更新字段")
+        ok = BlueprintMysqlHandler.modify(id, g.user_id, **fields)
         if ok:
             return ProtocolBuilder.build_response({}, StatusCode.SUCCESS, "修改成功")
         else:

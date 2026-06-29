@@ -79,6 +79,7 @@ def agent_chat():
                     canvas_context=canvas_context,
                     task_id=task_id,
                     images=images,
+                    stream=True,
                 ):
                     event_queue.put(event)
                 event_queue.put({"type": "done", "data": {"status": "completed"}})

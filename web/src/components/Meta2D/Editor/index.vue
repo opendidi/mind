@@ -11,7 +11,7 @@
 </template>
 
 <script lang="ts" setup>
-import { onMounted, onUnmounted, watch } from 'vue'
+import { onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute } from 'vue-router'
 import { provideCanvas } from '@/composables/useCanvas'
 import { message } from 'ant-design-vue'
@@ -28,15 +28,65 @@ import { Meta2d, register, registerAnchors, registerCanvasDraw } from '@meta2d/c
 import type { Pen } from '@meta2d/core'
 import { useCommonStoreWithOut } from '@/store/modules/common'
 import { removeOriginalData } from '@/utils/meta-storage'
+import { applyBlueprintData } from '@/utils/metaBlueprint'
 import '@/assets/js/assets.le5lecdn.com_2d_canvas2svg.js'
 import '@/assets/js/arrows.js'
 import '@/assets/js/rg.js'
 import { MetaPlugin } from '@/utils/plugin'
 import { useSelection } from '@/services/selections'
 import { useKeyboardShortcuts } from '@/composables/useKeyboardShortcuts'
+import GET_IMAGE_PATH from '@/utils/graphicGroups'
+
+function socketHandler(meta2d: Meta2d, message: unknown, _context: unknown): boolean {
+  if (!message) return true
+  let info: Record<string, unknown> | undefined
+  try {
+    info = typeof message === 'string' ? JSON.parse(message) : (message as Record<string, unknown>)
+  } catch {
+    return true
+  }
+  if (info && typeof info === 'object' && 'data' in info) {
+    const payload = info.data as Record<string, unknown> | undefined
+    if (payload && payload['data']) {
+      let dataList: unknown[]
+      try {
+        const raw = payload['data']
+        dataList = typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown[])
+      } catch {
+        return true
+      }
+      let hasUpdate = false
+      dataList.forEach((item: any) => {
+        if (item['dot'] === 0) {
+          item['id'] = `a${item['dot']}`
+        } else {
+          item['id'] = item['dot']
+        }
+        if (item['vtype'] === 'FLOAT') {
+          let data = parseFloat(item['value']).toFixed(2)
+          item['text'] = Number(data)
+        } else {
+          item['text'] = item['value']
+        }
+        if (item['id'] === 6) {
+          item['progress'] = item['value'] / 10
+        }
+        meta2d.setValue({ ...item }, { render: false })
+        hasUpdate = true
+      })
+      if (hasUpdate) {
+        meta2d.render()
+        localStorage.setItem('meta2d', JSON.stringify(meta2d.data()))
+        useCommonStoreWithOut().setVariableData(dataList)
+        useCommonStoreWithOut().setIsSave('0')
+      }
+    }
+  }
+  return true
+}
 
 const { select } = useSelection()
-const commonStore = useCommonStoreWithOut()
+const emit = defineEmits<{ 'canvas-change': [] }>()
 
 let onStorageChange: ((e: StorageEvent) => void) | null = null
 let resizeObserver: ResizeObserver | null = null
@@ -49,28 +99,7 @@ function loadBlueprint(id: string) {
   apiBlueprintFind({ id })
     .then((res: any) => {
       if (res?.data) {
-        const bp = res.data
-        meta2d.open({
-          pens: bp.pens || [],
-          name: bp.name || '',
-          color: bp.color || '',
-          penBackground: bp.penBackground || '',
-          background: bp.background || '',
-          bkImage: bp.bkImage || '',
-          grid: bp.grid === '1' || bp.grid === true || undefined,
-          gridColor: bp.gridColor || '',
-          gridSize: bp.gridSize || '',
-          gridRotate: bp.gridRotate || '',
-          rule: bp.rule === '1' || bp.rule === true || undefined,
-          ruleColor: bp.ruleColor || '',
-          initJs: bp.initJs || '',
-          https: bp.https || [],
-          thumbnail: bp.thumbnail || '',
-          locked: 0,
-        })
-        meta2d.store.data.fromArrow = ''
-        meta2d.store.data.toArrow = 'triangleSolid'
-        meta2d.fitView(true, 24)
+        applyBlueprintData(meta2d, res.data)
         window.dispatchEvent(new CustomEvent('meta2d:dataLoaded'))
       } else {
         console.warn('[Editor] loadBlueprint: empty data for id=' + id)
@@ -118,9 +147,6 @@ onMounted(() => {
   // 初始化插件
   initPlugin()
 
-  // Initial blueprint load is handled by parent Index.vue's onInit()
-  // Route-change loading is handled by the watch below
-
   // Register custom tools immediately — meta2dTools is already available
   // from synchronously loaded arrows.js and canvas2svg.js
   if (window?.meta2dTools) {
@@ -154,56 +180,35 @@ onMounted(() => {
   meta2d.on('active', active)
   meta2d.on('inactive', inactive)
 
-  meta2d.socketFn = (message: unknown, _context: unknown) => {
-    if (!message) return true
-    let info: Record<string, unknown> | undefined
-    try {
-      info = typeof message === 'string' ? JSON.parse(message) : (message as Record<string, unknown>)
-    } catch {
-      return true
+  meta2d.socketFn = (message: unknown, context: unknown) => socketHandler(meta2d!, message, context)
+
+  // Bind save-trigger events → emit canvas-change for parent Index.vue
+  const onCanvasChange = () => emit('canvas-change')
+  meta2d.on('scale', onCanvasChange)
+  meta2d.on('add', onCanvasChange)
+  meta2d.on('opened', onCanvasChange)
+  meta2d.on('undo', onCanvasChange)
+  meta2d.on('redo', onCanvasChange)
+  meta2d.on('delete', onCanvasChange)
+  meta2d.on('resizePens', onCanvasChange)
+  meta2d.on('rotatePens', onCanvasChange)
+  meta2d.on('translatePens', onCanvasChange)
+
+  // Rotate cursor
+  GET_IMAGE_PATH('rotate', 'rotate.cur').then((rotateCursor: string) => {
+    meta2d?.setOptions({ rotateCursor })
+  })
+
+  // Handle external blueprint deletion — clear canvas
+  window.addEventListener('blueprint:deleted', onBlueprintDeleted)
+
+  // Initial blueprint load (deferred so parent's @canvas-change handler is attached)
+  nextTick(() => {
+    const id = route.params.id
+    if (id && typeof id === 'string') {
+      loadBlueprint(id)
     }
-    if (info && typeof info === 'object' && 'data' in info) {
-      const payload = info.data as Record<string, unknown> | undefined
-      if (payload && payload['data']) {
-        let dataList: unknown[]
-        try {
-          const raw = payload['data']
-          dataList = typeof raw === 'string' ? JSON.parse(raw) : (raw as unknown[])
-        } catch {
-          return true
-        }
-        let hasUpdate = false
-        dataList.forEach((item: any) => {
-          if (item['dot'] === 0) {
-            item['id'] = `a${item['dot']}`
-          } else {
-            item['id'] = item['dot']
-          }
-          if (item['vtype'] === 'FLOAT') {
-            let data = parseFloat(item['value']).toFixed(2)
-            item['text'] = Number(data)
-          } else {
-            item['text'] = item['value']
-          }
-          if (item['id'] === 6) {
-            item['progress'] = item['value'] / 10
-          }
-          meta2d.setValue({ ...item }, { render: false })
-          hasUpdate = true
-        })
-        if (hasUpdate) {
-          meta2d.render()
-          // Sync to localStorage so data persists across refresh
-          localStorage.setItem('meta2d', JSON.stringify(meta2d.data()))
-          // Store variable data for binding UI (updates store + localStorage)
-          commonStore.setVariableData(dataList)
-          // Mark save state as dirty
-          commonStore.setIsSave('0')
-        }
-      }
-    }
-    return true
-  }
+  })
 })
 
 // 监听路由变化，切换图纸
@@ -233,15 +238,27 @@ function initPlugin() {
   metaplugin.initPlugin(meta2d, target, {})
 }
 
+function onBlueprintDeleted(e: Event) {
+  const detail = (e as CustomEvent).detail as { id: string } | undefined
+  if (!detail?.id) return
+  if (detail.id !== route.params.id) return
+  const data = meta2d?.data()
+  if (data?.pens?.length > 0) {
+    meta2d?.delete(data.pens)
+  }
+  meta2d?.render()
+}
+
 onUnmounted(() => {
   if (onStorageChange) window.removeEventListener('storage', onStorageChange)
   if (resizeObserver) resizeObserver.disconnect()
+  window.removeEventListener('blueprint:deleted', onBlueprintDeleted)
   if (meta2d) {
-    meta2d.off('active', active)
-    meta2d.off('inactive', inactive)
+    ;['scale', 'add', 'opened', 'undo', 'redo', 'delete', 'resizePens', 'rotatePens', 'translatePens', 'active', 'inactive'].forEach(event => {
+      meta2d.off(event)
+    })
     meta2d.destroy()
   }
-  // 删除原始数据
   removeOriginalData()
 })
 </script>
