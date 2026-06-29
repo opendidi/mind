@@ -86,7 +86,6 @@ function socketHandler(meta2d: Meta2d, message: unknown, _context: unknown): boo
 }
 
 const { select } = useSelection()
-const emit = defineEmits<{ 'canvas-change': [] }>()
 
 let onStorageChange: ((e: StorageEvent) => void) | null = null
 let resizeObserver: ResizeObserver | null = null
@@ -182,18 +181,6 @@ onMounted(() => {
 
   meta2d.socketFn = (message: unknown, context: unknown) => socketHandler(meta2d!, message, context)
 
-  // Bind save-trigger events → emit canvas-change for parent Index.vue
-  const onCanvasChange = () => emit('canvas-change')
-  meta2d.on('scale', onCanvasChange)
-  meta2d.on('add', onCanvasChange)
-  meta2d.on('opened', onCanvasChange)
-  meta2d.on('undo', onCanvasChange)
-  meta2d.on('redo', onCanvasChange)
-  meta2d.on('delete', onCanvasChange)
-  meta2d.on('resizePens', onCanvasChange)
-  meta2d.on('rotatePens', onCanvasChange)
-  meta2d.on('translatePens', onCanvasChange)
-
   // Rotate cursor
   GET_IMAGE_PATH('rotate', 'rotate.cur').then((rotateCursor: string) => {
     meta2d?.setOptions({ rotateCursor })
@@ -254,7 +241,7 @@ onUnmounted(() => {
   if (resizeObserver) resizeObserver.disconnect()
   window.removeEventListener('blueprint:deleted', onBlueprintDeleted)
   if (meta2d) {
-    ;['scale', 'add', 'opened', 'undo', 'redo', 'delete', 'resizePens', 'rotatePens', 'translatePens', 'active', 'inactive'].forEach(event => {
+    ;['active', 'inactive'].forEach(event => {
       meta2d.off(event)
     })
     meta2d.destroy()

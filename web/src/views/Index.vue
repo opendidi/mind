@@ -13,7 +13,7 @@
       <div class="designer">
         <Graphics />
         <a-dropdown :trigger="['contextmenu']" @visibleChange="handleMenuVisibleChange">
-          <Editor @canvas-change="save" />
+          <Editor />
           <template #overlay>
             <a-menu class="canvas-context-menu" @click="handleMenuClick">
               <template v-for="(vo, idx) in menuLists">
@@ -57,8 +57,7 @@ import AgentPanel from '@/components/AgentPanel/index.vue'
 import { MENUS as menus } from '@/utils/config-contentmenu.ts'
 import { LOCK_STATE_DATA as lockState, PEN_TYPE as PenType } from '@/utils/index'
 import { useSelection } from '@/services/selections'
-import { useCommonStore, useCommonStoreWithOut } from '@/store/modules/common'
-import { apiBlueprintModify } from '@/api/blueprint'
+import { useCommonStoreWithOut } from '@/store/modules/common'
 import { useCanvas } from '@/composables/useCanvas'
 
 const meta2d = useCanvas()
@@ -80,36 +79,7 @@ const multiPen = ref(false)
 // 画笔数组
 const pens = ref([])
 
-let timer: any
-
 const propsData = ref({})
-let backendTimer: ReturnType<typeof setTimeout> | undefined
-
-function save() {
-  if (timer) clearTimeout(timer)
-  timer = setTimeout(() => {
-    const data: any = meta2d.data()
-    useCommonStoreWithOut().setTopology(meta2d)
-    const commonStore = useCommonStore()
-    propsData.value = commonStore.topology.store.data
-    localStorage.setItem('meta2d', JSON.stringify(data))
-    timer = undefined
-    commonStore.setIsSave('0')
-
-    // Auto-sync pens to backend if a blueprint is loaded
-    const bpId = route.params.id as string | undefined
-    if (bpId && data.pens) {
-      if (backendTimer) clearTimeout(backendTimer)
-      backendTimer = setTimeout(() => {
-        const pensJson = JSON.stringify(data.pens)
-        apiBlueprintModify({ id: bpId, pens: pensJson }).catch(() => {
-          /* silent — user can always manually save */
-        })
-        backendTimer = undefined
-      }, 5000)
-    }
-  }, 500)
-}
 
 /**
  * 处理鼠标右键菜单显示
@@ -287,7 +257,6 @@ const handleMenuClick: MenuProps['onClick'] = (e: any) => {
   }
   meta2d.inactive()
   meta2d.render()
-  save()
 }
 
 const agentPanelCollapsed = ref(true)
