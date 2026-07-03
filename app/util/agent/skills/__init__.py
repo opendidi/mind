@@ -9,9 +9,9 @@ from app.util.agent.skills.blueprint_skill import BLUEPRINT_SKILL
 from app.util.agent.skills.canvas_skill import CANVAS_SKILL
 from app.util.agent.skills.code_skill import CODE_SKILL
 from app.util.agent.skills.file_skill import FILE_SKILL
+from app.util.agent.skills.map_skill import MAP_SKILL
 from app.util.agent.skills.mindmap_skill import MINDMAP_SKILL
 from app.util.agent.skills.translate_skill import TRANSLATE_SKILL
-from app.util.agent.skills.map_skill import MAP_SKILL
 from app.util.agent.skills.travel_skill import TRAVEL_SKILL
 
 __all__ = [

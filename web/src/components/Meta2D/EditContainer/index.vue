@@ -116,9 +116,10 @@ export default defineComponent({
         monaco.editor.setModelLanguage(model, language.value)
       }
 
-      // Set value and compute adaptive height
-      monacoEditor.setValue(value || '')
-      editorHeight.value = computeEditorHeight(value || '')
+      // Normalize value to string — callers may pass objects, arrays, etc.
+      const text = typeof value === 'string' ? value : JSON.stringify(value || '', null, 2)
+      monacoEditor.setValue(text)
+      editorHeight.value = computeEditorHeight(text)
 
       // Move editor from hidden container into the visible modal area
       if (persistentContainer && editContainerRef.value) {

@@ -108,9 +108,21 @@ def modify():
         # Only include fields that were explicitly sent — avoid overwriting
         # unmentioned fields (e.g. "name") with empty strings.
         updatable = [
-            "name", "color", "penBackground", "background", "bkImage",
-            "grid", "gridColor", "gridSize", "gridRotate", "rule",
-            "ruleColor", "initJs", "pens", "https", "thumbnail",
+            "name",
+            "color",
+            "penBackground",
+            "background",
+            "bkImage",
+            "grid",
+            "gridColor",
+            "gridSize",
+            "gridRotate",
+            "rule",
+            "ruleColor",
+            "initJs",
+            "pens",
+            "https",
+            "thumbnail",
         ]
         fields = {k: data[k] for k in updatable if k in data}
         if not fields:

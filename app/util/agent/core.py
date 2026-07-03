@@ -256,6 +256,7 @@ class AgentSession:
             structured = {"summary": raw_json.strip()}
             try:
                 from app.util.agent.helpers import extract_json as _extract_json
+
                 json_text = _extract_json(raw_json)
                 if json_text:
                     structured = json.loads(json_text)
@@ -292,7 +293,7 @@ class AgentSession:
                 self._compact_summary = merged_text
 
             # Store recent errors for plan feedback
-            if errors and hasattr(self, '_recent_errors'):
+            if errors and hasattr(self, "_recent_errors"):
                 self._recent_errors = (self._recent_errors or []) + errors[-5:]
 
             self.history = recent_msgs

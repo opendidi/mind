@@ -1,5 +1,19 @@
 import { ref } from 'vue'
 
+const CJK_RE = /[一-鿿㐀-䶿]/g
+const JP_RE = /[぀-ゟ゠-ヿ]/g
+const KO_RE = /[가-힯]/g
+
+function detectTargetLang(text: string): string {
+  const stripped = text.replace(/\s/g, '')
+  const total = stripped.length
+  if (!total) return 'zh'
+  if ((stripped.match(KO_RE) || []).length > total * 0.3) return 'en'
+  if ((stripped.match(JP_RE) || []).length > total * 0.3) return 'en'
+  if ((stripped.match(CJK_RE) || []).length > total * 0.3) return 'en'
+  return 'zh'
+}
+
 export function useTranslate(messageText: string, messageId: string) {
   const loading = ref(false)
   const error = ref('')
@@ -12,20 +26,22 @@ export function useTranslate(messageText: string, messageId: string) {
   let text = ''
   let abortController: AbortController | null = null
 
-  async function translate(targetLang?: string) {
-    let sel = window.getSelection()?.toString().trim()
-    if (!sel) sel = messageText || ''
-    if (!sel) return
-    text = sel
+  async function doTranslate(params: { target_lang: string; style: string }) {
     abortController?.abort()
     abortController = new AbortController()
-    const target = targetLang || (/[一-龥]/.test(text) ? 'en' : 'zh')
     loading.value = true
     error.value = ''
     result.value = ''
+
     try {
       const { translateText } = await import('@/api/translate')
-      const res = await translateText({ text, target_lang: target, source_lang: 'auto', style: style.value, signal: abortController.signal })
+      const res = await translateText({
+        text,
+        target_lang: params.target_lang,
+        source_lang: 'auto',
+        style: params.style,
+        signal: abortController.signal,
+      })
       result.value = res.translated
       engine.value = res.engine
       srcLang.value = res.source_lang
@@ -36,6 +52,15 @@ export function useTranslate(messageText: string, messageId: string) {
     } finally {
       loading.value = false
     }
+  }
+
+  async function translate(targetLang?: string) {
+    let sel = window.getSelection()?.toString().trim()
+    if (!sel) sel = messageText || ''
+    if (!sel) return
+    text = sel
+    style.value = 'general'
+    await doTranslate({ target_lang: targetLang || detectTargetLang(text), style: 'general' })
   }
 
   function showPopover() {
@@ -57,47 +82,12 @@ export function useTranslate(messageText: string, messageId: string) {
 
   async function changeTarget(lang: string) {
     tgtLang.value = lang
-    abortController?.abort()
-    abortController = new AbortController()
-    loading.value = true
-    error.value = ''
-    result.value = ''
-    try {
-      const { translateText } = await import('@/api/translate')
-      const res = await translateText({ text, target_lang: lang, source_lang: 'auto', style: style.value, signal: abortController.signal })
-      result.value = res.translated
-      engine.value = res.engine
-      srcLang.value = res.source_lang
-      tgtLang.value = res.target_lang
-    } catch (e: any) {
-      if (e?.name === 'AbortError' || e?.name === 'CanceledError') return
-      error.value = e.message || '翻译失败'
-    } finally {
-      loading.value = false
-    }
+    await doTranslate({ target_lang: lang, style: style.value })
   }
 
   async function changeStyle(s: string) {
     style.value = s
-    abortController?.abort()
-    abortController = new AbortController()
-    loading.value = true
-    error.value = ''
-    result.value = ''
-    try {
-      const { translateText } = await import('@/api/translate')
-      const target = tgtLang.value || 'zh'
-      const res = await translateText({ text, target_lang: target, source_lang: 'auto', style: s, signal: abortController.signal })
-      result.value = res.translated
-      engine.value = res.engine
-      srcLang.value = res.source_lang
-      tgtLang.value = res.target_lang
-    } catch (e: any) {
-      if (e?.name === 'AbortError' || e?.name === 'CanceledError') return
-      error.value = e.message || '翻译失败'
-    } finally {
-      loading.value = false
-    }
+    await doTranslate({ target_lang: tgtLang.value || 'zh', style: s })
   }
 
   function close() {

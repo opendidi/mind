@@ -91,4 +91,3 @@ TTS_ENABLED = os.environ.get("TTS_ENABLED", "true").lower() == "true"
 TTS_CACHE_DIR = os.environ.get("TTS_CACHE_DIR", os.path.join(os.path.dirname(__file__), "../../data/tts_cache"))
 TTS_VOICE_SEED = int(os.environ.get("TTS_VOICE_SEED", 42))
 TTS_MAX_TEXT_LENGTH = int(os.environ.get("TTS_MAX_TEXT_LENGTH", 5000))
-

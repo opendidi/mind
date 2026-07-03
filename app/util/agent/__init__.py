@@ -58,7 +58,7 @@ except ImportError:
     ToolRouting = None  # type: ignore[assignment]
 
 try:
-    from .model_router import ModelRouter, ModelRoute
+    from .model_router import ModelRoute, ModelRouter
 except ImportError:
     ModelRouter = None  # type: ignore[assignment]
     ModelRoute = None  # type: ignore[assignment]

@@ -50,8 +50,8 @@ class AgentEngine:
         self.dispatcher = AgentDispatcher()
 
         # ── Phase 0: State Manager ──
-        from app.util.agent.state_store import StateStore
         from app.util.agent.state_snapshot import SnapshotManager
+        from app.util.agent.state_store import StateStore
 
         self.state_store = StateStore()
         self.snapshot_mgr = SnapshotManager(self.state_store)
@@ -194,9 +194,7 @@ class AgentEngine:
             )
 
             # ── Critic Hints (Quick Win 2) ──
-            pre_critic = self.critic.review_plan(
-                precomputed_plan, user_message, domains
-            ) if precomputed_plan else None
+            pre_critic = self.critic.review_plan(precomputed_plan, user_message, domains) if precomputed_plan else None
             if pre_critic and pre_critic.issues:
                 executor.set_critic_hints(pre_critic.get_quality_hints())
 
@@ -280,7 +278,10 @@ class AgentEngine:
             if precomputed_plan and precomputed_plan.get("mode") == "dag":
                 try:
                     post_critic = self.critic.review_execution(
-                        plan, executor._dag._get_state() if hasattr(executor._dag, '_get_state') else None, world_state, user_message
+                        plan,
+                        executor._dag._get_state() if hasattr(executor._dag, "_get_state") else None,
+                        world_state,
+                        user_message,
                     )
                     if post_critic and not post_critic.passes:
                         logging.warning(

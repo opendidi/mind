@@ -148,9 +148,7 @@ class CriticAgent:
 
     # ── 公共 API ─────────────────────────────────────────────────────────
 
-    def review_plan(
-        self, plan, user_message: str = "", domains: list = None
-    ) -> CriticReview:
+    def review_plan(self, plan, user_message: str = "", domains: list = None) -> CriticReview:
         """审查执行计划（执行前）."""
         if not self.llm:
             return CriticReview.empty()
@@ -188,7 +186,11 @@ class CriticAgent:
         # 世界状态摘要
         world_summary = ""
         if world_state:
-            world_summary = world_state.get_task_summary() if hasattr(world_state, "get_task_summary") else str(world_state.to_dict())[:500]
+            world_summary = (
+                world_state.get_task_summary()
+                if hasattr(world_state, "get_task_summary")
+                else str(world_state.to_dict())[:500]
+            )
 
         prompt = CRITIC_RESULT_PROMPT.format(
             user_message=user_message[:1000],
@@ -203,9 +205,7 @@ class CriticAgent:
         )
         return self._call_critic(prompt)
 
-    def review_final_output(
-        self, output_text: str, user_intent: str = "", plan=None
-    ) -> CriticReview:
+    def review_final_output(self, output_text: str, user_intent: str = "", plan=None) -> CriticReview:
         """审查最终输出文本."""
         if not self.llm or not output_text:
             return CriticReview.empty()

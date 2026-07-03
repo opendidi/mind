@@ -21,9 +21,11 @@ from app.util.agent.helpers import extract_json
 
 class ReflectionType(Enum):
     """反射类型。"""
-    ERROR = "error"       # 工具调用失败，需要重试
-    QUALITY = "quality"   # 结果质量不达标，需要补充
+
+    ERROR = "error"  # 工具调用失败，需要重试
+    QUALITY = "quality"  # 结果质量不达标，需要补充
     STRATEGY = "strategy"  # 整体方案不合理，需要重新规划
+
 
 REFLECT_PROMPT = """你是故障诊断专家。一个工具执行失败了，分析原因并提出恢复方案。
 

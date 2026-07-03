@@ -364,12 +364,12 @@ def unified_intent_and_plan(
         state_lines.append(f"- 目标: {world_state.get('goal', '') or world_state.get('working_goal', '')}")
         state_lines.append(f"- 画布图形数: {world_state.get('pen_count', 0)}")
         state_lines.append(f"- 当前蓝图: {world_state.get('current_blueprint_id', '') or '无'}")
-        recent_files = world_state.get('recent_files', [])
+        recent_files = world_state.get("recent_files", [])
         if recent_files:
             state_lines.append(f"- 最近文件: {', '.join(f.get('name', '') for f in recent_files[:3])}")
-        if world_state.get('completed'):
+        if world_state.get("completed"):
             state_lines.append(f"- 已完成: {', '.join(world_state['completed'][:5])}")
-        if world_state.get('pending'):
+        if world_state.get("pending"):
             state_lines.append(f"- 待处理: {', '.join(world_state['pending'][:5])}")
         system_prompt += "\n\n" + "\n".join(state_lines)
 

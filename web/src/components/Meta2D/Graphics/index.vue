@@ -110,25 +110,36 @@
       <a-tab-pane key="3" tab="图纸" force-render>
         <a-spin :spinning="blueprintLoading" tip="加载中...">
           <template v-if="blueprintList.length !== 0">
+            <div class="bp-toolbar" v-if="blueprintList.length > 0">
+              <a-checkbox :indeterminate="indeterminate" :checked="checkAll" @change="onCheckAllChange">
+                全选
+              </a-checkbox>
+              <a-button v-if="selectedIds.size > 0" size="small" danger @click.stop="onBatchDelete">
+                删除 ({{ selectedIds.size }})
+              </a-button>
+            </div>
             <div class="blueprint-grid">
               <template v-for="item in blueprintList" :key="item.id">
-                <div class="bp-card" @click="onOpenBlueprint(item)">
-                  <div class="bp-thumb">
-                    <img v-if="item.thumbnail" :src="item.thumbnail" alt="" />
-                    <template v-else>
-                      <t-icon name="image" size="28px" class="bp-placeholder-icon" />
-                    </template>
+                <div class="bp-card" :class="{ 'bp-card-selected': selectedIds.has(item.id) }">
+                  <div class="bp-check" @click.stop="onToggleSelect(item.id)">
+                    <a-checkbox :checked="selectedIds.has(item.id)" />
                   </div>
-                  <div class="bp-name" :title="item.name">
-                    {{ item.name || '未命名' }}
-                  </div>
-                  <div class="bp-time">
-                    {{ item.created_at?.slice(0, 10) || '' }}
+                  <div class="bp-card-body" @click="onOpenBlueprint(item)">
+                    <div class="bp-thumb">
+                      <img v-if="item.thumbnail" :src="item.thumbnail" alt="" />
+                      <template v-else>
+                        <t-icon name="image" size="28px" class="bp-placeholder-icon" />
+                      </template>
+                    </div>
+                    <div class="bp-name" :title="item.name">
+                      {{ item.name || '未命名' }}
+                    </div>
+                    <div class="bp-time">
+                      {{ item.created_at?.slice(0, 10) || '' }}
+                    </div>
                   </div>
                   <div class="bp-card-actions" @click.stop>
-                    <a-popconfirm title="确定删除？" @confirm="onDeleteBlueprint(item)">
-                      <delete-outlined class="bp-delete-btn" />
-                    </a-popconfirm>
+                    <delete-outlined class="bp-delete-btn" @click="onDeleteBlueprint(item)" />
                   </div>
                 </div>
               </template>
@@ -148,10 +159,10 @@
 </template>
 
 <script lang="ts" setup>
-import { ref, watch, nextTick, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, nextTick, onMounted, onUnmounted, createVNode } from 'vue'
 import { useCanvas } from '@/composables/useCanvas'
-import { message } from 'ant-design-vue'
-import { FolderOutlined, FolderOpenOutlined, FolderAddOutlined, DeleteOutlined } from '@ant-design/icons-vue'
+import { message, Modal } from 'ant-design-vue'
+import { FolderOutlined, FolderOpenOutlined, FolderAddOutlined, DeleteOutlined, ExclamationCircleOutlined } from '@ant-design/icons-vue'
 import { GRAPHIC_GROUPS as graphicGroups } from '@/utils/graphicGroups.ts'
 import { MoreModal, CreatedFolder } from './components/index.ts'
 import { useCommonStore } from '@/store/modules/common'
@@ -185,6 +196,64 @@ const router = useRouter()
 // 图纸列表
 const blueprintList = ref<any[]>([])
 const blueprintLoading = ref(false)
+const selectedIds = ref<Set<string>>(new Set())
+
+const checkAll = computed(() => {
+  return blueprintList.value.length > 0 && selectedIds.value.size === blueprintList.value.length
+})
+
+const indeterminate = computed(() => {
+  return selectedIds.value.size > 0 && selectedIds.value.size < blueprintList.value.length
+})
+
+function onCheckAllChange() {
+  if (checkAll.value) {
+    selectedIds.value = new Set()
+  } else {
+    selectedIds.value = new Set(blueprintList.value.map((b: any) => b.id))
+  }
+}
+
+function onToggleSelect(id: string) {
+  const next = new Set(selectedIds.value)
+  if (next.has(id)) {
+    next.delete(id)
+  } else {
+    next.add(id)
+  }
+  selectedIds.value = next
+}
+
+function onBatchDelete() {
+  const ids = [...selectedIds.value]
+  if (ids.length === 0) return
+  Modal.confirm({
+    title: '批量删除确认',
+    icon: createVNode(ExclamationCircleOutlined),
+    content: createVNode('div', { style: 'color:red;' }, `确定要删除选中的 ${ids.length} 张图纸吗？删除后不可恢复。`),
+    okText: '确定删除',
+    okType: 'danger',
+    cancelText: '取消',
+    onOk() {
+      const promises = ids.map(id => apiBlueprintDelete({ id }))
+      return Promise.allSettled(promises)
+        .then(results => {
+          let successCount = 0
+          results.forEach((r: any, i: number) => {
+            if (r.status === 'fulfilled' && r.value?.code === 200) {
+              window.dispatchEvent(new CustomEvent('blueprint:deleted', { detail: { id: ids[i] } }))
+              successCount++
+            }
+          })
+          if (successCount > 0) {
+            message.success(`已删除 ${successCount} 张图纸`)
+          }
+          selectedIds.value = new Set()
+          loadBlueprints()
+        })
+    },
+  })
+}
 
 // 过滤值
 const keyword = ref('')
@@ -317,25 +386,39 @@ function onOpenBlueprint(item: { id: string }) {
 }
 
 function onDeleteBlueprint(item: { id: string }) {
-  apiBlueprintDelete({ id: item.id })
-    .then(res => {
-      if (res.code === 200) {
-        message.success('已删除')
-        loadBlueprints()
-      } else {
-        message.error(res.message || '删除失败')
-      }
-    })
-    .catch(() => {
-      message.error('删除失败，请重试')
-    })
+  Modal.confirm({
+    title: '删除确认',
+    icon: createVNode(ExclamationCircleOutlined),
+    content: createVNode('div', { style: 'color:red;' }, `确定要删除「${item.name || '未命名'}」吗？删除后不可恢复。`),
+    okText: '确定删除',
+    okType: 'danger',
+    cancelText: '取消',
+    onOk() {
+      return apiBlueprintDelete({ id: item.id })
+        .then(res => {
+          if (res.code === 200) {
+            window.dispatchEvent(new CustomEvent('blueprint:deleted', { detail: { id: item.id } }))
+            message.success('已删除')
+            loadBlueprints()
+          } else {
+            message.error(res.message || '删除失败')
+          }
+        })
+        .catch(() => {
+          message.error('删除失败，请重试')
+        })
+    },
+  })
 }
 
 watch(
   () => tabsActiveKey.value,
   key => {
-    if (key === '3' && blueprintList.value.length === 0) {
-      loadBlueprints()
+    if (key === '3') {
+      selectedIds.value = new Set()
+      if (blueprintList.value.length === 0) {
+        loadBlueprints()
+      }
     }
   },
 )
@@ -406,6 +489,14 @@ handleGraphicGroups()
     box-sizing: border-box;
   }
 
+  .bp-toolbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 8px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+
   .blueprint-grid {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
@@ -417,7 +508,6 @@ handleGraphicGroups()
   }
 
   .bp-card {
-    cursor: pointer;
     border: 1px solid #f0f0f0;
     border-radius: 6px;
     overflow: hidden;
@@ -427,6 +517,25 @@ handleGraphicGroups()
       box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
       border-color: #d9d9d9;
     }
+  }
+
+  .bp-card-selected {
+    border-color: #4f46e5;
+    box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.15);
+  }
+
+  .bp-check {
+    position: absolute;
+    top: 4px;
+    left: 4px;
+    z-index: 2;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 3px;
+    padding: 1px;
+  }
+
+  .bp-card-body {
+    cursor: pointer;
   }
 
   .bp-thumb {
@@ -468,11 +577,6 @@ handleGraphicGroups()
     position: absolute;
     top: 2px;
     right: 2px;
-    opacity: 0;
-    transition: opacity 0.15s;
-    .bp-card:hover & {
-      opacity: 1;
-    }
   }
 
   .bp-delete-btn {

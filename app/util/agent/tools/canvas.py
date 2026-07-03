@@ -9,6 +9,7 @@ from app.util.tool_registry import ToolRegistry
 # Canvas Tools — unified single tool with action parameter
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def _new_pen_id() -> str:
     """Generate a unique pen ID using UUID4 (12 hex chars = 48 bits random)."""
     return uuid.uuid4().hex[:12]
@@ -70,7 +71,8 @@ def _resolve_pen_ids(args: dict) -> list:
             "borderColor": {"type": "string", "description": "[add_pen]边框颜色(#RRGGBB)"},
             "borderRadius": {"type": "number", "description": "[add_pen]圆角半径(px)"},
             "lineDash": {
-                "type": "array", "items": {"type": "number"},
+                "type": "array",
+                "items": {"type": "number"},
                 "description": "[add_pen]虚线模式,如[5,3]表示5px实线+3px空白",
             },
             "globalAlpha": {"type": "number", "description": "[add_pen]透明度(0-1)"},
@@ -78,7 +80,10 @@ def _resolve_pen_ids(args: dict) -> list:
             "shadowBlur": {"type": "number", "description": "[add_pen]阴影模糊半径(px)"},
             "shadowOffsetX": {"type": "number", "description": "[add_pen]阴影X偏移(px)"},
             "shadowOffsetY": {"type": "number", "description": "[add_pen]阴影Y偏移(px)"},
-            "gradientColors": {"type": "string", "description": "[add_pen]渐变填充色,JSON数组如'[\"#ff0000\",\"#0000ff\"]'"},
+            "gradientColors": {
+                "type": "string",
+                "description": '[add_pen]渐变填充色,JSON数组如\'["#ff0000","#0000ff"]\'',
+            },
             "fontFamily": {"type": "string", "description": "[add_pen]字体家族"},
             "fontWeight": {"type": "string", "description": "[add_pen]字体粗细(normal/bold/100-900)"},
             "fontStyle": {"type": "string", "description": "[add_pen]字体样式(normal/italic)"},
@@ -96,7 +101,8 @@ def _resolve_pen_ids(args: dict) -> list:
             "visible": {"type": "boolean", "description": "[add_pen]是否可见"},
             "locked": {"type": "number", "description": "[add_pen]锁定状态:0=正常,1=禁编辑,2=禁移动"},
             "tags": {
-                "type": "array", "items": {"type": "string"},
+                "type": "array",
+                "items": {"type": "string"},
                 "description": "[add_pen]标签列表",
             },
             # add_line params
@@ -150,7 +156,10 @@ def _resolve_pen_ids(args: dict) -> list:
             # move_pen params
             "moves": {
                 "type": "array",
-                "items": {"type": "object", "properties": {"pen_id": {"type": "string"}, "x": {"type": "number"}, "y": {"type": "number"}}},
+                "items": {
+                    "type": "object",
+                    "properties": {"pen_id": {"type": "string"}, "x": {"type": "number"}, "y": {"type": "number"}},
+                },
                 "description": "[move_pen]批量移动列表,每项含pen_id/x/y",
             },
         },
@@ -160,7 +169,10 @@ def _resolve_pen_ids(args: dict) -> list:
 def _tool_canvas(args):
     action = args.get("action", "")
     if not action:
-        return {"success": False, "error": "缺少必填参数: action，请指定画布操作类型。支持: add_pen/add_line/add_diagram/update_pen/delete_pen/clear/undo/redo/get_state/lock/unlock/toggle_visibility/duplicate/move_pen/group/ungroup"}
+        return {
+            "success": False,
+            "error": "缺少必填参数: action，请指定画布操作类型。支持: add_pen/add_line/add_diagram/update_pen/delete_pen/clear/undo/redo/get_state/lock/unlock/toggle_visibility/duplicate/move_pen/group/ungroup",
+        }
     if action == "add_pen":
         pen_id = _new_pen_id()
         pen_type = args.get("type", "rectangle")
@@ -256,13 +268,33 @@ def _tool_canvas(args):
         return {
             "success": True,
             "data": {
-                "pens": [{"pen_id": p.get("id", p.get("penId", "")), "type": p.get("name", p.get("type", "rectangle")), "text": p.get("text", ""), "x": p.get("x", 0), "y": p.get("y", 0)} for p in pens],
-                "lines": [{"from": l.get("fromPen", l.get("source", "")), "to": l.get("toPen", l.get("connectTo", "")), "text": l.get("text", "")} for l in lines],
+                "pens": [
+                    {
+                        "pen_id": p.get("id", p.get("penId", "")),
+                        "type": p.get("name", p.get("type", "rectangle")),
+                        "text": p.get("text", ""),
+                        "x": p.get("x", 0),
+                        "y": p.get("y", 0),
+                    }
+                    for p in pens
+                ],
+                "lines": [
+                    {
+                        "from": l.get("fromPen", l.get("source", "")),
+                        "to": l.get("toPen", l.get("connectTo", "")),
+                        "text": l.get("text", ""),
+                    }
+                    for l in lines
+                ],
                 "pen_count": len(pens),
                 "line_count": len(lines),
                 "empty": len(pens) == 0 and len(lines) == 0,
             },
-            "message": f"画布当前有 {len(pens)} 个图形和 {len(lines)} 条连线。如需重新绘制，先调用 canvas(action='clear', confirm=true) 清空。" if (pens or lines) else "画布当前为空，可以开始绘制",
+            "message": (
+                f"画布当前有 {len(pens)} 个图形和 {len(lines)} 条连线。如需重新绘制，先调用 canvas(action='clear', confirm=true) 清空。"
+                if (pens or lines)
+                else "画布当前为空，可以开始绘制"
+            ),
         }
     elif action == "lock":
         pen_ids = _resolve_pen_ids(args)
@@ -308,7 +340,7 @@ def _tool_canvas(args):
     elif action == "move_pen":
         moves = args.get("moves", [])
         if not moves:
-            return {"success": False, "error": "moves 不能为空，格式: [{\"pen_id\": \"...\", \"x\": 100, \"y\": 200}]"}
+            return {"success": False, "error": 'moves 不能为空，格式: [{"pen_id": "...", "x": 100, "y": 200}]'}
         return {
             "success": True,
             "data": {"moves": moves},

@@ -10,8 +10,8 @@ import logging
 import time
 from typing import Optional
 
-from app.util.agent.state import WorldState
 from app.util.agent.constants import SNAPSHOT_TTL, STATE_MAX_VERSIONS, STATE_TTL
+from app.util.agent.state import WorldState
 
 
 class StateStore:

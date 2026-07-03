@@ -292,7 +292,22 @@ function onRemoveDoc(idx: number) {
 }
 
 function onKeydown(e: KeyboardEvent) {
-  if (e.key === 'Enter' && !e.shiftKey && !e.isComposing) {
+  if (e.key === 'Enter' && !e.isComposing) {
+    if (e.shiftKey) {
+      e.preventDefault()
+      const el = textareaRef.value
+      if (!el) return
+      const start = el.selectionStart
+      const end = el.selectionEnd
+      const before = inputText.value.slice(0, start)
+      const after = inputText.value.slice(end)
+      inputText.value = before + '\n' + after
+      nextTick(() => {
+        el.selectionStart = el.selectionEnd = start + 1
+        onTextareaInput()
+      })
+      return
+    }
     e.preventDefault()
     if (translateMode.value) {
       onSendTranslate()

@@ -121,9 +121,7 @@ class ToolRouter:
         self._max = max_tool_schemas
         self._cache: dict = {}
 
-    def route(
-        self, domains: list, user_message: str = "", has_write: bool = False
-    ) -> ToolRouting:
+    def route(self, domains: list, user_message: str = "", has_write: bool = False) -> ToolRouting:
         """根据领域和用户消息筛选工具 schema。
 
         Args:

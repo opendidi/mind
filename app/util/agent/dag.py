@@ -175,9 +175,7 @@ class DAGExecutor(BaseExecutor):
             session_id=(task_id or user_id),
         )
         self.hooks = hooks or []
-        self.shared_context = SharedContext(
-            redis_client=redis_client, task_id=task_id
-        )
+        self.shared_context = SharedContext(redis_client=redis_client, task_id=task_id)
         self._replan_used = False
         self._reflection_count = 0
         self._dag_start_ts = 0.0
@@ -193,7 +191,7 @@ class DAGExecutor(BaseExecutor):
 
     def _get_state(self):
         """返回最近的 ExecutionState（供 CriticAgent 审查使用）。"""
-        return getattr(self, '_last_execution_state', None)
+        return getattr(self, "_last_execution_state", None)
 
     def execute(self, plan: DAGPlan) -> Generator:
         if plan.mode == "simple" or not plan.nodes:
@@ -392,9 +390,7 @@ class DAGExecutor(BaseExecutor):
 
         ctx_hint = self.shared_context.sniff()
         progress = self._build_progress_prompt(state, node.id)
-        instruction = (
-            f"{progress}\n\n{ctx_hint}现在执行计划步骤: {node.desc}\n请仅执行这一步需要的工具调用，完成后简要用文字描述结果。"
-        )
+        instruction = f"{progress}\n\n{ctx_hint}现在执行计划步骤: {node.desc}\n请仅执行这一步需要的工具调用，完成后简要用文字描述结果。"
         # ── Critic 质量提示注入 ──
         if self._critic_hints:
             instruction += f"\n\n{self._critic_hints}"

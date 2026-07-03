@@ -35,7 +35,9 @@ TRANSLATE_PARAMS = {
     "翻译文本。将一段文本翻译为指定语言。支持自动检测源语言和智能选择目标语言，可选择通用/正式/技术文档风格。",
     TRANSLATE_PARAMS,
 )
-def _translate_tool_handler(text: str, target_lang: str = "", source_lang: str = "auto", style: str = "general") -> dict:
+def _translate_tool_handler(
+    text: str, target_lang: str = "", source_lang: str = "auto", style: str = "general"
+) -> dict:
     """Translate text using Argos (primary) or LLM (fallback)."""
     from app.util.translate import TranslationEngine, detect_target_language
 

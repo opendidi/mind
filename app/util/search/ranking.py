@@ -186,21 +186,9 @@ def format_search_results(
                 "url": r.get("url", r.get("href", "")),
                 "date": r.get("date", ""),
                 "domain": _extract_domain(r.get("url", r.get("href", ""))),
-                **(
-                    {"author": r["author"]}
-                    if r.get("author")
-                    else {}
-                ),
-                **(
-                    {"score": round(r["score"], 2)}
-                    if isinstance(r.get("score"), (int, float))
-                    else {}
-                ),
-                **(
-                    {"_engine": r["_engine"]}
-                    if r.get("_engine")
-                    else {}
-                ),
+                **({"author": r["author"]} if r.get("author") else {}),
+                **({"score": round(r["score"], 2)} if isinstance(r.get("score"), (int, float)) else {}),
+                **({"_engine": r["_engine"]} if r.get("_engine") else {}),
             }
             for r in raw_results
         ]

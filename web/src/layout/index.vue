@@ -19,12 +19,6 @@
             <span class="nav-label">AI 对话</span>
           </router-link>
         </a-tooltip>
-        <a-tooltip title="图纸列表" placement="right">
-          <div class="nav-item" @click="showBlueprintList = true">
-            <t-icon name="view-list" class="nav-icon" />
-            <span class="nav-label">图纸</span>
-          </div>
-        </a-tooltip>
       </nav>
 
       <div class="sidebar-bottom">
@@ -47,23 +41,19 @@
       <AppMain />
     </main>
 
-    <BluePrintList ref="blueprintListRef" @closed="showBlueprintList = false" />
   </div>
 </template>
 
 <script setup lang="ts">
-import { createVNode, ref, watch } from 'vue'
+import { createVNode } from 'vue'
 import { useRouter } from 'vue-router'
 import { ExclamationCircleOutlined } from '@ant-design/icons-vue'
 import { Modal } from 'ant-design-vue'
 import { useUserStore } from '@/store/modules/user'
 import AppMain from './AppMain.vue'
-import BluePrintList from '@/components/blueprint/index.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
-const blueprintListRef = ref(null)
-const showBlueprintList = ref(false)
 
 function handleLogout() {
   Modal.confirm({
@@ -78,11 +68,6 @@ function handleLogout() {
   })
 }
 
-watch(showBlueprintList, val => {
-  if (blueprintListRef.value) {
-    ;(blueprintListRef.value as any).visible = val
-  }
-})
 </script>
 
 <style lang="scss" scoped>

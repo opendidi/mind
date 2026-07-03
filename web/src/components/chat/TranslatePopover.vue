@@ -2,8 +2,8 @@
 <template>
   <teleport to="body">
     <div class="translate-overlay" @click.self="$emit('close')">
-      <div class="translate-popover" :style="popoverStyle">
-        <div class="tp-header">
+      <div ref="popoverRef" class="translate-popover" :style="popoverStyle">
+        <div class="tp-header" @mousedown="onHeaderMouseDown">
           <span class="tp-langs flex">
             <span class="tp-lang-tag">{{ sourceLabel }}</span>
             <span class="tp-swap" title="交换语言" @click="onSwap">⇄</span>
@@ -67,7 +67,7 @@
 </template>
 
 <script setup lang="ts">
-import { computed, onMounted, onBeforeUnmount } from 'vue'
+import { computed, onMounted, onBeforeUnmount, ref, reactive, nextTick, watch } from 'vue'
 import { CopyOutlined, CaretDownFilled, SoundOutlined, PauseCircleFilled } from '@ant-design/icons-vue'
 import { message } from 'ant-design-vue'
 import { useSpeech } from '@/composables/useSpeech'
@@ -90,6 +90,68 @@ const emit = defineEmits<{
   changeStyle: [style: string]
 }>()
 
+const dragOffset = reactive({ x: 0, y: 0 })
+const isDragging = ref(false)
+const popoverRef = ref<HTMLElement | null>(null)
+let grabX = 0
+let grabY = 0
+
+function getBaseLeft() {
+  const w = Math.min(380, window.innerWidth - 32)
+  let left = props.x
+  if (left + w > window.innerWidth - 16) left = window.innerWidth - w - 16
+  if (left < 16) left = 16
+  return left
+}
+
+function getBaseTop() {
+  return Math.min(props.y + 8, window.innerHeight - 260)
+}
+
+function onHeaderMouseDown(e: MouseEvent) {
+  const target = e.target as HTMLElement
+  if (target.closest('button, a, .ant-dropdown-trigger, .tp-close, .tp-swap')) return
+  isDragging.value = true
+  const rect = popoverRef.value!.getBoundingClientRect()
+  grabX = e.clientX - rect.left
+  grabY = e.clientY - rect.top
+  document.addEventListener('mousemove', onDragMove)
+  document.addEventListener('mouseup', onDragEnd)
+}
+
+function onDragMove(e: MouseEvent) {
+  if (!isDragging.value) return
+  const el = popoverRef.value!
+  const m = 8
+  const pw = el.offsetWidth
+  const ph = el.offsetHeight
+
+  let dl = e.clientX - grabX
+  let dt = e.clientY - grabY
+  dl = Math.max(m, Math.min(dl, window.innerWidth - pw - m))
+  dt = Math.max(m, Math.min(dt, window.innerHeight - ph - m))
+
+  dragOffset.x = dl - getBaseLeft()
+  dragOffset.y = dt - getBaseTop()
+}
+
+function onDragEnd() {
+  isDragging.value = false
+  document.removeEventListener('mousemove', onDragMove)
+  document.removeEventListener('mouseup', onDragEnd)
+}
+
+function clampToViewport() {
+  const el = popoverRef.value
+  if (!el) return
+  const r = el.getBoundingClientRect()
+  const m = 8
+  if (r.bottom > window.innerHeight - m) dragOffset.y -= r.bottom - (window.innerHeight - m)
+  if (r.top < m) dragOffset.y += m - r.top
+  if (r.right > window.innerWidth - m) dragOffset.x -= r.right - (window.innerWidth - m)
+  if (r.left < m) dragOffset.x += m - r.left
+}
+
 const styleOptions = [
   { key: 'general', label: '通用' },
   { key: 'formal', label: '正式' },
@@ -100,8 +162,13 @@ function onKeydown(e: KeyboardEvent) {
   if (e.key === 'Escape') emit('close')
 }
 
-onMounted(() => document.addEventListener('keydown', onKeydown))
+onMounted(() => {
+  document.addEventListener('keydown', onKeydown)
+  nextTick(() => clampToViewport())
+})
 onBeforeUnmount(() => document.removeEventListener('keydown', onKeydown))
+
+watch(() => [props.translated, props.loading], () => nextTick(() => clampToViewport()))
 
 const langLabels: Record<string, string> = {
   zh: '中文',
@@ -140,16 +207,10 @@ function onSwap() {
   emit('changeTarget', props.sourceLang)
 }
 
-const popoverStyle = computed(() => {
-  const w = Math.min(380, window.innerWidth - 32)
-  let left = props.x
-  if (left + w > window.innerWidth - 16) left = window.innerWidth - w - 16
-  if (left < 16) left = 16
-  return {
-    left: `${left}px`,
-    top: `${Math.min(props.y + 8, window.innerHeight - 260)}px`,
-  }
-})
+const popoverStyle = computed(() => ({
+  left: `${getBaseLeft() + dragOffset.x}px`,
+  top: `${getBaseTop() + dragOffset.y}px`,
+}))
 
 function copyResult() {
   navigator.clipboard.writeText(props.translated).then(() => {
@@ -187,6 +248,8 @@ function speakResult() {
   gap: 8px;
   padding: 10px 14px;
   border-bottom: 1px solid #f1f5f9;
+  cursor: grab;
+  user-select: none;
   .tp-langs {
     .tp-lang-tag {
       font-size: 12px;

@@ -92,12 +92,14 @@ class BlueprintMysqlHandler:
                 result = cursor.fetchone()
                 if result is None:
                     return False
-                if result["initJs"]:
-                    result["initJs"] = json.loads(result["initJs"])
-                if result["https"]:
-                    result["https"] = json.loads(result["https"])
-                if result["pens"]:
-                    result["pens"] = json.loads(result["pens"])
+                for field in ("initJs", "https", "pens"):
+                    raw = result.get(field)
+                    if raw and isinstance(raw, str):
+                        try:
+                            result[field] = json.loads(raw)
+                        except (json.JSONDecodeError, TypeError) as e:
+                            logging.warning(f"Blueprint find json.loads({field}) 失败 id={id}: {e}")
+                            result[field] = [] if field in ("pens", "https") else {}
                 return result
         except Exception as e:
             logging.error(f"Blueprint MySQL find 错误：{e}")

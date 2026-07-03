@@ -423,7 +423,7 @@ class AgentExecutor:
 
     def set_critic_hints(self, hints: str):
         """注入 CriticAgent 的质量要求到 DAGExecutor 的节点指令中。"""
-        if hasattr(self._dag, '_critic_hints'):
+        if hasattr(self._dag, "_critic_hints"):
             self._dag._critic_hints = hints
 
     @classmethod

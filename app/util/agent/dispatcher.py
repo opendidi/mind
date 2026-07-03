@@ -308,9 +308,7 @@ class AgentDispatcher:
                     )
                     if peer_result.get("success"):
                         try:
-                            critique_data = json.loads(
-                                extract_json(peer_result.get("result", "{}")) or "{}"
-                            )
+                            critique_data = json.loads(extract_json(peer_result.get("result", "{}")) or "{}")
                             total_score += float(critique_data.get("score", 0.5))
                         except (json.JSONDecodeError, ValueError, TypeError):
                             total_score += 0.5
@@ -353,7 +351,8 @@ class AgentDispatcher:
 def extract_json(text: str) -> str | None:
     """Extract JSON from text (simple bracket matching)."""
     import re
+
     if not text:
         return None
-    match = re.search(r'\{[^{}]*\}', text, re.DOTALL)
+    match = re.search(r"\{[^{}]*\}", text, re.DOTALL)
     return match.group(0) if match else None

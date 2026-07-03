@@ -97,12 +97,12 @@ function loadBlueprint(id: string) {
   if (!meta2d) return
   apiBlueprintFind({ id })
     .then((res: any) => {
-      if (res?.data) {
+      if (res?.code === 200 && res?.data) {
         applyBlueprintData(meta2d, res.data)
         window.dispatchEvent(new CustomEvent('meta2d:dataLoaded'))
       } else {
-        console.warn('[Editor] loadBlueprint: empty data for id=' + id)
-        message.error('图纸加载失败')
+        console.warn('[Editor] loadBlueprint: failed for id=' + id, res)
+        message.error(res?.message || '图纸加载失败')
       }
     })
     .catch((err: any) => {

@@ -3,11 +3,13 @@
 Imports retry module directly to avoid pre-existing package import chain
 (app.util.agent.dispatcher references a non-existent app.util.agents module).
 """
+
 import importlib.util
 import sys
+from unittest.mock import Mock
+
 import httpx
 import pytest
-from unittest.mock import Mock
 
 # Load retry module directly to avoid full package import chain
 _spec = importlib.util.spec_from_file_location(

@@ -6,7 +6,13 @@ import logging
 import time
 
 from app.config import AGENT_DEFAULT_MODEL
-from app.util.agent.constants import LONG_TERM_TTL, PROJECT_MAX_ENTRIES, PROJECT_MAX_RECALL, PROJECT_MEMORY_TTL, SHORT_TERM_TTL
+from app.util.agent.constants import (
+    LONG_TERM_TTL,
+    PROJECT_MAX_ENTRIES,
+    PROJECT_MAX_RECALL,
+    PROJECT_MEMORY_TTL,
+    SHORT_TERM_TTL,
+)
 
 MAX_SHORT_SUMMARY_CHARS = 600
 MAX_LONG_ENTRIES = 50  # max long-term entries per user
