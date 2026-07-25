@@ -507,9 +507,10 @@ class AgentSession:
         try:
             from app.util.agent.plan_eval import PlanMemory
 
+            pm = PlanMemory(user_id=self.user_id)
             tentative_domains = classify_domain(user_message)
-            plan_feedback_hints = PlanMemory.get_hints_for_domains(tentative_domains)
-            failure_hints = PlanMemory.get_failure_summary(limit=2)
+            plan_feedback_hints = pm.get_hints_for_domains(tentative_domains)
+            failure_hints = pm.get_failure_summary(limit=2)
             if failure_hints:
                 plan_feedback_hints = (
                     plan_feedback_hints + "\n\n" + failure_hints if plan_feedback_hints else failure_hints

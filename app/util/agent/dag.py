@@ -766,6 +766,7 @@ class DAGExecutor(BaseExecutor):
         try:
             from app.util.agent.plan_eval import PlanMemory, evaluate_plan
 
+            pm = PlanMemory(user_id=self.user_id)
             completed_desc = [state.node_map[nid].desc for nid in state.completed]
             failed_desc = [state.node_map[nid].desc for nid in state.failed]
             duration_ms = (time.time() - self._dag_start_ts) * 1000 if self._dag_start_ts else 0
@@ -786,7 +787,7 @@ class DAGExecutor(BaseExecutor):
                 reflections=self._reflection_count,
                 duration_ms=duration_ms,
             )
-            PlanMemory.record(feedback)
+            pm.record(feedback)
             logging.info(
                 "Plan-Feedback recorded: score=%.2f, %d/%d steps succeeded, %d reflections",
                 feedback.score,

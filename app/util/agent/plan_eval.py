@@ -130,11 +130,6 @@ _PLAN_MEMORY_REDIS_DB = 5
 _PLAN_MEMORY_TTL = 3600
 _PLAN_MEMORY_MAX_RECENT = 20
 
-# In-memory fallback storage
-_mem_feedbacks: dict[str, PlanFeedback] = {}
-_mem_recent: list[PlanFeedback] = []
-
-
 def _get_plan_memory_redis():
     try:
         from app.util.redis_utils import get_redis
@@ -144,64 +139,70 @@ def _get_plan_memory_redis():
         return None
 
 
-def _plan_pattern_key(domains: list[str]) -> str:
-    domain_key = ":".join(sorted(domains)) if domains else "general"
-    return f"plan:feedback:{domain_key}"
-
-
-def _plan_recent_key() -> str:
-    return "plan:feedback:recent"
-
-
 class PlanMemory:
-    """Cross-session plan quality memory. Uses Redis with in-memory fallback."""
+    """Cross-session plan quality memory, scoped per user.
 
-    @staticmethod
-    def record(feedback: PlanFeedback):
+    Uses Redis (keyed by user_id:domain) with per-instance in-memory fallback.
+    """
+
+    # Module-level shared in-memory fallback, keyed by "user_id:domain"
+    _global_feedbacks: dict[str, PlanFeedback] = {}
+    _global_recent: list[PlanFeedback] = []
+
+    def __init__(self, user_id: str):
+        self.user_id = user_id
+
+    def _domain_key(self, domains: list[str]) -> str:
+        domain_key_part = ":".join(sorted(domains)) if domains else "general"
+        return f"plan:feedback:{self.user_id}:{domain_key_part}"
+
+    def _recent_key(self) -> str:
+        return f"plan:feedback:{self.user_id}:recent"
+
+    def record(self, feedback: PlanFeedback):
         r = _get_plan_memory_redis()
         if r:
             try:
                 data = json.dumps(feedback.to_dict(), ensure_ascii=False)
-                domain_key = _plan_pattern_key(feedback.domains)
+                domain_key = self._domain_key(feedback.domains)
                 r.setex(domain_key, _PLAN_MEMORY_TTL, data)
-                recent_key = _plan_recent_key()
+                recent_key = self._recent_key()
                 r.lpush(recent_key, data)
                 r.ltrim(recent_key, 0, _PLAN_MEMORY_MAX_RECENT - 1)
                 r.expire(recent_key, _PLAN_MEMORY_TTL * 4)
                 logging.debug("PlanMemory recorded: score=%.2f, domains=%s", feedback.score, feedback.domains)
             except Exception:
                 logging.warning("PlanMemory Redis record failed", exc_info=True)
-        # In-memory fallback
-        domain_key = _plan_pattern_key(feedback.domains)
-        _mem_feedbacks[domain_key] = feedback
-        _mem_recent.insert(0, feedback)
-        if len(_mem_recent) > _PLAN_MEMORY_MAX_RECENT:
-            _mem_recent.pop()
+        # In-memory fallback (keyed by user_id:domain to prevent cross-user leakage)
+        domain_key = self._domain_key(feedback.domains)
+        PlanMemory._global_feedbacks[domain_key] = feedback
+        PlanMemory._global_recent.insert(0, feedback)
+        if len(PlanMemory._global_recent) > _PLAN_MEMORY_MAX_RECENT:
+            PlanMemory._global_recent.pop()
 
-    @staticmethod
-    def get_hints_for_domains(domains: list[str]) -> str:
+    def get_hints_for_domains(self, domains: list[str]) -> str:
         hints_parts: list[str] = []
         r = _get_plan_memory_redis()
         if r:
             try:
                 if domains:
-                    domain_key = _plan_pattern_key(domains)
+                    domain_key = self._domain_key(domains)
                     raw = r.get(domain_key)
                     if raw:
                         fb = PlanFeedback.from_dict(json.loads(raw))
                         hint = fb.to_planner_hint()
                         if hint:
                             hints_parts.append(hint)
-                recent_key = _plan_recent_key()
+                recent_key = self._recent_key()
                 recent_raws = r.lrange(recent_key, 0, 2) or []
-                seen_goals = {domains and _plan_pattern_key(domains)}
+                seen_keys = {self._domain_key(domains) if domains else ""}
                 for raw in recent_raws:
                     try:
                         fb = PlanFeedback.from_dict(json.loads(raw))
-                        fb_key = _plan_pattern_key(fb.domains)
-                        if fb_key in seen_goals:
+                        fb_key = self._domain_key(fb.domains)
+                        if fb_key in seen_keys:
                             continue
-                        seen_goals.add(fb_key)
+                        seen_keys.add(fb_key)
                         hint = fb.to_planner_hint()
                         if hint:
                             hints_parts.append(hint)
@@ -211,21 +212,20 @@ class PlanMemory:
                 logging.warning("PlanMemory Redis get failed", exc_info=True)
         # In-memory fallback
         if not hints_parts:
-            domain_key = _plan_pattern_key(domains)
-            if domain_key in _mem_feedbacks:
-                hint = _mem_feedbacks[domain_key].to_planner_hint()
+            domain_key = self._domain_key(domains)
+            if domain_key in PlanMemory._global_feedbacks:
+                hint = PlanMemory._global_feedbacks[domain_key].to_planner_hint()
                 if hint:
                     hints_parts.append(hint)
-            for fb in _mem_recent[:3]:
-                fb_key = _plan_pattern_key(fb.domains)
+            for fb in PlanMemory._global_recent[:3]:
+                fb_key = self._domain_key(fb.domains)
                 if fb_key != domain_key:
                     hint = fb.to_planner_hint()
                     if hint:
                         hints_parts.append(hint)
         return "\n\n".join(hints_parts) if hints_parts else ""
 
-    @staticmethod
-    def get_failure_summary(limit: int = 3) -> str:
+    def get_failure_summary(self, limit: int = 3) -> str:
         """Return recent failure patterns as planner hints.
 
         Reads from Redis recent plan list (in-memory fallback).
@@ -235,7 +235,7 @@ class PlanMemory:
         r = _get_plan_memory_redis()
         if r:
             try:
-                recent_key = _plan_recent_key()
+                recent_key = self._recent_key()
                 recent_raws = r.lrange(recent_key, 0, _PLAN_MEMORY_MAX_RECENT - 1) or []
                 for raw in recent_raws:
                     try:
@@ -252,10 +252,11 @@ class PlanMemory:
 
         # In-memory fallback
         if not failures:
-            for fb in _mem_recent:
+            for fb in PlanMemory._global_recent:
                 if fb.steps_failed > 0:
                     failures.append(
-                        f"目标「{fb.goal[:60]}」: {fb.steps_failed}/{fb.steps_total} 步骤失败，" f"评分 {fb.score:.2f}"
+                        f"目标「{fb.goal[:60]}」: {fb.steps_failed}/{fb.steps_total} 步骤失败，"
+                        f"评分 {fb.score:.2f}"
                     )
 
         if not failures:
