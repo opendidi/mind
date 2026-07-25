@@ -36,12 +36,9 @@ class ToolRouter:
     # ── 领域 → 基础工具映射 ──
     DOMAIN_TOOL_MAP: ClassVar[dict] = {
         "canvas": [
-            "canvas",
-            "canvas_check_empty",
-            "layout_auto_arrange",
-            "layout_align",
-            "canvas_props",
-            "fit_view",
+            "canvas_edit",
+            "canvas_organize",
+            "canvas_view",
         ],
         "blueprint": [
             "blueprint_list",
@@ -71,6 +68,7 @@ class ToolRouter:
         "web_fetch",
         "analyze_image",
         "dispatch_agent",
+        "macro",
     ]
 
     # ── 用例关键词 → 额外工具 ──
@@ -91,10 +89,10 @@ class ToolRouter:
         "图像": ["analyze_image"],
         "识别": ["analyze_image"],
         "分析图片": ["analyze_image"],
-        "布局": ["layout_auto_arrange", "layout_align"],
-        "排版": ["layout_auto_arrange", "layout_align"],
-        "排列": ["layout_auto_arrange"],
-        "对齐": ["layout_align"],
+        "布局": ["canvas_organize"],
+        "排版": ["canvas_organize"],
+        "排列": ["canvas_organize"],
+        "对齐": ["canvas_organize"],
         "Excel": ["extract_excel"],
         "表格": ["extract_excel"],
         "Word": ["analyze_doc"],
@@ -105,6 +103,11 @@ class ToolRouter:
         "生成代码": ["code_generate"],
         "写代码": ["code_generate"],
         "代码": ["code_generate"],
+        # 宏/模板
+        "宏": ["macro"],
+        "模板": ["macro"],
+        "保存操作": ["macro"],
+        "操作序列": ["macro"],
         "保存蓝图": ["blueprint_save"],
         "加载蓝图": ["blueprint_load"],
         "导出": ["blueprint_export"],

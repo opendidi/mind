@@ -13,12 +13,18 @@ from app.util.tool_registry import ToolRegistry
 
 # Import all sub-modules to trigger @ToolRegistry.register decorators
 from . import blueprint  # noqa: F401  — blueprint CRUD
-from . import canvas  # noqa: F401  — canvas + layout tools
+from . import canvas  # noqa: F401  — legacy canvas tools (deprecated)
+from app.util.agent.tools.canvas import (  # noqa: F401
+    _tool_canvas_edit,
+    _tool_canvas_organize,
+    _tool_canvas_view,
+)
 from . import code  # noqa: F401  — code_generate
 from . import file_ops  # noqa: F401  — file search + document analysis
 from . import geo  # noqa: F401  — geocode + regeocode
 from . import translate  # noqa: F401  — translate_text
 from . import web  # noqa: F401  — web_fetch + analyze_image
+from . import macro  # noqa: F401  — macro tool registration
 
 # Re-export _require for backward compat (used by engine_chain.py)
 from .web import _require  # noqa: F401
