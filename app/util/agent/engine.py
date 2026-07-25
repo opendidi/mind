@@ -95,6 +95,7 @@ class AgentEngine:
         stream: bool = False,
         precomputed_plan: dict = None,
         canvas_context: dict = None,
+        canvas_snapshot: list = None,
     ) -> Generator:
         """Unified V3 chat entry point with guardrails.
 
@@ -161,6 +162,8 @@ class AgentEngine:
             tool_ctx = {"user_id": self.user_id}
             if canvas_context:
                 tool_ctx["_canvas_context"] = canvas_context
+            if canvas_snapshot:
+                tool_ctx["canvas_snapshot"] = canvas_snapshot
             if redis_client:
                 tool_ctx["_redis"] = redis_client
                 tool_ctx["_task_id"] = task_id

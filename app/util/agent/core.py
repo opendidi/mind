@@ -462,6 +462,7 @@ class AgentSession:
         self,
         user_message: str,
         canvas_context: dict = None,
+        canvas_snapshot: list = None,
         confirm_handler=None,
         model: str = AGENT_DEFAULT_MODEL,
         redis_client=None,
@@ -548,6 +549,7 @@ class AgentSession:
             stream=stream,
             precomputed_plan=unified_result.get("plan"),
             canvas_context=canvas_context,
+            canvas_snapshot=canvas_snapshot,
         ):
             if event[0] == "llm_response":
                 choice = event[1]

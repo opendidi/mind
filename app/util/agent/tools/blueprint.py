@@ -90,6 +90,16 @@ def _tool_blueprint_save(args):
     name = args.get("name", "").strip()
     if not name:
         return {"success": False, "error": "图纸名称不能为空"}
+
+    # Use canvas_snapshot from tool_ctx (injected by AgentSession) for atomic save
+    canvas_snapshot = args.get("canvas_snapshot")
+    pens = ""
+    if canvas_snapshot and isinstance(canvas_snapshot, list):
+        pens = json.dumps(canvas_snapshot, ensure_ascii=False)
+    else:
+        # Fallback: use pens arg if provided directly (legacy path)
+        pens = args.get("pens", "")
+
     ok, result = BlueprintMysqlHandler.add(
         {
             "name": name,
@@ -104,7 +114,7 @@ def _tool_blueprint_save(args):
             "rule": args.get("rule", ""),
             "ruleColor": args.get("ruleColor", ""),
             "initJs": args.get("initJs", ""),
-            "pens": args.get("pens", ""),
+            "pens": pens,
             "https": args.get("https", ""),
             "thumbnail": args.get("thumbnail", ""),
         },

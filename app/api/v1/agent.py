@@ -57,6 +57,7 @@ def agent_chat():
 
     user_id = data.get("user_id", request.headers.get("X-User-ID", "anonymous"))
     canvas_context = data.get("canvas_context")
+    canvas_snapshot = data.get("canvas_snapshot")
     images = data.get("images")  # list of base64 data URL strings for multimodal vision
 
     from app.util.agent.observability import AgentObservability
@@ -77,6 +78,7 @@ def agent_chat():
                 for event in session.chat_v3(
                     user_message=message,
                     canvas_context=canvas_context,
+                    canvas_snapshot=canvas_snapshot,
                     task_id=task_id,
                     images=images,
                     stream=True,

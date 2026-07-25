@@ -223,6 +223,38 @@ export function buildCanvasContext(): CanvasContext | null {
   }
 }
 
+/** Build a lightweight pens snapshot for blueprint_save atomicity. */
+export function buildCanvasSnapshot(): any[] | null {
+  try {
+    const meta2d = (window as any).meta2d
+    if (!meta2d || typeof meta2d.data !== 'function') return null
+    const data = meta2d.data()
+    if (!data) return null
+    return (data.pens || []).map((p: any) => ({
+      id: p.id || p.penId,
+      type: p.name || p.type || 'rectangle',
+      text: (p.text || '').slice(0, 500),
+      x: p.x || 0, y: p.y || 0,
+      width: p.width || 100, height: p.height || 60,
+      background: p.background || '',
+      color: p.color || '',
+      borderColor: p.borderColor || '',
+      borderRadius: p.borderRadius,
+      fontSize: p.fontSize,
+      fontFamily: p.fontFamily,
+      fontWeight: p.fontWeight,
+      textAlign: p.textAlign,
+      icon: p.icon || '',
+      image: p.image || '',
+      visible: p.visible !== false,
+      locked: p.locked || 0,
+      tags: p.tags || [],
+    }))
+  } catch {
+    return null
+  }
+}
+
 // ── Composable ─────────────────────────────────────────────────────
 
 export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatReturn {
@@ -694,6 +726,12 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       ? options.getCanvasContext()
       : buildCanvasContext()
 
+    // Build canvas snapshot only when NOT on canvas editor page
+    // (on canvas editor page, getCanvasContext is set, so snapshot is redundant)
+    const canvasSnapshot = options.getCanvasContext
+      ? null
+      : buildCanvasSnapshot()
+
     loading.value = true
     connected.value = true
     streamDisconnected.value = false
@@ -707,6 +745,7 @@ export function useAgentChat(options: UseAgentChatOptions = {}): UseAgentChatRet
       userMessage: apiText,
       user_id: options.userId,
       canvasContext,
+      canvasSnapshot,
       images: images || undefined,
       onEvent: (event) => handleSSEEvent(event.type, event.data),
       onError: (err) => {

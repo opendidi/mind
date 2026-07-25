@@ -33,6 +33,7 @@ export interface AgentChatOptions {
   userMessage: string
   user_id?: string
   canvasContext?: any
+  canvasSnapshot?: any[] | null
   images?: string[]
   onEvent?: (event: AgentEvent) => void
   onError?: (error: Error) => void
@@ -54,6 +55,7 @@ export function agentChat(options: AgentChatOptions): AbortController {
     message: options.userMessage,
     user_id: options.user_id || 'anonymous',
     canvas_context: options.canvasContext,
+    canvas_snapshot: options.canvasSnapshot || null,
     images: options.images || [],
   })
 
