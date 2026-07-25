@@ -73,8 +73,11 @@
 
 - 🤖 **自然语言画图** — "画一个登录流程图" → AI 自动创建节点和连线
 - 🧠 **智能图表生成** — 支持流程图、架构图、UML 类图、时序图、活动图等
-- 📐 **自动排版** — "把这些框水平排列""左对齐选中节点"
-- 📋 **蓝图管理** — 搜索、加载、保存、导出（PNG/SVG/JSON）
+- 📐 **智能排版** — 网格/树形/力导向/分层 4 种布局算法，"把这些框垂直排列""用树形布局展开"
+- ⏱️ **快照回滚** — Agent 每次写操作自动保存快照，对话中随时回退到历史版本
+- 📋 **蓝图管理** — 搜索、加载、保存、导出（PNG/SVG/JSON），对比两个蓝图差异、合并蓝图
+- 📦 **操作宏** — 将常用操作序列保存为可复用宏，"把刚才的操作存为'三层架构'"
+- 🏗️ **蓝图模板** — 从预置模板（三层架构/微服务/数据管道/类图/SWOT）一键创建
 
 ### 聊天体验
 
@@ -162,12 +165,13 @@ mind/
 │       │   ├── state_store.py     🆕        # StateStore — Redis 持久化 + 版本管理
 │       │   ├── state_reducer.py   🆕        # StateReducer — 状态合并 + 冲突解决
 │       │   ├── state_snapshot.py  🆕        # SnapshotManager — 快照/回滚/diff
+│       │   ├── canvas_shadow.py   🆕        # CanvasShadow — 画布影子状态，跨轮次 ID 校验 + 线程安全锁
 │       │   ├── critic_agent.py    🆕        # CriticAgent — 独立四维质量审查
 │       │   ├── tool_router.py     🆕        # ToolRouter — 意图→工具集过滤（减少 40-60% prompt）
 │       │   ├── model_router.py    🆕        # ModelRouter — 任务→模型路由（cheap/balanced/quality）
 │       │   ├── pheromone.py                 # 信息素黑板 — 跨节点共享发现（Redis 持久化）
-│       │   ├── plan_eval.py                 # Plan-Feedback 闭环 — 执行后评分 → 历史教训
-│       │   ├── cache.py                     # 工具结果缓存 + LLM 确定性缓存（Redis）
+│       │   ├── plan_eval.py                 # Plan-Feedback 闭环 — 执行后评分 → 用户隔离历史教训
+│       │   ├── cache.py                     # 工具结果缓存 + LLM 确定性缓存（状态感知失效）
 │       │   ├── circuit.py                   # Circuit Breaker — LLM 熔断保护
 │       │   ├── fallback.py                  # FallbackLLM — 多级故障转移
 │       │   ├── llm_stream.py                # SSE 流式响应处理
@@ -188,10 +192,16 @@ mind/
 │       │   │   ├── file_skill.py            # 文件管理知识
 │       │   │   ├── code_skill.py            # 代码生成知识
 │       │   │   └── translate_skill.py       # 翻译技能知识
-│       │   ├── tools/                       # 工具函数（7 个模块，按域拆分）
+│       │   ├── tools/                       # 工具函数（按域拆分 + canvas 子包）
 │       │   │   ├── __init__.py               # 工具注册触发点
-│       │   │   ├── canvas.py                 # Canvas 工具 (add/update/delete pen/line)
-│       │   │   ├── blueprint.py              # Blueprint 工具 (list/load/save/search/export)
+│       │   │   ├── canvas.py                 # [已弃用] Canvas 旧工具（→ tools/canvas/）
+│       │   │   ├── canvas/          🆕       # Canvas 工具子包（语义化三工具）
+│       │   │   │   ├── _base.py              # 共享工具函数（pen ID 生成/参数解析/shadow 引用）
+│       │   │   │   ├── edit.py               # canvas_edit — 图形增删改（11 action）
+│       │   │   │   ├── organize.py           # canvas_organize — 布局对齐编组（7 action）
+│       │   │   │   └── view.py               # canvas_view — 视图/属性/快照（6 action）
+│       │   │   ├── blueprint.py              # Blueprint 工具 (list/load/save/search/export/diff/merge/from_template)
+│       │   │   ├── macro.py         🆕       # Macro 工具 — 操作宏的保存/列表/执行
 │       │   │   ├── file_ops.py               # 文件工具 (search/upload/delete/folder/rename)
 │       │   │   ├── web.py                    # Web 工具 (search/fetch)
 │       │   │   ├── geo.py                    # 地理工具 (geocode/route)
@@ -285,7 +295,8 @@ mind/
 │   │   │   └── permission.js                # 路由守卫（Token 校验 + 重定向）
 │   │   └── utils/                           # 工具函数（15 个模块）
 │   │       ├── request.ts                    # Axios 实例（自动 Token 刷新、错误处理）
-│   │       ├── canvasBridge.ts               # 聊天 ↔ 画布双向通信桥
+│   │       ├── canvasBridge.ts               # 聊天 ↔ 画布双向通信桥（支持 3 工具语义路由 + 快照回滚）
+│   │       ├── layoutEngine.ts      🆕       # 智能布局引擎（网格/树形/力导向/分层 4 种算法）
 │   │       ├── graphicGroups.ts              # 图形分组配置
 │   │       ├── meta-storage.ts               # 画布持久化（localStorage）
 │   │       ├── defaultConfig.ts              # Meta2D 默认配置
@@ -298,6 +309,9 @@ mind/
 │   ├── .env                                  # 前端环境变量
 │   ├── .env.development                      # 开发环境
 │   └── vite.config.ts                        # Vite 构建配置（代理、Monaco 分块、Windi CSS）
+│
+├── app/data/                                 # 后端数据文件
+│   ├── blueprint_templates/         🆕       # 蓝图模板（5 个预置模板 JSON）
 │
 ├── tests/                                   # Python 测试（11 个文件）
 │   ├── conftest.py                           # 共享 Fixtures（Flask app、mock LLM/Redis/DB）
@@ -480,11 +494,18 @@ pnpm dev:web
   "user_id": "user_001",
   "canvas_context": {
     "pens": [{"id": "p1", "type": "rectangle", "x": 100, "y": 50, "text": "开始"}],
-    "lines": []
+    "lines": [],
+    "selectedIds": [],
+    "viewportCenter": {"x": 400, "y": 300}
   },
+  "canvas_snapshot": [
+    {"id": "p1", "type": "rectangle", "text": "开始", "x": 100, "y": 50, "width": 100, "height": 60}
+  ],
   "images": ["data:image/png;base64,..."]
 }
 ```
+
+> `canvas_context` 用于 Agent 理解当前画布状态；`canvas_snapshot` 用于 blueprint_save 原子写入完整 pens 数据。新增 `viewportCenter` 和 `selectedIds` 字段辅助 Agent 定位。
 
 **SSE 事件类型：**
 
@@ -608,56 +629,59 @@ Level 4  Agent Runtime       DAG + 规划 + 反思 + 长期记忆
 Level 5  Agent OS  ← 当前    状态管理 + 项目认知 + 独立审查 + 战略反思 + 多 Agent 协作
 ```
 
-### 架构层次（v2.0 — 优化后）
+### 架构层次（v2.1 — 本次优化后）
 
 ```
 用户输入 → InputGuard
                 ↓
-        StateManager.load()  ← 加载用户世界状态
+        StateManager.load()     ← 加载 WorldState + CanvasShadow
+        CanvasShadow.sync()     ← 前端快照 → 影子状态 diff 同步
                 ↓
-        ToolRouter.route()   ← 按领域过滤工具集（减少 prompt 40-60%）
-        ModelRouter.route()  ← 按任务复杂度选模型（cheap/balanced/quality）
+        ToolRouter.route()      ← 按领域过滤工具集（canvas → 3 语义工具，减少 prompt 40-60%）
+        ModelRouter.route()     ← 按任务复杂度选模型（cheap/balanced/quality）
                 ↓
-        SnapshotManager.snapshot("pre_execution")
+        SnapshotManager.save("pre_execution")
                 ↓
-        Intent 分类 → Domain Skill 注入
+        Intent 分类（LLM Cache 状态感知失效 → canvas/blueprint 版本变化自动刷新）
                 ↓
-        Plan 生成（统一 LLM 调用 + WorldState 上下文 + Plan-Feedback 闭环）
+        Domain Skill 注入 → Plan 生成（统一 LLM 调用 + WorldState + CanvasShadow + PlanFeedback 用户隔离）
                 ↓
         AgentEngine 路由
         ├── simple 模式 → BaseExecutor（单轮 ReAct 循环）
-        └── dag 模式    → DAGExecutor（拓扑排序 + 并行执行 + 条件分支）
+        └── dag 模式    → DAGExecutor（拓扑排序 + 并行 + 条件分支 + CanvasShadow 线程安全写入）
                 ↓
-        Tool 执行（ToolGuard 护栏 + Circuit Breaker 熔断）
+        Tool 执行（canvas_edit / canvas_organize / canvas_view + ToolGuard + Circuit Breaker）
+                ↓
+        CanvasShadow 同步写 ← add_pen/add_line/delete_pen → shadow add/remove/validate
                 ↓
         Reflexion 自纠正 → Pheromone 信息素沉积（Redis 持久化）
                 ↓
         CriticAgent.review()  ← 独立质量审查（正确性/完整性/一致性/安全性）
                 ↓
-        StateManager.save()   ← 持久化世界状态
-        SnapshotManager.snapshot("post_execution")
+        StateManager.save() + CanvasShadow.save()  ← Redis 持久化（30min TTL）
+        SnapshotManager.save("post_execution")
                 ↓
-        OutputGuard → SSE 流式输出 → 会话记忆 + 项目记忆持久化
+        OutputGuard → SSE 流式输出 → 会话记忆 + PlanMemory 用户隔离存储
 ```
 
-### 工具集（21 个）
+### 工具集（25 个）
 
 | 域 | 工具 | 说明 |
 |----|------|------|
-| **Canvas** | `canvas_add_pen` | 创建图形（支持矩形/圆形/三角形/菱形/文本/图片等） |
-| | `canvas_update_pen` | 修改图形属性（位置/大小/颜色/文本） |
-| | `canvas_delete_pen` | 删除图形 |
-| | `canvas_add_line` | 创建连线（含源/目标连接元数据） |
-| | `canvas_get_state` | 获取画布全部状态（图形数+连线数统计） |
-| | `canvas_clear` | 清空画布 |
-| | `canvas_undo` / `canvas_redo` | 撤销 / 重做 |
+| **Canvas** | `canvas_edit` | 图形编辑（11 action: add_pen/add_line/add_diagram/update_pen/delete_pen/duplicate/move_pen/undo/redo/clear/get_state） |
+| | `canvas_organize` | 图形组织（7 action: group/ungroup/lock/unlock/toggle_visibility/auto_arrange/align） |
+| | `canvas_view` | 视图与属性（6 action: set_props/fit_view/check_empty/list_snapshots/restore_snapshot/save_snapshot） |
+| **Layout** | `auto_arrange`（内置于 canvas_organize） | 4 种布局算法：网格(grid) / 树形(tree) / 力导向(force) / 分层(layered) |
+| | `align`（内置于 canvas_organize） | 6 方向对齐：左/中/右/上/中/下 |
 | **Blueprint** | `blueprint_list` | 蓝图列表（分页） |
 | | `blueprint_load` | 加载蓝图到画布 |
-| | `blueprint_save` | 保存当前画布为蓝图 |
+| | `blueprint_save` | 保存当前画布为蓝图（原子写入，canvas_snapshot 注入） |
 | | `blueprint_search` | 按名称搜索蓝图 |
 | | `blueprint_export` | 导出为 PNG/SVG/JSON |
-| **Layout** | `layout_auto_arrange` | 自动排列（水平/垂直/网格） |
-| | `layout_align` | 对齐图形（左/右/居中/上/下） |
+| | `blueprint_diff` 🆕 | 对比两个蓝图的节点差异（新增/删除/修改） |
+| | `blueprint_merge` 🆕 | 合并蓝图（add/replace/preview 三种模式） |
+| | `blueprint_from_template` 🆕 | 从预置模板（三层架构/微服务/数据管道/类图/SWOT）创建蓝图 |
+| **Macro** | `macro` 🆕 | 操作宏管理（list/run/save），保存可复用的画布操作序列 |
 | **Web** | `web_search` | 网络搜索（5 引擎多策略链，含缓存/排序/监控） |
 | | `web_fetch` | 抓取网页内容并提取正文 |
 | **Geo** | `geo_geocode` | 地理编码（地址→坐标） |
@@ -670,8 +694,8 @@ Level 5  Agent OS  ← 当前    状态管理 + 项目认知 + 独立审查 + �
 
 | Agent | 工具域 | 职责 |
 |-------|--------|------|
-| `canvas_agent` | canvas_* + layout_* | 画布图形创建、编辑、布局 |
-| `blueprint_agent` | blueprint_* | 蓝图搜索、加载、保存、导出 |
+| `canvas_agent` | canvas_edit + canvas_organize + canvas_view + blueprint_save | 画布图形创建、编辑、布局、视图、快照、保存 |
+| `blueprint_agent` | blueprint_* + blueprint_diff + blueprint_merge + blueprint_from_template | 蓝图搜索、加载、保存、导出、对比、合并、模板创建 |
 | `file_agent` | file_search | 文件/素材检索管理 |
 | `code_agent` | code_generate | JavaScript/JSON 代码生成 |
 
@@ -679,6 +703,16 @@ Level 5  Agent OS  ← 当前    状态管理 + 项目认知 + 独立审查 + �
 
 | 特性 | 说明 |
 |------|------|
+| **🆕 Canvas Tool Unification** | 画布工具从 6 个独立工具重构为 3 个语义工具（edit/organize/view），减少 prompt 模糊性 |
+| **🆕 CanvasShadow 状态追踪** | 后端维护轻量画布影子状态，跨轮次 pen ID 校验 + 线程安全锁，Agent 知道哪些图形真实存在 |
+| **🆕 Canvas Context 语义截断** | 4 层预算分配（选中→邻居→有文字→其余），确保关键上下文不被截断 |
+| **🆕 Layout Engine** | 4 种布局算法：网格(grid) / 树形(tree) / 力导向(force) / 分层(layered)，前端纯计算 |
+| **🆕 Canvas Snapshot 回滚** | 每次写操作自动快照，对话中随时回滚到历史版本（list/restore/save） |
+| **🆕 Macro 操作宏** | 将操作序列保存为可复用宏（list/run/save），Redis 持久化 |
+| **🆕 Cross-Blueprint** | 蓝图对比(diff)、合并(merge add/replace/preview)、从模板创建(from_template) |
+| **🆕 Blueprint Save 原子化** | canvas_snapshot 注入 → 后端一步写入完整蓝图，消除前后端两阶段提交 |
+| **🆕 PlanFeedback 用户隔离** | Plan Memory key 增加 user_id 维度，防止跨用户计划教训泄露 |
+| **🆕 LLM Cache 状态感知** | 缓存 key 混入画布/蓝图版本号，状态变化自动失效避免过期意图 |
 | **🆕 WorldState 状态管理** | 统一 Agent 世界状态模型，JSON 序列化，乐观锁版本控制，所有模块共享 |
 | **🆕 StateStore + 快照** | Redis 持久化状态 + 版本快照/回滚/diff，支持时间旅行调试 |
 | **🆕 StateReducer** | 并行 DAG 节点的确定性状态合并 + 冲突检测 |
@@ -693,10 +727,10 @@ Level 5  Agent OS  ← 当前    状态管理 + 项目认知 + 独立审查 + �
 | **统一意图规划** | 单次 LLM 调用同时完成意图分类 + 领域检测 + DAG 计划生成 |
 | **DAG 并行执行** | 无依赖步骤同时执行，拓扑排序调度，信息素跨节点传递 |
 | **AgentReflexion** | 工具失败自动分析原因，retry/skip/escalate + strategy 四级纠正 |
-| **Plan-Feedback 闭环** | 执行后评分 → 历史教训存储 → 下次规划时自动注入提示 |
+| **Plan-Feedback 闭环** | 执行后评分 → 历史教训存储（用户隔离） → 下次规划时自动注入提示 |
 | **Circuit Breaker** | LLM 连续失败自动熔断，冷却后半开探测 |
 | **多级 Fallback** | 主 LLM 故障时透明切换到备用模型（最多 3 级） |
-| **LLM 确定性缓存** | Redis 缓存 `compact_history` 和 `unified_intent` 结果 |
+| **LLM 确定性缓存** | Redis 缓存 `compact_history` 和 `unified_intent` 结果（状态感知失效） |
 | **Context Compaction** | LLM 驱动对话历史压缩，超长上下文自动摘要 |
 | **Streaming SSE** | 逐 Token + 工具调用实时流式输出，含完整执行计划追踪 |
 | **Tracing + Token 预算** | Span 树调用链追踪 + 实时 Token 消耗监控 |
@@ -713,31 +747,38 @@ Memory
 └── Project 🆕       (Redis, TTL 30d)  跨会话项目知识（偏好/规范/约束/决策）
 ```
 
-### 新增模块职责
+### 新增/更新模块职责
 
 | 模块 | 文件 | 职责 |
 |------|------|------|
 | **State** | `state.py` | `WorldState` — 画布/蓝图/文件/任务/风险/置信度统一模型 |
 | **StateStore** | `state_store.py` | Redis key: `state:current:{user_id}`，`state:snapshot:{user_id}:{version}` |
 | **StateReducer** | `state_reducer.py` | 确定性状态合并（set/merge/append/increment/delete_key）+ 乐观锁冲突检测 |
-| **Snapshot** | `state_snapshot.py` | 执行前后快照、diff 变更追踪、版本回滚 |
+| **Snapshot** | `state_snapshot.py` | 执行前后快照、diff 变更追踪、版本回滚、list_versions 快照列表 |
+| **CanvasShadow** 🆕 | `canvas_shadow.py` | 画布影子状态 — 后端维护的轻量画布模型，跨轮次 ID 校验 + 线程安全锁 |
+| **Canvas Tools** 🆕 | `tools/canvas/` | 语义化三工具（edit/organize/view），3 个 schema 替代旧 6 个，减少 LLM 混淆 |
+| **Macro** 🆕 | `tools/macro.py` | 操作宏管理（list/run/save），Redis 持久化，支持自然语言创建和执行 |
+| **Layout Engine** 🆕 | `layoutEngine.ts` | 4 种布局算法（grid/tree/force/layered），前端纯计算，支持树形/力导向/分层 |
 | **Critic** | `critic_agent.py` | 独立 LLM 审查：正确性/完整性/一致性/安全性，输出 CriticReview |
-| **ToolRouter** | `tool_router.py` | 领域→工具集映射（6 领域），关键词扩展，缓存友好 |
+| **ToolRouter** | `tool_router.py` | 领域→工具集映射（canvas → 3 语义工具），关键词扩展，缓存友好 |
 | **ModelRouter** | `model_router.py` | 10 种任务类型 → cheap/balanced/quality 三档模型选择 |
 
 ### 与业界框架对比
 
-| 能力 | MIND (v2.0) | LangGraph | CrewAI | AutoGen |
+| 能力 | MIND (v2.1) | LangGraph | CrewAI | AutoGen |
 |------|:----------:|:---------:|:------:|:-------:|
 | DAG 并行执行 | ✅ | ✅ | ❌ | ❌ |
-| 统一状态管理 | ✅ 🆕 | ✅ | ❌ | ❌ |
-| 独立 Critic Agent | ✅ 🆕 | ❌ | ❌ | ❌ |
-| 工具路由 | ✅ 🆕 | ❌ | ❌ | ❌ |
-| 模型路由 | ✅ 🆕 | ❌ | ❌ | ❌ |
-| 项目级记忆 | ✅ 🆕 | ❌ | ❌ | ❌ |
-| 战略反思 | ✅ 🆕 | ❌ | ❌ | ❌ |
-| 多 Agent 协商 | ✅ 🆕 | ❌ | ✅ | ✅ |
+| 统一状态管理 | ✅ | ✅ | ❌ | ❌ |
+| 画布影子状态追踪 | ✅ 🆕 | ❌ | ❌ | ❌ |
+| 独立 Critic Agent | ✅ | ❌ | ❌ | ❌ |
+| 工具路由 + 语义化 | ✅ 🆕 | ❌ | ❌ | ❌ |
+| 模型路由 | ✅ | ❌ | ❌ | ❌ |
+| 项目级记忆 | ✅ | ❌ | ❌ | ❌ |
+| 战略反思 | ✅ | ❌ | ❌ | ❌ |
+| 多 Agent 协商 | ✅ | ❌ | ✅ | ✅ |
 | 状态快照/回滚 | ✅ 🆕 | ✅ | ❌ | ❌ |
+| 操作宏/模板 | ✅ 🆕 | ❌ | ❌ | ❌ |
+| 蓝图 diff/merge | ✅ 🆕 | ❌ | ❌ | ❌ |
 | 熔断 + Fallback | ✅ | ❌ | ❌ | ❌ |
 | MCP 协议 | ✅ | ❌ | ❌ | ❌ |
 
