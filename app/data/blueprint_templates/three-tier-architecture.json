@@ -1,0 +1,15 @@
+{
+  "name": "三层架构",
+  "description": "标准三层架构图：Web层 → 应用层 → 数据库层",
+  "background": "#ffffff",
+  "grid": true,
+  "pens": [
+    {"id": "web", "type": "rectangle", "text": "Web 层\nNginx / CDN", "x": 300, "y": 80, "width": 200, "height": 80, "background": "#E3F2FD"},
+    {"id": "app", "type": "rectangle", "text": "应用层\nAPI / Service", "x": 300, "y": 220, "width": 200, "height": 80, "background": "#E8F5E9"},
+    {"id": "db", "type": "rectangle", "text": "数据层\nMySQL / Redis", "x": 300, "y": 360, "width": 200, "height": 80, "background": "#FFF3E0"}
+  ],
+  "lines": [
+    {"from": "web", "to": "app", "lineName": "downstream", "text": "HTTP"},
+    {"from": "app", "to": "db", "lineName": "downstream", "text": "SQL"}
+  ]
+}

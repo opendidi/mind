@@ -1,0 +1,20 @@
+{
+  "name": "微服务网格架构",
+  "description": "微服务网格架构图：API网关 → 服务网格 → 基础设施",
+  "background": "#ffffff",
+  "grid": true,
+  "pens": [
+    {"id": "gateway", "type": "rectangle", "text": "API 网关\nKong / APISIX", "x": 300, "y": 60, "width": 200, "height": 70, "background": "#E8EAF6"},
+    {"id": "mesh", "type": "rectangle", "text": "服务网格\nIstio / Linkerd", "x": 300, "y": 180, "width": 200, "height": 70, "background": "#F3E5F5"},
+    {"id": "svc-a", "type": "rectangle", "text": "服务 A\n订单服务", "x": 180, "y": 300, "width": 140, "height": 60, "background": "#E0F2F1"},
+    {"id": "svc-b", "type": "rectangle", "text": "服务 B\n用户服务", "x": 380, "y": 300, "width": 140, "height": 60, "background": "#E0F2F1"},
+    {"id": "infra", "type": "rectangle", "text": "基础设施\nK8s / Docker", "x": 300, "y": 420, "width": 200, "height": 70, "background": "#FFF8E1"}
+  ],
+  "lines": [
+    {"from": "gateway", "to": "mesh", "lineName": "downstream", "text": "路由"},
+    {"from": "mesh", "to": "svc-a", "lineName": "downstream", "text": "负载均衡"},
+    {"from": "mesh", "to": "svc-b", "lineName": "downstream", "text": "负载均衡"},
+    {"from": "svc-a", "to": "infra", "lineName": "downstream", "text": "持久化"},
+    {"from": "svc-b", "to": "infra", "lineName": "downstream", "text": "持久化"}
+  ]
+}

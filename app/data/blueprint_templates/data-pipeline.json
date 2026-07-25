@@ -1,0 +1,17 @@
+{
+  "name": "数据管道架构",
+  "description": "数据管道架构图：采集 → 处理 → 存储 → 分析",
+  "background": "#ffffff",
+  "grid": true,
+  "pens": [
+    {"id": "collect", "type": "rectangle", "text": "数据采集\nFlume / Kafka", "x": 300, "y": 80, "width": 200, "height": 70, "background": "#E3F2FD"},
+    {"id": "process", "type": "rectangle", "text": "数据处理\nSpark / Flink", "x": 300, "y": 200, "width": 200, "height": 70, "background": "#E8F5E9"},
+    {"id": "store", "type": "rectangle", "text": "数据存储\nHDFS / HBase", "x": 300, "y": 320, "width": 200, "height": 70, "background": "#FFF3E0"},
+    {"id": "analyze", "type": "rectangle", "text": "数据分析\nHive / Presto", "x": 300, "y": 440, "width": 200, "height": 70, "background": "#F3E5F5"}
+  ],
+  "lines": [
+    {"from": "collect", "to": "process", "lineName": "downstream", "text": "流式传输"},
+    {"from": "process", "to": "store", "lineName": "downstream", "text": "写入"},
+    {"from": "store", "to": "analyze", "lineName": "downstream", "text": "查询"}
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "name": "类层次结构图",
+  "description": "UML 类层次结构图：基类 → 派生类",
+  "background": "#ffffff",
+  "grid": true,
+  "pens": [
+    {"id": "base", "type": "rectangle", "text": "Animal\n+ name: str\n+ eat()", "x": 300, "y": 60, "width": 200, "height": 80, "background": "#E3F2FD"},
+    {"id": "derived1", "type": "rectangle", "text": "Dog\n+ bark()", "x": 120, "y": 220, "width": 180, "height": 70, "background": "#E8F5E9"},
+    {"id": "derived2", "type": "rectangle", "text": "Cat\n+ meow()", "x": 360, "y": 220, "width": 180, "height": 70, "background": "#E8F5E9"},
+    {"id": "derived3", "type": "rectangle", "text": "Bird\n+ fly()", "x": 600, "y": 220, "width": 180, "height": 70, "background": "#E8F5E9"}
+  ],
+  "lines": [
+    {"from": "base", "to": "derived1", "lineName": "curve", "text": "继承"},
+    {"from": "base", "to": "derived2", "lineName": "curve", "text": "继承"},
+    {"from": "base", "to": "derived3", "lineName": "curve", "text": "继承"}
+  ]
+}

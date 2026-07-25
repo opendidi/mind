@@ -1,0 +1,13 @@
+{
+  "name": "SWOT 分析矩阵",
+  "description": "SWOT 分析矩阵图：优势、劣势、机会、威胁",
+  "background": "#ffffff",
+  "grid": true,
+  "pens": [
+    {"id": "strengths", "type": "rectangle", "text": "优势 (Strengths)\n- 核心技术\n- 品牌优势\n- 人才团队", "x": 100, "y": 80, "width": 250, "height": 130, "background": "#E8F5E9"},
+    {"id": "weaknesses", "type": "rectangle", "text": "劣势 (Weaknesses)\n- 资金限制\n- 市场份额\n- 技术短板", "x": 450, "y": 80, "width": 250, "height": 130, "background": "#FFEBEE"},
+    {"id": "opportunities", "type": "rectangle", "text": "机会 (Opportunities)\n- 新兴市场\n- 政策扶持\n- 技术趋势", "x": 100, "y": 270, "width": 250, "height": 130, "background": "#E3F2FD"},
+    {"id": "threats", "type": "rectangle", "text": "威胁 (Threats)\n- 竞争对手\n- 监管变化\n- 替代品", "x": 450, "y": 270, "width": 250, "height": 130, "background": "#FFF3E0"}
+  ],
+  "lines": []
+}

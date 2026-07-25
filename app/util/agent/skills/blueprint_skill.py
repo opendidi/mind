@@ -15,8 +15,28 @@ BLUEPRINT_SKILL = """## 蓝图管理指南
 | SVG  | 进一步编辑 | 矢量，可无限缩放 |
 | JSON | 备份/迁移 | 完整数据，可重新加载 |
 
+### 跨蓝图操作
+
+**蓝图对比 (blueprint_diff)**
+比较两个蓝图的 pens（节点）差异，返回新增、删除、修改和未变更四个分类。按节点 ID 匹配。
+
+**蓝图合并 (blueprint_merge)**
+支持三种合并模式：
+- `preview`（预览）：只返回即将变更的内容，不实际修改
+- `add`（追加）：将源蓝图中目标蓝图没有的节点追加到目标蓝图中
+- `replace`（覆盖）：以源蓝图的节点覆盖目标蓝图的同名节点，并追加新节点
+
+**模板创建 (blueprint_from_template)**
+从预置模板快速创建新蓝图，可用模板：
+- `three-tier-architecture` — 三层架构图
+- `microservices-mesh` — 微服务网格架构
+- `data-pipeline` — 数据管道架构
+- `class-hierarchy` — 类层次结构图
+- `swot-analysis` — SWOT 分析矩阵
+
 ### 保存策略
 - 重要修改后及时保存
 - 创建蓝图时同时设置分类
 - 加载新蓝图前确认是否保存当前编辑
+- 合并操作前推荐先用 preview 模式预览变更
 """
