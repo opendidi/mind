@@ -168,6 +168,19 @@ class AgentEngine:
                 tool_ctx["_redis"] = redis_client
                 tool_ctx["_task_id"] = task_id
 
+            # ── Canvas Shadow: cross-turn state tracking ──
+            from app.util.agent.canvas_shadow import (
+                load_canvas_shadow,
+                save_canvas_shadow,
+            )
+
+            canvas_shadow = load_canvas_shadow(session_id)
+            # Sync from snapshot if frontend sent fresh state
+            if canvas_snapshot:
+                canvas_shadow.sync_from_snapshot(canvas_snapshot)
+            # Inject into tool_ctx so tools can access and update it
+            tool_ctx["_canvas_shadow"] = canvas_shadow
+
             # ── Pre-execution Snapshot (Phase 0) ──
             if precomputed_plan and precomputed_plan.get("goal"):
                 world_state.working_goal = precomputed_plan.get("goal", "")
@@ -276,6 +289,12 @@ class AgentEngine:
             world_state.last_plan_goal = precomputed_plan.get("goal", "") if precomputed_plan else ""
             self.state_store.save(world_state)
             self.snapshot_mgr.snapshot(world_state, "post_execution")
+
+            # ── Save CanvasShadow after execution ──
+            try:
+                save_canvas_shadow(session_id, canvas_shadow)
+            except Exception:
+                logging.debug("CanvasShadow save failed after execution", exc_info=True)
 
             # ── Post-execution Critic Review (Phase 0) ──
             if precomputed_plan and precomputed_plan.get("mode") == "dag":

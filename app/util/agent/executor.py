@@ -191,6 +191,10 @@ class BaseExecutor:
             if not gr.get("ok", True):
                 return {"success": False, "error": gr.get("reason", "工具调用被安全策略拦截")}
 
+        # Inject canvas shadow into tool args for cross-turn ID validation
+        if "_canvas_shadow" in self.tool_context:
+            tool_args["_canvas_shadow"] = self.tool_context["_canvas_shadow"]
+
         from app.util.agent.tools import run_tool_call
 
         result, _ = run_tool_call(
@@ -239,6 +243,10 @@ class BaseExecutor:
 
         if event_queue is not None:
             event_queue.put(("tool_call", tc_name, tool_args, node_id))
+
+        # Inject canvas shadow into tool args for cross-turn ID validation
+        if "_canvas_shadow" in self.tool_context:
+            tool_args["_canvas_shadow"] = self.tool_context["_canvas_shadow"]
 
         from app.util.agent.tools import run_tool_call
 

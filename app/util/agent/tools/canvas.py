@@ -180,6 +180,10 @@ def _tool_canvas(args):
         x, y = args.get("x", 0), args.get("y", 0)
         w, h = args.get("width", 100), args.get("height", 60)
         label = f"「{text}」" if text else ""
+        # Update canvas shadow
+        shadow = args.get("_canvas_shadow")
+        if shadow:
+            shadow.add_pen(pen_id, args)
         return {
             "success": True,
             "pen_id": pen_id,
@@ -191,8 +195,18 @@ def _tool_canvas(args):
         to_pen = args.get("to_pen", "")
         if not from_pen or not to_pen:
             return {"success": False, "error": "from_pen 和 to_pen 不能为空，请先创建起始和目标节点"}
+        # Validate pen IDs against canvas shadow
+        shadow = args.get("_canvas_shadow")
+        if shadow:
+            if from_pen and not shadow.has_pen(from_pen):
+                return {"success": False, "error": f"from_pen '{from_pen}' 不存在，可能已被删除"}
+            if to_pen and not shadow.has_pen(to_pen):
+                return {"success": False, "error": f"to_pen '{to_pen}' 不存在，可能已被删除"}
         line_type = args.get("line_type", "straight")
         label = f"「{args.get('text')}」" if args.get("text") else ""
+        # Update canvas shadow
+        if shadow:
+            shadow.add_line("", from_pen, to_pen)
         return {
             "success": True,
             "data": {"from_pen": from_pen, "to_pen": to_pen, "line_type": line_type, "text": args.get("text", "")},
@@ -205,6 +219,23 @@ def _tool_canvas(args):
         props = args.get("props", {})
         if not props:
             return {"success": False, "error": "props 不能为空，至少指定一个要修改的属性"}
+        # Update canvas shadow
+        shadow = args.get("_canvas_shadow")
+        if shadow and shadow.has_pen(pen_id):
+            existing = shadow.get_pen(pen_id)
+            if existing is not None:
+                if "text" in props:
+                    existing.text = props["text"]
+                if "x" in props:
+                    existing.x = props["x"]
+                if "y" in props:
+                    existing.y = props["y"]
+                if "width" in props:
+                    existing.width = props["width"]
+                if "height" in props:
+                    existing.height = props["height"]
+                if "type" in props:
+                    existing.type = props["type"]
         props_desc = ", ".join(f"{k}={v}" for k, v in props.items())
         return {
             "success": True,
@@ -215,6 +246,11 @@ def _tool_canvas(args):
         pen_ids = _resolve_pen_ids(args)
         if not pen_ids:
             return {"success": False, "error": "pen_id 或 pen_ids 不能为空，请指定要删除的图形ID"}
+        # Update canvas shadow
+        shadow = args.get("_canvas_shadow")
+        if shadow:
+            for pid in pen_ids:
+                shadow.remove_pen(pid)
         return {
             "success": True,
             "data": {"pen_ids": pen_ids},
@@ -223,6 +259,10 @@ def _tool_canvas(args):
     elif action == "clear":
         if not args.get("confirm"):
             return {"success": False, "error": "清空画布不可逆，请设置 confirm=true 确认"}
+        # Update canvas shadow
+        shadow = args.get("_canvas_shadow")
+        if shadow:
+            shadow.clear()
         return {"success": True, "data": {}, "message": "画布已清空，所有图形和连线已删除"}
     elif action == "undo":
         return {"success": True, "data": {}, "message": "已撤销上一步操作"}
@@ -237,6 +277,7 @@ def _tool_canvas(args):
         # Generate pen_ids for each node and resolve edge references
         id_map = {}
         node_summaries = []
+        shadow = args.get("_canvas_shadow")
         for node in nodes:
             logical_id = node.get("id", "")
             pen_id = _new_pen_id()
@@ -244,11 +285,20 @@ def _tool_canvas(args):
             if logical_id:
                 id_map[logical_id] = pen_id
             node_summaries.append(f"{node.get('type', 'rectangle')}({pen_id})")
+            # Update canvas shadow
+            if shadow:
+                shadow.add_pen(pen_id, node)
         for edge in edges:
             from_ref = edge.get("from", "")
             to_ref = edge.get("to", "")
             edge["_from_id"] = id_map.get(from_ref, from_ref)
             edge["_to_id"] = id_map.get(to_ref, to_ref)
+            # Update canvas shadow with edges
+            if shadow:
+                from_pen = id_map.get(from_ref, from_ref)
+                to_pen = id_map.get(to_ref, to_ref)
+                if from_pen and to_pen:
+                    shadow.add_line("", from_pen, to_pen)
         return {
             "success": True,
             "data": {"diagram": {"nodes": nodes, "edges": edges}},
@@ -332,6 +382,21 @@ def _tool_canvas(args):
         ox = args.get("offset_x", 30)
         oy = args.get("offset_y", 30)
         new_ids = [_new_pen_id() for _ in pen_ids]
+        # Update canvas shadow: copy each original pen's shadow to new ID
+        shadow = args.get("_canvas_shadow")
+        if shadow:
+            for orig_id, new_id in zip(pen_ids, new_ids):
+                orig_pen = shadow.get_pen(orig_id)
+                if orig_pen is not None:
+                    pen_data = {
+                        "type": orig_pen.type,
+                        "text": orig_pen.text,
+                        "x": orig_pen.x + ox,
+                        "y": orig_pen.y + oy,
+                        "width": orig_pen.width,
+                        "height": orig_pen.height,
+                    }
+                    shadow.add_pen(new_id, pen_data)
         return {
             "success": True,
             "data": {"original_ids": pen_ids, "new_ids": new_ids, "offset_x": ox, "offset_y": oy},
@@ -341,6 +406,14 @@ def _tool_canvas(args):
         moves = args.get("moves", [])
         if not moves:
             return {"success": False, "error": 'moves 不能为空，格式: [{"pen_id": "...", "x": 100, "y": 200}]'}
+        # Update canvas shadow
+        shadow = args.get("_canvas_shadow")
+        if shadow:
+            for move in moves:
+                pid = move.get("pen_id", "")
+                if pid and pid in shadow.pens:
+                    shadow.pens[pid].x = move.get("x", shadow.pens[pid].x)
+                    shadow.pens[pid].y = move.get("y", shadow.pens[pid].y)
         return {
             "success": True,
             "data": {"moves": moves},
@@ -350,6 +423,12 @@ def _tool_canvas(args):
         pen_ids = _resolve_pen_ids(args)
         if len(pen_ids) < 2:
             return {"success": False, "error": "至少需要两个图形才能组合"}
+        # Update canvas shadow: add a group pen tracking component IDs
+        shadow = args.get("_canvas_shadow")
+        if shadow:
+            group_id = _new_pen_id()
+            pen_data = {"type": "group", "text": "group", "x": 0, "y": 0, "width": 0, "height": 0}
+            shadow.add_pen(group_id, pen_data)
         return {
             "success": True,
             "data": {"pen_ids": pen_ids},
@@ -359,6 +438,10 @@ def _tool_canvas(args):
         pen_id = args.get("pen_id", "")
         if not pen_id:
             return {"success": False, "error": "pen_id 不能为空"}
+        # Update canvas shadow: remove the group pen
+        shadow = args.get("_canvas_shadow")
+        if shadow:
+            shadow.remove_pen(pen_id)
         return {
             "success": True,
             "data": {"pen_id": pen_id},
