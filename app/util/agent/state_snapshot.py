@@ -145,3 +145,99 @@ class SnapshotManager:
     def clear_in_memory(self) -> None:
         """清除内存快照缓存。"""
         self._in_memory_snapshots.clear()
+
+    # ── 用户面向的静态便捷方法 ──
+
+    @staticmethod
+    def _make_store() -> StateStore:
+        """创建默认的 StateStore 实例。"""
+        return StateStore()
+
+    @staticmethod
+    def list_versions(session_id: str) -> list[dict]:
+        """列出可用的快照版本及元数据。
+
+        Returns:
+            list[dict]: [{"version": N, "time": "...", "description": "..."}, ...]
+        """
+        store = SnapshotManager._make_store()
+        versions = store.list_versions(session_id)
+        result = []
+        for v in versions:
+            raw = store.load_version(session_id, v)
+            if raw is not None:
+                snap_meta = raw.extra.get("_snapshot", {})
+                created_at = snap_meta.get("created_at", "")
+                description = snap_meta.get("description", "")
+                # 格式化时间戳为可读字符串
+                time_str = ""
+                if created_at:
+                    try:
+                        from datetime import datetime
+
+                        time_str = datetime.fromtimestamp(float(created_at)).strftime(
+                            "%Y-%m-%d %H:%M:%S"
+                        )
+                    except Exception:
+                        time_str = str(created_at)
+                result.append(
+                    {
+                        "version": v,
+                        "time": time_str,
+                        "description": description,
+                    }
+                )
+            else:
+                result.append({"version": v, "time": "", "description": ""})
+        return result
+
+    @staticmethod
+    def restore(session_id: str, target_version: int) -> dict | None:
+        """回滚到指定版本的状态，返回恢复的世界状态数据字典。
+
+        Returns:
+            dict: 恢复后的 WorldState.to_dict() 或 None
+        """
+        store = SnapshotManager._make_store()
+        manager = SnapshotManager(store)
+        state = manager.rollback(session_id, target_version)
+        if state is None:
+            return None
+        return state.to_dict()
+
+    @staticmethod
+    def save(session_id: str, context: dict, description: str = "manual") -> bool:
+        """保存当前上下文作为快照。
+
+        Args:
+            session_id: 用户/会话 ID
+            context: 画布上下文数据（pens, lines 等）
+            description: 快照描述标签
+
+        Returns:
+            bool: 是否保存成功
+        """
+        store = SnapshotManager._make_store()
+
+        # 尝试加载现有状态以保留版本历史；不存在则创建
+        existing = store.load(session_id)
+        if existing is not None:
+            state = existing
+            state.canvas = context
+        else:
+            state = WorldState(
+                user_id=session_id,
+                canvas=context,
+            )
+
+        # 将快照元信息存入 extra
+        state.extra["_snapshot"] = {
+            "created_at": str(time.time()),
+            "description": description,
+        }
+
+        # 先通过 save 方法 bump version 并写入 current
+        store.save(state)
+        # 再保存为持久化快照
+        store.save_snapshot(state)
+        return True

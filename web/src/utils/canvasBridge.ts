@@ -1,4 +1,4 @@
-import { autoLayout, type Pen, type Line } from './layoutEngine'
+import { autoLayout } from './layoutEngine'
 
 /**
  * canvasBridge — bridges Agent canvas tool calls to Meta2D API operations.
@@ -719,7 +719,7 @@ function _autoArrange(meta2d: any, args: Record<string, unknown>, success: boole
   // Use layout engine
   const result = autoLayout(targetPens, targetLines, {
     algorithm: (args.algorithm as string) || 'grid',
-    direction: (args.direction as string) || 'vertical',
+    direction: ((args.direction as string) || 'vertical') as 'horizontal' | 'vertical',
     spacing: (args.spacing as number) || 40,
     rootPenId: (args.root_pen_id as string),
     width: (data?.width as number) || 1920,
@@ -878,7 +878,7 @@ function _fitView(meta2d: any, args: Record<string, unknown>, success: boolean):
 /**
  * Restore canvas state from a snapshot — rebuild pens/lines from backend data.
  */
-function _restoreSnapshot(meta2d: any, args: Record<string, unknown>, success: boolean, result: unknown): boolean {
+function _restoreSnapshot(meta2d: any, _args: Record<string, unknown>, success: boolean, result: unknown): boolean {
   if (!success) return false
   const r = result as Record<string, unknown> | undefined
   const data = (r?.data as Record<string, unknown>) || {}
