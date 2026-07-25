@@ -132,28 +132,72 @@ def deterministic_cache_set(tool_name: str, tool_args: dict, result: dict | str)
 LLM_CACHE_TTL = 300  # 5 minutes
 
 
-def llm_cache_get(func_name: str, inputs: dict) -> str | None:
-    """Get cached LLM response for deterministic calls (e.g. compaction, intent)."""
+def get_state_version(tool_ctx: dict = None) -> int:
+    """Compute a version number from mutable state sources.
+
+    Changes whenever canvas or blueprint state changes, causing
+    state-dependent cache entries to miss on stale data.
+
+    Args:
+        tool_ctx: Optional tool context dict that may contain canvas_shadow.
+
+    Returns:
+        Integer version combining contributions from canvas and blueprint state.
+    """
+    version = 0
+    if not tool_ctx:
+        return version
+    try:
+        shadow = tool_ctx.get("canvas_shadow") or tool_ctx.get("_canvas_shadow")
+        if shadow and hasattr(shadow, "version"):
+            version ^= shadow.version
+        r = _get_cache_redis()
+        if r:
+            bp_ver = r.get("blueprint:version:" + str(tool_ctx.get("user_id", "")))
+            if bp_ver:
+                version ^= int(bp_ver)
+    except Exception:
+        pass
+    return version
+
+
+def llm_cache_get(func_name: str, inputs: dict, state_version: int = 0) -> str | None:
+    """Get cached LLM response for deterministic calls (e.g. compaction, intent).
+
+    Args:
+        func_name: Cache key namespace identifier.
+        inputs: Dict of inputs that determine cache uniqueness.
+        state_version: Mutable-state version counter. When state changes, the
+                       cache key differs and a stale cached response is avoided.
+    """
     try:
         r = _get_cache_redis()
         inp_str = json.dumps(inputs, sort_keys=True, ensure_ascii=False)
-        key = f"agent:llmcache:{func_name}:{hashlib.md5(inp_str.encode()).hexdigest()}"
+        key = f"agent:llmcache:{func_name}:{hashlib.md5(inp_str.encode()).hexdigest()}:v{state_version}"
         data = r.get(key)
         if data:
-            logging.debug("LLMCache HIT: %s", func_name)
+            logging.debug("LLMCache HIT: %s (v%d)", func_name, state_version)
             return data.decode("utf-8") if isinstance(data, bytes) else data
     except Exception:
         logging.warning("LLM cache get failed: %s", func_name)
     return None
 
 
-def llm_cache_set(func_name: str, inputs: dict, response: str, ttl: int = LLM_CACHE_TTL):
-    """Cache LLM response for deterministic calls."""
+def llm_cache_set(func_name: str, inputs: dict, response: str, state_version: int = 0, ttl: int = LLM_CACHE_TTL):
+    """Cache LLM response for deterministic calls.
+
+    Args:
+        func_name: Cache key namespace identifier.
+        inputs: Dict of inputs that determine cache uniqueness.
+        response: The LLM response string to cache.
+        state_version: Mutable-state version counter embedded in the cache key.
+        ttl: Time-to-live in seconds (default 300).
+    """
     try:
         r = _get_cache_redis()
         inp_str = json.dumps(inputs, sort_keys=True, ensure_ascii=False)
-        key = f"agent:llmcache:{func_name}:{hashlib.md5(inp_str.encode()).hexdigest()}"
+        key = f"agent:llmcache:{func_name}:{hashlib.md5(inp_str.encode()).hexdigest()}:v{state_version}"
         r.setex(key, ttl, response)
-        logging.debug("LLMCache SET: %s (TTL=%ds)", func_name, ttl)
+        logging.debug("LLMCache SET: %s (v%d, TTL=%ds)", func_name, state_version, ttl)
     except Exception:
         logging.warning("LLM cache set failed: %s", func_name)

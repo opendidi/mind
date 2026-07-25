@@ -338,6 +338,7 @@ def unified_intent_and_plan(
     model: str = AGENT_DEFAULT_MODEL,
     plan_feedback_hints: str = "",
     world_state: dict = None,
+    tool_ctx: dict = None,
 ) -> dict:
     """Single LLM call for intent classification + domain detection + DAG plan generation.
 
@@ -349,6 +350,7 @@ def unified_intent_and_plan(
         plan_feedback_hints: Optional feedback text from prior plan executions
                              to inject into the planner prompt (Plan-Feedback 闭环).
         world_state: Optional WorldState dict for context-aware planning.
+        tool_ctx: Optional tool context dict for state-versioned cache invalidation.
 
     Returns dict: {intent, domains, has_write, plan: {mode, goal?, nodes?, risk?}}
     Falls back to keyword matching on LLM failure.
@@ -384,10 +386,11 @@ def unified_intent_and_plan(
 
     try:
         # Check deterministic cache first (same prompt + history + message → same plan)
-        from app.util.agent.cache import llm_cache_get, llm_cache_set
+        from app.util.agent.cache import get_state_version, llm_cache_get, llm_cache_set
 
+        state_version = get_state_version(tool_ctx)
         cache_inputs = {"system": system_prompt, "history": history[-6:] if history else [], "message": user_message}
-        cached = llm_cache_get("unified_intent", cache_inputs)
+        cached = llm_cache_get("unified_intent", cache_inputs, state_version=state_version)
         if cached:
             raw = cached
         else:
@@ -403,7 +406,7 @@ def unified_intent_and_plan(
             )
             raw = resp.choices[0].message.content or ""
             if raw.strip():
-                llm_cache_set("unified_intent", cache_inputs, raw)
+                llm_cache_set("unified_intent", cache_inputs, raw, state_version=state_version)
     except Exception:
         logging.warning("unified_intent: LLM call failed after retries, falling back to keyword")
         return _keyword_fallback(user_message)

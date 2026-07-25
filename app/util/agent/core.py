@@ -518,6 +518,13 @@ class AgentSession:
         except Exception:
             logging.debug("Plan feedback retrieval skipped", exc_info=True)
 
+        # ── Tool context for state-versioned cache invalidation ──
+        tool_ctx = {
+            "canvas_context": canvas_context,
+            "canvas_snapshot": canvas_snapshot,
+            "user_id": self.user_id,
+        }
+
         # ── Unified LLM call: intent + domains + plan ──
         unified_result = unified_intent_and_plan(
             self._engine.llm,
@@ -525,6 +532,7 @@ class AgentSession:
             self.history[-6:],
             model,
             plan_feedback_hints=plan_feedback_hints,
+            tool_ctx=tool_ctx,
         )
 
         skill_context = {"has_failures": False}
