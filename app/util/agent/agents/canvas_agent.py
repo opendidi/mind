@@ -9,6 +9,8 @@ CANVAS_TOOLS = [
     "canvas_check_empty",
     "layout_auto_arrange",
     "layout_align",
+    "canvas_props",
+    "fit_view",
     "blueprint_save",
 ]
 
@@ -41,9 +43,13 @@ class CanvasAgent(AgentBase):
   - action="delete_pen": 删除图形 (需 pen_id 或 pen_ids)
   - action="get_state": 获取画布状态
   - action="undo"/"redo"/"clear": 撤销/重做/清空
+  - action="duplicate"/"move_pen"/"group"/"ungroup"/"lock"/"unlock"/"toggle_visibility": 高级操作
 - canvas_check_empty: 线程安全检查画布是否为空（推荐替代 canvas_get_state）
 - layout_auto_arrange: 自动排版
 - layout_align: 对齐图形
+- canvas_props: 设置画布属性（背景色/网格/标尺/默认样式等）
+- fit_view: 自适应视口，将所有图形缩放到适合视窗的大小
+- blueprint_save: 保存蓝图
 
 ## 最佳实践
 1. **[!!] 直接绘制，不要过度检查**：用户要求画图时，直接用 add_diagram 创建图表。如果画布状态不可用（canvas_available=false），跳过查询，直接绘制。
