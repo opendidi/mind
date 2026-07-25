@@ -9,6 +9,7 @@
 
 import json
 import logging
+import threading
 import time
 from dataclasses import dataclass, field
 
@@ -77,19 +78,35 @@ class CanvasShadow:
     lines: dict = field(default_factory=dict)  # composite key -> LineShadow
     version: int = 0
     last_sync_at: float = 0.0
+    _lock: threading.Lock = field(default_factory=threading.Lock, repr=False)
+    _dirty: bool = field(default=False, repr=False)
+
+    @property
+    def dirty(self) -> bool:
+        return self._dirty
+
+    def mark_clean(self):
+        """Clear dirty flag after successful persistence."""
+        self._dirty = False
+
+    def _bump(self):
+        """Increment version and mark dirty. Caller must hold _lock."""
+        self._dirty = True
+        self.version += 1
 
     def add_pen(self, pen_id: str, pen_data: dict):
         """Add or update a pen in the shadow."""
-        self.pens[pen_id] = PenShadow(
-            pen_id=pen_id,
-            type=pen_data.get("type", "rectangle"),
-            text=pen_data.get("text", ""),
-            x=pen_data.get("x", 0),
-            y=pen_data.get("y", 0),
-            width=pen_data.get("width", 100),
-            height=pen_data.get("height", 60),
-        )
-        self.version += 1
+        with self._lock:
+            self.pens[pen_id] = PenShadow(
+                pen_id=pen_id,
+                type=pen_data.get("type", "rectangle"),
+                text=pen_data.get("text", ""),
+                x=pen_data.get("x", 0),
+                y=pen_data.get("y", 0),
+                width=pen_data.get("width", 100),
+                height=pen_data.get("height", 60),
+            )
+            self._bump()
 
     def has_pen(self, pen_id: str) -> bool:
         """Check if a pen exists in the shadow."""
@@ -101,27 +118,30 @@ class CanvasShadow:
 
     def remove_pen(self, pen_id: str):
         """Remove a pen and its connected lines from the shadow."""
-        if pen_id in self.pens:
-            del self.pens[pen_id]
-            # Also remove connected lines
-            self.lines = {
-                k: v
-                for k, v in self.lines.items()
-                if v.from_pen != pen_id and v.to_pen != pen_id
-            }
-            self.version += 1
+        with self._lock:
+            if pen_id in self.pens:
+                del self.pens[pen_id]
+                # Also remove connected lines
+                self.lines = {
+                    k: v
+                    for k, v in self.lines.items()
+                    if v.from_pen != pen_id and v.to_pen != pen_id
+                }
+                self._bump()
 
     def clear(self):
         """Clear all pens and lines from the shadow."""
-        self.pens.clear()
-        self.lines.clear()
-        self.version += 1
+        with self._lock:
+            self.pens.clear()
+            self.lines.clear()
+            self.version += 1
 
     def add_line(self, line_id: str, from_pen: str, to_pen: str):
         """Add a line to the shadow."""
-        key = line_id or f"{from_pen}->{to_pen}"
-        self.lines[key] = LineShadow(from_pen=from_pen, to_pen=to_pen, line_id=line_id)
-        self.version += 1
+        with self._lock:
+            key = line_id or f"{from_pen}->{to_pen}"
+            self.lines[key] = LineShadow(from_pen=from_pen, to_pen=to_pen, line_id=line_id)
+            self.version += 1
 
     def sync_from_snapshot(self, snapshot: list[dict]):
         """全量同步：用前端快照更新 shadow。
@@ -130,27 +150,28 @@ class CanvasShadow:
         """
         if not snapshot:
             return
-        incoming_ids = set()
-        for p in snapshot:
-            pid = p.get("id", p.get("pen_id", ""))
-            if not pid:
-                continue
-            incoming_ids.add(pid)
-            if pid in self.pens:
-                existing = self.pens[pid]
-                existing.text = p.get("text", existing.text)
-                existing.x = p.get("x", existing.x)
-                existing.y = p.get("y", existing.y)
-                existing.width = p.get("width", existing.width)
-                existing.height = p.get("height", existing.height)
-            else:
-                self.pens[pid] = PenShadow.from_dict(p)
-        # Remove pens not in snapshot (user deleted them manually)
-        removed = [pid for pid in self.pens if pid not in incoming_ids]
-        for pid in removed:
-            del self.pens[pid]
-        if removed or not self.pens:
-            self.version += 1
+        with self._lock:
+            incoming_ids = set()
+            for p in snapshot:
+                pid = p.get("id", p.get("pen_id", ""))
+                if not pid:
+                    continue
+                incoming_ids.add(pid)
+                if pid in self.pens:
+                    existing = self.pens[pid]
+                    existing.text = p.get("text", existing.text)
+                    existing.x = p.get("x", existing.x)
+                    existing.y = p.get("y", existing.y)
+                    existing.width = p.get("width", existing.width)
+                    existing.height = p.get("height", existing.height)
+                else:
+                    self.pens[pid] = PenShadow.from_dict(p)
+            # Remove pens not in snapshot (user deleted them manually)
+            removed = [pid for pid in self.pens if pid not in incoming_ids]
+            for pid in removed:
+                del self.pens[pid]
+            if removed or not self.pens:
+                self._bump()
 
     def to_dict(self) -> dict:
         """Serialize shadow to dict for Redis storage."""

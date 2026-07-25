@@ -4,7 +4,7 @@
 from app.util.agent.agents.base import AgentBase
 from app.util.agent.tools import TOOL_SCHEMAS
 
-FILE_TOOLS = ["file_search", "extract_excel", "read_text", "parse_json"]
+FILE_TOOLS = ["file_search", "extract_excel", "read_text", "parse_json", "analyze_doc"]
 
 
 class FileAgent(AgentBase):
@@ -16,12 +16,14 @@ class FileAgent(AgentBase):
 ## 职责
 - 搜索文件管理器中的素材/文件
 - 帮助用户找到需要的图片、SVG、文档、Markdown 等资源
+- 解析 Word 文档（.docx）提取段落文本、标题和表格内容
 - 解析 Excel 文件（.xlsx/.xls）并以图表展示数据
 - 读取 Markdown/文本文件（.md/.txt）内容并分析
 - 解析 JSON 文件（.json）并提取结构化数据
 
 ## 核心工具
 - file_search: 按关键词和类型搜索文件（类型: image/svg/document/text）
+- analyze_doc: 解析 Word 文档 (.docx)，提取段落文本、标题和表格内容，支持分页读取长文档
 - extract_excel: 解析 Excel 表格数据
 - read_text: 读取 Markdown (.md) 和纯文本 (.txt) 文件内容
 - parse_json: 解析 JSON 文件并提取结构化数据

@@ -96,12 +96,12 @@ def upload_file():
             400,
         )
 
-    MAX_SIZE = 10 * 1024 * 1024
+    MAX_SIZE = 50 * 1024 * 1024
     file.seek(0, os.SEEK_END)
     size = file.tell()
     file.seek(0)
     if size > MAX_SIZE:
-        return jsonify({"code": 400, "message": f"文件过大，请控制在 10MB 以内"}), 400
+        return jsonify({"code": 400, "message": f"文件过大，请控制在 50MB 以内"}), 400
 
     date_str = time.strftime("%Y%m%d")
     uid = str(_uuid.uuid4()).replace("-", "")

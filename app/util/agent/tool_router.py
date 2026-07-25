@@ -98,6 +98,7 @@ class ToolRouter:
         "Excel": ["extract_excel"],
         "表格": ["extract_excel"],
         "Word": ["analyze_doc"],
+        "docx": ["analyze_doc"],
         "文档": ["analyze_doc"],
         "JSON": ["parse_json"],
         "json": ["parse_json"],
