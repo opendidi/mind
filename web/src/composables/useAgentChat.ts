@@ -125,13 +125,12 @@ export function buildCanvasContext(): CanvasContext | null {
     const data = meta2d.data()
     if (!data) return null
 
-    const TARGET_TOKENS = 2000
+    const BUDGET = 2000
 
-    // Priority: selected pens > connected neighbors > viewport pens > rest
+    // Identify selected and neighbor pens
     const selectedIds = new Set<string>(meta2d.active || [])
     const neighborIds = new Set<string>()
 
-    // Find neighbors of selected pens (connected via lines)
     if (selectedIds.size > 0) {
       for (const line of (data.lines || [])) {
         if (selectedIds.has(line.source?.id)) neighborIds.add(line.source?.connectTo)
@@ -140,59 +139,103 @@ export function buildCanvasContext(): CanvasContext | null {
       }
     }
 
-    const priorityPens = [
-      ...(data.pens || []).filter((p: any) => selectedIds.has(p.id)),
-      ...(data.pens || []).filter((p: any) => neighborIds.has(p.id)),
-      ...(data.pens || []),
-    ]
+    // Helper: serialize a single pen into the output format
+    const serialize = (p: any) => ({
+      id: p.id || p.penId,
+      type: p.name || p.type || 'rectangle',
+      text: (p.text || '').slice(0, 200),
+      x: p.x || 0, y: p.y || 0,
+      width: p.width || 100, height: p.height || 60,
+      background: p.background || '',
+      color: p.color || '',
+      borderColor: p.borderColor || '',
+      borderRadius: p.borderRadius,
+      fontSize: p.fontSize,
+      fontFamily: p.fontFamily,
+      fontWeight: p.fontWeight,
+      textAlign: p.textAlign,
+      icon: p.icon || '',
+      image: p.image || '',
+      visible: p.visible !== false,
+      locked: p.locked || 0,
+      tags: p.tags || [],
+      lineName: p.lineName || '',
+      fromArrow: p.fromArrow || '',
+      toArrow: p.toArrow || '',
+    })
 
-    // Deduplicate and cap at token budget
-    const seen = new Set<string>()
-    const truncatedPens: any[] = []
-    for (const p of priorityPens) {
-      if (seen.has(p.id)) continue
-      seen.add(p.id)
-      truncatedPens.push({
-        id: p.id || p.penId,
-        type: p.name || p.type || 'rectangle',
-        text: (p.text || '').slice(0, 200),
-        x: p.x || 0, y: p.y || 0,
-        width: p.width || 100, height: p.height || 60,
-        // 样式
-        background: p.background || '',
-        color: p.color || '',
-        borderColor: p.borderColor || '',
-        borderRadius: p.borderRadius,
-        fontSize: p.fontSize,
-        fontFamily: p.fontFamily,
-        fontWeight: p.fontWeight,
-        textAlign: p.textAlign,
-        // 图标/图片
-        icon: p.icon || '',
-        image: p.image || '',
-        // 状态
-        visible: p.visible !== false,
-        locked: p.locked || 0,
-        tags: p.tags || [],
-        // 连线特有
-        lineName: p.lineName || '',
-        fromArrow: p.fromArrow || '',
-        toArrow: p.toArrow || '',
-      })
-      if (JSON.stringify(truncatedPens).length > TARGET_TOKENS * 2.5) break
+    // Estimate token usage from JSON length
+    const usedTokens = (pens: any[]) => JSON.stringify(pens).length / 2.5
+
+    // Split pens into four layers
+    const selectedPens = (data.pens || []).filter((p: any) => selectedIds.has(p.id))
+    const neighborPens = (data.pens || []).filter(
+      (p: any) => neighborIds.has(p.id) && !selectedIds.has(p.id),
+    )
+    const withTextPens = (data.pens || []).filter(
+      (p: any) => (p.text || '').trim() && !selectedIds.has(p.id) && !neighborIds.has(p.id),
+    )
+    const restPens = (data.pens || []).filter(
+      (p: any) => !selectedIds.has(p.id) && !neighborIds.has(p.id) && !(p.text || '').trim(),
+    )
+
+    const collectedPens: any[] = []
+
+    // Layer 0: Selected pens — no token limit
+    collectedPens.push(...selectedPens.map(serialize))
+
+    // Layer 1: Neighbors of selected — max 40% of budget
+    for (const p of neighborPens) {
+      const candidate = [...collectedPens, serialize(p)]
+      if (usedTokens(candidate) <= BUDGET * 0.4) {
+        collectedPens.push(serialize(p))
+      } else {
+        break
+      }
     }
 
-    // Include line data
-    const lines = (data.lines || []).map((l: any) => ({
-      from: l.source?.id || l.fromPen || '',
-      to: l.source?.connectTo || l.toPen || '',
-      lineName: l.lineName || 'line',
-      text: (l.text || '').slice(0, 200),
-      fromArrow: l.fromArrow || '',
-      toArrow: l.toArrow || '',
-      color: l.color || '',
-      lineWidth: l.lineWidth || 2,
-    }))
+    // Layer 2: Pens with text content — max 70% cumulative
+    for (const p of withTextPens) {
+      const candidate = [...collectedPens, serialize(p)]
+      if (usedTokens(candidate) <= BUDGET * 0.7) {
+        collectedPens.push(serialize(p))
+      } else {
+        break
+      }
+    }
+
+    // Layer 3: Rest — fill remaining budget
+    for (const p of restPens) {
+      const candidate = [...collectedPens, serialize(p)]
+      if (usedTokens(candidate) <= BUDGET) {
+        collectedPens.push(serialize(p))
+      } else {
+        break
+      }
+    }
+
+    // Collect IDs of all pens that made it into the context
+    const collectedIds = new Set(collectedPens.map((p) => p.id))
+
+    // Lines: only those connected to collected pens
+    const lines = (data.lines || [])
+      .filter(
+        (l: any) =>
+          collectedIds.has(l.source?.id) ||
+          collectedIds.has(l.source?.connectTo) ||
+          collectedIds.has(l.target?.id) ||
+          collectedIds.has(l.target?.connectTo),
+      )
+      .map((l: any) => ({
+        from: l.source?.id || l.fromPen || '',
+        to: l.source?.connectTo || l.toPen || '',
+        lineName: l.lineName || 'line',
+        text: (l.text || '').slice(0, 200),
+        fromArrow: l.fromArrow || '',
+        toArrow: l.toArrow || '',
+        color: l.color || '',
+        lineWidth: l.lineWidth || 2,
+      }))
 
     // Viewport center in canvas coordinates — for placing new elements in view
     const scale = meta2d.store?.data?.scale || 1
@@ -206,7 +249,7 @@ export function buildCanvasContext(): CanvasContext | null {
     }
 
     return {
-      pens: truncatedPens,
+      pens: collectedPens,
       lines,
       selectedIds: [...selectedIds],
       canvasInfo: {
@@ -216,7 +259,7 @@ export function buildCanvasContext(): CanvasContext | null {
       viewportCenter,
       total_pens: (data.pens || []).length,
       total_lines: (data.lines || []).length,
-      truncated: truncatedPens.length < (data.pens || []).length,
+      truncated: collectedPens.length < (data.pens || []).length,
     }
   } catch {
     return null
