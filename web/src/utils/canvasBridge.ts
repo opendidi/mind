@@ -335,7 +335,6 @@ export function executeCanvasToolLocalStorage(
         break
       case 'get_state':
       case 'canvas_get_state':
-      case 'canvas_check_empty':
         break
       case 'restore_snapshot':
       case 'canvas_restore_snapshot': {
