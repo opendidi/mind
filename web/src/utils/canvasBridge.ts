@@ -1,3 +1,5 @@
+import { autoLayout, type Pen, type Line } from './layoutEngine'
+
 /**
  * canvasBridge — bridges Agent canvas tool calls to Meta2D API operations.
  *
@@ -300,6 +302,7 @@ export function executeCanvasToolLocalStorage(
       case 'ungroup':
         // localStorage mode doesn't support combine/uncombine — pens just persist
         break
+      case 'set_props':
       case 'canvas_props': {
         for (const key of ['background', 'bkImage', 'gridColor', 'color', 'penBackground', 'ruleColor']) {
           if (args[key] !== undefined) data[key] = args[key]
@@ -313,6 +316,17 @@ export function executeCanvasToolLocalStorage(
       case 'fit_view':
         // Not applicable to localStorage mode
         break
+      case 'check_empty':
+      case 'canvas_check_empty':
+        break
+      case 'auto_arrange':
+      case 'layout_auto_arrange':
+        // Not applicable to localStorage mode
+        break
+      case 'align':
+      case 'layout_align':
+        // Not applicable to localStorage mode
+        break
       case 'undo':
       case 'redo':
       case 'canvas_undo':
@@ -323,6 +337,17 @@ export function executeCanvasToolLocalStorage(
       case 'canvas_get_state':
       case 'canvas_check_empty':
         break
+      case 'restore_snapshot':
+      case 'canvas_restore_snapshot': {
+        const r = result as Record<string, unknown> | undefined
+        const d = (r?.data as Record<string, unknown>) || {}
+        const canvas = d.canvas as Record<string, unknown> | undefined
+        const pens = (canvas?.pens || d.pens || []) as any[]
+        const lines = (canvas?.lines || d.lines || []) as any[]
+        data.pens = pens
+        data.lines = lines
+        break
+      }
     }
     localStorage.setItem('meta2d', JSON.stringify(data))
     return true
@@ -347,6 +372,7 @@ export async function executeCanvasTool(
 
   try {
     switch (action) {
+      // ── canvas_edit actions ──
       case 'add_pen':
       case 'canvas_add_pen':
         ok = await _addPen(meta2d, args, success, result)
@@ -377,25 +403,10 @@ export async function executeCanvasTool(
         break
       case 'get_state':
       case 'canvas_get_state':
-      case 'canvas_check_empty':
         return true
       case 'add_diagram':
       case 'canvas_add_diagram':
         ok = await _addDiagram(meta2d, args, success, result)
-        break
-      case 'layout_auto_arrange':
-        ok = _autoArrange(meta2d, args, success)
-        break
-      case 'layout_align':
-        ok = _align(meta2d, args, success)
-        break
-      // ── New actions ──
-      case 'lock':
-      case 'unlock':
-        ok = _setLockState(meta2d, args, success, action === 'lock' ? 2 : 0)
-        break
-      case 'toggle_visibility':
-        ok = _toggleVisibility(meta2d, args, success)
         break
       case 'duplicate':
         ok = await _duplicatePens(meta2d, args, success, result)
@@ -403,18 +414,53 @@ export async function executeCanvasTool(
       case 'move_pen':
         ok = _movePen(meta2d, args, success)
         break
+      // ── canvas_organize actions ──
       case 'group':
         ok = _groupPens(meta2d, args, success)
         break
       case 'ungroup':
         ok = _ungroupPen(meta2d, args, success)
         break
+      case 'lock':
+      case 'unlock':
+        ok = _setLockState(meta2d, args, success, action === 'lock' ? 2 : 0)
+        break
+      case 'toggle_visibility':
+        ok = _toggleVisibility(meta2d, args, success)
+        break
+      case 'auto_arrange':
+      case 'layout_auto_arrange':
+        ok = _autoArrange(meta2d, args, success)
+        break
+      case 'align':
+      case 'layout_align':
+        ok = _align(meta2d, args, success)
+        break
+      // ── canvas_view actions ──
+      case 'set_props':
       case 'canvas_props':
         ok = _setCanvasProps(meta2d, args, success)
         break
       case 'fit_view':
         ok = _fitView(meta2d, args, success)
         break
+      case 'check_empty':
+      case 'canvas_check_empty':
+        return true
+      case 'restore_snapshot':
+      case 'canvas_restore_snapshot': {
+        ok = _restoreSnapshot(meta2d, args, success, result)
+        break
+      }
+      // ── Tool name fallbacks (backward compat with old tool names) ──
+      case 'canvas':
+        // legacy canvas tool — already dispatched via action above
+        return false
+      case 'canvas_edit':
+      case 'canvas_organize':
+      case 'canvas_view':
+        // These tool names are just containers for actions above
+        return false
       default:
         return false
     }
@@ -642,26 +688,48 @@ function _redo(meta2d: any, success: boolean): boolean {
 
 function _autoArrange(meta2d: any, args: Record<string, unknown>, success: boolean): boolean {
   if (!success) return false
-  const direction = (args.direction as string) || 'vertical'
-  const spacing = (args.spacing as number) || 40
 
   const data = meta2d.data()
-  const pens = (data?.pens || []) as any[]
-  if (pens.length < 2) return true
+  const allPens = (data?.pens || []) as any[]
+  const allLines = (data?.lines || []) as any[]
+  if (allPens.length < 2) return true
+
+  // Collect target pens (filtered by pen_ids if provided, else all)
+  const penIds = (args.pen_ids as string[]) || allPens.map((p: any) => p.id || p.penId)
+  const targetPens = allPens
+    .filter((p: any) => penIds.includes(p.id || p.penId))
+    .map((p: any) => ({
+      id: p.id || p.penId,
+      x: p.x || 0,
+      y: p.y || 0,
+      width: p.width || 100,
+      height: p.height || 60,
+    }))
+  const targetLines = allLines
+    .filter((l: any) => {
+      const from = l.source?.id || l.fromPen || ''
+      const to = l.source?.connectTo || l.toPen || ''
+      return penIds.includes(from) || penIds.includes(to)
+    })
+    .map((l: any) => ({
+      from: l.source?.id || l.fromPen || '',
+      to: l.source?.connectTo || l.toPen || '',
+    }))
+
+  // Use layout engine
+  const result = autoLayout(targetPens, targetLines, {
+    algorithm: (args.algorithm as string) || 'grid',
+    direction: (args.direction as string) || 'vertical',
+    spacing: (args.spacing as number) || 40,
+    rootPenId: (args.root_pen_id as string),
+    width: (data?.width as number) || 1920,
+  })
 
   pushUndoState(meta2d)
 
-  // Sort pens top-to-bottom, then arrange
-  const sorted = [...pens].sort((a, b) => (a.y || 0) - (b.y || 0))
-  let pos = sorted[0]?.y || 0
-  for (const pen of sorted) {
-    if (direction === 'vertical') {
-      meta2d.setValue({ id: pen.id, y: pos }, { render: false })
-      pos += (pen.height || 60) + spacing
-    } else if (direction === 'horizontal') {
-      meta2d.setValue({ id: pen.id, x: pos }, { render: false })
-      pos += (pen.width || 120) + spacing
-    }
+  // Apply in batch (no render per pen)
+  for (const { id, x, y } of result.positions) {
+    meta2d.setValue({ id, x, y }, { render: false })
   }
   meta2d.render()
   return true
@@ -807,6 +875,35 @@ function _fitView(meta2d: any, args: Record<string, unknown>, success: boolean):
   return true
 }
 
+/**
+ * Restore canvas state from a snapshot — rebuild pens/lines from backend data.
+ */
+function _restoreSnapshot(meta2d: any, args: Record<string, unknown>, success: boolean, result: unknown): boolean {
+  if (!success) return false
+  const r = result as Record<string, unknown> | undefined
+  const data = (r?.data as Record<string, unknown>) || {}
+  const canvas = data.canvas as Record<string, unknown> | undefined
+  const pens = (canvas?.pens || data.pens || []) as any[]
+  const lines = (canvas?.lines || data.lines || []) as any[]
+
+  if (pens.length === 0 && lines.length === 0) return true
+
+  pushUndoState(meta2d)
+  // Replace all canvas data by clearing and re-adding
+  const current = meta2d.data()
+  if (current?.pens?.length > 0) {
+    meta2d.delete(current.pens)
+  }
+  for (const pen of pens) {
+    meta2d.addPen(pen, { render: false })
+  }
+  for (const line of lines) {
+    meta2d.addPen(line, { render: false })
+  }
+  meta2d.render()
+  return true
+}
+
 /** Build a human-readable summary of canvas mutations for Agent tool card feedback. */
 export function getCanvasMutationSummary(
   tool: string,
@@ -887,21 +984,36 @@ export function getCanvasMutationSummary(
     }
     case 'ungroup':
       return '已取消组合'
+    case 'set_props':
     case 'canvas_props': {
       const keys = Object.keys(args).filter(k => k !== 'action' && args[k] !== undefined)
       return `已更新画布属性 (${keys.join(', ')})`
     }
     case 'fit_view':
       return '已自适应视口'
+    case 'check_empty':
+    case 'canvas_check_empty':
+      return '画布为空检查'
+    case 'auto_arrange':
     case 'layout_auto_arrange': {
       const dir = (args.direction as string) || 'vertical'
       const label = dir === 'vertical' ? '垂直' : dir === 'horizontal' ? '水平' : '网格'
       return `已${label}排列节点`
     }
+    case 'align':
     case 'layout_align': {
       const align = (args.align as string) || 'center'
       const labels: Record<string, string> = { left: '左', center: '中', right: '右', top: '上', middle: '中', bottom: '下' }
       return `已${labels[align] || align}对齐节点`
+    }
+    case 'restore_snapshot':
+    case 'canvas_restore_snapshot':
+      return '已回滚画布状态'
+    case 'list_snapshots':
+      return '已查询快照列表'
+    case 'save_snapshot': {
+      const label = (args.label as string) || 'manual'
+      return `已保存快照「${label}」`
     }
     default:
       return null
