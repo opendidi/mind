@@ -9,6 +9,8 @@ import random
 import time
 from typing import Any, Generator
 
+from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
+
 # ── Retry / Backoff ──────────────────────────────────────────────────────
 
 
@@ -16,7 +18,6 @@ def should_retry_llm(error: Exception, attempt: int) -> bool:
     """Check if an LLM call error is retryable."""
     if attempt >= 2:
         return False
-    from openai import APIConnectionError, APIError, APITimeoutError, RateLimitError
 
     if isinstance(error, (RateLimitError, APITimeoutError, APIConnectionError)):
         return True
