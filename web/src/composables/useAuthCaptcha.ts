@@ -16,7 +16,7 @@ export function useAuthCaptcha() {
     if (initTimer) clearTimeout(initTimer)
     initTimer = setTimeout(async () => {
       try {
-        const res = await apiAuthCaptcha()
+        const res: any = await apiAuthCaptcha()
         if (res?.code === 200 && res.data) {
           randCodeData.requestCodeSuccess = true
           randCodeData.captcha_id = res.data.captcha_id

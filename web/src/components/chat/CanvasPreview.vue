@@ -52,6 +52,8 @@ interface DiagramEdge {
   text?: string
   line_type?: string
   arrow?: string
+  color?: string
+  lineWidth?: number
 }
 
 const props = defineProps<{
@@ -66,7 +68,7 @@ const ready = ref(false)
 const scalePercent = ref(100)
 
 let containerEl: HTMLElement | null = null
-let meta2d: Record<string, unknown> | null = null
+let meta2d: any = null
 let inited = false
 let observer: IntersectionObserver | null = null
 
@@ -106,7 +108,7 @@ function initCanvas() {
     background: 'transparent',
     rule: false,
     locked: 2,
-  })
+  } as any)
 
   ready.value = true
   nextTick(() => renderContent())

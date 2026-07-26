@@ -55,7 +55,7 @@ const ALLOWED_ATTRS = new Set([
 
 function sanitizeNode(node: Node): void {
   if (node.nodeType === Node.COMMENT_NODE) {
-    node.remove()
+    ;(node as ChildNode).remove()
     return
   }
   if (node.nodeType === Node.ELEMENT_NODE) {

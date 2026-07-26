@@ -16,7 +16,7 @@
       </template>
       <template v-if="toolCall.status === 'error' && toolCall.result">
         <div class="tool-error">
-          {{ toolCall.result?.error || toolCall.result?.message || '执行失败' }}
+          {{ resultAny?.error || resultAny?.message || '执行失败' }}
         </div>
       </template>
     </div>
@@ -118,8 +118,10 @@ function onLocateClick() {
   if (ids.length) emit('locatePens', ids)
 }
 
+const resultAny = computed(() => props.toolCall.result as any)
+
 const summary = computed(() => {
-  const { tool, args } = props.toolCall
+  const { args } = props.toolCall
   if (!args || Object.keys(args).length === 0) return '无参数'
 
   if (isCanvasTool.value) {

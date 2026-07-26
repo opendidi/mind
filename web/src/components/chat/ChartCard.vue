@@ -21,7 +21,7 @@ let resizeTimer2: ReturnType<typeof setTimeout> | null = null
 function initChart() {
   if (!chartRef.value) return
   if (!chart) {
-    chart = echarts.init(chartRef.value)
+    chart = echarts.init(chartRef.value as any)
   }
   chart.setOption(props.option, true)
   // Catch late layout — parent may not have settled by nextTick

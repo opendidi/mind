@@ -29,8 +29,11 @@ def _ensure_utf8_stream(stream):
 
 
 def setup_logging(
-    log_file="app.log", level=logging.DEBUG, log_format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+    log_file="app.log", level=None, log_format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 ):
+    if level is None:
+        level_name = os.environ.get("LOG_LEVEL", "INFO").upper()
+        level = getattr(logging, level_name, logging.INFO)
     # Create log directory if needed
     log_directory = os.path.dirname(log_file)
     if log_directory and not os.path.exists(log_directory):

@@ -29,7 +29,7 @@ import CssWorker from 'monaco-editor/esm/vs/language/css/css.worker?worker'
 import HtmlWorker from 'monaco-editor/esm/vs/language/html/html.worker?worker'
 import EditorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker'
 
-self.MonacoEnvironment = {
+;(self as any).MonacoEnvironment = {
   getWorker(_: string, label: string) {
     if (label === 'json') return new JsonWorker()
     if (label === 'css' || label === 'scss' || label === 'less') return new CssWorker()

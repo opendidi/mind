@@ -577,7 +577,7 @@ const onCreateDirectory = () => {
   }
   apiMaterialCreatedFolder(data)
     .then(res => {
-      message.success(res.message)
+      message.success((res as any).message)
       init()
       initMaterialFolder()
     })

@@ -147,8 +147,8 @@ function haversine(a: RoutePoint, b: RoutePoint): number {
 }
 
 function resolveInitialMode(): RouteMode {
-  const m = props.mode as RouteMode
-  if (m && m !== 'auto') return m
+  const m = props.mode as string
+  if (m && m !== 'auto') return m as RouteMode
   if (!props.from || !props.to) return 'driving'
   const dist = haversine(props.from, props.to)
   if (dist < 1) return 'walking'

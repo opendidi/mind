@@ -100,14 +100,14 @@ const validatePwdConfirm = (_rule: any, value: string) => {
   return Promise.resolve()
 }
 
-const pwdRules = {
-  oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur' }],
+const pwdRules: Record<string, any> = {
+  oldPassword: [{ required: true, message: '请输入原密码', trigger: 'blur', type: 'string' as const }],
   newPassword: [
-    { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 8, max: 128, message: '密码长度 8-128 个字符', trigger: 'blur' },
+    { required: true, message: '请输入新密码', trigger: 'blur', type: 'string' as const },
+    { min: 8, max: 128, message: '密码长度 8-128 个字符', trigger: 'blur', type: 'string' as const },
   ],
   confirmPassword: [
-    { required: true, message: '请确认新密码', trigger: 'blur' },
+    { required: true, message: '请确认新密码', trigger: 'blur', type: 'string' as const },
     { validator: validatePwdConfirm, trigger: 'blur' },
   ],
 }

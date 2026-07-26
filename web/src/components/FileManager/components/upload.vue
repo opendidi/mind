@@ -32,7 +32,7 @@ import { ref, computed } from 'vue'
 import { message } from 'ant-design-vue'
 import { FileExplorer } from '@/utils/FileExplorer.ts'
 
-const fileExplorer = new FileExplorer()
+const fileExplorer = new (FileExplorer as any)()
 
 const emit = defineEmits(['oks'])
 

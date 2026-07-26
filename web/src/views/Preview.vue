@@ -33,7 +33,9 @@
 <script lang="ts" setup>
 import { onMounted, onBeforeUnmount, ref, nextTick, watch } from 'vue'
 import Editor from '@/components/Meta2D/Editor/index.vue'
+// @ts-ignore — dynamic modal components without explicit type declarations
 import CommonModal from '@/components/Meta2D/CommonModal/index.vue'
+// @ts-ignore — dynamic modal components without explicit type declarations
 import IframeModal from '@/components/Meta2D/IframeModal/index.vue'
 import { useSelection } from '@/services/selections'
 
@@ -48,20 +50,20 @@ watch(
     if (data) {
       const { events } = data
       if (events) {
-        events.some((_: { action: number; value: string; params?: string }) => {
+        events.some((_: any) => {
           switch (_.action) {
             case 7:
               switch (_.value) {
                 case 'l-dialog':
                   {
-                    meta2d.on(_.value, (e: unknown) => {
+                    meta2d.on(_.value, () => {
                       if (commonModalRef.value) {
                         Object.assign(commonModalRef.value, {
                           visible: true,
                           title: '自定义弹窗',
                         })
                         nextTick(() => {
-                          commonModalRef.value.init(_)
+                          commonModalRef.value?.init(_)
                         })
                       }
                     })
@@ -77,7 +79,7 @@ watch(
                           url: _.params,
                         })
                         nextTick(() => {
-                          iframeModalRef.value.init(e)
+                          iframeModalRef.value?.init(e)
                         })
                       }
                     })

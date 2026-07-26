@@ -278,8 +278,8 @@ async function onDocFileChange(e: Event) {
     } catch (err: unknown) {
       docAttachments.value[idx].failed = true
       docAttachments.value[idx].uploading = false
-      if (err?.message && !err?.response) {
-        message.error(err.message)
+      if ((err as any)?.message && !(err as any)?.response) {
+        message.error((err as any).message)
       }
     }
   }

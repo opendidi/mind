@@ -116,26 +116,27 @@ const validatePasswordConfirm = (_rule: any, value: string) => {
   return Promise.resolve()
 }
 
-const rules = {
+const rules: Record<string, any> = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
+    { required: true, message: '请输入用户名', trigger: 'blur', type: 'string' as const },
     {
       pattern: /^[a-zA-Z0-9_]{3,20}$/,
       message: '用户名只能包含字母、数字和下划线，长度 3-20',
       trigger: 'blur',
+      type: 'string' as const,
     },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 8, message: '密码至少 8 个字符', trigger: 'blur' },
+    { required: true, message: '请输入密码', trigger: 'blur', type: 'string' as const },
+    { min: 8, message: '密码至少 8 个字符', trigger: 'blur', type: 'string' as const },
   ],
   passwordConfirm: [
-    { required: true, message: '请确认密码', trigger: 'blur' },
+    { required: true, message: '请确认密码', trigger: 'blur', type: 'string' as const },
     { validator: validatePasswordConfirm, trigger: 'blur' },
   ],
   captcha: [
-    { required: true, message: '请输入验证码', trigger: 'blur' },
-    { len: 4, message: '验证码为 4 位', trigger: 'blur' },
+    { required: true, message: '请输入验证码', trigger: 'blur', type: 'string' as const },
+    { len: 4, message: '验证码为 4 位', trigger: 'blur', type: 'string' as const },
   ],
 }
 

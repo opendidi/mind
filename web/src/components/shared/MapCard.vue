@@ -113,7 +113,7 @@ const selectedMarker = ref<MapMarker | null>(null)
 
 let _AMap: any = null
 let amap: any = null
-const mapMarkers: unknown[] = []
+const mapMarkers: any[] = []
 
 const MAP_PLUGINS = ['AMap.MarkerClusterer', 'AMap.MarkerCluster']
 

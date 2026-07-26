@@ -12,6 +12,12 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 
 
+def _resolve_log_level():
+    """Resolve log level from environment, defaulting to INFO."""
+    level_name = os.environ.get("LOG_LEVEL", "INFO").upper()
+    return getattr(logging, level_name, logging.INFO)
+
+
 def _init_logging():
     """Patch StreamHandler to survive UnicodeEncodeError on Windows GBK systems."""
     _orig_emit = logging.StreamHandler.emit
@@ -45,7 +51,7 @@ def _init_logging():
             )
         )
         root.addHandler(h)
-        root.setLevel(logging.DEBUG)
+        root.setLevel(_resolve_log_level())
 
     # Suppress overly verbose third-party debug logs
     logging.getLogger("openai").setLevel(logging.WARNING)

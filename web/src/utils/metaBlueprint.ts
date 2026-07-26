@@ -28,15 +28,15 @@ export function applyBlueprintData(meta2d: Meta2d, bp: BlueprintData) {
     bkImage: bp.bkImage || '',
     grid: bp.grid === '1' || bp.grid === true || undefined,
     gridColor: bp.gridColor || '',
-    gridSize: bp.gridSize || '',
-    gridRotate: bp.gridRotate || '',
+    gridSize: (bp.gridSize || '') as any,
+    gridRotate: (bp.gridRotate || '') as any,
     rule: bp.rule === '1' || bp.rule === true || undefined,
     ruleColor: bp.ruleColor || '',
     initJs: bp.initJs || '',
     https: bp.https || [],
     thumbnail: bp.thumbnail || '',
     locked: 0,
-  })
+  } as any)
   meta2d.store.data.fromArrow = ''
   meta2d.store.data.toArrow = 'triangleSolid'
 }

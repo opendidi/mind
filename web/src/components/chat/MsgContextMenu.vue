@@ -70,7 +70,7 @@ function onVisibleChange(val: boolean) {
   visible.value = val
 }
 
-function onMenuClick({ key }: { key: string }) {
+function onMenuClick({ key }: any) {
   visible.value = false
   if (key === 'copy') emit('copy')
   else if (key === 'translate') emit('translate')

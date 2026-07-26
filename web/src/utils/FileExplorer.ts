@@ -7,7 +7,7 @@
  * @LastEditTime: 2025-08-18 20:47:32
  */
 
-export const FileExplorer = function (options: any) {
+export const FileExplorer = function (this: any, options: any) {
   this._filterExt = {
     // all: ['.gif', '.jpg', '.png', '.bmp', '.jpeg', '.swf', '.mp3', '.mp4', '.flv', '.webm', '.txt', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx', '.pdf', '.odt', '.csv', '.rar', '.zip'],
     all: [

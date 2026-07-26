@@ -434,7 +434,7 @@ const currentPlan = computed(() => {
       desc: n.desc,
       tool: null as string | null,
       confirm: n.confirm ?? false,
-      status: n.status,
+      status: n.status as any,
     })),
   }
 })

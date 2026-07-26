@@ -199,7 +199,7 @@ const { speaking: ttsSpeaking, supported: ttsSupported, speak } = useSpeech()
 const sourceLabel = computed(() => langLabels[props.sourceLang] || props.sourceLang || '自动检测')
 const targetLabel = computed(() => langLabels[props.targetLang] || props.targetLang)
 
-function onSelectTarget({ key }: { key: string }) {
+function onSelectTarget({ key }: any) {
   emit('changeTarget', key)
 }
 

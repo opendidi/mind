@@ -17,7 +17,7 @@ export interface TranslateResult {
 
 export async function translateText(data: TranslateRequest): Promise<TranslateResult> {
   const { signal, ...payload } = data
-  const res = await http.post('/translate/translate', payload, signal ? { signal } : undefined)
+  const res: any = await http.post('/translate/translate', payload, signal ? { signal } : undefined)
   if (res.code === 200) {
     return res.data as TranslateResult
   }

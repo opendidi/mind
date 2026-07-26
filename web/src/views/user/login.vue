@@ -96,18 +96,18 @@ const form = reactive({
   captcha: '',
 })
 
-const rules = {
+const rules: Record<string, any> = {
   username: [
-    { required: true, message: '请输入用户名', trigger: 'blur' },
-    { min: 3, max: 20, message: '用户名长度应为 3-20 个字符', trigger: 'blur' },
+    { required: true, message: '请输入用户名', trigger: 'blur', type: 'string' },
+    { min: 3, max: 20, message: '用户名长度应为 3-20 个字符', trigger: 'blur', type: 'string' },
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
-    { min: 3, message: '密码至少 3 个字符', trigger: 'blur' },
+    { required: true, message: '请输入密码', trigger: 'blur', type: 'string' },
+    { min: 3, message: '密码至少 3 个字符', trigger: 'blur', type: 'string' },
   ],
   captcha: [
-    { required: true, message: '请输入验证码', trigger: 'blur' },
-    { len: 4, message: '验证码为 4 位', trigger: 'blur' },
+    { required: true, message: '请输入验证码', trigger: 'blur', type: 'string' },
+    { len: 4, message: '验证码为 4 位', trigger: 'blur', type: 'string' },
   ],
 }
 

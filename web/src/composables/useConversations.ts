@@ -40,7 +40,7 @@ export interface UseConversationsReturn {
   onDeleteConv: (id: string) => Promise<void>
   onTogglePin: (convId: string) => void
   onLoadMoreConversations: () => Promise<void>
-  onExportConv: (convId: string, format: 'json' | 'md') => Promise<void>
+  onExportConv: (convId: string, format: string) => Promise<void>
   onClearData: () => void
   loadConversationList: (reset?: boolean) => Promise<void>
 }
@@ -153,7 +153,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
 
   async function loadConversationList(reset = true) {
     try {
-      const res = await apiChatList({ limit: convPageSize, offset: reset ? 0 : convPageOffset.value })
+      const res: any = await apiChatList({ limit: convPageSize, offset: reset ? 0 : convPageOffset.value })
       if (res?.code === 200 && res.data) {
         const mapped = res.data.map((r: Record<string, any>) => ({
           id: r.id,
@@ -210,7 +210,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
     apiChatSave({ id: convId, pinned: conv.pinned }).catch(() => message.error('置顶操作失败'))
   }
 
-  async function onExportConv(convId: string, format: 'json' | 'md') {
+  async function onExportConv(convId: string, format: string) {
     let msgs: ChatMessage[] = []
     let title = '对话'
 
@@ -219,7 +219,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
       title = activeConvTitle.value || '对话'
     } else {
       try {
-        const res = await apiChatLoad(convId)
+        const res: any = await apiChatLoad(convId)
         if (res?.code === 200 && res.data?.messages) {
           msgs = res.data.messages
           title = res.data.title || '对话'
@@ -305,7 +305,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
         const ctrl = new AbortController()
         convLoadCtrl = ctrl
         try {
-          const res = await apiChatLoad(newId, ctrl.signal)
+          const res: any = await apiChatLoad(newId, ctrl.signal)
           if (res?.code === 200 && res.data) {
             activeConvId.value = newId
             messages.value = res.data.messages || []

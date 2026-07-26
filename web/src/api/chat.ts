@@ -9,7 +9,7 @@ const API = {
 
 export interface ChatMsg {
   id: string
-  role: 'user' | 'agent' | 'error'
+  role: 'user' | 'agent' | 'tool' | 'error'
   text?: string
 }
 

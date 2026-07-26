@@ -14,7 +14,7 @@ describe('ThinkCard.vue', () => {
     expect(wrapper.text()).toContain('正在分析用户意图...')
   })
 
-  it('is open by default when thinking is true', () => {
+  it('shows thinking label when thinking is true', () => {
     const wrapper = mount(ThinkCard, {
       props: {
         content: '分析完毕',
@@ -22,11 +22,11 @@ describe('ThinkCard.vue', () => {
       },
     })
 
-    // Should show the content when open
-    expect(wrapper.find('.thinking-body').exists()).toBe(true)
+    // Shows "深度思考中" when still thinking
+    expect(wrapper.text()).toContain('深度思考中')
   })
 
-  it('is collapsed when thinking is false', () => {
+  it('shows done label when thinking is false', () => {
     const wrapper = mount(ThinkCard, {
       props: {
         content: '分析完毕',
@@ -34,7 +34,7 @@ describe('ThinkCard.vue', () => {
       },
     })
 
-    // The summary label should be visible
-    expect(wrapper.text()).toContain('思考过程')
+    // Shows completion summary when thinking is done
+    expect(wrapper.text()).toContain('已深度思考分析完毕')
   })
 })
