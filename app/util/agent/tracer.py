@@ -56,7 +56,13 @@ class Span:
 
 
 def _summarize(d: dict, max_len: int = 200) -> str:
-    s = json.dumps(d, ensure_ascii=False)
+    try:
+        s = json.dumps(d, ensure_ascii=False, default=str)
+    except (TypeError, ValueError):
+        try:
+            s = json.dumps({k: repr(v) for k, v in d.items()}, ensure_ascii=False)
+        except Exception:
+            return "{}"
     return s if len(s) <= max_len else s[: max_len - 3] + "..."
 
 
