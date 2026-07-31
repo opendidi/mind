@@ -281,6 +281,7 @@ import { useMessageSelect } from '@/composables/useMessageSelect'
 import { useScrollToBottom } from '@/composables/useScrollToBottom'
 import { useTheme } from '@/composables/useTheme'
 import { executeCanvasTool } from '@/utils/canvasBridge'
+import { apiChatFeedback } from '@/api/chat'
 import ChatSidebar from '@/components/chat/ChatSidebar.vue'
 import ChatInput from '@/components/chat/ChatInput.vue'
 import PlanCard from '@/components/chat/PlanCard.vue'
@@ -296,11 +297,23 @@ const md = new MarkdownIt({
   typographer: true,
   breaks: true,
 })
-const renderMd = (text: string) => md.render(text)
+const mdCache = new Map<string, string>()
+const MAX_CACHE_SIZE = 200
+
+const renderMd = (text: string) => {
+  if (mdCache.has(text)) return mdCache.get(text)!
+  const result = md.render(text)
+  if (mdCache.size >= MAX_CACHE_SIZE) {
+    const firstKey = mdCache.keys().next().value
+    if (firstKey !== undefined) mdCache.delete(firstKey)
+  }
+  mdCache.set(text, result)
+  return result
+}
 
 const router = useRouter()
 const route = useRoute()
-const userName = computed(() => '用户')
+const userName = computed(() => useUserStore().userInfo?.username || '用户')
 const { isDark, toggleTheme } = useTheme()
 
 // UI state
@@ -412,14 +425,14 @@ const hasCanvasChanges = ref(false)
 const showCanvasPreview = ref(false)
 const showOutline = ref(false)
 const previewIframe = ref<HTMLIFrameElement>()
-const previewUrl = `${window.location.origin}${window.location.pathname}#/preview`
+const previewUrl = `/preview/local`
 
 function onPreviewLoaded() {
   // iframe loaded — canvas is displayed
 }
 
 function openCanvasEditor() {
-  window.open(`${window.location.origin}${window.location.pathname}#/`, '_blank')
+  window.open('/', '_blank')
 }
 
 // Plan state — driven by composable's built-in plan tracker
@@ -646,8 +659,12 @@ function onCloseRefPanel() {
   refPanelVisible.value = false
 }
 
-function onMsgFeedback(_msgId: string, _type: string) {
-  // Feedback persistence placeholder
+function onMsgFeedback(msgId: string, type: string) {
+  if (activeConvId.value) {
+    apiChatFeedback(activeConvId.value, msgId, type).catch(() => {
+      console.warn('[feedback] Failed to persist feedback for msg:', msgId)
+    })
+  }
   saveCurrentConv()
 }
 

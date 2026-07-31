@@ -36,6 +36,7 @@ export const useUserStore = defineStore('app-auth-token', {
         const payload = JSON.parse(atob(state.token.split('.')[1]))
         if (payload.exp * 1000 < Date.now()) return ''
       } catch {
+        console.warn('Failed to parse JWT token payload for expiration check')
         return ''
       }
       return state.token
@@ -70,7 +71,7 @@ export const useUserStore = defineStore('app-auth-token', {
       try {
         await apiLogout()
       } catch {
-        /* ignore */
+        console.warn('Logout API call failed, clearing local auth state anyway')
       }
       this.token = ''
       this.refreshToken = ''

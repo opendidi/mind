@@ -7,6 +7,7 @@ export function getCache<T = any>(key: string): T | null {
   try {
     return JSON.parse(raw) as T
   } catch {
+    console.warn('Failed to parse cached auth data from localStorage for key:', key)
     return null
   }
 }

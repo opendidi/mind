@@ -128,7 +128,12 @@ const rules: Record<string, any> = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur', type: 'string' as const },
-    { min: 8, message: '密码至少 8 个字符', trigger: 'blur', type: 'string' as const },
+    {
+      pattern: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~])[A-Za-z\d!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?`~]{8,}$/,
+      message: '密码需至少 8 位，包含大小写字母、数字和特殊字符',
+      trigger: 'blur',
+      type: 'string' as const,
+    },
   ],
   passwordConfirm: [
     { required: true, message: '请确认密码', trigger: 'blur', type: 'string' as const },

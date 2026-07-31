@@ -3,14 +3,16 @@
 
 import logging
 
-from flask import Blueprint, jsonify, request
+from flask import Blueprint, g, jsonify, request
 
+from app.util.decorators import token_required
 from app.util.translate import TranslationEngine, detect_target_language
 
 translate_api = Blueprint("translate", __name__)
 
 
 @translate_api.route("/translate", methods=["POST"])
+@token_required
 def translate_text():
     """Translate text directly without going through the Agent pipeline."""
     data = request.get_json(silent=True) or {}
@@ -21,6 +23,8 @@ def translate_text():
 
     if not text:
         return jsonify({"code": 400, "message": "text 不能为空"}), 400
+    if len(text) > 20000:
+        return jsonify({"code": 400, "message": f"text too long ({len(text)} > 20000)"}), 400
     if style not in ("general", "formal", "technical"):
         return jsonify({"code": 400, "message": "style 必须为 general/formal/technical"}), 400
 
@@ -45,6 +49,7 @@ def translate_text():
 
 
 @translate_api.route("/translate/languages", methods=["GET"])
+@token_required
 def get_languages():
     """Return supported languages and engine status."""
     info = TranslationEngine.supported_languages()

@@ -64,7 +64,7 @@ class TestAgentTTSEndpoint:
 
     def test_tts_not_loaded(self, client):
         """TTS model not available returns 503."""
-        with patch("app.util.agent_tts.AgentTTS.instance") as mock_tts:
+        with patch("app.util.agent.tts.AgentTTS.instance") as mock_tts:
             mock_tts.side_effect = RuntimeError("TTS 功能已禁用")
             resp = client.post("/v1/agent/tts", data=json.dumps({"text": "测试文本"}), content_type="application/json")
             assert resp.status_code == 503

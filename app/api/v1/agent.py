@@ -7,9 +7,33 @@ import queue
 import threading
 import uuid
 
-from flask import Blueprint, Response, request, stream_with_context
+from flask import Blueprint, Response, g, request, stream_with_context
+
+from app.plugin.auth import decode_token
+from app.util.decorators import token_required
 
 agent_api = Blueprint("agent", __name__)
+
+
+def _get_user_id():
+    """Extract authenticated user_id from JWT, falling back to anonymous.
+
+    MUST be called within a request context. Attempts Bearer token first,
+    then cookie, finally returns 'anonymous' for unauthenticated requests.
+    """
+    token = None
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        token = auth_header[7:]
+    if not token:
+        token = request.cookies.get("access_token")
+    if token:
+        try:
+            payload = decode_token(token)
+            return payload.get("sub", "anonymous")
+        except Exception:
+            pass
+    return "anonymous"
 
 
 def _safe_json_dumps(obj, **kwargs):
@@ -55,7 +79,7 @@ def agent_chat():
     if len(message) > 8192:
         return {"code": 400, "message": f"message too long ({len(message)} > 8192)"}, 400
 
-    user_id = data.get("user_id", request.headers.get("X-User-ID", "anonymous"))
+    user_id = _get_user_id()
     canvas_context = data.get("canvas_context")
     canvas_snapshot = data.get("canvas_snapshot")
     images = data.get("images")  # list of base64 data URL strings for multimodal vision
@@ -147,6 +171,7 @@ def agent_mcp():
 
 
 @agent_api.route("/tts", methods=["POST"])
+@token_required
 def agent_tts():
     """TTS 语音合成端点。
 

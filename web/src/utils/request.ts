@@ -36,7 +36,7 @@ async function tryRefreshToken(): Promise<string | null> {
       return access_token
     }
   } catch {
-    /* ignore */
+    console.warn('Token refresh request failed')
   }
   return null
 }

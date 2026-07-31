@@ -100,6 +100,7 @@ export function sanitizeHtml(html: string): string {
     sanitizeNode(doc.body)
     return doc.body.innerHTML
   } catch {
+    console.warn('HTML sanitization via DOMParser failed, falling back to tag stripping')
     // Fallback: strip all tags
     return html.replace(/<[^>]*>/g, '')
   }

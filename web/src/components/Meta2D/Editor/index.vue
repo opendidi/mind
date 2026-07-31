@@ -29,7 +29,7 @@ import { Meta2d, register, registerAnchors, registerCanvasDraw } from '@meta2d/c
 import type { Pen } from '@meta2d/core'
 import { useCommonStoreWithOut } from '@/store/modules/common'
 import { removeOriginalData } from '@/utils/meta-storage'
-import { applyBlueprintData } from '@/utils/metaBlueprint'
+import { applyBlueprintData, defaultBlueprintName } from '@/utils/metaBlueprint'
 import '@/assets/js/assets.le5lecdn.com_2d_canvas2svg.js'
 import '@/assets/js/arrows.js'
 import '@/assets/js/rg.js'
@@ -195,6 +195,13 @@ onMounted(() => {
     const id = route.params.id
     if (id && typeof id === 'string') {
       loadBlueprint(id)
+    } else {
+      // New canvas: ensure a default name is set so it's non-empty on first save
+      const data = meta2d.store.data
+      if (!data.name) {
+        meta2d.setValue({ name: defaultBlueprintName() })
+        window.dispatchEvent(new CustomEvent('meta2d:dataLoaded'))
+      }
     }
   })
 })

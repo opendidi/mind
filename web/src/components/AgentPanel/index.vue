@@ -109,7 +109,7 @@ function updateCanvasPenCount() {
       canvasPenCount.value = data?.pens?.length || 0
     }
   } catch {
-    /* not on editor page */
+    console.warn('[AgentPanel] not on editor page — Meta2D unavailable for pen count')
   }
 }
 

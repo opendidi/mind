@@ -23,7 +23,7 @@ from app.plugin.minio import minio_cdn_url
 from app.plugin.minio.app.controller import MinioUtil
 from app.util.log_config import setup_logging
 
-from .connect import ConnectMysqlHandler
+from .connect import ConnectMysqlHandler, generic_modify
 
 dirname = os.path.dirname(os.path.abspath(__name__))
 
@@ -163,31 +163,10 @@ class BlueprintMysqlHandler:
                 connect.close()
 
     def modify(id, user_id, **kwargs):
-        if not id:
-            logging.warning("ID 不能为空")
-            return False
         connect = None
         try:
             connect = ConnectMysqlHandler.connect_mysql()
-            with connect.cursor() as cursor:
-                for key in kwargs:
-                    if isinstance(kwargs[key], dict):
-                        kwargs[key] = json.dumps(kwargs[key], ensure_ascii=False)
-                update_fields = [f"{key} = %s" for key in kwargs.keys()]
-                values = list(kwargs.values())
-
-                sql = f"UPDATE blueprint SET {', '.join(update_fields)} WHERE id = %s AND user_id = %s"
-                values.append(id)
-                values.append(user_id)
-
-                cursor.execute(sql, values)
-                connect.commit()
-
-                if cursor.rowcount == 0:
-                    return False, "未找到匹配的 ID 或数据未变更"
-                return True, cursor.rowcount
-        except Exception as ex:
-            logging.warning(f"数据增加失败：{ex}")
+            return generic_modify(connect, id, user_id, "blueprint", **kwargs)
         finally:
             if connect:
                 connect.close()
@@ -208,7 +187,7 @@ class BlueprintMysqlHandler:
         """
                 cursor.execute(sql, (is_del, id, user_id))
                 connect.commit()
-                return cursor.lastrowid
+                return cursor.rowcount > 0
         except Exception as ex:
             logging.warning(ex)
         finally:

@@ -80,6 +80,7 @@ function extractDomain(url: string): string {
     const u = new URL(url)
     return u.hostname.replace(/^www\./, '')
   } catch {
+    console.warn('[ReferencePanel] extractDomain: invalid URL —', url)
     return ''
   }
 }
@@ -89,6 +90,7 @@ function faviconUrl(url: string): string {
     const u = new URL(url)
     return `https://www.google.com/s2/favicons?domain=${u.hostname}&sz=32`
   } catch {
+    console.warn('[ReferencePanel] faviconUrl: invalid URL —', url)
     return ''
   }
 }

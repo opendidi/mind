@@ -103,7 +103,7 @@ const rules: Record<string, any> = {
   ],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur', type: 'string' },
-    { min: 3, message: '密码至少 3 个字符', trigger: 'blur', type: 'string' },
+    { min: 6, message: '密码至少 6 个字符', trigger: 'blur', type: 'string' },
   ],
   captcha: [
     { required: true, message: '请输入验证码', trigger: 'blur', type: 'string' },

@@ -152,7 +152,7 @@ def delete_blueprint():
     if not id:
         return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, "请选择要删除的数据")
     data = BlueprintMysqlHandler.delete_blueprint({"id": id, "del": 1}, g.user_id)
-    if data is not None:
+    if data:
         return ProtocolBuilder.build_response({}, StatusCode.SUCCESS, "删除成功")
     else:
-        return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, "删除失败")
+        return ProtocolBuilder.build_response({}, StatusCode.NOT_FOUND, "删除失败：图纸不存在或已删除")

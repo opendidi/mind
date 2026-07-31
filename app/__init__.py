@@ -102,8 +102,15 @@ def create_app():
     ]
     CORS(app, origins=allowed_origins, supports_credentials=True)
 
-    # Security: set SECRET_KEY
-    app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", os.urandom(32).hex())
+    # Security: set SECRET_KEY — fail fast in production if not configured
+    secret_key = os.environ.get("SECRET_KEY")
+    if not secret_key:
+        if os.environ.get("FLASK_DEBUG", "").lower() == "true":
+            secret_key = os.urandom(32).hex()
+            app.logger.warning("SECRET_KEY not set — using random key (sessions will be lost on restart)")
+        else:
+            raise RuntimeError("SECRET_KEY must be set in production")
+    app.config["SECRET_KEY"] = secret_key
 
     # Security: add HTTP security headers
     @app.after_request

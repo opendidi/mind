@@ -107,7 +107,9 @@ function pushUndoState(meta2d: any): void {
     if (typeof meta2d.addHistory === 'function') {
       meta2d.addHistory(structuredClone(meta2d.data()))
     }
-  } catch { /* ignore */ }
+  } catch {
+    console.warn('[canvasBridge] failed to push history state to Meta2D undo stack')
+  }
 }
 
 /** Calculate connection anchor point on the edge of a pen, accounting for shape type. */
@@ -164,7 +166,9 @@ function notifyCanvasMutation(): void {
       if (data) {
         localStorage.setItem('meta2d', JSON.stringify(data))
       }
-    } catch { /* ignore */ }
+    } catch {
+      console.warn('[canvasBridge] failed to serialize canvas data to localStorage')
+    }
     window.dispatchEvent(new CustomEvent('meta2d:agent-mutation'))
     _mutationTimer = null
   }, 100)
@@ -350,7 +354,8 @@ export function executeCanvasToolLocalStorage(
     }
     localStorage.setItem('meta2d', JSON.stringify(data))
     return true
-  } catch {
+  } catch (e) {
+    console.warn('[canvasBridge] executeCanvasToolLocalStorage failed:', e)
     return false
   }
 }

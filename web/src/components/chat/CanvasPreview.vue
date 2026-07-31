@@ -209,7 +209,7 @@ async function renderAsync() {
     try {
       meta2d.fitView(40)
     } catch {
-      /* ignore */
+      console.warn('[CanvasPreview] fitView failed during render')
     }
     scalePercent.value = Math.round((meta2d?.store?.data?.scale || 1) * 100)
   }, 80)
@@ -219,8 +219,8 @@ function onDownloadPng() {
   if (!meta2d) return
   try {
     meta2d.downloadPng('preview')
-  } catch {
-    /* ignore */
+  } catch (e) {
+    console.warn('[CanvasPreview] downloadPng failed:', e)
   }
 }
 
@@ -228,8 +228,8 @@ function onDownloadSvg() {
   if (!meta2d) return
   try {
     meta2d.downloadSvg()
-  } catch {
-    /* ignore */
+  } catch (e) {
+    console.warn('[CanvasPreview] downloadSvg failed:', e)
   }
 }
 
@@ -279,8 +279,8 @@ onBeforeUnmount(() => {
   if (meta2d) {
     try {
       meta2d.destroy?.()
-    } catch {
-      /* ignore */
+    } catch (e) {
+      console.warn('[CanvasPreview] meta2d.destroy failed:', e)
     }
     meta2d = null
   }

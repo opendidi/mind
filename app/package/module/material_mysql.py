@@ -9,7 +9,6 @@ LastEditTime: 2025-08-19 15:12:24
 
 # -*- coding: UTF-8 -*-
 
-import json
 import logging
 import os
 import time
@@ -24,7 +23,7 @@ from app.plugin.minio import minio_cdn_url
 from app.plugin.minio.app.controller import MinioUtil
 from app.util.log_config import setup_logging
 
-from .connect import ConnectMysqlHandler
+from .connect import ConnectMysqlHandler, generic_modify
 
 dirname = os.path.dirname(os.path.abspath(__name__))
 
@@ -140,6 +139,12 @@ class MaterialMysqlHandler:
                 count_sql = """
           SELECT COUNT(*) as total FROM material WHERE del = 0 AND user_id = %s
         """
+                if type is not None:
+                    count_sql += "AND type = %s "
+                    params_count.append(type)
+                if folder is not None:
+                    count_sql += "AND name = %s "
+                    params_count.append(folder)
                 if parent_id is not None:
                     count_sql += "AND parent_id = %s "
                     params_count.append(parent_id)
@@ -406,7 +411,7 @@ class MaterialMysqlHandler:
         """
                 cursor.execute(sql, (is_del, id, user_id))
                 connect.commit()
-                return cursor.lastrowid
+                return cursor.rowcount > 0
         except Exception as ex:
             logging.warning(ex)
         finally:
@@ -414,36 +419,10 @@ class MaterialMysqlHandler:
                 connect.close()
 
     def modify(id, user_id, **kwargs):
-        if not id:
-            logging.warning("ID 不能为空")
-            return False
-        if not kwargs:
-            logging.warning("没有可更新的字段")
-            return False
         connect = None
         try:
             connect = ConnectMysqlHandler.connect_mysql()
-            with connect.cursor() as cursor:
-                for key in kwargs:
-                    # 如果值是字典
-                    if isinstance(kwargs[key], dict):
-                        # 转成 JSON 字符串
-                        kwargs[key] = json.dumps(kwargs[key], ensure_ascii=False)
-                update_fields = [f"{key} = %s" for key in kwargs.keys()]
-                values = list(kwargs.values())
-
-                sql = f"UPDATE material SET {', '.join(update_fields)} WHERE id = %s AND user_id = %s"
-                values.append(id)
-                values.append(user_id)
-
-                cursor.execute(sql, values)
-                connect.commit()
-
-                if cursor.rowcount == 0:
-                    return False, "未找到匹配的 ID 或数据未变更"
-                return True, cursor.rowcount
-        except Exception as ex:
-            logging.warning(f"数据增加失败：{ex}")
+            return generic_modify(connect, id, user_id, "material", **kwargs)
         finally:
             if connect:
                 connect.close()

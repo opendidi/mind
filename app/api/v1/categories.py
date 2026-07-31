@@ -12,5 +12,5 @@ categories_api = Blueprint("categories", __name__)
 @token_required
 def categories_lists():
     data = CategoriesMysqlHandler.query_list(g.user_id)
-    response = {"code": 200, "msg": "success", "data": data}
+    response = {"code": 200, "message": "success", "data": data}
     return jsonify(response)

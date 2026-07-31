@@ -316,6 +316,7 @@ import { useCommonStoreWithOut } from '@/store/modules/common'
 import { apiBlueprintAdd, apiBlueprintModify } from '@/api/blueprint'
 import { apiChatUploadFile } from '@/api/chat'
 import FileManager from '@/components/FileManager/index.vue'
+import { defaultBlueprintName } from '@/utils/metaBlueprint'
 
 const emit = defineEmits(['openAgentPanel'])
 
@@ -496,7 +497,7 @@ const createBluePrint = () => {
   currentId.value = ''
   router.replace({ path: '/' })
   meta2d.open({
-    name: '',
+    name: defaultBlueprintName(),
     pens: [],
     lines: [],
     background: 'rgba(255, 255, 255, 1)',
@@ -697,6 +698,11 @@ function onSave(flag: boolean): Promise<string | false> | boolean {
     // 先截图 → 上传 → 获取缩略图URL，再保存
     return generateThumbnail().then(thumbnailUrl => {
       params.thumbnail = thumbnailUrl
+
+      // Auto-generate name for new canvases if name is empty
+      if (!params.name || !(params.name as string).trim()) {
+        params.name = defaultBlueprintName()
+      }
 
       if (!currentId.value) {
         return apiBlueprintAdd(params)

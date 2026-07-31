@@ -244,5 +244,6 @@ class OutputGuard:
             if f"```{bt}" in cleaned:
                 if not OutputGuard.validate_code_block(cleaned, bt):
                     logging.warning("OutputGuard: invalid %s block in response", bt)
+                    return {"ok": False, "reason": f"invalid {bt} code block", "text": cleaned}
 
         return {"ok": True, "text": cleaned}

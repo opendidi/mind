@@ -16,6 +16,7 @@ export function getTopology() {
   try {
     return raw ? JSON.parse(raw) : null
   } catch {
+    console.warn('Failed to parse topology data from localStorage')
     return null
   }
 }
@@ -45,6 +46,7 @@ export function getVariableData() {
   try {
     return raw ? JSON.parse(raw) : null
   } catch {
+    console.warn('Failed to parse variableData from localStorage')
     return null
   }
 }

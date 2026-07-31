@@ -358,6 +358,7 @@ const formattedToolResult = computed(() => {
   try {
     return JSON.stringify(result, null, 2)
   } catch {
+    console.warn('[MsgRow] failed to stringify tool result, falling back to String()')
     return String(result)
   }
 })

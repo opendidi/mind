@@ -49,7 +49,8 @@ function formatConvTime(raw: string | undefined): string {
   if (!raw) return ''
   try {
     return new Date(raw).toLocaleString()
-  } catch {
+  } catch (e) {
+    console.warn('[useConversations] formatConvTime error:', e)
     return raw
   }
 }
@@ -101,7 +102,8 @@ export function useConversations(options: UseConversationsOptions): UseConversat
 
     try {
       await apiChatSave({ id, title, messages: msgs })
-    } catch {
+    } catch (e) {
+      console.warn('[useConversations] saveCurrentConv error:', e)
       message.error('保存对话失败')
       return null
     }
@@ -133,7 +135,8 @@ export function useConversations(options: UseConversationsOptions): UseConversat
 
     try {
       await apiChatSave({ id, title, messages: msgs })
-    } catch {
+    } catch (e) {
+      console.warn('[useConversations] silentSave error:', e)
       // Silently ignore — don't distract user during streaming
       return
     }
@@ -166,7 +169,8 @@ export function useConversations(options: UseConversationsOptions): UseConversat
         hasMoreConversations.value = res.data.length >= convPageSize
         convPageOffset.value = reset ? res.data.length : convPageOffset.value + res.data.length
       }
-    } catch {
+    } catch (e) {
+      console.warn('[useConversations] loadConversationList error:', e)
       /* network error, skip */
     }
   }
@@ -199,6 +203,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
     try {
       await apiChatDelete(id)
     } catch (e: any) {
+      console.warn('[useConversations] onDeleteConv error:', e)
       message.error(e?.message || '删除对话失败')
     }
   }
@@ -207,7 +212,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
     const conv = conversations.value.find(c => c.id === convId)
     if (!conv) return
     conv.pinned = !conv.pinned
-    apiChatSave({ id: convId, pinned: conv.pinned }).catch(() => message.error('置顶操作失败'))
+    apiChatSave({ id: convId, pinned: conv.pinned }).catch((e) => { console.warn('[useConversations] onTogglePin error:', e); message.error('置顶操作失败') })
   }
 
   async function onExportConv(convId: string, format: string) {
@@ -224,7 +229,8 @@ export function useConversations(options: UseConversationsOptions): UseConversat
           msgs = res.data.messages
           title = res.data.title || '对话'
         }
-      } catch {
+      } catch (e) {
+        console.warn('[useConversations] onExportConv error:', e)
         message.error('加载对话失败')
         return
       }
@@ -316,6 +322,7 @@ export function useConversations(options: UseConversationsOptions): UseConversat
           }
         } catch (err: any) {
           if (err?.name === 'AbortError' || err?.code === 'ERR_CANCELED') return
+          console.warn('[useConversations] route watch convLoad error:', err)
           router.replace({ name: 'chat' })
         } finally {
           if (convLoadCtrl === ctrl) switchingConv.value = false

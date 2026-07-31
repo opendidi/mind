@@ -22,7 +22,8 @@ export function useAuthCaptcha() {
           randCodeData.captcha_id = res.data.captcha_id
           randCodeData.randCodeImage = res.data.captcha_image
         }
-      } catch {
+      } catch (e) {
+        console.warn('[useAuthCaptcha] initAuthCaptcha error:', e)
         /* ignore */
       }
       initTimer = null

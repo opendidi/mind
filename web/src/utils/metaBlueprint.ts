@@ -1,5 +1,14 @@
 import type { Meta2d } from '@meta2d/core'
 
+/** Generate a default blueprint name with timestamp for new canvases */
+export function defaultBlueprintName(): string {
+  const now = new Date()
+  const pad = (n: number) => String(n).padStart(2, '0')
+  const date = `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`
+  const time = `${pad(now.getHours())}${pad(now.getMinutes())}${pad(now.getSeconds())}`
+  return `新图纸_${date}_${time}`
+}
+
 export interface BlueprintData {
   pens?: any[]
   name?: string

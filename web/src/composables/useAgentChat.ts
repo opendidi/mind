@@ -261,7 +261,8 @@ export function buildCanvasContext(): CanvasContext | null {
       total_lines: (data.lines || []).length,
       truncated: collectedPens.length < (data.pens || []).length,
     }
-  } catch {
+  } catch (e) {
+    console.warn('[useAgentChat] buildCanvasContext error:', e)
     return null
   }
 }
@@ -293,7 +294,8 @@ export function buildCanvasSnapshot(): any[] | null {
       locked: p.locked || 0,
       tags: p.tags || [],
     }))
-  } catch {
+  } catch (e) {
+    console.warn('[useAgentChat] buildCanvasSnapshot error:', e)
     return null
   }
 }
