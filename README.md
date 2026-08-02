@@ -6,16 +6,47 @@
 
 **当前版本：** 0.0.2 | **在线预览：** [opendidi.github.io/mind](https://opendidi.github.io/mind)
 
-[![AUR](https://img.shields.io/badge/license-Apache%20License%202.0-blue.svg)](https://github.com/opendidi/mind/blob/main/LICENSE)
-[![](https://img.shields.io/badge/version-0.0.2-brightgreen.svg)](https://github.com/opendidi/mind)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/opendidi/mind/blob/main/LICENSE)
+[![Version](https://img.shields.io/badge/version-0.0.2-brightgreen.svg)](https://github.com/opendidi/mind)
+[![Python](https://img.shields.io/badge/Python-3.10+-3776AB?logo=python&logoColor=white)](https://python.org)
+[![Vue](https://img.shields.io/badge/Vue-3.x-4FC08D?logo=vue.js&logoColor=white)](https://vuejs.org)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://typescriptlang.org)
+[![Flask](https://img.shields.io/badge/Flask-3.0-000000?logo=flask&logoColor=white)](https://flask.palletsprojects.com)
+[![Docker](https://img.shields.io/badge/Docker-Compose-2496ED?logo=docker&logoColor=white)](https://docs.docker.com/compose/)
+[![MySQL](https://img.shields.io/badge/MySQL-8.0-4479A1?logo=mysql&logoColor=white)](https://mysql.com)
+[![Redis](https://img.shields.io/badge/Redis-7-DC382D?logo=redis&logoColor=white)](https://redis.io)
 
 ---
 
 <img width="100%" align="center" src="./images/ffcde3e3-c4f4-4a40-884f-c16eb8005ce6.png" />
 
+---
+
+## 目录
+
+- [功能特性](#功能特性)
+  - [图形编辑](#图形编辑)
+  - [AI 对话 & 知识助手](#ai-对话--知识助手)
+  - [画布操控](#画布操控)
+  - [聊天体验](#聊天体验)
+- [技术栈](#技术栈)
+- [项目结构](#项目结构)
+- [快速开始](#快速开始)
+- [API 接口](#api-接口)
+- [Agent 架构](#agent-架构)
+- [前端架构](#前端架构)
+- [Docker 部署](#docker-部署)
+- [开发指南](#开发指南)
+- [贡献指南](#贡献指南)
+- [相关资源](#相关资源)
+- [License](#license)
+
+---
+
 ## 功能特性
 
 ### 图形编辑
+
 - 🎨 **丰富图元** — 矩形、圆形、三角形、菱形、五边形、星形、文本、图片等基础图形
 - 🔗 **智能连线** — 直线、曲线、折线、思维导图曲线，支持多方向箭头
 - 📐 **自动布局** — 水平/垂直/网格排列，左/右/居中/上/下对齐
@@ -31,7 +62,7 @@
 - 🎯 **样式面板** — 统一属性编辑（填充/边框/阴影/渐变/文字/透明度） + 100ms 渲染防抖
 - 🎨 **颜色选择器** — TDesign ColorPicker，支持 CSS 格式 + 单色模式
 
-### 图表类型
+#### 图表类型
 
 | 类型 | 说明 |
 |------|------|
@@ -44,13 +75,15 @@
 | FTA 图 | 故障树分析 |
 | 表单图 | UI 表单布局 |
 
-### 文件管理
+#### 文件管理
+
 - 📁 **树形目录** — 文件夹管理，拖拽移动
 - 📤 **上传下载** — 支持图片、SVG、文档
 - 👁️ **在线预览** — 图片和 SVG 即时预览
 - 📋 **素材库** — 可复用的图形模板
 
-### 蓝图系统
+#### 蓝图系统
+
 - 💾 **保存加载** — 完整画布状态持久化到后端
 - 📤 **多格式导出** — PNG（位图）/ SVG（矢量）/ JSON（数据）
 - 🔍 **搜索** — 按名称和分类检索
@@ -73,10 +106,10 @@
 
 - 🤖 **自然语言画图** — "画一个登录流程图" → AI 自动创建节点和连线
 - 🧠 **智能图表生成** — 支持流程图、架构图、UML 类图、时序图、活动图等
-- 📐 **智能排版** — 网格/树形/力导向/分层 4 种布局算法，"把这些框垂直排列""用树形布局展开"
+- 📐 **智能排版** — 网格/树形/力导向/分层 4 种布局算法
 - ⏱️ **快照回滚** — Agent 每次写操作自动保存快照，对话中随时回退到历史版本
 - 📋 **蓝图管理** — 搜索、加载、保存、导出（PNG/SVG/JSON），对比两个蓝图差异、合并蓝图
-- 📦 **操作宏** — 将常用操作序列保存为可复用宏，"把刚才的操作存为'三层架构'"
+- 📦 **操作宏** — 将常用操作序列保存为可复用宏
 - 🏗️ **蓝图模板** — 从预置模板（三层架构/微服务/数据管道/类图/SWOT）一键创建
 
 ### 聊天体验
@@ -93,22 +126,45 @@
 
 ## 技术栈
 
-| 层 | 技术 |
-|----|------|
-| **前端** | Vue 3 + TypeScript + Vite 4 |
-| **UI 库** | Ant Design Vue 3.2 + TDesign Vue Next |
-| **图形引擎** | @meta2d/core + 8 个 diagram 插件 |
-| **图表** | ECharts 6 |
-| **思维导图** | markmap |
-| **代码编辑器** | Monaco Editor |
-| **地图** | AMap（高德地图） |
-| **状态管理** | Pinia 2 |
-| **后端** | Python 3.10+ / Flask 3.0 + eventlet |
-| **数据库** | MySQL 8.0 (PyMySQL + DBUtils 连接池) |
-| **对象存储** | MinIO |
-| **LLM** | DeepSeek API（主）+ 多级 Fallback |
-| **缓存** | Redis 7（会话、搜索缓存、Agent 记忆、LLM 确定性缓存） |
-| **包管理** | pnpm (monorepo) |
+### 后端
+
+| 类别 | 技术 | 说明 |
+|------|------|------|
+| **语言 / 框架** | Python 3.10+ / Flask 3.0 + eventlet | REST API + SSE 流式响应 |
+| **Agent 系统** | 自研六层架构 | Guard → Intent → Planner → Executor → Supervisor → Memory |
+| **LLM** | DeepSeek API（主）+ 多级 Fallback | 支持 OpenAI 兼容 API 作为备选 |
+| **数据库** | MySQL 8.0 | PyMySQL + DBUtils 连接池 |
+| **缓存** | Redis 7 | 会话、搜索缓存、Agent 记忆、LLM 确定性缓存 |
+| **对象存储** | MinIO | 文件/素材/蓝图存储 |
+| **搜索引擎** | Bing / DDGS / Baidu / Exa / SearXNG | 5 引擎多策略链 |
+| **翻译引擎** | Argos Translate（本地）+ LLM Fallback | 40+ 语言，TTL 缓存 |
+| **TTS** | ChatTTS | 高质量中文语音合成 |
+
+### 前端
+
+| 类别 | 技术 | 说明 |
+|------|------|------|
+| **框架** | Vue 3 + TypeScript + Vite 4 | Composition API |
+| **UI 库** | Ant Design Vue 3.2 + TDesign Vue Next | 企业级组件 |
+| **图形引擎** | @meta2d/core + 8 个 diagram 插件 | 画布渲染核心 |
+| **图表** | ECharts 6 | 数据可视化 |
+| **思维导图** | markmap | 交互式脑图渲染 |
+| **代码编辑器** | Monaco Editor | 代码编辑容器 |
+| **地图** | AMap（高德地图） | 地理编码 + 路线规划 |
+| **状态管理** | Pinia 2 | Vue 3 官方推荐 |
+| **CSS** | Windi CSS | 原子化 CSS |
+| **包管理** | pnpm | monorepo 工作空间 |
+
+### DevOps
+
+| 类别 | 技术 |
+|------|------|
+| **容器化** | Docker + Docker Compose |
+| **Python Lint/Format** | Ruff |
+| **前端 Format** | Prettier |
+| **TypeScript 检查** | vue-tsc |
+| **Git Hooks** | pre-commit |
+| **测试** | pytest + vitest |
 
 ---
 
@@ -116,228 +172,68 @@
 
 ```
 mind/
-├── app/                                    # Python 后端
-│   ├── __init__.py                         # Flask app 工厂 — CORS、安全头、速率限制、蓝图注册
-│   ├── config/
-│   │   ├── __init__.py                     # 环境变量配置（DB / Redis / LLM / MinIO / TTS）
-│   │   └── protocol.py                     # API 协议常量和状态码
-│   ├── api/v1/
-│   │   ├── __init__.py                     # 注册所有蓝图（auth, material, categories, blueprint, agent, chat, translate）
-│   │   ├── agent.py                        # Agent SSE 流式对话 + MCP JSON-RPC + TTS + Health
-│   │   ├── auth.py                         # 认证（登录、注册、刷新 Token）
-│   │   ├── chat.py                         # 会话管理 CRUD + 反馈
-│   │   ├── blueprint.py                    # 蓝图 CRUD
-│   │   ├── material.py                     # 素材管理 CRUD
-│   │   ├── categories.py                   # 分类
-│   │   └── translate.py                    # 翻译文本 + 语言列表
-│   ├── package/module/                     # MySQL 数据访问层
-│   │   ├── connect.py                      # 连接管理
-│   │   ├── user_mysql.py                   # 用户 CRUD
-│   │   ├── chat_mysql.py                   # 会话消息 CRUD
-│   │   ├── blueprint_mysql.py              # 蓝图 CRUD
-│   │   ├── material_mysql.py               # 素材 CRUD
-│   │   └── categories_mysql.py             # 分类 CRUD
-│   ├── plugin/
-│   │   ├── minio/                          # MinIO 对象存储（上传/下载/预览）
-│   │   └── auth/                           # JWT 认证装饰器
+├── app/                              # Python 后端
+│   ├── api/v1/                       # REST API (agent, auth, chat, blueprint, material, translate)
+│   ├── config/                       # 环境变量 + 配置常量
+│   ├── package/module/               # MySQL 数据访问层 (user, chat, blueprint, material, categories)
+│   ├── plugin/                       # 插件 (JWT auth, MinIO 对象存储)
 │   └── util/
-│       ├── llm_client.py                   # LLM 客户端 — 懒加载单例 + 多级 Fallback
-│       ├── vision.py                        # 视觉分析（DeepSeek Vision）
-│       ├── search/                          # 搜索引擎（Bing + DuckDuckGo + SerpAPI + Local Scraper + LLM Summary，5 引擎多策略）
-│       ├── translate/                       # 翻译引擎（Argos Translate 本地 + LLM 回退 + TTL 缓存）
-│       │   ├── __init__.py                  # TranslationEngine + 缓存层
-│       │   └── models.py                    # 语言代码/检测/目标语言推断
-│       ├── agent/                           # Agent 系统核心包（32 模块，Agent OS 架构）
-│       │   ├── __init__.py                  # 包初始化，重导出关键类
-│       │   ├── core.py                      # AgentSession — 消息构建、视觉桥接、会话管理
-│       │   ├── engine.py                    # AgentEngine — 统一执行入口，集成 State/Critic/Router
-│       │   ├── guard.py                     # InputGuard / ToolGuard / OutputGuard 三级安全
-│       │   ├── intent.py                    # 意图分类 + 统一意图规划（支持 WorldState 上下文）
-│       │   ├── router.py                    # 意图 → Skill 路由
-│       │   ├── planner.py                   # 任务规划器
-│       │   ├── executor.py                  # BaseExecutor / AgentExecutor（工具执行 + 护栏 + Critic 提示）
-│       │   ├── dag.py                       # DAGExecutor — 拓扑排序 + 并行 + StateDAGNode 条件分支
-│       │   ├── dispatcher.py                # 子 Agent 调度 + 多 Agent 协商（negotiate）
-│       │   ├── tools.py                     # 工具注册表 + 21 个业务工具（新路径: tools/ 子目录）
-│       │   ├── memory.py                    # 4 层记忆（工作/短期/长期/项目）+ Project Memory
-│       │   ├── reflexion.py                 # AgentReflexion — retry/skip/escalate/strategy 四级
-│       │   ├── state.py           🆕        # WorldState — 统一 Agent 世界状态模型
-│       │   ├── state_store.py     🆕        # StateStore — Redis 持久化 + 版本管理
-│       │   ├── state_reducer.py   🆕        # StateReducer — 状态合并 + 冲突解决
-│       │   ├── state_snapshot.py  🆕        # SnapshotManager — 快照/回滚/diff
-│       │   ├── canvas_shadow.py   🆕        # CanvasShadow — 画布影子状态，跨轮次 ID 校验 + 线程安全锁
-│       │   ├── critic_agent.py    🆕        # CriticAgent — 独立四维质量审查
-│       │   ├── tool_router.py     🆕        # ToolRouter — 意图→工具集过滤（减少 40-60% prompt）
-│       │   ├── model_router.py    🆕        # ModelRouter — 任务→模型路由（cheap/balanced/quality）
-│       │   ├── pheromone.py                 # 信息素黑板 — 跨节点共享发现（Redis 持久化）
-│       │   ├── plan_eval.py                 # Plan-Feedback 闭环 — 执行后评分 → 用户隔离历史教训
-│       │   ├── cache.py                     # 工具结果缓存 + LLM 确定性缓存（状态感知失效）
-│       │   ├── circuit.py                   # Circuit Breaker — LLM 熔断保护
-│       │   ├── fallback.py                  # FallbackLLM — 多级故障转移
-│       │   ├── llm_stream.py                # SSE 流式响应处理
-│       │   ├── retry.py                     # 统一重试包装器（含指数退避）
-│       │   ├── tracer.py                    # Span 树调用链追踪
-│       │   ├── observability.py             # HealthChecker + MetricsCollector + Token 预算
-│       │   ├── adaptive.py                  # 自适应重规划
-│       │   ├── helpers.py                   # JSON 修复、Token 估算、工具函数
-│       │   ├── constants.py                 # 共享常量（37 个配置项）
-│       │   ├── skills.py                    # Skill 注册表（渐进式提示词注入）
-│       │   ├── mcp.py                       # MCP 协议封装
-│       │   ├── evaluator.py                 # 输出质量评估
-│       │   ├── tts.py                       # ChatTTS 文本转语音
-│       │   ├── skills/                      # 域 Skill 模块
-│       │   │   ├── canvas_skill.py          # 画布编辑知识
-│       │   │   ├── blueprint_skill.py       # 蓝图管理知识
-│       │   │   ├── mindmap_skill.py         # 思维导图知识
-│       │   │   ├── file_skill.py            # 文件管理知识
-│       │   │   ├── code_skill.py            # 代码生成知识
-│       │   │   └── translate_skill.py       # 翻译技能知识
-│       │   ├── tools/                       # 工具函数（按域拆分 + canvas 子包）
-│       │   │   ├── __init__.py               # 工具注册触发点
-│       │   │   ├── canvas.py                 # [已弃用] Canvas 旧工具（→ tools/canvas/）
-│       │   │   ├── canvas/          🆕       # Canvas 工具子包（语义化三工具）
-│       │   │   │   ├── _base.py              # 共享工具函数（pen ID 生成/参数解析/shadow 引用）
-│       │   │   │   ├── edit.py               # canvas_edit — 图形增删改（11 action）
-│       │   │   │   ├── organize.py           # canvas_organize — 布局对齐编组（7 action）
-│       │   │   │   └── view.py               # canvas_view — 视图/属性/快照（6 action）
-│       │   │   ├── blueprint.py              # Blueprint 工具 (list/load/save/search/export/diff/merge/from_template)
-│       │   │   ├── macro.py         🆕       # Macro 工具 — 操作宏的保存/列表/执行
-│       │   │   ├── file_ops.py               # 文件工具 (search/upload/delete/folder/rename)
-│       │   │   ├── web.py                    # Web 工具 (search/fetch)
-│       │   │   ├── geo.py                    # 地理工具 (geocode/route)
-│       │   │   ├── code.py                   # 代码工具 (generate)
-│       │   │   └── translate.py              # 翻译工具 (translate_text)
-│       │   ├── agents/                      # 子 Agent
-│       │   │   ├── base.py                  # AgentBase（ReAct 循环基类）
-│       │   │   ├── canvas_agent.py          # CanvasAgent — 画布操作
-│       │   │   ├── blueprint_agent.py       # BlueprintAgent — 蓝图管理
-│       │   │   ├── file_agent.py            # FileAgent — 文件素材
-│       │   │   └── code_agent.py            # CodeAgent — 代码生成
-│       │   └── eval/                        # Agent 评估框架
-│       └── json_response.py                 # 统一 JSON 响应工具
+│       ├── agent/                    # Agent 核心包 — Agent OS 架构 (30+ 模块)
+│       │   ├── core.py               # AgentSession — 消息构建、视觉桥接、会话管理
+│       │   ├── engine.py             # AgentEngine — 统一执行入口
+│       │   ├── guard.py              # InputGuard / ToolGuard / OutputGuard 三级安全
+│       │   ├── intent.py             # 意图分类 + 统一意图规划
+│       │   ├── planner.py            # 任务规划器
+│       │   ├── executor.py           # 工具执行器 + Critic 提示
+│       │   ├── dag.py                # DAG 并行执行引擎 + 条件分支
+│       │   ├── memory.py             # 4 层记忆体系 (工作/短期/长期/项目)
+│       │   ├── state.py              # WorldState — 统一世界状态模型
+│       │   ├── critic_agent.py       # CriticAgent — 独立四维质量审查
+│       │   ├── tool_router.py        # 意图→工具集路由 (减少 40-60% prompt)
+│       │   ├── model_router.py       # 任务→模型路由 (cheap/balanced/quality)
+│       │   ├── canvas_shadow.py      # CanvasShadow — 画布影子状态追踪
+│       │   ├── reflexion.py          # 战略反思 — retry/skip/escalate
+│       │   ├── circuit.py            # Circuit Breaker — LLM 熔断保护
+│       │   ├── fallback.py           # 多级 LLM 故障转移
+│       │   ├── observability.py      # 结构化追踪 + Token 预算
+│       │   ├── skills/               # 域 Skill 模块 (canvas, blueprint, mindmap, file, code, translate)
+│       │   ├── tools/                # 工具函数 (canvas 子包, blueprint, macro, file, web, geo, code, translate)
+│       │   ├── agents/               # 子 Agent (canvas, blueprint, file, code)
+│       │   └── eval/                 # Agent 评估框架
+│       ├── search/                   # 搜索引擎 (5 引擎多策略链 + 缓存 + 排序)
+│       ├── translate/                # 翻译引擎 (Argos 本地 + LLM 回退 + TTL 缓存)
+│       ├── vision.py                 # 视觉分析 (DeepSeek Vision)
+│       └── llm_client.py             # LLM 通用客户端
 │
-├── web/                                    # Vue 3 前端
+├── web/                              # Vue 3 前端
 │   ├── src/
-│   │   ├── main.ts                          # 应用入口 — Pinia、Router、Ant Design、TDesign、Monaco
-│   │   ├── views/
-│   │   │   ├── Index.vue                    # 主编辑器页面（Meta2D 画布 + 图形库 + 属性面板）
-│   │   │   ├── Preview.vue                  # 只读预览模式
-│   │   │   ├── chat/
-│   │   │   │   └── index.vue                # 全屏 AI 对话页（含会话列表 + 聊天区）
-│   │   │   └── user/                        # 登录 / 注册 / 个人中心
+│   │   ├── views/                    # 页面 (编辑器, 预览, 全屏聊天, 用户)
 │   │   ├── components/
-│   │   │   ├── Meta2D/                      # 核心编辑器组件（17 个子组件）
-│   │   │   │   ├── Editor/                  # Meta2D 画布渲染
-│   │   │   │   ├── Header/                  # 顶部工具栏（撤销/重做/缩放/保存/AI 助手）
-│   │   │   │   ├── Graphics/                # 左侧图形库侧边栏
-│   │   │   │   ├── Props/                   # 右侧统一属性面板
-│   │   │   │   ├── PenProps/                # 单图形属性编辑（带 100ms 渲染防抖）
-│   │   │   │   ├── FileProps/               # 画布级设置
-│   │   │   │   ├── Appearance/              # 多选外观样式
-│   │   │   │   ├── Animate/                 # 动画帧配置
-│   │   │   │   ├── Event/                   # 事件/动作绑定
-│   │   │   │   ├── DataValue/               # 数据变量绑定
-│   │   │   │   ├── Frames/                  # 帧/动画时间线
-│   │   │   │   ├── EditContainer/           # Monaco 代码编辑器容器
-│   │   │   │   ├── Share/                   # 导出/分享弹窗
-│   │   │   │   └── Video/                   # 视频播放器覆层
-│   │   │   ├── AgentPanel/                  # AI 对话抽屉面板
-│   │   │   │   ├── index.vue                # 抽屉容器 + SSE 流管理
-│   │   │   │   ├── AgentInput.vue           # 消息输入框
-│   │   │   │   ├── AgentMessageItem.vue     # 消息气泡渲染
-│   │   │   │   ├── AgentThinkCard.vue       # 思考步骤卡片
-│   │   │   │   ├── AgentToolCard.vue        # 工具调用卡片
-│   │   │   │   ├── AgentToolGroupCard.vue   # 工具调用分组
-│   │   │   │   └── AgentStreamHandler.ts    # SSE 事件流处理
-│   │   │   ├── chat/                        # 全屏聊天组件
-│   │   │   │   ├── ChatInput.vue            # 消息输入栏（文本/文件/语音/引用/翻译/表情）
-│   │   │   │   ├── ChatSidebar.vue          # 左侧会话列表（CRUD、搜索、Pin、导出 JSON/MD）
-│   │   │   │   ├── MsgRow.vue               # 消息行（支持 Markdown、代码块复制、图表卡片、语音朗读、消息编辑、右键菜单）
-│   │   │   │   ├── MsgContextMenu.vue       # 右键菜单（复制/删除/引用/编辑/翻译/语音朗读/反馈）
-│   │   │   │   ├── MsgReferenceCard.vue     # 引用消息卡片
-│   │   │   │   ├── ReferencePanel.vue       # 引用附件面板
-│   │   │   │   ├── TranslatePopover.vue     # 消息内联翻译弹窗（语言切换 + 朗读 + 复制）
-│   │   │   │   ├── WelcomePanel.vue         # 空状态欢迎词
-│   │   │   │   ├── ThinkCard.vue            # 思考过程卡片（可折叠）
-│   │   │   │   ├── PlanCard.vue             # Agent 执行计划卡片
-│   │   │   │   ├── CanvasPreview.vue        # 画布预览内联渲染
-│   │   │   │   ├── ChartCard.vue            # ECharts 图表卡片
-│   │   │   │   ├── FileCard.vue             # 文件信息卡片
-│   │   │   │   └── MindMapCard.vue          # markmap 思维导图卡片
-│   │   │   ├── FileManager/                 # 文件/素材管理器（含预览/重命名/上传子组件）
-│   │   │   ├── blueprint/                   # 蓝图弹窗（缩略图列表 + 打开/删除）
-│   │   │   └── shared/                      # 共享组件
-│   │   │       ├── ColorPicker.vue           # TDesign 颜色选择器封装
-│   │   │       ├── MapCard.vue               # AMap 高德地图卡片
-│   │   │       └── RouteCard.vue             # 路线规划卡片
-│   │   ├── composables/                     # Vue Composables（10 个）
-│   │   │   ├── useAgentChat.ts              # Agent SSE 流式聊天核心逻辑 + 消息编辑
-│   │   │   ├── useConversations.ts          # 会话 CRUD、Pin、分页、路由同步、导出 JSON/MD
-│   │   │   ├── useCanvas.ts                 # Meta2D 画布实例 provide/inject
-│   │   │   ├── useSpeech.ts                 # TTS 语音合成（Web Speech API 即时 + ChatTTS 高质量，双引擎自动选择）
-│   │   │   ├── useKeyboardShortcuts.ts      # 全局键盘快捷键
-│   │   │   ├── useScrollToBottom.ts         # 聊天列表自动滚底
-│   │   │   ├── useAttachments.ts            # 文件附件管理（上传/预览/移除）
-│   │   │   ├── useAuthCaptcha.ts            # 图形验证码
-│   │   │   ├── useMessageSelect.ts          # 消息多选（引用/删除多选）
-│   │   │   └── useTheme.ts                  # 暗色/亮色主题切换
-│   │   ├── api/                             # API 客户端（6 个模块）
-│   │   │   ├── agent.ts                     # Agent SSE + TTS
-│   │   │   ├── chat.ts                      # 会话 CRUD + 反馈 + 文件上传
-│   │   │   ├── user.ts                      # 认证（登录/注册/Token 刷新/个人中心）
-│   │   │   ├── blueprint.ts                 # 蓝图 CRUD
-│   │   │   ├── material.ts                  # 素材 CRUD
-│   │   │   └── translate.ts                 # 翻译文本 + 语言列表
-│   │   ├── store/
-│   │   │   └── modules/user.ts              # Pinia 用户状态（Token、登录/退出、个人信息）
-│   │   ├── router/
-│   │   │   ├── index.js                      # Hash 路由（首页/预览/聊天/登录/注册/个人中心）
-│   │   │   └── permission.js                # 路由守卫（Token 校验 + 重定向）
-│   │   └── utils/                           # 工具函数（15 个模块）
-│   │       ├── request.ts                    # Axios 实例（自动 Token 刷新、错误处理）
-│   │       ├── canvasBridge.ts               # 聊天 ↔ 画布双向通信桥（支持 3 工具语义路由 + 快照回滚）
-│   │       ├── layoutEngine.ts      🆕       # 智能布局引擎（网格/树形/力导向/分层 4 种算法）
-│   │       ├── graphicGroups.ts              # 图形分组配置
-│   │       ├── meta-storage.ts               # 画布持久化（localStorage）
-│   │       ├── defaultConfig.ts              # Meta2D 默认配置
-│   │       ├── config-contentmenu.ts         # 画布右键菜单配置
-│   │       ├── config-line.ts                # 连线样式配置
-│   │       ├── FileExplorer.ts               # 文件树数据结构
-│   │       ├── sanitize.ts                   # 输入清洗
-│   │       ├── uuid.ts                       # UUID 生成
-│   │       └── urlParamsManager.ts           # URL 查询参数管理
-│   ├── .env                                  # 前端环境变量
-│   ├── .env.development                      # 开发环境
-│   └── vite.config.ts                        # Vite 构建配置（代理、Monaco 分块、Windi CSS）
+│   │   │   ├── Meta2D/               # 核心编辑器 (17 个子组件: 画布, 工具栏, 属性面板, 动画, 事件...)
+│   │   │   ├── AgentPanel/           # AI 对话抽屉面板
+│   │   │   ├── chat/                 # 全屏聊天组件 (消息/引用/翻译/思维导图/图表卡片...)
+│   │   │   ├── FileManager/          # 文件/素材管理器
+│   │   │   ├── blueprint/            # 蓝图弹窗
+│   │   │   └── shared/               # 共享组件 (MapCard, RouteCard, ColorPicker)
+│   │   ├── composables/              # Vue Composables (useAgentChat, useConversations, useSpeech...)
+│   │   ├── api/                      # API 客户端 (agent, chat, user, blueprint, material, translate)
+│   │   ├── store/modules/            # Pinia 状态管理 (user)
+│   │   ├── router/                   # Hash 路由 + 权限守卫
+│   │   └── utils/                    # 工具函数 (canvasBridge, layoutEngine, request...)
+│   └── vite.config.ts                # Vite 构建配置
 │
-├── app/data/                                 # 后端数据文件
-│   ├── blueprint_templates/         🆕       # 蓝图模板（5 个预置模板 JSON）
-│
-├── tests/                                   # Python 测试（11 个文件）
-│   ├── conftest.py                           # 共享 Fixtures（Flask app、mock LLM/Redis/DB）
-│   ├── test_agent_api.py                     # Agent SSE / TTS 端点测试
-│   ├── test_agent_guard.py                   # Guard 三级安全测试
-│   ├── test_agent_tools.py                   # 工具函数测试
-│   ├── test_llm_retry.py                     # LLM 重试/退避测试
-│   ├── test_memory_unified.py                # 统一记忆管理测试
-│   ├── test_material_mysql.py                # 素材 MySQL CRUD 测试
-│   ├── test_minio.py                         # MinIO 对象存储测试
-│   ├── test_search_engines.py                # 搜索引擎测试
-│   └── test_vision.py                        # 视觉分析测试
-│
-├── scripts/
-│   └── run_checks.sh                         # 全量质量门禁（Ruff → Pytest → vue-tsc → Build）
-├── sql/                                      # 数据库初始化脚本
-├── docs/                                     # GitHub Pages 部署目录
-├── static/                                   # 静态资源
-├── images/                                   # 截图
-├── starter.py                                # 后端启动入口
-├── Dockerfile                                # Python 3.12-slim 镜像（Aliyun 源）
-├── docker-compose.yml                        # 三服务编排（app + mysql + redis）
-├── requirements.txt                          # Python 依赖
-├── pyproject.toml                            # Ruff + Pytest 配置
-├── .env.example                              # 环境配置模板
-└── CLAUDE.md                                 # 项目开发指南
+├── tests/                            # Python 测试 (11 个文件, pytest + vitest)
+├── scripts/                          # 质量门禁脚本
+├── sql/                              # 数据库初始化
+├── docs/                             # GitHub Pages 部署
+├── app/data/blueprint_templates/     # 预置蓝图模板 (5 个)
+├── starter.py                        # 后端启动入口
+├── Dockerfile                        # Python 3.12-slim 镜像
+├── docker-compose.yml                # 三服务编排 (app + mysql + redis)
+├── requirements.txt                  # Python 依赖
+├── pyproject.toml                    # Ruff + Pytest 配置
+├── .env.example                      # 环境配置模板
+└── CLAUDE.md                         # 项目开发指南
 ```
 
 ---
@@ -505,8 +401,6 @@ pnpm dev:web
 }
 ```
 
-> `canvas_context` 用于 Agent 理解当前画布状态；`canvas_snapshot` 用于 blueprint_save 原子写入完整 pens 数据。新增 `viewportCenter` 和 `selectedIds` 字段辅助 Agent 定位。
-
 **SSE 事件类型：**
 
 | 事件 | 说明 |
@@ -607,12 +501,6 @@ web_search(query)
 | **监控** | 成功率滑动窗口 + 引擎降级 + 自动告警 |
 | **排序** | BM25 算法 + 去重 + 统一格式化 |
 
-### 分类
-
-| 方法 | 路径 | 说明 |
-|------|------|------|
-| `GET` | `/v1/categories/lists` | 分类列表 |
-
 ---
 
 ## Agent 架构
@@ -629,7 +517,7 @@ Level 4  Agent Runtime       DAG + 规划 + 反思 + 长期记忆
 Level 5  Agent OS  ← 当前    状态管理 + 项目认知 + 独立审查 + 战略反思 + 多 Agent 协作
 ```
 
-### 架构层次（v2.1 — 本次优化后）
+### 执行流程
 
 ```
 用户输入 → InputGuard
@@ -637,14 +525,14 @@ Level 5  Agent OS  ← 当前    状态管理 + 项目认知 + 独立审查 + �
         StateManager.load()     ← 加载 WorldState + CanvasShadow
         CanvasShadow.sync()     ← 前端快照 → 影子状态 diff 同步
                 ↓
-        ToolRouter.route()      ← 按领域过滤工具集（canvas → 3 语义工具，减少 prompt 40-60%）
+        ToolRouter.route()      ← 按领域过滤工具集（减少 prompt 40-60%）
         ModelRouter.route()     ← 按任务复杂度选模型（cheap/balanced/quality）
                 ↓
         SnapshotManager.save("pre_execution")
                 ↓
         Intent 分类（LLM Cache 状态感知失效 → canvas/blueprint 版本变化自动刷新）
                 ↓
-        Domain Skill 注入 → Plan 生成（统一 LLM 调用 + WorldState + CanvasShadow + PlanFeedback 用户隔离）
+        Domain Skill 注入 → Plan 生成（统一 LLM 调用 + WorldState + CanvasShadow）
                 ↓
         AgentEngine 路由
         ├── simple 模式 → BaseExecutor（单轮 ReAct 循环）
@@ -671,31 +559,20 @@ Level 5  Agent OS  ← 当前    状态管理 + 项目认知 + 独立审查 + �
 | **Canvas** | `canvas_edit` | 图形编辑（11 action: add_pen/add_line/add_diagram/update_pen/delete_pen/duplicate/move_pen/undo/redo/clear/get_state） |
 | | `canvas_organize` | 图形组织（7 action: group/ungroup/lock/unlock/toggle_visibility/auto_arrange/align） |
 | | `canvas_view` | 视图与属性（6 action: set_props/fit_view/check_empty/list_snapshots/restore_snapshot/save_snapshot） |
-| **Layout** | `auto_arrange`（内置于 canvas_organize） | 4 种布局算法：网格(grid) / 树形(tree) / 力导向(force) / 分层(layered) |
-| | `align`（内置于 canvas_organize） | 6 方向对齐：左/中/右/上/中/下 |
-| **Blueprint** | `blueprint_list` | 蓝图列表（分页） |
-| | `blueprint_load` | 加载蓝图到画布 |
-| | `blueprint_save` | 保存当前画布为蓝图（原子写入，canvas_snapshot 注入） |
-| | `blueprint_search` | 按名称搜索蓝图 |
-| | `blueprint_export` | 导出为 PNG/SVG/JSON |
-| | `blueprint_diff` 🆕 | 对比两个蓝图的节点差异（新增/删除/修改） |
-| | `blueprint_merge` 🆕 | 合并蓝图（add/replace/preview 三种模式） |
-| | `blueprint_from_template` 🆕 | 从预置模板（三层架构/微服务/数据管道/类图/SWOT）创建蓝图 |
-| **Macro** | `macro` 🆕 | 操作宏管理（list/run/save），保存可复用的画布操作序列 |
-| **Web** | `web_search` | 网络搜索（5 引擎多策略链，含缓存/排序/监控） |
-| | `web_fetch` | 抓取网页内容并提取正文 |
-| **Geo** | `geo_geocode` | 地理编码（地址→坐标） |
-| | `geo_route` | 路线规划（驾车/步行/公交） |
-| **翻译** | `translate_text` | 翻译文本（Argos 本地 + LLM 回退，三种风格） |
-| **文件** | `file_search` / `file_upload` / `file_delete` / `file_folder_create` / `file_rename` | 素材文件 CRUD |
-| **代码** | `code_generate` | 生成 JavaScript/JSON 代码 |
+| **Blueprint** | `blueprint_*` | 列表/加载/保存/搜索/导出/diff/merge/从模板创建 |
+| **Macro** | `macro` | 操作宏管理（list/run/save），Redis 持久化 |
+| **Web** | `web_search` / `web_fetch` | 5 引擎搜索 + 网页内容抓取 |
+| **Geo** | `geo_geocode` / `geo_route` | 地理编码 + 路线规划 |
+| **翻译** | `translate_text` | Argos 本地 + LLM 回退，三种风格 |
+| **文件** | `file_*` | 素材文件 CRUD |
+| **代码** | `code_generate` | JavaScript/JSON 代码生成 |
 
 ### 子 Agent
 
 | Agent | 工具域 | 职责 |
 |-------|--------|------|
 | `canvas_agent` | canvas_edit + canvas_organize + canvas_view + blueprint_save | 画布图形创建、编辑、布局、视图、快照、保存 |
-| `blueprint_agent` | blueprint_* + blueprint_diff + blueprint_merge + blueprint_from_template | 蓝图搜索、加载、保存、导出、对比、合并、模板创建 |
+| `blueprint_agent` | blueprint_* + diff + merge + from_template | 蓝图搜索、加载、保存、导出、对比、合并、模板创建 |
 | `file_agent` | file_search | 文件/素材检索管理 |
 | `code_agent` | code_generate | JavaScript/JSON 代码生成 |
 
@@ -703,27 +580,23 @@ Level 5  Agent OS  ← 当前    状态管理 + 项目认知 + 独立审查 + �
 
 | 特性 | 说明 |
 |------|------|
-| **🆕 Canvas Tool Unification** | 画布工具从 6 个独立工具重构为 3 个语义工具（edit/organize/view），减少 prompt 模糊性 |
-| **🆕 CanvasShadow 状态追踪** | 后端维护轻量画布影子状态，跨轮次 pen ID 校验 + 线程安全锁，Agent 知道哪些图形真实存在 |
-| **🆕 Canvas Context 语义截断** | 4 层预算分配（选中→邻居→有文字→其余），确保关键上下文不被截断 |
-| **🆕 Layout Engine** | 4 种布局算法：网格(grid) / 树形(tree) / 力导向(force) / 分层(layered)，前端纯计算 |
-| **🆕 Canvas Snapshot 回滚** | 每次写操作自动快照，对话中随时回滚到历史版本（list/restore/save） |
-| **🆕 Macro 操作宏** | 将操作序列保存为可复用宏（list/run/save），Redis 持久化 |
-| **🆕 Cross-Blueprint** | 蓝图对比(diff)、合并(merge add/replace/preview)、从模板创建(from_template) |
-| **🆕 Blueprint Save 原子化** | canvas_snapshot 注入 → 后端一步写入完整蓝图，消除前后端两阶段提交 |
-| **🆕 PlanFeedback 用户隔离** | Plan Memory key 增加 user_id 维度，防止跨用户计划教训泄露 |
-| **🆕 LLM Cache 状态感知** | 缓存 key 混入画布/蓝图版本号，状态变化自动失效避免过期意图 |
-| **🆕 WorldState 状态管理** | 统一 Agent 世界状态模型，JSON 序列化，乐观锁版本控制，所有模块共享 |
-| **🆕 StateStore + 快照** | Redis 持久化状态 + 版本快照/回滚/diff，支持时间旅行调试 |
-| **🆕 StateReducer** | 并行 DAG 节点的确定性状态合并 + 冲突检测 |
-| **🆕 Project Memory** | 跨会话项目级记忆（用户偏好/技术栈约束/历史决策），4 层记忆体系 |
-| **🆕 Critic Agent** | 独立质量审查 Agent，正确性/完整性/一致性/安全性四维评估 |
-| **🆕 ToolRouter** | 意图→工具集路由，prompt 中 tool schema 数量减少 40-60% |
-| **🆕 ModelRouter** | 任务类型→模型路由，cheap/balanced/quality 三档成本优化 |
-| **🆕 Strategic Reflexion** | 战略级反思 — 发现计划不合理时直接重规划（非继续重试） |
-| **🆕 StateDAGNode** | 条件分支 DAG 节点，支持前置条件/后置条件/条件边 |
-| **🆕 Multi-Agent Negotiation** | 多 Agent propose→critique→consensus 协商机制 |
-| **🆕 Pheromone Redis 持久化** | 信息素黑板跨会话恢复，DAG 节点失败后可恢复上下文 |
+| **Canvas Tool Unification** | 画布工具从 6 个重构为 3 个语义工具（edit/organize/view），减少 LLM 混淆 |
+| **CanvasShadow 状态追踪** | 后端维护轻量画布影子状态，跨轮次 pen ID 校验 + 线程安全锁 |
+| **Canvas Context 语义截断** | 4 层预算分配（选中→邻居→有文字→其余），确保关键上下文不被截断 |
+| **Layout Engine** | 4 种布局算法：网格(grid) / 树形(tree) / 力导向(force) / 分层(layered) |
+| **Canvas Snapshot 回滚** | 每次写操作自动快照，对话中随时回滚到历史版本 |
+| **Macro 操作宏** | 将操作序列保存为可复用宏，Redis 持久化 |
+| **Cross-Blueprint** | 蓝图对比(diff)、合并(merge add/replace/preview)、从模板创建(from_template) |
+| **WorldState 状态管理** | 统一 Agent 世界状态模型，JSON 序列化，乐观锁版本控制 |
+| **StateStore + 快照** | Redis 持久化状态 + 版本快照/回滚/diff，支持时间旅行调试 |
+| **StateReducer** | 并行 DAG 节点的确定性状态合并 + 冲突检测 |
+| **Project Memory** | 跨会话项目级记忆（用户偏好/技术栈约束/历史决策） |
+| **Critic Agent** | 独立质量审查 Agent，正确性/完整性/一致性/安全性四维评估 |
+| **ToolRouter** | 意图→工具集路由，prompt 中 tool schema 数量减少 40-60% |
+| **ModelRouter** | 任务类型→模型路由，cheap/balanced/quality 三档成本优化 |
+| **Strategic Reflexion** | 战略级反思 — 发现计划不合理时直接重规划 |
+| **StateDAGNode** | 条件分支 DAG 节点，支持前置条件/后置条件/条件边 |
+| **Multi-Agent Negotiation** | 多 Agent propose→critique→consensus 协商机制 |
 | **统一意图规划** | 单次 LLM 调用同时完成意图分类 + 领域检测 + DAG 计划生成 |
 | **DAG 并行执行** | 无依赖步骤同时执行，拓扑排序调度，信息素跨节点传递 |
 | **AgentReflexion** | 工具失败自动分析原因，retry/skip/escalate + strategy 四级纠正 |
@@ -744,24 +617,8 @@ Memory
 ├── Working Memory   (进程内存)        当前会话上下文，LLM 驱动的上下文压缩
 ├── Short-Term       (Redis, TTL 1h)   最近会话摘要 + 话题标签
 ├── Long-Term        (Redis, TTL 30d)  历史会话索引，关键词匹配检索
-└── Project 🆕       (Redis, TTL 30d)  跨会话项目知识（偏好/规范/约束/决策）
+└── Project          (Redis, TTL 30d)  跨会话项目知识（偏好/规范/约束/决策）
 ```
-
-### 新增/更新模块职责
-
-| 模块 | 文件 | 职责 |
-|------|------|------|
-| **State** | `state.py` | `WorldState` — 画布/蓝图/文件/任务/风险/置信度统一模型 |
-| **StateStore** | `state_store.py` | Redis key: `state:current:{user_id}`，`state:snapshot:{user_id}:{version}` |
-| **StateReducer** | `state_reducer.py` | 确定性状态合并（set/merge/append/increment/delete_key）+ 乐观锁冲突检测 |
-| **Snapshot** | `state_snapshot.py` | 执行前后快照、diff 变更追踪、版本回滚、list_versions 快照列表 |
-| **CanvasShadow** 🆕 | `canvas_shadow.py` | 画布影子状态 — 后端维护的轻量画布模型，跨轮次 ID 校验 + 线程安全锁 |
-| **Canvas Tools** 🆕 | `tools/canvas/` | 语义化三工具（edit/organize/view），3 个 schema 替代旧 6 个，减少 LLM 混淆 |
-| **Macro** 🆕 | `tools/macro.py` | 操作宏管理（list/run/save），Redis 持久化，支持自然语言创建和执行 |
-| **Layout Engine** 🆕 | `layoutEngine.ts` | 4 种布局算法（grid/tree/force/layered），前端纯计算，支持树形/力导向/分层 |
-| **Critic** | `critic_agent.py` | 独立 LLM 审查：正确性/完整性/一致性/安全性，输出 CriticReview |
-| **ToolRouter** | `tool_router.py` | 领域→工具集映射（canvas → 3 语义工具），关键词扩展，缓存友好 |
-| **ModelRouter** | `model_router.py` | 10 种任务类型 → cheap/balanced/quality 三档模型选择 |
 
 ### 与业界框架对比
 
@@ -769,16 +626,16 @@ Memory
 |------|:----------:|:---------:|:------:|:-------:|
 | DAG 并行执行 | ✅ | ✅ | ❌ | ❌ |
 | 统一状态管理 | ✅ | ✅ | ❌ | ❌ |
-| 画布影子状态追踪 | ✅ 🆕 | ❌ | ❌ | ❌ |
+| 画布影子状态追踪 | ✅ | ❌ | ❌ | ❌ |
 | 独立 Critic Agent | ✅ | ❌ | ❌ | ❌ |
-| 工具路由 + 语义化 | ✅ 🆕 | ❌ | ❌ | ❌ |
+| 工具路由 + 语义化 | ✅ | ❌ | ❌ | ❌ |
 | 模型路由 | ✅ | ❌ | ❌ | ❌ |
 | 项目级记忆 | ✅ | ❌ | ❌ | ❌ |
 | 战略反思 | ✅ | ❌ | ❌ | ❌ |
 | 多 Agent 协商 | ✅ | ❌ | ✅ | ✅ |
-| 状态快照/回滚 | ✅ 🆕 | ✅ | ❌ | ❌ |
-| 操作宏/模板 | ✅ 🆕 | ❌ | ❌ | ❌ |
-| 蓝图 diff/merge | ✅ 🆕 | ❌ | ❌ | ❌ |
+| 状态快照/回滚 | ✅ | ✅ | ❌ | ❌ |
+| 操作宏/模板 | ✅ | ❌ | ❌ | ❌ |
+| 蓝图 diff/merge | ✅ | ❌ | ❌ | ❌ |
 | 熔断 + Fallback | ✅ | ❌ | ❌ | ❌ |
 | MCP 协议 | ✅ | ❌ | ❌ | ❌ |
 
@@ -892,9 +749,8 @@ pnpm dev:web
 
 前端运行在 `http://localhost:3100`，API 代理到 `http://localhost:5001`。
 
----
-
-### Docker 常用命令
+<details>
+<summary><b>📋 Docker 常用命令参考</b></summary>
 
 ```powershell
 # ── 容器管理 ────────────────────────────────────────
@@ -934,6 +790,8 @@ docker images mind-app                # 查看镜像大小
 docker builder prune                  # 清理构建缓存
 docker system prune -a                # 清理所有无用镜像/容器
 ```
+
+</details>
 
 ### Docker 常见问题
 
@@ -984,13 +842,16 @@ bash scripts/run_checks.sh
 
 ### Commit 规范
 
-遵循 Conventional Commits：
-- `feat:` — 新功能
-- `fix:` — Bug 修复
-- `refactor:` — 重构
-- `perf:` — 性能优化
-- `docs:` — 文档
-- `chore:` — 杂项
+遵循 [Conventional Commits](https://www.conventionalcommits.org/)：
+
+| 前缀 | 用途 | 示例 |
+|------|------|------|
+| `feat:` | 新功能 | `feat: add canvas snapshot rollback` |
+| `fix:` | Bug 修复 | `fix: resolve SSE connection leak` |
+| `refactor:` | 重构 | `refactor: unify canvas tools into 3 semantic tools` |
+| `perf:` | 性能优化 | `perf: add LLM deterministic cache` |
+| `docs:` | 文档 | `docs: update API reference` |
+| `chore:` | 杂项 | `chore: update dependencies` |
 
 ### Agent 开发约定
 
@@ -1009,6 +870,26 @@ from app.util.agent_core import AgentSession
 - 所有 `except:` 必须记录日志，禁止裸 except
 
 详见 [`CLAUDE.md`](CLAUDE.md)。
+
+---
+
+## 贡献指南
+
+欢迎贡献代码、报告问题或提出建议！
+
+### 贡献流程
+
+1. **Fork** 本仓库
+2. 创建特性分支：`git checkout -b feat/your-feature`
+3. 编写代码并确保通过质量门禁：`bash scripts/run_checks.sh`
+4. 遵循 [Conventional Commits](#commit-规范) 提交代码
+5. 推送到远程分支并发起 **Pull Request** 到 `main` 分支
+
+### 问题反馈
+
+- 使用 [GitHub Issues](https://github.com/opendidi/mind/issues) 报告 Bug 或提出功能建议
+- 请提供详细的操作步骤、预期行为和实际行为
+- 附带相关的日志或截图（如有）
 
 ---
 
