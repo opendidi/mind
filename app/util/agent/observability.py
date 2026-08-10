@@ -170,7 +170,7 @@ class HealthChecker:
     def _check_executor() -> dict:
         status = "ok"
         try:
-            from app.util.agent.tools import ToolRegistry
+            from app.util.tool_registry import ToolRegistry
 
             tools = ToolRegistry.list_tools()
             enabled = sum(1 for _, e in tools if e)
@@ -183,7 +183,7 @@ class HealthChecker:
     @staticmethod
     def _check_tools() -> dict:
         try:
-            from app.util.agent.tools import ToolRegistry
+            from app.util.tool_registry import ToolRegistry
 
             tools = ToolRegistry.list_tools()
             enabled = [n for n, e in tools if e]

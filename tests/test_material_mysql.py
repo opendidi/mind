@@ -38,7 +38,8 @@ class TestPathSegmentEdgeCases:
 
     def test_no_trailing_slash(self):
         result = extract_path_segment("http://host/mind/123/file.txt", start_segment="/mind/", levels=2)
-        assert result.endswith("/") or len(result) > 0
+        # Should return a non-empty string (typically with trailing slash)
+        assert isinstance(result, str) and len(result) > 0, f"Unexpected result: {result!r}"
 
     def test_deep_path(self):
         url = "http://host/mind/abc/def/ghi/file.txt"

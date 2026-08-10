@@ -136,5 +136,20 @@ def run_tool_call(
             return result, False
 
     # Normal tool execution via ToolRegistry
+    # ── Tool Result Cache (read) ──
+    from app.util.agent.cache import cache_get as _cache_get, cache_set as _cache_set, cache_invalidate as _cache_invalidate
+
+    cached = _cache_get(tool_name, tool_args, tool_context.get("user_id", ""))
+    if cached is not None:
+        logging.debug("ToolCache HIT: %s", tool_name)
+        return cached, True
+
     result = ToolRegistry.execute(tool_name, tool_args, tool_context)
+
+    # ── Tool Result Cache (write) ──
+    if result.get("success"):
+        _cache_set(tool_name, tool_args, result, tool_context.get("user_id", ""))
+    # Invalidate related caches for write operations
+    _cache_invalidate(tool_name, tool_args)
+
     return result, False

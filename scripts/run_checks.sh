@@ -20,8 +20,13 @@ cd web && npx vue-tsc --noEmit || { echo "❌ Type check failed"; exit 1; }
 echo "✅ Type check passed"
 
 echo ""
+echo "=== Frontend Tests (Vitest) ==="
+cd web && npx vitest run || { echo "❌ Vitest failed"; exit 1; }
+echo "✅ Vitest passed"
+
+echo ""
 echo "=== Frontend Build ==="
-pnpm build || { echo "❌ Build failed"; exit 1; }
+cd web && pnpm build || { echo "❌ Build failed"; exit 1; }
 echo "✅ Build passed"
 
 echo ""

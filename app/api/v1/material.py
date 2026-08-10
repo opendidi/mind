@@ -18,6 +18,7 @@ LastEditTime: 2025-08-15 15:09:31
 # -*- coding: UTF-8 -*-
 
 import json
+import logging
 import os
 import shutil
 import time
@@ -208,7 +209,8 @@ def material_modify():
             else:
                 return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, "修改失败")
     except Exception as e:
-        return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, str(e))
+        logging.getLogger(__name__).error("material_modify 操作失败: %s", e, exc_info=True)
+        return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, "修改失败，请稍后重试")
 
 
 @material_api.route("/scissors", methods=["POST"])
@@ -227,7 +229,8 @@ def scissors():
             else:
                 return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, "剪切失败")
     except Exception as e:
-        return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, str(e))
+        logging.getLogger(__name__).error("scissors 操作失败: %s", e, exc_info=True)
+        return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, "剪切失败，请稍后重试")
 
 
 @material_api.route("/copy", methods=["POST"])
@@ -246,4 +249,5 @@ def copy():
             else:
                 return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, "复制失败")
     except Exception as e:
-        return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, str(e))
+        logging.getLogger(__name__).error("copy 操作失败: %s", e, exc_info=True)
+        return ProtocolBuilder.build_response({}, StatusCode.INTERNAL_ERROR, "复制失败，请稍后重试")

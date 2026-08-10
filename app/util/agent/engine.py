@@ -56,10 +56,15 @@ class AgentEngine:
         self.state_store = StateStore()
         self.snapshot_mgr = SnapshotManager(self.state_store)
 
-        # ── Phase 0: Critic Agent ──
-        from app.util.agent.critic_agent import CriticAgent
+        # ── Phase 0: Critic Agent (configurable via AGENT_CRITIC_ENABLED) ──
+        import os as _os
 
-        self.critic = CriticAgent(llm_client, model)
+        _critic_enabled = _os.environ.get("AGENT_CRITIC_ENABLED", "true").lower() in ("1", "true", "yes")
+        self.critic = None
+        if _critic_enabled:
+            from app.util.agent.critic_agent import CriticAgent
+
+            self.critic = CriticAgent(llm_client, model)
 
         # ── Phase 1: Routers (lazy init) ──
         self._tool_router = None
@@ -209,8 +214,8 @@ class AgentEngine:
                 session_id=session_id,
             )
 
-            # ── Critic Hints (Quick Win 2) ──
-            pre_critic = self.critic.review_plan(precomputed_plan, user_message, domains) if precomputed_plan else None
+            # ── Critic Hints (Quick Win 2, configurable) ──
+            pre_critic = self.critic.review_plan(precomputed_plan, user_message, domains) if (self.critic and precomputed_plan) else None
             if pre_critic and pre_critic.issues:
                 executor.set_critic_hints(pre_critic.get_quality_hints())
 

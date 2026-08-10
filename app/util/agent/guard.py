@@ -15,7 +15,7 @@ def _load_word_list(filename: str) -> set:
     """Load a word list from file, one word per line, skip empty/comments."""
     words = set()
     try:
-        path = os.path.join(os.path.dirname(__file__), "agent_eval", filename)
+        path = os.path.join(os.path.dirname(__file__), "eval", filename)
         if os.path.exists(path):
             with open(path, "r", encoding="utf-8") as f:
                 for line in f:
@@ -112,8 +112,22 @@ class ToolGuard:
 
     # Max calls per tool per session
     _tool_call_counts: dict = {}
+    _tool_call_timestamps: dict = {}  # For TTL cleanup
     _lock = threading.Lock()
+    _TOOL_COUNT_TTL = 3600  # 1 hour TTL for call counts
     from app.util.agent.constants import MAX_CALLS_PER_TOOL
+
+    @classmethod
+    def _cleanup_stale_entries(cls):
+        """Remove call count entries older than TTL."""
+        now = time.time()
+        stale_keys = [
+            k for k, ts in cls._tool_call_timestamps.items()
+            if now - ts > cls._TOOL_COUNT_TTL
+        ]
+        for k in stale_keys:
+            cls._tool_call_counts.pop(k, None)
+            cls._tool_call_timestamps.pop(k, None)
 
     @classmethod
     def check_tool_call(cls, tool_name: str, tool_args: dict, session_id: str = "") -> dict:
@@ -121,11 +135,15 @@ class ToolGuard:
 
         Returns {"ok": True} or {"ok": False, "reason": str, "confirm_required": bool}.
         """
+        # Periodic cleanup of stale entries
+        cls._cleanup_stale_entries()
+
         # Rate limit
         with cls._lock:
             key = f"{session_id}:{tool_name}"
             count = cls._tool_call_counts.get(key, 0) + 1
             cls._tool_call_counts[key] = count
+            cls._tool_call_timestamps[key] = time.time()
         if count > cls.MAX_CALLS_PER_TOOL:
             return {
                 "ok": False,

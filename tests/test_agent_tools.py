@@ -77,14 +77,15 @@ class TestFileTools:
     """File search tool validation."""
 
     def test_file_search_no_keyword(self):
-        result = run_tool_call(
+        result, cached = run_tool_call(
             "file_search",
             {},
             {"task_id": "test"},
         )
         # Should error without keyword
         assert result is not None
-        assert "keyword" in str(result).lower() if isinstance(result, str) else True
+        assert not result.get("success", True), f"Expected error without keyword, got: {result}"
+        assert "keyword" in str(result).lower()
 
 
 class TestGeoTools:

@@ -13,7 +13,7 @@ from types import SimpleNamespace
 from typing import Generator
 
 from app.config import AGENT_DEFAULT_MODEL
-from app.util.agent.executor import BaseExecutor
+from app.util.agent.base_executor import BaseExecutor
 from app.util.agent.helpers import loop_key as _loop_key
 from app.util.agent.pheromone import SharedContext
 from app.util.executor import ExecutorTimeout, ManagedPool
@@ -135,7 +135,7 @@ def _has_cycle(nodes) -> bool:
 
 # ── Constants ──────────────────────────────────────────────────────────────
 
-from app.util.agent.constants import MAX_DAG_TOTAL_SECONDS, MAX_LOOP_REPEAT, MAX_NODE_SECONDS, MAX_REFLECT_RETRIES
+from app.util.agent.constants import MAX_DAG_LOOP_ITERATIONS, MAX_DAG_TOTAL_SECONDS, MAX_LOOP_REPEAT, MAX_NODE_SECONDS, MAX_REFLECT_RETRIES
 
 # ── MODELS ──────────────────────────────────────────────────────────────────
 
@@ -411,7 +411,7 @@ class DAGExecutor(BaseExecutor):
                 return _finish_step(False, {"error": f"节点超时（{MAX_NODE_SECONDS}秒）"})
             self._trim_step_messages(msgs)
             iteration = 0
-            while iteration < 50:
+            while iteration < MAX_DAG_LOOP_ITERATIONS:
                 if time.time() - node_start > MAX_NODE_SECONDS:
                     return _finish_step(False, {"error": f"节点超时（{MAX_NODE_SECONDS}秒）"})
                 iteration += 1

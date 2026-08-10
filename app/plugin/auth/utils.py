@@ -14,7 +14,23 @@ import bcrypt
 import jwt
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
 
-SECRET_KEY = os.environ.get("SECRET_KEY", os.urandom(32).hex())
+# SECRET_KEY is loaded from environment only; fallback is handled by create_app().
+# Using os.urandom here would break JWT tokens across restarts/workers.
+_SECRET_KEY = os.environ.get("SECRET_KEY")
+if not _SECRET_KEY:
+    import logging
+    logging.getLogger(__name__).warning(
+        "SECRET_KEY not set in environment — JWT tokens will be invalid "
+        "across restarts. Set SECRET_KEY in .env or production config."
+    )
+
+
+def _get_secret_key() -> str:
+    """Return the JWT signing key, reading fresh from env each call."""
+    key = os.environ.get("SECRET_KEY")
+    if not key:
+        raise RuntimeError("SECRET_KEY is required but not configured")
+    return key
 JWT_ACCESS_EXPIRES = int(os.environ.get("JWT_ACCESS_TOKEN_EXPIRES", 30 * 60))  # 30 min
 JWT_REFRESH_EXPIRES = int(os.environ.get("JWT_REFRESH_TOKEN_EXPIRES", 7 * 86400))  # 7 days
 JWT_ALGORITHM = "HS256"
@@ -28,7 +44,7 @@ def create_access_token(user_id: str) -> str:
         "exp": datetime.utcnow() + timedelta(seconds=JWT_ACCESS_EXPIRES),
         "iat": datetime.utcnow(),
     }
-    return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
+    return jwt.encode(payload, _get_secret_key(), algorithm=JWT_ALGORITHM)
 
 
 def create_refresh_token(user_id: str) -> str:
@@ -39,11 +55,11 @@ def create_refresh_token(user_id: str) -> str:
         "exp": datetime.utcnow() + timedelta(seconds=JWT_REFRESH_EXPIRES),
         "iat": datetime.utcnow(),
     }
-    return jwt.encode(payload, SECRET_KEY, algorithm=JWT_ALGORITHM)
+    return jwt.encode(payload, _get_secret_key(), algorithm=JWT_ALGORITHM)
 
 
 def decode_token(token: str) -> dict:
-    return jwt.decode(token, SECRET_KEY, algorithms=[JWT_ALGORITHM])
+    return jwt.decode(token, _get_secret_key(), algorithms=[JWT_ALGORITHM])
 
 
 def hash_password(password: str) -> str:

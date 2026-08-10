@@ -13,19 +13,10 @@ import json
 import logging
 import os
 import uuid
-from datetime import datetime
-
 import pymysql
 import pymysql.cursors
 
-import app.util.file as PanoFile
-from app.plugin.minio import minio_cdn_url
-from app.plugin.minio.app.controller import MinioUtil
-from app.util.log_config import setup_logging
-
-from .connect import ConnectMysqlHandler, generic_modify
-
-dirname = os.path.dirname(os.path.abspath(__name__))
+from .connect import ConnectMysqlHandler, generic_modify, normalize_datetime
 
 
 class BlueprintMysqlHandler:
@@ -50,12 +41,7 @@ class BlueprintMysqlHandler:
                 results = cursor.fetchall()
 
                 for row in results:
-                    if isinstance(row["created_at"], str):
-                        row["created_at"] = datetime.strptime(row["created_at"], "%a, %d %b %Y %H:%M:%S %Z").strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        )
-                    elif isinstance(row["created_at"], datetime):
-                        row["created_at"] = row["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+                    row["created_at"] = normalize_datetime(row["created_at"])
 
                 params_count = [user_id]
                 count_sql = """

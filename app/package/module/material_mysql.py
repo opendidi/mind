@@ -13,25 +13,16 @@ import logging
 import os
 import time
 import uuid
-from datetime import datetime
-
 import pymysql
 import pymysql.cursors
 
 import app.util.file as PanoFile
 from app.plugin.minio import minio_cdn_url
 from app.plugin.minio.app.controller import MinioUtil
-from app.util.log_config import setup_logging
-
-from .connect import ConnectMysqlHandler, generic_modify
-
-dirname = os.path.dirname(os.path.abspath(__name__))
+from .connect import ConnectMysqlHandler, generic_modify, normalize_datetime
 
 # 获取操作系统类型
 platform = os.name
-
-if platform == "nt":
-    logger = setup_logging(log_file=dirname + "\\app\\log\\MaterialMysqlHandler.log")
 
 
 def extract_path_segment(url, start_segment="/pano/", levels=2):
@@ -126,13 +117,7 @@ class MaterialMysqlHandler:
                 results = cursor.fetchall()
                 # 格式化时间
                 for row in results:
-                    # 检查 created_at 的类型
-                    if isinstance(row["created_at"], str):
-                        row["created_at"] = datetime.strptime(row["created_at"], "%a, %d %b %Y %H:%M:%S %Z").strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        )
-                    elif isinstance(row["created_at"], datetime):
-                        row["created_at"] = row["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+                    row["created_at"] = normalize_datetime(row["created_at"])
 
                 params_count = [user_id]
 
@@ -243,13 +228,7 @@ class MaterialMysqlHandler:
                 results = cursor.fetchall()
                 # 格式化时间
                 for row in results:
-                    # 检查 created_at 的类型
-                    if isinstance(row["created_at"], str):
-                        row["created_at"] = datetime.strptime(row["created_at"], "%a, %d %b %Y %H:%M:%S %Z").strftime(
-                            "%Y-%m-%d %H:%M:%S"
-                        )
-                    elif isinstance(row["created_at"], datetime):
-                        row["created_at"] = row["created_at"].strftime("%Y-%m-%d %H:%M:%S")
+                    row["created_at"] = normalize_datetime(row["created_at"])
                 return [dict(row) for row in results]
         except Exception as ex:
             logging.warning(ex)

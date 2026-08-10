@@ -477,16 +477,8 @@ class AgentSession:
                     for multimodal vision input.
         """
 
-        # ── Input Guard (boundary defense) ──
-        from app.util.agent.guard import InputGuard
-
-        guard_result = InputGuard.check(user_message)
-        if not guard_result["ok"]:
-            yield {"type": "error", "data": {"message": guard_result.get("reason", "输入被安全策略拦截")}}
-            yield {"type": "done", "data": {"status": "blocked"}}
-            return
-
         # ── Restore cross-session memory (messages + prompt) ──
+        # Note: InputGuard check is performed by AgentEngine.chat() — no need to double-check here.
         session_memory_prompt = ""
         try:
             from app.util.agent.memory import MemoryManager as _MemMgr
@@ -732,29 +724,37 @@ class AgentSession:
         return None
 
     @staticmethod
-    def _describe_images(images: list, user_message: str = "") -> str:
-        """Preprocess images through vision model — always auto-OCR.
+    def _describe_images(images: list, user_message: str = "", need_ocr: bool = None) -> str:
+        """Preprocess images through vision model — OCR on explicit request or when text is likely.
 
-        Design intent: every uploaded image is automatically OCR'd so the
-        Agent can see the text content without the user needing to ask.
+        Design intent: by default, OCR is triggered only when the user's message contains
+        text-extraction keywords (OCR/文字/识别/提取/read/extract). Set need_ocr=True
+        to force OCR, or need_ocr=False to skip it entirely.
+
         Falls back gracefully when no vision-capable model is configured.
         """
+        # Auto-detect OCR need from user message keywords
+        if need_ocr is None:
+            _ocr_keywords = ("ocr", "文字", "识别", "提取", "read", "extract", "文本", "截图", "屏幕")
+            msg_lower = user_message.lower() if user_message else ""
+            need_ocr = any(kw in msg_lower for kw in _ocr_keywords)
+
         try:
             from app.util.vision import VisionHandler
 
-            # Always run OCR first — extract text from every uploaded image
-            ok, result = VisionHandler.analyze_images(images, VisionHandler.build_ocr_prompt(), task_type="ocr")
-            if ok and isinstance(result, dict):
-                text = result.get("text") or ""
-                has_text = result.get("has_text", bool(text))
-                if has_text and text.strip():
-                    return f"[图片 OCR 文字提取]\n{text}"
-                # Image has no text — fall through to describe
-                if not has_text:
-                    return "[图片 OCR] 该图片中没有检测到文字"
+            if need_ocr:
+                # Run OCR to extract text from images
+                ok, result = VisionHandler.analyze_images(images, VisionHandler.build_ocr_prompt(), task_type="ocr")
+                if ok and isinstance(result, dict):
+                    text = result.get("text") or ""
+                    has_text = result.get("has_text", bool(text))
+                    if has_text and text.strip():
+                        return f"[图片 OCR 文字提取]\n{text}"
+                    if not has_text:
+                        return "[图片 OCR] 该图片中没有检测到文字"
 
-            # OCR failed (likely no vision model configured) — return None
-            # so _build_messages can inject image URLs as fallback
+            # OCR not needed or failed — return None so _build_messages
+            # can inject image URLs as fallback for the analyze_image tool
             return None
         except Exception:
             logging.debug("Vision bridge failed, proceeding text-only", exc_info=True)

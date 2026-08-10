@@ -33,6 +33,20 @@ class ConnectMysqlHandler:
         return _pool.connection()
 
 
+def normalize_datetime(value):
+    """Normalize a created_at value to a consistent string format.
+
+    Handles both the strptime format from MySQL and datetime objects.
+    Used by material_mysql.py and blueprint_mysql.py to avoid duplication.
+    """
+    from datetime import datetime
+    if isinstance(value, str):
+        return datetime.strptime(value, "%a, %d %b %Y %H:%M:%S %Z").strftime("%Y-%m-%d %H:%M:%S")
+    elif isinstance(value, datetime):
+        return value.strftime("%Y-%m-%d %H:%M:%S")
+    return value
+
+
 def generic_modify(connect, id, user_id, table, **kwargs):
     """Shared generic UPDATE helper.
 

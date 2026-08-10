@@ -62,6 +62,16 @@ class MinioUtil:
             logging.error(f"MinIO stat_object error: {e}")
             return None
 
+    @staticmethod
+    def _sanitize_path(rel_path: str) -> str:
+        """Remove path traversal segments (..) from a relative path."""
+        import re
+        # Normalize separators and strip dangerous segments
+        cleaned = rel_path.replace("\\", "/")
+        # Remove any segment that is exactly ".."
+        parts = [p for p in cleaned.split("/") if p and p != ".."]
+        return "/".join(parts)
+
     def download_minio_folder(minio_paths, root):
         for path in minio_paths:
             # 去掉 bucket 前缀后计算相对路径
@@ -78,8 +88,14 @@ class MinioUtil:
                 # 原图通常为 krpano/时间戳/文件.jpeg（路径深度 = 2）
                 if object_name.endswith(".jpeg") and object_name.count("/") == 2:
                     continue  # 过滤掉原图
-                rel_path = os.path.join("panos", object_name[len(f"krpano/{timestamp}/") :])
+                raw_rel_path = object_name[len(f"krpano/{timestamp}/") :]
+                safe_rel_path = MinioUtil._sanitize_path(raw_rel_path)
+                rel_path = os.path.join("panos", safe_rel_path)
                 target_path = os.path.join(root, rel_path)
+                # Double-check: target_path must stay within root
+                if not os.path.realpath(target_path).startswith(os.path.realpath(root) + os.sep):
+                    logging.warning("download_minio_folder: 路径穿越拦截, object_name=%s", object_name)
+                    continue
                 os.makedirs(os.path.dirname(target_path), exist_ok=True)
                 # 下载到本地
                 minio_client.fget_object(bucket_name, object_name, target_path)
