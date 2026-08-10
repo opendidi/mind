@@ -10,6 +10,7 @@ BaseExecutor lives in base_executor.py (shared by dag.py without circular import
 """
 
 import logging
+from typing import Generator
 
 from app.config import AGENT_DEFAULT_MODEL
 from app.util.agent.base_executor import BaseExecutor  # noqa: F401 — re-export for backward compat
